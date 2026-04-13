@@ -1,0 +1,437 @@
+package http
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/vvs/isp/internal/modules/recurring/domain"
+	"github.com/vvs/isp/internal/modules/recurring/app/queries"
+	"github.com/vvs/isp/internal/infrastructure/http/templates"
+)
+
+templ RecurringListPage() {
+	@templates.Layout("Recurring Invoices") {
+		@templates.PageHeader("Recurring Invoices", "Manage recurring billing schedules")
+		<div
+			id="recurring-content"
+			data-signals="{search: '', status: '', page: 1, pageSize: 25}"
+			data-init="@get('/api/recurring')"
+		>
+			<div class="flex items-center justify-between mb-4">
+				<div class="flex items-center gap-3">
+					<input
+						type="text"
+						data-bind:search
+						data-on:input__debounce.500ms="$page = 1; @get('/api/recurring')"
+						placeholder="Search recurring invoices..."
+						class="bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-4 py-2 w-80 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+					/>
+					<select
+						data-bind:status
+						data-on:change="$page = 1; @get('/api/recurring')"
+						class="bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+					>
+						<option value="">All Statuses</option>
+						<option value="active">Active</option>
+						<option value="paused">Paused</option>
+						<option value="cancelled">Cancelled</option>
+					</select>
+				</div>
+				<a
+					href="/recurring/new"
+					class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+				>
+					+ New Recurring Invoice
+				</a>
+			</div>
+			<div id="recurring-table">
+				<div class="text-gray-500 py-8 text-center">Loading...</div>
+			</div>
+		</div>
+	}
+}
+
+templ RecurringTable(result queries.ListRecurringResult) {
+	<div id="recurring-table">
+		if len(result.Invoices) == 0 {
+			@templates.EmptyState("No recurring invoices found")
+		} else {
+			<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+				<table class="w-full">
+					<thead>
+						<tr class="border-b border-gray-800">
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Customer</th>
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Schedule</th>
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Next Run</th>
+							<th class="text-right text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Total</th>
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Status</th>
+							<th class="text-right text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Actions</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-800">
+						for _, inv := range result.Invoices {
+							@RecurringRow(inv)
+						}
+					</tbody>
+				</table>
+			</div>
+			if result.TotalPages > 1 {
+				@templates.Pagination(result.Page, result.TotalPages, "/api/recurring")
+			}
+		}
+	</div>
+}
+
+templ RecurringRow(inv *domain.RecurringInvoice) {
+	<tr class="hover:bg-gray-800/50 transition-colors" id={ fmt.Sprintf("recurring-%s", inv.ID) }>
+		<td class="px-4 py-3 font-medium text-gray-100">{ inv.CustomerName }</td>
+		<td class="px-4 py-3 text-gray-300">
+			{ fmt.Sprintf("%s on day %d", inv.Schedule.FrequencyLabel(), inv.Schedule.DayOfMonth) }
+		</td>
+		<td class="px-4 py-3 text-gray-300">{ inv.NextRunDate.Format("2006-01-02") }</td>
+		<td class="px-4 py-3 text-right text-gray-100 font-mono">{ inv.Total().Display() }</td>
+		<td class="px-4 py-3">
+			@recurringStatusBadge(inv.Status)
+		</td>
+		<td class="px-4 py-3 text-right">
+			<div class="flex items-center justify-end gap-2">
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/recurring/%s", inv.ID)) }
+					class="text-gray-400 hover:text-orange-400 text-sm"
+				>
+					View
+				</a>
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/recurring/%s/edit", inv.ID)) }
+					class="text-gray-400 hover:text-orange-400 text-sm"
+				>
+					Edit
+				</a>
+			</div>
+		</td>
+	</tr>
+}
+
+templ recurringStatusBadge(status domain.RecurringStatus) {
+	switch status {
+		case domain.StatusActive:
+			@templates.Badge("success", "Active")
+		case domain.StatusPaused:
+			@templates.Badge("warning", "Paused")
+		case domain.StatusCancelled:
+			@templates.Badge("danger", "Cancelled")
+	}
+}
+
+templ RecurringFormPage(invoice *domain.RecurringInvoice) {
+	@templates.Layout(recurringFormTitle(invoice)) {
+		@templates.PageHeader(recurringFormTitle(invoice), recurringFormSubtitle(invoice))
+		<div class="max-w-2xl">
+			@templates.Card() {
+				<form
+					data-signals={ recurringFormSignals(invoice) }
+					data-on:submit__prevent={ recurringFormAction(invoice) }
+					class="flex flex-col gap-4"
+				>
+					<div class="grid grid-cols-2 gap-4">
+						@templates.DataInput("customerID", "Customer ID *", "text", "Enter customer ID", "customerID")
+						@templates.DataInput("customerName", "Customer Name *", "text", "Enter customer name", "customerName")
+					</div>
+					<div class="grid grid-cols-2 gap-4">
+						<div class="flex flex-col gap-1.5">
+							<label for="frequency" class="text-sm font-medium text-gray-300">Frequency *</label>
+							<select
+								id="frequency"
+								data-bind:frequency
+								class="bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+							>
+								<option value="monthly">Monthly</option>
+								<option value="quarterly">Quarterly</option>
+								<option value="yearly">Yearly</option>
+							</select>
+						</div>
+						@templates.DataInput("dayOfMonth", "Day of Month (1-28) *", "number", "1", "dayOfMonth")
+					</div>
+					<div class="border-t border-gray-800 pt-4 mt-2">
+						<h3 class="text-sm font-medium text-gray-300 mb-3">Invoice Lines</h3>
+						<div class="flex flex-col gap-3">
+							<div class="grid grid-cols-12 gap-2 text-xs text-gray-500 uppercase tracking-wider">
+								<div class="col-span-4">Product Name</div>
+								<div class="col-span-3">Description</div>
+								<div class="col-span-2">Qty</div>
+								<div class="col-span-3">Unit Price</div>
+							</div>
+							<div class="grid grid-cols-12 gap-2">
+								<input
+									type="text"
+									data-bind:lineProductNames.0
+									placeholder="Product name"
+									class="col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+								<input
+									type="text"
+									data-bind:lineDescriptions.0
+									placeholder="Description"
+									class="col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+								<input
+									type="number"
+									data-bind:lineQuantities.0
+									placeholder="1"
+									class="col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+								<input
+									type="text"
+									data-bind:lineUnitPrices.0
+									placeholder="0.00"
+									class="col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+							</div>
+							<div class="grid grid-cols-12 gap-2">
+								<input
+									type="text"
+									data-bind:lineProductNames.1
+									placeholder="Product name"
+									class="col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+								<input
+									type="text"
+									data-bind:lineDescriptions.1
+									placeholder="Description"
+									class="col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+								<input
+									type="number"
+									data-bind:lineQuantities.1
+									placeholder="1"
+									class="col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+								<input
+									type="text"
+									data-bind:lineUnitPrices.1
+									placeholder="0.00"
+									class="col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+							</div>
+							<div class="grid grid-cols-12 gap-2">
+								<input
+									type="text"
+									data-bind:lineProductNames.2
+									placeholder="Product name"
+									class="col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+								<input
+									type="text"
+									data-bind:lineDescriptions.2
+									placeholder="Description"
+									class="col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+								<input
+									type="number"
+									data-bind:lineQuantities.2
+									placeholder="1"
+									class="col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+								<input
+									type="text"
+									data-bind:lineUnitPrices.2
+									placeholder="0.00"
+									class="col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+							</div>
+						</div>
+					</div>
+					<div id="form-errors"></div>
+					<div class="flex items-center gap-3 pt-2">
+						<button
+							type="submit"
+							class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+						>
+							{ recurringFormButtonText(invoice) }
+						</button>
+						<a
+							href="/recurring"
+							class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-6 py-2 rounded-lg font-medium transition-colors border border-gray-700"
+						>
+							Cancel
+						</a>
+					</div>
+				</form>
+			}
+		</div>
+	}
+}
+
+templ RecurringDetailPage(inv *domain.RecurringInvoice) {
+	@templates.Layout(inv.CustomerName + " - Recurring") {
+		@templates.PageHeader(inv.CustomerName, "Recurring Invoice")
+		<div class="max-w-3xl">
+			<div class="flex items-center gap-3 mb-6">
+				@recurringStatusBadge(inv.Status)
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/recurring/%s/edit", inv.ID)) }
+					class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
+				>
+					Edit
+				</a>
+				if inv.Status != domain.StatusCancelled {
+					<button
+						data-on:click={ fmt.Sprintf("@put('/api/recurring/%s/toggle')", inv.ID) }
+						class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors border border-gray-700"
+					>
+						if inv.Status == domain.StatusActive {
+							Pause
+						} else {
+							Resume
+						}
+					</button>
+				}
+				<button
+					data-on:click={ fmt.Sprintf("@delete('/api/recurring/%s')", inv.ID) }
+					class="bg-red-600/10 hover:bg-red-600/20 text-red-400 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors border border-red-600/30"
+				>
+					Delete
+				</button>
+			</div>
+			@templates.Card() {
+				<div class="grid grid-cols-2 gap-6">
+					@recurringDetailField("Customer", inv.CustomerName)
+					@recurringDetailField("Schedule", fmt.Sprintf("%s on day %d", inv.Schedule.FrequencyLabel(), inv.Schedule.DayOfMonth))
+					@recurringDetailField("Next Run Date", inv.NextRunDate.Format("2006-01-02"))
+					@recurringDetailField("Last Run Date", formatLastRunDate(inv.LastRunDate))
+					@recurringDetailField("Total", inv.Total().Display())
+				</div>
+			}
+			if len(inv.Lines) > 0 {
+				<div class="mt-6">
+					@templates.Card() {
+						<h3 class="text-sm font-medium text-gray-400 uppercase tracking-wider mb-4">Invoice Lines</h3>
+						<div class="bg-gray-950 border border-gray-800 rounded-lg overflow-hidden">
+							<table class="w-full">
+								<thead>
+									<tr class="border-b border-gray-800">
+										<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-2">Product</th>
+										<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-2">Description</th>
+										<th class="text-right text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-2">Qty</th>
+										<th class="text-right text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-2">Unit Price</th>
+										<th class="text-right text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-2">Total</th>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-gray-800">
+									for _, line := range inv.Lines {
+										<tr>
+											<td class="px-4 py-2 text-gray-100">{ line.ProductName }</td>
+											<td class="px-4 py-2 text-gray-400 text-sm">{ line.Description }</td>
+											<td class="px-4 py-2 text-right text-gray-300">{ fmt.Sprintf("%d", line.Quantity) }</td>
+											<td class="px-4 py-2 text-right text-gray-300 font-mono">{ line.UnitPrice.Display() }</td>
+											<td class="px-4 py-2 text-right text-gray-100 font-mono">{ line.UnitPrice.Multiply(int64(line.Quantity)).Display() }</td>
+										</tr>
+									}
+								</tbody>
+							</table>
+						</div>
+					}
+				</div>
+			}
+		</div>
+	}
+}
+
+templ recurringDetailField(label string, value string) {
+	<div>
+		<p class="text-xs text-gray-500 uppercase tracking-wider mb-1">{ label }</p>
+		if value != "" {
+			<p class="text-gray-100">{ value }</p>
+		} else {
+			<p class="text-gray-600 italic">-</p>
+		}
+	</div>
+}
+
+func recurringFormTitle(inv *domain.RecurringInvoice) string {
+	if inv == nil {
+		return "New Recurring Invoice"
+	}
+	return "Edit Recurring Invoice"
+}
+
+func recurringFormSubtitle(inv *domain.RecurringInvoice) string {
+	if inv == nil {
+		return "Set up a new recurring billing schedule"
+	}
+	return "Update recurring invoice details"
+}
+
+func recurringFormSignals(inv *domain.RecurringInvoice) string {
+	if inv == nil {
+		return `{customerID:'',customerName:'',frequency:'monthly',dayOfMonth:'1',lineProductIDs:['','',''],lineProductNames:['','',''],lineDescriptions:['','',''],lineQuantities:['1','1','1'],lineUnitPrices:['','','']}`
+	}
+	// Pre-fill with existing data
+	productNames := "['','','']"
+	descriptions := "['','','']"
+	quantities := "['1','1','1']"
+	unitPrices := "['','','']"
+	productIDs := "['','','']"
+
+	if len(inv.Lines) > 0 {
+		pn := "["
+		desc := "["
+		qty := "["
+		up := "["
+		pid := "["
+		for i := 0; i < 3; i++ {
+			if i > 0 {
+				pn += ","
+				desc += ","
+				qty += ","
+				up += ","
+				pid += ","
+			}
+			if i < len(inv.Lines) {
+				pn += fmt.Sprintf("'%s'", inv.Lines[i].ProductName)
+				desc += fmt.Sprintf("'%s'", inv.Lines[i].Description)
+				qty += fmt.Sprintf("'%d'", inv.Lines[i].Quantity)
+				up += fmt.Sprintf("'%s'", inv.Lines[i].UnitPrice.DisplayAmount())
+				pid += fmt.Sprintf("'%s'", inv.Lines[i].ProductID)
+			} else {
+				pn += "''"
+				desc += "''"
+				qty += "'1'"
+				up += "''"
+				pid += "''"
+			}
+		}
+		productNames = pn + "]"
+		descriptions = desc + "]"
+		quantities = qty + "]"
+		unitPrices = up + "]"
+		productIDs = pid + "]"
+	}
+
+	return fmt.Sprintf(
+		`{customerID:'%s',customerName:'%s',frequency:'%s',dayOfMonth:'%d',lineProductIDs:%s,lineProductNames:%s,lineDescriptions:%s,lineQuantities:%s,lineUnitPrices:%s}`,
+		inv.CustomerID, inv.CustomerName, string(inv.Schedule.Frequency), inv.Schedule.DayOfMonth,
+		productIDs, productNames, descriptions, quantities, unitPrices,
+	)
+}
+
+func recurringFormAction(inv *domain.RecurringInvoice) string {
+	if inv == nil {
+		return "@post('/api/recurring')"
+	}
+	return fmt.Sprintf("@put('/api/recurring/%s')", inv.ID)
+}
+
+func recurringFormButtonText(inv *domain.RecurringInvoice) string {
+	if inv == nil {
+		return "Create Recurring Invoice"
+	}
+	return "Save Changes"
+}
+
+func formatLastRunDate(t *time.Time) string {
+	if t == nil {
+		return "Never"
+	}
+	return t.Format("2006-01-02")
+}

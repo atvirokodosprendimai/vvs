@@ -1,0 +1,255 @@
+package http
+
+import (
+	"fmt"
+
+	"github.com/vvs/isp/internal/modules/customer/domain"
+	"github.com/vvs/isp/internal/modules/customer/app/queries"
+	"github.com/vvs/isp/internal/infrastructure/http/templates"
+)
+
+templ CustomerListPage() {
+	@templates.Layout("Customers") {
+		@templates.PageHeader("Customers", "Manage your customer base")
+		<div
+			id="customer-content"
+			data-signals="{search: '', page: 1, pageSize: 25}"
+			data-init="@get('/api/customers')"
+		>
+			<div class="flex items-center justify-between mb-4">
+				<input
+					type="text"
+					data-bind:search
+					data-on:input__debounce.500ms="$page = 1; @get('/api/customers')"
+					placeholder="Search customers..."
+					class="bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-4 py-2 w-80 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+				/>
+				<a
+					href="/customers/new"
+					class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+				>
+					+ New Customer
+				</a>
+			</div>
+			<div id="customer-table">
+				<div class="text-gray-500 py-8 text-center">Loading...</div>
+			</div>
+		</div>
+	}
+}
+
+templ CustomerTable(result queries.ListCustomersResult) {
+	<div id="customer-table">
+		if len(result.Customers) == 0 {
+			@templates.EmptyState("No customers found")
+		} else {
+			<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+				<table class="w-full">
+					<thead>
+						<tr class="border-b border-gray-800">
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Code</th>
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Company</th>
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Contact</th>
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Email</th>
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Status</th>
+							<th class="text-right text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Actions</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-800">
+						for _, c := range result.Customers {
+							@CustomerRow(c)
+						}
+					</tbody>
+				</table>
+			</div>
+			if result.TotalPages > 1 {
+				@templates.Pagination(result.Page, result.TotalPages, "/api/customers")
+			}
+		}
+	</div>
+}
+
+templ CustomerRow(c *domain.Customer) {
+	<tr class="hover:bg-gray-800/50 transition-colors" id={ fmt.Sprintf("customer-%s", c.ID) }>
+		<td class="px-4 py-3">
+			<span class="text-orange-400 font-mono text-sm">{ c.Code.String() }</span>
+		</td>
+		<td class="px-4 py-3 font-medium text-gray-100">{ c.CompanyName }</td>
+		<td class="px-4 py-3 text-gray-300">{ c.ContactName }</td>
+		<td class="px-4 py-3 text-gray-300">{ c.Email }</td>
+		<td class="px-4 py-3">
+			@customerStatusBadge(c.Status)
+		</td>
+		<td class="px-4 py-3 text-right">
+			<div class="flex items-center justify-end gap-2">
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/customers/%s", c.ID)) }
+					class="text-gray-400 hover:text-orange-400 text-sm"
+				>
+					View
+				</a>
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/customers/%s/edit", c.ID)) }
+					class="text-gray-400 hover:text-orange-400 text-sm"
+				>
+					Edit
+				</a>
+			</div>
+		</td>
+	</tr>
+}
+
+templ customerStatusBadge(status domain.CustomerStatus) {
+	switch status {
+		case domain.StatusActive:
+			@templates.Badge("success", "Active")
+		case domain.StatusSuspended:
+			@templates.Badge("warning", "Suspended")
+		case domain.StatusChurned:
+			@templates.Badge("danger", "Churned")
+	}
+}
+
+templ CustomerFormPage(customer *domain.Customer) {
+	@templates.Layout(formTitle(customer)) {
+		@templates.PageHeader(formTitle(customer), formSubtitle(customer))
+		<div class="max-w-2xl">
+			@templates.Card() {
+				<form
+					data-signals={ formSignals(customer) }
+					data-on:submit__prevent={ formAction(customer) }
+					class="flex flex-col gap-4"
+				>
+					@templates.DataInput("companyName", "Company Name *", "text", "Enter company name", "companyName")
+					@templates.DataInput("contactName", "Contact Name", "text", "Enter contact name", "contactName")
+					<div class="grid grid-cols-2 gap-4">
+						@templates.DataInput("email", "Email", "email", "Enter email", "email")
+						@templates.DataInput("phone", "Phone", "tel", "Enter phone", "phone")
+					</div>
+					@templates.DataInput("street", "Street", "text", "Enter street address", "street")
+					<div class="grid grid-cols-3 gap-4">
+						@templates.DataInput("city", "City", "text", "Enter city", "city")
+						@templates.DataInput("postalCode", "Postal Code", "text", "Enter postal code", "postalCode")
+						@templates.DataInput("country", "Country", "text", "Enter country code", "country")
+					</div>
+					@templates.DataInput("taxId", "Tax ID", "text", "Enter tax ID / VAT number", "taxId")
+					<div class="flex flex-col gap-1.5">
+						<label for="notes" class="text-sm font-medium text-gray-300">Notes</label>
+						<textarea
+							id="notes"
+							data-bind:notes
+							rows="3"
+							placeholder="Enter notes..."
+							class="bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+						></textarea>
+					</div>
+					<div id="form-errors"></div>
+					<div class="flex items-center gap-3 pt-2">
+						<button
+							type="submit"
+							class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+						>
+							{ formButtonText(customer) }
+						</button>
+						<a
+							href="/customers"
+							class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-6 py-2 rounded-lg font-medium transition-colors border border-gray-700"
+						>
+							Cancel
+						</a>
+					</div>
+				</form>
+			}
+		</div>
+	}
+}
+
+templ CustomerDetailPage(c *domain.Customer) {
+	@templates.Layout(c.CompanyName) {
+		@templates.PageHeader(c.CompanyName, fmt.Sprintf("Customer %s", c.Code.String()))
+		<div class="max-w-3xl">
+			<div class="flex items-center gap-3 mb-6">
+				@customerStatusBadge(c.Status)
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/customers/%s/edit", c.ID)) }
+					class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
+				>
+					Edit
+				</a>
+				<button
+					data-on:click={ fmt.Sprintf("@delete('/api/customers/%s')", c.ID) }
+					class="bg-red-600/10 hover:bg-red-600/20 text-red-400 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors border border-red-600/30"
+				>
+					Delete
+				</button>
+			</div>
+			@templates.Card() {
+				<div class="grid grid-cols-2 gap-6">
+					@detailField("Company Name", c.CompanyName)
+					@detailField("Contact", c.ContactName)
+					@detailField("Email", c.Email)
+					@detailField("Phone", c.Phone)
+					@detailField("Street", c.Street)
+					@detailField("City", c.City)
+					@detailField("Postal Code", c.PostalCode)
+					@detailField("Country", c.Country)
+					@detailField("Tax ID", c.TaxID)
+				</div>
+				if c.Notes != "" {
+					<div class="mt-6 pt-6 border-t border-gray-800">
+						@detailField("Notes", c.Notes)
+					</div>
+				}
+			}
+		</div>
+	}
+}
+
+templ detailField(label string, value string) {
+	<div>
+		<p class="text-xs text-gray-500 uppercase tracking-wider mb-1">{ label }</p>
+		if value != "" {
+			<p class="text-gray-100">{ value }</p>
+		} else {
+			<p class="text-gray-600 italic">-</p>
+		}
+	</div>
+}
+
+func formTitle(c *domain.Customer) string {
+	if c == nil {
+		return "New Customer"
+	}
+	return "Edit " + c.CompanyName
+}
+
+func formSubtitle(c *domain.Customer) string {
+	if c == nil {
+		return "Add a new customer to your system"
+	}
+	return "Update customer details"
+}
+
+func formSignals(c *domain.Customer) string {
+	if c == nil {
+		return `{companyName:'',contactName:'',email:'',phone:'',street:'',city:'',postalCode:'',country:'',taxId:'',notes:''}`
+	}
+	return fmt.Sprintf(
+		`{companyName:'%s',contactName:'%s',email:'%s',phone:'%s',street:'%s',city:'%s',postalCode:'%s',country:'%s',taxId:'%s',notes:'%s'}`,
+		c.CompanyName, c.ContactName, c.Email, c.Phone, c.Street, c.City, c.PostalCode, c.Country, c.TaxID, c.Notes,
+	)
+}
+
+func formAction(c *domain.Customer) string {
+	if c == nil {
+		return "@post('/api/customers')"
+	}
+	return fmt.Sprintf("@put('/api/customers/%s')", c.ID)
+}
+
+func formButtonText(c *domain.Customer) string {
+	if c == nil {
+		return "Create Customer"
+	}
+	return "Save Changes"
+}

@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:data-star.dev)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.nats.io)",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(data[0]['text'][:15000]\\)\")",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); text=data[0]['text']; print\\(text[15000:30000]\\)\")",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); text=data[0]['text']; print\\(text[30000:]\\)\")",
+      "Bash(go mod:*)",
+      "Bash(go get:*)",
+      "Bash(go install:*)",
+      "Bash(templ version:*)",
+      "Bash(templ generate:*)",
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(timeout 5 ./bin/vvs --db ./data/test.db --addr :9999)",
+      "Bash(find . -name \"*.go\" ! -name \"*_templ.go\" -exec cat {} +)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -s -N --max-time 4 http://localhost:9999/sse/clock)",
+      "Bash(echo \"---EXIT:$?\")",
+      "Bash(curl -s http://localhost:9999/)",
+      "Bash(kill 62137)",
+      "Bash(rm -f /tmp/vvs-clock-test.db)",
+      "Bash(make build:*)"
+    ]
+  }
+}

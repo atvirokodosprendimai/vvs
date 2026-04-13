@@ -1,0 +1,25 @@
+# Compiled binaries
+bin/
+
+# Database
+data/
+*.db
+
+# Environment
+.env
+.env.*
+
+# Dependencies (not vendoring)
+vendor/
+
+# Temporary files
+tmp/
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
