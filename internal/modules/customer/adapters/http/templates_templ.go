@@ -9,6 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
@@ -155,7 +156,7 @@ func CustomerRow(c *domain.Customer) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("customer-%s", c.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 73, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 74, Col: 89}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -168,7 +169,7 @@ func CustomerRow(c *domain.Customer) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(c.Code.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 75, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 76, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -181,7 +182,7 @@ func CustomerRow(c *domain.Customer) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(c.CompanyName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 77, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 78, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -194,7 +195,7 @@ func CustomerRow(c *domain.Customer) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(c.ContactName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 78, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 79, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -207,7 +208,7 @@ func CustomerRow(c *domain.Customer) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(c.Email)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 79, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 80, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -228,7 +229,7 @@ func CustomerRow(c *domain.Customer) templ.Component {
 		var templ_7745c5c3_Var10 templ.SafeURL
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/customers/%s", c.ID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 86, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 87, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -241,7 +242,7 @@ func CustomerRow(c *domain.Customer) templ.Component {
 		var templ_7745c5c3_Var11 templ.SafeURL
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/customers/%s/edit", c.ID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 92, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 93, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -357,7 +358,7 @@ func CustomerFormPage(customer *domain.Customer) templ.Component {
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(formSignals(customer))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 119, Col: 41}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 120, Col: 41}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -426,7 +427,7 @@ func CustomerFormPage(customer *domain.Customer) templ.Component {
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(formAction(customer))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 149, Col: 43}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 150, Col: 43}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -439,7 +440,7 @@ func CustomerFormPage(customer *domain.Customer) templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(formButtonText(customer))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 152, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 153, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -521,7 +522,7 @@ func CustomerDetailPage(c *domain.Customer) templ.Component {
 			var templ_7745c5c3_Var21 templ.SafeURL
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/customers/%s/edit", c.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 174, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 175, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -534,7 +535,7 @@ func CustomerDetailPage(c *domain.Customer) templ.Component {
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/customers/%s')", c.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 180, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 181, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -662,7 +663,7 @@ func detailField(label string, value string) templ.Component {
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 210, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 211, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -680,7 +681,7 @@ func detailField(label string, value string) templ.Component {
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 212, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 213, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -719,13 +720,35 @@ func formSubtitle(c *domain.Customer) string {
 }
 
 func formSignals(c *domain.Customer) string {
-	if c == nil {
-		return `{companyName:'',contactName:'',email:'',phone:'',street:'',city:'',postalCode:'',country:'',taxId:'',notes:''}`
+	type sig struct {
+		CompanyName string `json:"companyName"`
+		ContactName string `json:"contactName"`
+		Email       string `json:"email"`
+		Phone       string `json:"phone"`
+		Street      string `json:"street"`
+		City        string `json:"city"`
+		PostalCode  string `json:"postalCode"`
+		Country     string `json:"country"`
+		TaxID       string `json:"taxId"`
+		Notes       string `json:"notes"`
 	}
-	return fmt.Sprintf(
-		`{companyName:'%s',contactName:'%s',email:'%s',phone:'%s',street:'%s',city:'%s',postalCode:'%s',country:'%s',taxId:'%s',notes:'%s'}`,
-		c.CompanyName, c.ContactName, c.Email, c.Phone, c.Street, c.City, c.PostalCode, c.Country, c.TaxID, c.Notes,
-	)
+	if c == nil {
+		b, _ := json.Marshal(sig{})
+		return string(b)
+	}
+	b, _ := json.Marshal(sig{
+		CompanyName: c.CompanyName,
+		ContactName: c.ContactName,
+		Email:       c.Email,
+		Phone:       c.Phone,
+		Street:      c.Street,
+		City:        c.City,
+		PostalCode:  c.PostalCode,
+		Country:     c.Country,
+		TaxID:       c.TaxID,
+		Notes:       c.Notes,
+	})
+	return string(b)
 }
 
 func formAction(c *domain.Customer) string {

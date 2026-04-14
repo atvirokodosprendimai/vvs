@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/vvs/isp/internal/modules/product/domain"
@@ -288,13 +289,27 @@ func prodFormSubtitle(p *domain.Product) string {
 }
 
 func prodFormSignals(p *domain.Product) string {
-	if p == nil {
-		return `{name:'',description:'',productType:'internet',priceAmount:'',priceCurrency:'EUR',billingPeriod:'monthly'}`
+	type sig struct {
+		Name          string `json:"name"`
+		Description   string `json:"description"`
+		ProductType   string `json:"productType"`
+		PriceAmount   string `json:"priceAmount"`
+		PriceCurrency string `json:"priceCurrency"`
+		BillingPeriod string `json:"billingPeriod"`
 	}
-	return fmt.Sprintf(
-		`{name:'%s',description:'%s',productType:'%s',priceAmount:'%s',priceCurrency:'%s',billingPeriod:'%s'}`,
-		p.Name, p.Description, string(p.Type), p.Price.DisplayAmount(), p.Price.Currency, string(p.BillingPeriod),
-	)
+	if p == nil {
+		b, _ := json.Marshal(sig{ProductType: "internet", PriceCurrency: "EUR", BillingPeriod: "monthly"})
+		return string(b)
+	}
+	b, _ := json.Marshal(sig{
+		Name:          p.Name,
+		Description:   p.Description,
+		ProductType:   string(p.Type),
+		PriceAmount:   p.Price.DisplayAmount(),
+		PriceCurrency: p.Price.Currency,
+		BillingPeriod: string(p.BillingPeriod),
+	})
+	return string(b)
 }
 
 func prodFormAction(p *domain.Product) string {

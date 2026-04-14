@@ -9,7 +9,9 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
@@ -156,7 +158,7 @@ func RecurringRow(inv *domain.RecurringInvoice) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("recurring-%s", inv.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 86, Col: 92}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 88, Col: 92}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -169,7 +171,7 @@ func RecurringRow(inv *domain.RecurringInvoice) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(inv.CustomerName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 87, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 89, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -182,7 +184,7 @@ func RecurringRow(inv *domain.RecurringInvoice) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%s on day %d", inv.Schedule.FrequencyLabel(), inv.Schedule.DayOfMonth))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 89, Col: 88}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 91, Col: 88}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -195,7 +197,7 @@ func RecurringRow(inv *domain.RecurringInvoice) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(inv.NextRunDate.Format("2006-01-02"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 91, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 93, Col: 76}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -208,7 +210,7 @@ func RecurringRow(inv *domain.RecurringInvoice) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(inv.Total().Display())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 92, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 94, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -229,7 +231,7 @@ func RecurringRow(inv *domain.RecurringInvoice) templ.Component {
 		var templ_7745c5c3_Var10 templ.SafeURL
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/recurring/%s", inv.ID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 99, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 101, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -242,7 +244,7 @@ func RecurringRow(inv *domain.RecurringInvoice) templ.Component {
 		var templ_7745c5c3_Var11 templ.SafeURL
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/recurring/%s/edit", inv.ID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 105, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 107, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -358,7 +360,7 @@ func RecurringFormPage(invoice *domain.RecurringInvoice) templ.Component {
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(recurringFormSignals(invoice))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 132, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 134, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -391,7 +393,7 @@ func RecurringFormPage(invoice *domain.RecurringInvoice) templ.Component {
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(recurringFormAction(invoice))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 247, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 249, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -404,7 +406,7 @@ func RecurringFormPage(invoice *domain.RecurringInvoice) templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(recurringFormButtonText(invoice))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 250, Col: 41}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 252, Col: 41}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -486,7 +488,7 @@ func RecurringDetailPage(inv *domain.RecurringInvoice) templ.Component {
 			var templ_7745c5c3_Var21 templ.SafeURL
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/recurring/%s/edit", inv.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 272, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 274, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -504,7 +506,7 @@ func RecurringDetailPage(inv *domain.RecurringInvoice) templ.Component {
 				var templ_7745c5c3_Var22 string
 				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/recurring/%s/toggle')", inv.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 279, Col: 77}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 281, Col: 77}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
@@ -537,7 +539,7 @@ func RecurringDetailPage(inv *domain.RecurringInvoice) templ.Component {
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/recurring/%s')", inv.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 290, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 292, Col: 72}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -622,7 +624,7 @@ func RecurringDetailPage(inv *domain.RecurringInvoice) templ.Component {
 						var templ_7745c5c3_Var26 string
 						templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(line.ProductName)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 323, Col: 65}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 325, Col: 65}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 						if templ_7745c5c3_Err != nil {
@@ -635,7 +637,7 @@ func RecurringDetailPage(inv *domain.RecurringInvoice) templ.Component {
 						var templ_7745c5c3_Var27 string
 						templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(line.Description)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 324, Col: 73}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 326, Col: 73}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 						if templ_7745c5c3_Err != nil {
@@ -648,7 +650,7 @@ func RecurringDetailPage(inv *domain.RecurringInvoice) templ.Component {
 						var templ_7745c5c3_Var28 string
 						templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", line.Quantity))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 325, Col: 92}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 327, Col: 92}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 						if templ_7745c5c3_Err != nil {
@@ -661,7 +663,7 @@ func RecurringDetailPage(inv *domain.RecurringInvoice) templ.Component {
 						var templ_7745c5c3_Var29 string
 						templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(line.UnitPrice.Display())
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 326, Col: 94}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 328, Col: 94}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 						if templ_7745c5c3_Err != nil {
@@ -674,7 +676,7 @@ func RecurringDetailPage(inv *domain.RecurringInvoice) templ.Component {
 						var templ_7745c5c3_Var30 string
 						templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(line.UnitPrice.Multiply(int64(line.Quantity)).Display())
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 327, Col: 125}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 329, Col: 125}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 						if templ_7745c5c3_Err != nil {
@@ -742,7 +744,7 @@ func recurringDetailField(label string, value string) templ.Component {
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 342, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 344, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -760,7 +762,7 @@ func recurringDetailField(label string, value string) templ.Component {
 			var templ_7745c5c3_Var33 string
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 344, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 346, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 			if templ_7745c5c3_Err != nil {
@@ -799,56 +801,54 @@ func recurringFormSubtitle(inv *domain.RecurringInvoice) string {
 }
 
 func recurringFormSignals(inv *domain.RecurringInvoice) string {
+	type sig struct {
+		CustomerID       string   `json:"customerID"`
+		CustomerName     string   `json:"customerName"`
+		Frequency        string   `json:"frequency"`
+		DayOfMonth       string   `json:"dayOfMonth"`
+		LineProductIDs   []string `json:"lineProductIDs"`
+		LineProductNames []string `json:"lineProductNames"`
+		LineDescriptions []string `json:"lineDescriptions"`
+		LineQuantities   []string `json:"lineQuantities"`
+		LineUnitPrices   []string `json:"lineUnitPrices"`
+	}
+	empty3 := func(def string) []string { return []string{def, def, def} }
 	if inv == nil {
-		return `{customerID:'',customerName:'',frequency:'monthly',dayOfMonth:'1',lineProductIDs:['','',''],lineProductNames:['','',''],lineDescriptions:['','',''],lineQuantities:['1','1','1'],lineUnitPrices:['','','']}`
+		b, _ := json.Marshal(sig{
+			Frequency:        "monthly",
+			DayOfMonth:       "1",
+			LineProductIDs:   empty3(""),
+			LineProductNames: empty3(""),
+			LineDescriptions: empty3(""),
+			LineQuantities:   empty3("1"),
+			LineUnitPrices:   empty3(""),
+		})
+		return string(b)
 	}
-	// Pre-fill with existing data
-	productNames := "['','','']"
-	descriptions := "['','','']"
-	quantities := "['1','1','1']"
-	unitPrices := "['','','']"
-	productIDs := "['','','']"
-
-	if len(inv.Lines) > 0 {
-		pn := "["
-		desc := "["
-		qty := "["
-		up := "["
-		pid := "["
-		for i := 0; i < 3; i++ {
-			if i > 0 {
-				pn += ","
-				desc += ","
-				qty += ","
-				up += ","
-				pid += ","
-			}
-			if i < len(inv.Lines) {
-				pn += fmt.Sprintf("'%s'", inv.Lines[i].ProductName)
-				desc += fmt.Sprintf("'%s'", inv.Lines[i].Description)
-				qty += fmt.Sprintf("'%d'", inv.Lines[i].Quantity)
-				up += fmt.Sprintf("'%s'", inv.Lines[i].UnitPrice.DisplayAmount())
-				pid += fmt.Sprintf("'%s'", inv.Lines[i].ProductID)
-			} else {
-				pn += "''"
-				desc += "''"
-				qty += "'1'"
-				up += "''"
-				pid += "''"
-			}
-		}
-		productNames = pn + "]"
-		descriptions = desc + "]"
-		quantities = qty + "]"
-		unitPrices = up + "]"
-		productIDs = pid + "]"
+	ids := empty3("")
+	names := empty3("")
+	descs := empty3("")
+	qtys := empty3("1")
+	prices := empty3("")
+	for i := 0; i < 3 && i < len(inv.Lines); i++ {
+		ids[i] = inv.Lines[i].ProductID
+		names[i] = inv.Lines[i].ProductName
+		descs[i] = inv.Lines[i].Description
+		qtys[i] = strconv.Itoa(inv.Lines[i].Quantity)
+		prices[i] = inv.Lines[i].UnitPrice.DisplayAmount()
 	}
-
-	return fmt.Sprintf(
-		`{customerID:'%s',customerName:'%s',frequency:'%s',dayOfMonth:'%d',lineProductIDs:%s,lineProductNames:%s,lineDescriptions:%s,lineQuantities:%s,lineUnitPrices:%s}`,
-		inv.CustomerID, inv.CustomerName, string(inv.Schedule.Frequency), inv.Schedule.DayOfMonth,
-		productIDs, productNames, descriptions, quantities, unitPrices,
-	)
+	b, _ := json.Marshal(sig{
+		CustomerID:       inv.CustomerID,
+		CustomerName:     inv.CustomerName,
+		Frequency:        string(inv.Schedule.Frequency),
+		DayOfMonth:       strconv.Itoa(inv.Schedule.DayOfMonth),
+		LineProductIDs:   ids,
+		LineProductNames: names,
+		LineDescriptions: descs,
+		LineQuantities:   qtys,
+		LineUnitPrices:   prices,
+	})
+	return string(b)
 }
 
 func recurringFormAction(inv *domain.RecurringInvoice) string {

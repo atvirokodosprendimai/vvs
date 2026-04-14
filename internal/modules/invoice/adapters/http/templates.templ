@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -301,20 +302,39 @@ func invoiceFormSubtitle(inv *domain.Invoice) string {
 }
 
 func invoiceFormSignals(inv *domain.Invoice) string {
-	newLineDefaults := `newLineSearch:'',newLineProductId:'',newLineProductName:'',newLineDescription:'',newLineQty:1,newLineUnitPrice:''`
-	if inv == nil {
-		today := time.Now().Format("2006-01-02")
-		due := time.Now().AddDate(0, 0, 30).Format("2006-01-02")
-		return fmt.Sprintf(
-			`{customerSearch:'',customerId:'',customerName:'',issueDate:'%s',dueDate:'%s',taxRate:21,lines:[],%s}`,
-			today, due, newLineDefaults,
-		)
+	type sig struct {
+		CustomerSearch     string `json:"customerSearch"`
+		CustomerID         string `json:"customerId"`
+		CustomerName       string `json:"customerName"`
+		IssueDate          string `json:"issueDate"`
+		DueDate            string `json:"dueDate"`
+		TaxRate            int    `json:"taxRate"`
+		Lines              []any  `json:"lines"`
+		NewLineSearch      string `json:"newLineSearch"`
+		NewLineProductID   string `json:"newLineProductId"`
+		NewLineProductName string `json:"newLineProductName"`
+		NewLineDescription string `json:"newLineDescription"`
+		NewLineQty         int    `json:"newLineQty"`
+		NewLineUnitPrice   string `json:"newLineUnitPrice"`
 	}
-	return fmt.Sprintf(
-		`{customerSearch:'%s',customerId:'%s',customerName:'%s',issueDate:'%s',dueDate:'%s',taxRate:%d,lines:[],%s}`,
-		inv.CustomerName, inv.CustomerID, inv.CustomerName,
-		inv.IssueDate.Format("2006-01-02"), inv.DueDate.Format("2006-01-02"), inv.TaxRate, newLineDefaults,
-	)
+	base := sig{
+		Lines:      []any{},
+		TaxRate:    21,
+		NewLineQty: 1,
+	}
+	if inv == nil {
+		base.IssueDate = time.Now().Format("2006-01-02")
+		base.DueDate = time.Now().AddDate(0, 0, 30).Format("2006-01-02")
+	} else {
+		base.CustomerSearch = inv.CustomerName
+		base.CustomerID = inv.CustomerID
+		base.CustomerName = inv.CustomerName
+		base.IssueDate = inv.IssueDate.Format("2006-01-02")
+		base.DueDate = inv.DueDate.Format("2006-01-02")
+		base.TaxRate = inv.TaxRate
+	}
+	b, _ := json.Marshal(base)
+	return string(b)
 }
 
 func invoiceFormAction(inv *domain.Invoice) string {

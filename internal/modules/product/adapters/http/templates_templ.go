@@ -9,6 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
@@ -155,7 +156,7 @@ func ProductRow(p *domain.Product) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("product-%s", p.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 86, Col: 88}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 87, Col: 88}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -168,7 +169,7 @@ func ProductRow(p *domain.Product) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 89, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 90, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -186,7 +187,7 @@ func ProductRow(p *domain.Product) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(truncate(p.Description, 60))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 91, Col: 74}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 92, Col: 74}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -212,7 +213,7 @@ func ProductRow(p *domain.Product) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(p.Price.Display())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 99, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 100, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -225,7 +226,7 @@ func ProductRow(p *domain.Product) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(billingLabel(p.BillingPeriod))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 101, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 102, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -246,7 +247,7 @@ func ProductRow(p *domain.Product) templ.Component {
 		var templ_7745c5c3_Var10 templ.SafeURL
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/products/%s", p.ID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 108, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 109, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -259,7 +260,7 @@ func ProductRow(p *domain.Product) templ.Component {
 		var templ_7745c5c3_Var11 templ.SafeURL
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/products/%s/edit", p.ID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 114, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 115, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -416,7 +417,7 @@ func ProductFormPage(product *domain.Product) templ.Component {
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(prodFormSignals(product))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 151, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 152, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -445,7 +446,7 @@ func ProductFormPage(product *domain.Product) templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(prodFormAction(product))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 209, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 210, Col: 46}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -458,7 +459,7 @@ func ProductFormPage(product *domain.Product) templ.Component {
 				var templ_7745c5c3_Var19 string
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(prodFormButtonText(product))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 212, Col: 36}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 213, Col: 36}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {
@@ -544,7 +545,7 @@ func ProductDetailPage(p *domain.Product) templ.Component {
 			var templ_7745c5c3_Var22 templ.SafeURL
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/products/%s/edit", p.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 235, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 236, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -557,7 +558,7 @@ func ProductDetailPage(p *domain.Product) templ.Component {
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/products/%s')", p.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 241, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 242, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -669,7 +670,7 @@ func detailField(label string, value string) templ.Component {
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 267, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 268, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
@@ -687,7 +688,7 @@ func detailField(label string, value string) templ.Component {
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 269, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 270, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -726,13 +727,27 @@ func prodFormSubtitle(p *domain.Product) string {
 }
 
 func prodFormSignals(p *domain.Product) string {
-	if p == nil {
-		return `{name:'',description:'',productType:'internet',priceAmount:'',priceCurrency:'EUR',billingPeriod:'monthly'}`
+	type sig struct {
+		Name          string `json:"name"`
+		Description   string `json:"description"`
+		ProductType   string `json:"productType"`
+		PriceAmount   string `json:"priceAmount"`
+		PriceCurrency string `json:"priceCurrency"`
+		BillingPeriod string `json:"billingPeriod"`
 	}
-	return fmt.Sprintf(
-		`{name:'%s',description:'%s',productType:'%s',priceAmount:'%s',priceCurrency:'%s',billingPeriod:'%s'}`,
-		p.Name, p.Description, string(p.Type), p.Price.DisplayAmount(), p.Price.Currency, string(p.BillingPeriod),
-	)
+	if p == nil {
+		b, _ := json.Marshal(sig{ProductType: "internet", PriceCurrency: "EUR", BillingPeriod: "monthly"})
+		return string(b)
+	}
+	b, _ := json.Marshal(sig{
+		Name:          p.Name,
+		Description:   p.Description,
+		ProductType:   string(p.Type),
+		PriceAmount:   p.Price.DisplayAmount(),
+		PriceCurrency: p.Price.Currency,
+		BillingPeriod: string(p.BillingPeriod),
+	})
+	return string(b)
 }
 
 func prodFormAction(p *domain.Product) string {

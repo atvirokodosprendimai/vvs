@@ -1,7 +1,9 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/vvs/isp/internal/modules/recurring/domain"
@@ -363,56 +365,54 @@ func recurringFormSubtitle(inv *domain.RecurringInvoice) string {
 }
 
 func recurringFormSignals(inv *domain.RecurringInvoice) string {
+	type sig struct {
+		CustomerID       string   `json:"customerID"`
+		CustomerName     string   `json:"customerName"`
+		Frequency        string   `json:"frequency"`
+		DayOfMonth       string   `json:"dayOfMonth"`
+		LineProductIDs   []string `json:"lineProductIDs"`
+		LineProductNames []string `json:"lineProductNames"`
+		LineDescriptions []string `json:"lineDescriptions"`
+		LineQuantities   []string `json:"lineQuantities"`
+		LineUnitPrices   []string `json:"lineUnitPrices"`
+	}
+	empty3 := func(def string) []string { return []string{def, def, def} }
 	if inv == nil {
-		return `{customerID:'',customerName:'',frequency:'monthly',dayOfMonth:'1',lineProductIDs:['','',''],lineProductNames:['','',''],lineDescriptions:['','',''],lineQuantities:['1','1','1'],lineUnitPrices:['','','']}`
+		b, _ := json.Marshal(sig{
+			Frequency:        "monthly",
+			DayOfMonth:       "1",
+			LineProductIDs:   empty3(""),
+			LineProductNames: empty3(""),
+			LineDescriptions: empty3(""),
+			LineQuantities:   empty3("1"),
+			LineUnitPrices:   empty3(""),
+		})
+		return string(b)
 	}
-	// Pre-fill with existing data
-	productNames := "['','','']"
-	descriptions := "['','','']"
-	quantities := "['1','1','1']"
-	unitPrices := "['','','']"
-	productIDs := "['','','']"
-
-	if len(inv.Lines) > 0 {
-		pn := "["
-		desc := "["
-		qty := "["
-		up := "["
-		pid := "["
-		for i := 0; i < 3; i++ {
-			if i > 0 {
-				pn += ","
-				desc += ","
-				qty += ","
-				up += ","
-				pid += ","
-			}
-			if i < len(inv.Lines) {
-				pn += fmt.Sprintf("'%s'", inv.Lines[i].ProductName)
-				desc += fmt.Sprintf("'%s'", inv.Lines[i].Description)
-				qty += fmt.Sprintf("'%d'", inv.Lines[i].Quantity)
-				up += fmt.Sprintf("'%s'", inv.Lines[i].UnitPrice.DisplayAmount())
-				pid += fmt.Sprintf("'%s'", inv.Lines[i].ProductID)
-			} else {
-				pn += "''"
-				desc += "''"
-				qty += "'1'"
-				up += "''"
-				pid += "''"
-			}
-		}
-		productNames = pn + "]"
-		descriptions = desc + "]"
-		quantities = qty + "]"
-		unitPrices = up + "]"
-		productIDs = pid + "]"
+	ids := empty3("")
+	names := empty3("")
+	descs := empty3("")
+	qtys := empty3("1")
+	prices := empty3("")
+	for i := 0; i < 3 && i < len(inv.Lines); i++ {
+		ids[i] = inv.Lines[i].ProductID
+		names[i] = inv.Lines[i].ProductName
+		descs[i] = inv.Lines[i].Description
+		qtys[i] = strconv.Itoa(inv.Lines[i].Quantity)
+		prices[i] = inv.Lines[i].UnitPrice.DisplayAmount()
 	}
-
-	return fmt.Sprintf(
-		`{customerID:'%s',customerName:'%s',frequency:'%s',dayOfMonth:'%d',lineProductIDs:%s,lineProductNames:%s,lineDescriptions:%s,lineQuantities:%s,lineUnitPrices:%s}`,
-		inv.CustomerID, inv.CustomerName, string(inv.Schedule.Frequency), inv.Schedule.DayOfMonth,
-		productIDs, productNames, descriptions, quantities, unitPrices,
-	)
+	b, _ := json.Marshal(sig{
+		CustomerID:       inv.CustomerID,
+		CustomerName:     inv.CustomerName,
+		Frequency:        string(inv.Schedule.Frequency),
+		DayOfMonth:       strconv.Itoa(inv.Schedule.DayOfMonth),
+		LineProductIDs:   ids,
+		LineProductNames: names,
+		LineDescriptions: descs,
+		LineQuantities:   qtys,
+		LineUnitPrices:   prices,
+	})
+	return string(b)
 }
 
 func recurringFormAction(inv *domain.RecurringInvoice) string {

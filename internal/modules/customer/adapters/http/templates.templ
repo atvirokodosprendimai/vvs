@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/vvs/isp/internal/modules/customer/domain"
@@ -231,13 +232,35 @@ func formSubtitle(c *domain.Customer) string {
 }
 
 func formSignals(c *domain.Customer) string {
-	if c == nil {
-		return `{companyName:'',contactName:'',email:'',phone:'',street:'',city:'',postalCode:'',country:'',taxId:'',notes:''}`
+	type sig struct {
+		CompanyName string `json:"companyName"`
+		ContactName string `json:"contactName"`
+		Email       string `json:"email"`
+		Phone       string `json:"phone"`
+		Street      string `json:"street"`
+		City        string `json:"city"`
+		PostalCode  string `json:"postalCode"`
+		Country     string `json:"country"`
+		TaxID       string `json:"taxId"`
+		Notes       string `json:"notes"`
 	}
-	return fmt.Sprintf(
-		`{companyName:'%s',contactName:'%s',email:'%s',phone:'%s',street:'%s',city:'%s',postalCode:'%s',country:'%s',taxId:'%s',notes:'%s'}`,
-		c.CompanyName, c.ContactName, c.Email, c.Phone, c.Street, c.City, c.PostalCode, c.Country, c.TaxID, c.Notes,
-	)
+	if c == nil {
+		b, _ := json.Marshal(sig{})
+		return string(b)
+	}
+	b, _ := json.Marshal(sig{
+		CompanyName: c.CompanyName,
+		ContactName: c.ContactName,
+		Email:       c.Email,
+		Phone:       c.Phone,
+		Street:      c.Street,
+		City:        c.City,
+		PostalCode:  c.PostalCode,
+		Country:     c.Country,
+		TaxID:       c.TaxID,
+		Notes:       c.Notes,
+	})
+	return string(b)
 }
 
 func formAction(c *domain.Customer) string {
