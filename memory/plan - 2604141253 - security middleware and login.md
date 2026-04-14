@@ -22,10 +22,11 @@ status: active
 
 ## Phases
 
-### Phase 1 — Spec — status: open
+### Phase 1 — Spec — status: completed
 
-1. [ ] Create `eidos/spec - auth - session based authentication.md`
+1. [x] Create `eidos/spec - auth - session based authentication.md`
    - covers user aggregate, session aggregate, middleware behaviour, login UX, user management
+   - => [[spec - auth - session based authentication.md]] created
 
 ### Phase 2 — Domain + migrations — status: open
 
@@ -116,3 +117,5 @@ status: active
 ## Adjustments
 
 ## Progress Log
+
+- 2604141253 — Phase 1 done: auth spec created
