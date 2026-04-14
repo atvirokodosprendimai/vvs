@@ -45,6 +45,53 @@ templ ProductSuggestions(rows []productSuggestion) {
 	</div>
 }
 
+// AddLineRow renders the add-line input row.
+// id="new-line-row" is the Datastar patch target — productSelectSSE replaces the whole row with pre-filled values.
+templ AddLineRow(search, description string, qty int, unitPrice string) {
+	<div id="new-line-row" class="grid grid-cols-12 gap-2 items-start mt-3">
+		<div class="col-span-3 relative">
+			<input
+				type="text"
+				data-bind:newLineSearch
+				data-on:input__debounce.50ms="@get('/api/autocomplete/products')"
+				placeholder="Search product..."
+				value={ search }
+				class="w-full bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+			/>
+			<div id="new-line-product-ac"></div>
+		</div>
+		<input
+			type="text"
+			data-bind:newLineDescription
+			placeholder="Description"
+			value={ description }
+			class="col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+		/>
+		<input
+			type="number"
+			data-bind:newLineQty
+			placeholder="1"
+			min="1"
+			value={ fmt.Sprintf("%d", qty) }
+			class="col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+		/>
+		<input
+			type="text"
+			data-bind:newLineUnitPrice
+			placeholder="0.00"
+			value={ unitPrice }
+			class="col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+		/>
+		<button
+			type="button"
+			data-on:click="@post('/api/invoices/lines')"
+			class="col-span-1 bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+		>
+			Add
+		</button>
+	</div>
+}
+
 // InvoiceLineTable renders the current line items as a table.
 // id="invoice-lines" is the Datastar patch target.
 templ InvoiceLineTable(lines []lineItem) {

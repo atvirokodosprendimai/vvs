@@ -146,7 +146,9 @@ func (h *Handlers) productAutocompleteSSE(w http.ResponseWriter, r *http.Request
 }
 
 // GET /api/autocomplete/products/select?id=X
-// Fetches product by ID; sets newLine* signals (search, productId, productName, unitPrice); clears dropdown.
+// Fetches product by ID; sets newLine* signals (search, productId, productName, unitPrice);
+// replaces #new-line-row HTML with all fields pre-filled; clears dropdown.
+// Preserves user-entered newLineDescription and newLineQty from current signals.
 func (h *Handlers) productSelectSSE(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	if id == "" {
@@ -166,6 +168,16 @@ func (h *Handlers) productSelectSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Read current signals to preserve user-entered description and qty.
+	var cur struct {
+		NewLineDescription string `json:"newLineDescription"`
+		NewLineQty         int    `json:"newLineQty"`
+	}
+	_ = datastar.ReadSignals(r, &cur) // missing signals are fine — zero values used as defaults
+	if cur.NewLineQty <= 0 {
+		cur.NewLineQty = 1
+	}
+
 	sse := datastar.NewSSE(w, r)
 
 	unitPriceStr := fmt.Sprintf("%.2f", float64(p.PriceAmount)/100)
@@ -182,5 +194,6 @@ func (h *Handlers) productSelectSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	b, _ := json.Marshal(signals)
 	sse.PatchSignals(b)
+	sse.PatchElementTempl(AddLineRow(p.Name, cur.NewLineDescription, cur.NewLineQty, unitPriceStr))
 	sse.PatchElementTempl(ProductSuggestions(nil))
 }

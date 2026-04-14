@@ -273,6 +273,48 @@ func TestProductSelect_FillsNewLineSignals(t *testing.T) {
 	}
 }
 
+func TestProductSelect_PatchesAddLineRow(t *testing.T) {
+	db := newTestDB(t)
+	insertTestProduct(t, db, "p1", "Internet 100M", 2999)
+
+	h := &Handlers{reader: db}
+	req := sseGETRequest("/api/autocomplete/products/select?id=p1", `{"newLineDescription":"Monthly","newLineQty":2}`)
+	w := httptest.NewRecorder()
+
+	h.productSelectSSE(w, req)
+
+	body := w.Body.String()
+	if !strings.Contains(body, "new-line-row") {
+		t.Errorf("expected #new-line-row element patch; body: %s", body)
+	}
+	// Product name and price should appear as input values in the row HTML
+	if !strings.Contains(body, "Internet 100M") {
+		t.Errorf("expected product name in row HTML; body: %s", body)
+	}
+	if !strings.Contains(body, "29.99") {
+		t.Errorf("expected unit price 29.99 in row HTML; body: %s", body)
+	}
+}
+
+func TestProductSelect_PreservesDescriptionAndQty(t *testing.T) {
+	db := newTestDB(t)
+	insertTestProduct(t, db, "p1", "VoIP Service", 999)
+
+	h := &Handlers{reader: db}
+	req := sseGETRequest("/api/autocomplete/products/select?id=p1", `{"newLineDescription":"Custom desc","newLineQty":3}`)
+	w := httptest.NewRecorder()
+
+	h.productSelectSSE(w, req)
+
+	body := w.Body.String()
+	if !strings.Contains(body, "Custom desc") {
+		t.Errorf("expected user-entered description preserved; body: %s", body)
+	}
+	if !strings.Contains(body, `value="3"`) {
+		t.Errorf("expected user-entered qty 3 preserved; body: %s", body)
+	}
+}
+
 func TestProductSelect_ClearsDropdown(t *testing.T) {
 	db := newTestDB(t)
 	insertTestProduct(t, db, "p1", "Internet 100M", 2999)
