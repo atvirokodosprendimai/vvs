@@ -1,6 +1,6 @@
 ---
 tldr: Replace fixed 3-row product inputs with a dynamic table — add-line row at bottom (product searchable like customer), remove-row button per line, backend-driven via SSE helpers
-status: active
+status: completed
 ---
 
 # Plan: Invoice line items — dynamic table
@@ -46,63 +46,52 @@ status: active
 
 ## Phases
 
-### Phase 1 — Add/remove line endpoints — status: open
+### Phase 1 — Add/remove line endpoints — status: completed
 
-1. [ ] Write tests for `POST /api/invoices/lines` (add-line handler)
-   - test: adds new line to `lines` signal array and returns updated `InvoiceLineTable`
-   - test: empty productName returns validation error
-   - test: existing lines are preserved when adding
+1. [x] Write tests for `POST /api/invoices/lines` (add-line handler)
+   - => TestAddLine_ValidLine, TestAddLine_EmptyProductName, TestAddLine_PreservesExistingLines, TestAddLine_DefaultsQtyToOne
 
-2. [ ] Implement `POST /api/invoices/lines`
-   - reads signals: `lines` (current), `newLineProductId/Name/Description/Qty/UnitPrice`
-   - appends new line to `lines` array
-   - returns `MarshalAndPatchSignals({lines: updated, newLineSearch:'', newLineProductId:'', newLineProductName:'', newLineDescription:'', newLineQty:1, newLineUnitPrice:''})` + `PatchElementTempl(InvoiceLineTable(lines))`
+2. [x] Implement `POST /api/invoices/lines`
+   - => `line_items.go`: addLineSSE reads lineFormSignals, appends new lineItem, resets newLine* signals, returns MarshalAndPatchSignals + PatchElementTempl(InvoiceLineTable)
+   - => `lineItem` type defined in `autocomplete.go` with JSON tags matching signal keys
 
-3. [ ] Write tests for `DELETE /api/invoices/lines?idx=N` (remove-line handler)
-   - test: removes correct index, re-renders table
-   - test: invalid idx is a no-op (returns current table)
+3. [x] Write tests for `DELETE /api/invoices/lines?idx=N` (remove-line handler)
+   - => TestRemoveLine_ValidIndex, TestRemoveLine_LastLine, TestRemoveLine_InvalidIndex, TestRemoveLine_RendersTableTarget
 
-4. [ ] Implement `DELETE /api/invoices/lines?idx=N`
-   - reads `lines` signal array, removes index N
-   - returns `MarshalAndPatchSignals({lines: updated})` + `PatchElementTempl(InvoiceLineTable(updatedLines))`
+4. [x] Implement `DELETE /api/invoices/lines?idx=N`
+   - => `line_items.go`: removeLineSSE reads lines, splices index N (no-op if out of range), returns updated signals + table
 
-5. [ ] Add `InvoiceLineTable` templ component to `fragments.templ`
-   - `id="invoice-lines"` outer div
-   - table with columns: Product, Description, Qty, Unit Price, Total, (remove button)
-   - shows "No line items yet" when empty
-   - register routes in `RegisterRoutes`
+5. [x] Add `InvoiceLineTable` templ component to `fragments.templ`
+   - => `id="invoice-lines"` outer div; shows "No line items yet" empty-state or table with Remove buttons
+   - => Remove button: `@delete('/api/invoices/lines?idx=N')` per row
+   - => routes registered in `RegisterRoutes`
 
-### Phase 2 — Update product autocomplete for new-line row — status: open
+### Phase 2 — Update product autocomplete for new-line row — status: completed
 
-6. [ ] Update `productAutocompleteSSE` to read `newLineSearch` signal
-   - remove `line{N}Query` / `?line=N` logic
-   - reads `newLineSearch`; returns `ProductSuggestions(rows, 0)` targeting `#new-line-product-ac`
+6. [x] Update `productAutocompleteSSE` to read `newLineSearch` signal
+   - => removed `line{N}Query` / `?line=N` logic; reads `newLineSearch` only
 
-7. [ ] Update `productSelectSSE` to set `newLine*` signals
-   - remove the per-line lines[] merge logic
-   - sets `newLineProductId`, `newLineProductName`, `newLineUnitPrice`, `newLineSearch`
-   - clears `#new-line-product-ac`
+7. [x] Update `productSelectSSE` to set `newLine*` signals
+   - => sets `newLineSearch`, `newLineProductId`, `newLineProductName`, `newLineUnitPrice`; clears `#new-line-product-ac`
+   - => `ProductSuggestions` component: `id="new-line-product-ac"`, no line param
 
-8. [ ] Update product autocomplete tests
-   - replace `line0Query`/`line1Query` signal tests with `newLineSearch`
-   - add test: select fills `newLineProductName`, `newLineUnitPrice`
+8. [x] Update product autocomplete tests
+   - => replaced `line0Query`/`line1Query` with `newLineSearch`; added TestProductAutocomplete_DropdownTarget
+   - => TestProductSelect_FillsNewLineSignals checks newLineProductName/UnitPrice/Id signals
 
-### Phase 3 — Invoice form template refactor — status: open
+### Phase 3 — Invoice form template refactor — status: completed
 
-9. [ ] Update `InvoiceFormPage` template
-   - remove the 3 fixed line rows and `line0Query`/`line1Query`/`line2Query` signals
-   - add `<div id="invoice-lines">` (initial empty table via `InvoiceLineTable(nil)`)
-   - add "new line" row: product search input + `#new-line-product-ac` + description + qty + unit price + Add button
-   - Add button: `data-on:click="@post('/api/invoices/lines')"`
+9. [x] Update `InvoiceFormPage` template
+   - => replaced 3 fixed line rows with `@InvoiceLineTable(nil)` + add-line row
+   - => add-line row: newLineSearch input + #new-line-product-ac + description + qty + unitPrice + Add button (`@post('/api/invoices/lines')`)
 
-10. [ ] Update `invoiceFormSignals` function
-    - remove `line0Query`, `line1Query`, `line2Query`, pre-populated lines
-    - add `newLineSearch`, `newLineProductId`, `newLineProductName`, `newLineDescription`, `newLineQty`, `newLineUnitPrice`
-    - `lines` starts as empty array `[]`
+10. [x] Update `invoiceFormSignals` function
+    - => removed line0Query/line1Query/line2Query and pre-populated lines
+    - => lines starts as `[]`, added newLine* fields
 
 ## Verification
 
-- `/invoices/new` → form shows empty line items table
+- `/invoices/new` → form shows empty line items table ("No line items yet")
 - Type "Inter" in product search → dropdown with matching products
 - Click product → unit price auto-filled, product name shown in search input
 - Fill description + qty → click Add → line appears in table, add form clears
@@ -111,3 +100,5 @@ status: active
 
 ## Progress Log
 
+- 2604141353 — Plan created
+- 2604141402 — All 10 actions completed in one commit (4334a5d); 19 tests pass
