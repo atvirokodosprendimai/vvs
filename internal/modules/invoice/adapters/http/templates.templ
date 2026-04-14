@@ -140,51 +140,73 @@ templ InvoiceFormPage(invoice *domain.Invoice) {
 					data-signals={ invoiceFormSignals(invoice) }
 					class="flex flex-col gap-4"
 				>
-					<div class="grid grid-cols-2 gap-4">
-						@templates.DataInput("customerId", "Customer ID *", "text", "Enter customer ID", "customerId")
-						@templates.DataInput("customerName", "Customer Name *", "text", "Enter customer name", "customerName")
+					<!-- Customer autocomplete -->
+					<div class="flex flex-col gap-1.5">
+						<label class="text-sm font-medium text-gray-300">Customer *</label>
+						<div class="relative">
+							<input
+								type="text"
+								data-bind:customerSearch
+								data-on:input__debounce.50ms="@get('/api/autocomplete/customers')"
+								placeholder="Search customer by name or code..."
+								class="w-full bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+							/>
+							<div id="customer-ac"></div>
+						</div>
+						<p class="text-xs text-gray-500" data-show="$customerId !== ''">
+							Selected: <span class="text-orange-400" data-text="$customerName"></span>
+						</p>
 					</div>
 					<div class="grid grid-cols-3 gap-4">
 						@templates.DataInput("issueDate", "Issue Date *", "date", "", "issueDate")
 						@templates.DataInput("dueDate", "Due Date *", "date", "", "dueDate")
 						@templates.DataInput("taxRate", "Tax Rate (%)", "number", "21", "taxRate")
 					</div>
+					<!-- Line items with product autocomplete -->
 					<div class="border-t border-gray-800 pt-4 mt-2">
 						<h3 class="text-sm font-medium text-gray-300 mb-3">Line Items</h3>
-						<div id="line-items" class="flex flex-col gap-3">
+						<div id="line-items" class="flex flex-col gap-4">
 							<div class="grid grid-cols-12 gap-2 text-xs text-gray-500 uppercase tracking-wider px-1">
 								<div class="col-span-3">Product</div>
 								<div class="col-span-4">Description</div>
 								<div class="col-span-2">Qty</div>
 								<div class="col-span-3">Unit Price</div>
 							</div>
-							<div class="grid grid-cols-12 gap-2">
-								<input
-									type="text"
-									data-bind="lines[0].productName"
-									placeholder="Product name"
-									class="col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
-								/>
-								<input
-									type="text"
-									data-bind="lines[0].description"
-									placeholder="Description"
-									class="col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
-								/>
-								<input
-									type="number"
-									data-bind="lines[0].quantity"
-									placeholder="1"
-									min="1"
-									class="col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
-								/>
-								<input
-									type="text"
-									data-bind="lines[0].unitPrice"
-									placeholder="0.00"
-									class="col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
-								/>
-							</div>
+							for _, row := range []struct{ idx int; query string }{
+								{0, "line0Query"}, {1, "line1Query"}, {2, "line2Query"},
+							} {
+								<div class="grid grid-cols-12 gap-2 items-start">
+									<div class="col-span-3 relative">
+										<input
+											type="text"
+											data-bind={ row.query }
+											data-on:input__debounce.50ms={ fmt.Sprintf("@get('/api/autocomplete/products?line=%d')", row.idx) }
+											placeholder="Search product..."
+											class="w-full bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+										/>
+										<div id={ fmt.Sprintf("product-ac-%d", row.idx) }></div>
+									</div>
+									<input
+										type="text"
+										data-bind={ fmt.Sprintf("lines[%d].description", row.idx) }
+										placeholder="Description"
+										class="col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+									/>
+									<input
+										type="number"
+										data-bind={ fmt.Sprintf("lines[%d].quantity", row.idx) }
+										placeholder="1"
+										min="1"
+										class="col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+									/>
+									<input
+										type="text"
+										data-bind={ fmt.Sprintf("lines[%d].unitPrice", row.idx) }
+										placeholder="0.00"
+										class="col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+									/>
+								</div>
+							}
 						</div>
 					</div>
 					<div id="form-errors"></div>
@@ -320,17 +342,19 @@ func invoiceFormSubtitle(inv *domain.Invoice) string {
 }
 
 func invoiceFormSignals(inv *domain.Invoice) string {
+	emptyLines := `[{productId:'',productName:'',description:'',quantity:1,unitPrice:''},{productId:'',productName:'',description:'',quantity:1,unitPrice:''},{productId:'',productName:'',description:'',quantity:1,unitPrice:''}]`
 	if inv == nil {
 		today := time.Now().Format("2006-01-02")
 		due := time.Now().AddDate(0, 0, 30).Format("2006-01-02")
 		return fmt.Sprintf(
-			`{customerId:'',customerName:'',issueDate:'%s',dueDate:'%s',taxRate:21,lines:[{productId:'',productName:'',description:'',quantity:1,unitPrice:''}]}`,
-			today, due,
+			`{customerSearch:'',customerId:'',customerName:'',issueDate:'%s',dueDate:'%s',taxRate:21,line0Query:'',line1Query:'',line2Query:'',lines:%s}`,
+			today, due, emptyLines,
 		)
 	}
 	return fmt.Sprintf(
-		`{customerId:'%s',customerName:'%s',issueDate:'%s',dueDate:'%s',taxRate:%d,lines:[{productId:'',productName:'',description:'',quantity:1,unitPrice:''}]}`,
-		inv.CustomerID, inv.CustomerName, inv.IssueDate.Format("2006-01-02"), inv.DueDate.Format("2006-01-02"), inv.TaxRate,
+		`{customerSearch:'%s',customerId:'%s',customerName:'%s',issueDate:'%s',dueDate:'%s',taxRate:%d,line0Query:'',line1Query:'',line2Query:'',lines:%s}`,
+		inv.CustomerName, inv.CustomerID, inv.CustomerName,
+		inv.IssueDate.Format("2006-01-02"), inv.DueDate.Format("2006-01-02"), inv.TaxRate, emptyLines,
 	)
 }
 

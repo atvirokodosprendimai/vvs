@@ -1,7 +1,44 @@
 package http
 
+import "fmt"
+
 templ formError(message string) {
 	<div id="form-errors" class="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm">
 		{ message }
+	</div>
+}
+
+templ CustomerSuggestions(rows []customerSuggestion) {
+	<div id="customer-ac">
+		if len(rows) > 0 {
+			<ul class="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-auto max-h-48">
+				for _, row := range rows {
+					<li
+						class="px-4 py-2 hover:bg-orange-500/20 cursor-pointer text-sm text-gray-100 flex items-center justify-between"
+						data-on:click={ fmt.Sprintf("@get('/api/autocomplete/customers/select?id=%s')", row.ID) }
+					>
+						<span>{ row.Name }</span>
+						<span class="text-gray-500 text-xs font-mono">{ row.Code }</span>
+					</li>
+				}
+			</ul>
+		}
+	</div>
+}
+
+templ ProductSuggestions(rows []productSuggestion, line int) {
+	<div id={ fmt.Sprintf("product-ac-%d", line) }>
+		if len(rows) > 0 {
+			<ul class="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-auto max-h-48">
+				for _, row := range rows {
+					<li
+						class="px-4 py-2 hover:bg-orange-500/20 cursor-pointer text-sm text-gray-100"
+						data-on:click={ fmt.Sprintf("@get('/api/autocomplete/products/select?id=%s&line=%d')", row.ID, line) }
+					>
+						{ row.Name }
+					</li>
+				}
+			</ul>
+		}
 	</div>
 }

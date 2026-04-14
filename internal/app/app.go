@@ -145,7 +145,7 @@ func New(cfg Config) (*App, error) {
 	getInvoiceQuery := invoicequeries.NewGetInvoiceHandler(reader)
 	invoiceRoutes := invoicehttp.NewHandlers(
 		createInvoiceCmd, finalizeInvoiceCmd, voidInvoiceCmd,
-		listInvoicesQuery, getInvoiceQuery, subscriber,
+		listInvoicesQuery, getInvoiceQuery, subscriber, reader,
 	)
 
 	// 8. Wire Recurring module

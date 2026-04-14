@@ -11,6 +11,7 @@ import (
 	"github.com/vvs/isp/internal/modules/invoice/app/commands"
 	"github.com/vvs/isp/internal/modules/invoice/app/queries"
 	"github.com/vvs/isp/internal/shared/events"
+	"gorm.io/gorm"
 )
 
 type Handlers struct {
@@ -20,6 +21,7 @@ type Handlers struct {
 	listQuery   *queries.ListInvoicesHandler
 	getQuery    *queries.GetInvoiceHandler
 	subscriber  events.EventSubscriber
+	reader      *gorm.DB
 }
 
 func NewHandlers(
@@ -29,6 +31,7 @@ func NewHandlers(
 	listQuery *queries.ListInvoicesHandler,
 	getQuery *queries.GetInvoiceHandler,
 	subscriber events.EventSubscriber,
+	reader *gorm.DB,
 ) *Handlers {
 	return &Handlers{
 		createCmd:   createCmd,
@@ -37,6 +40,7 @@ func NewHandlers(
 		listQuery:   listQuery,
 		getQuery:    getQuery,
 		subscriber:  subscriber,
+		reader:      reader,
 	}
 }
 
@@ -51,6 +55,11 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Put("/api/invoices/{id}/finalize", h.finalizeSSE)
 	r.Put("/api/invoices/{id}/void", h.voidSSE)
 	r.Delete("/api/invoices/{id}", h.deleteSSE)
+
+	r.Get("/api/autocomplete/customers", h.customerAutocompleteSSE)
+	r.Get("/api/autocomplete/customers/select", h.customerSelectSSE)
+	r.Get("/api/autocomplete/products", h.productAutocompleteSSE)
+	r.Get("/api/autocomplete/products/select", h.productSelectSSE)
 }
 
 func (h *Handlers) listPage(w http.ResponseWriter, r *http.Request) {
@@ -145,8 +154,11 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lines := make([]commands.CreateInvoiceLineInput, len(signals.Lines))
+	var lines []commands.CreateInvoiceLineInput
 	for i, l := range signals.Lines {
+		if l.ProductName == "" {
+			continue // skip empty line rows
+		}
 		unitPrice, err := parseMoneyInput(l.UnitPrice)
 		if err != nil {
 			sse.PatchElementTempl(formError("Invalid unit price for line " + strconv.Itoa(i+1)))
@@ -156,13 +168,13 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		if qty <= 0 {
 			qty = 1
 		}
-		lines[i] = commands.CreateInvoiceLineInput{
+		lines = append(lines, commands.CreateInvoiceLineInput{
 			ProductID:   l.ProductID,
 			ProductName: l.ProductName,
 			Description: l.Description,
 			Quantity:    qty,
 			UnitPrice:   unitPrice,
-		}
+		})
 	}
 
 	taxRate := signals.TaxRate
