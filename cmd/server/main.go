@@ -28,11 +28,23 @@ func main() {
 				Value:   ":8080",
 				Sources: cli.EnvVars("VVS_ADDR"),
 			},
+			&cli.StringFlag{
+				Name:    "admin-user",
+				Usage:   "Initial admin username (created/updated on startup)",
+				Sources: cli.EnvVars("VVS_ADMIN_USER"),
+			},
+			&cli.StringFlag{
+				Name:    "admin-password",
+				Usage:   "Initial admin password",
+				Sources: cli.EnvVars("VVS_ADMIN_PASSWORD"),
+			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			cfg := app.Config{
-				DatabasePath: cmd.String("db"),
-				ListenAddr:   cmd.String("addr"),
+				DatabasePath:  cmd.String("db"),
+				ListenAddr:    cmd.String("addr"),
+				AdminUser:     cmd.String("admin-user"),
+				AdminPassword: cmd.String("admin-password"),
 			}
 
 			application, err := app.New(cfg)

@@ -36,13 +36,23 @@ templ Sidebar() {
 		@NavItem("/recurring", "Recurring", recurringIcon())
 		@NavItem("/payments", "Payments", paymentsIcon())
 		@NavItem("/debt", "Debt", debtIcon())
+		@NavItem("/users", "Users", usersIcon())
 		</div>
-		<div
-			id="server-clock"
-			data-init="@get('/sse/clock')"
-			class="px-3 py-2 text-xs text-gray-500 font-mono border-t border-gray-800 pt-3"
-		>
-			--:--:--
+		<div class="flex flex-col gap-2 border-t border-gray-800 pt-3">
+			<div
+				id="server-clock"
+				data-init="@get('/sse/clock')"
+				class="px-3 py-2 text-xs text-gray-500 font-mono"
+			>
+				--:--:--
+			</div>
+			<button
+				data-on-click="@post('/api/logout')"
+				class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-gray-800 transition-colors text-sm w-full"
+			>
+				<span class="w-5 h-5">@templ.Raw(logoutIcon())</span>
+				Sign out
+			</button>
 		</div>
 	</nav>
 }
@@ -72,6 +82,14 @@ templ Toast() {
 			<span data-text="$toastMessage"></span>
 		</div>
 	</div>
+}
+
+func usersIcon() string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>`
+}
+
+func logoutIcon() string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>`
 }
 
 func debtIcon() string {

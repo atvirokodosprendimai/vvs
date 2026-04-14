@@ -50,6 +50,13 @@ import (
 	debtcommands "github.com/vvs/isp/internal/modules/debt/app/commands"
 	debtqueries "github.com/vvs/isp/internal/modules/debt/app/queries"
 	debtmigrations "github.com/vvs/isp/internal/modules/debt/migrations"
+
+	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
+	authpersistence "github.com/vvs/isp/internal/modules/auth/adapters/persistence"
+	authcommands "github.com/vvs/isp/internal/modules/auth/app/commands"
+	authqueries "github.com/vvs/isp/internal/modules/auth/app/queries"
+	"github.com/vvs/isp/internal/modules/auth/domain"
+	authmigrations "github.com/vvs/isp/internal/modules/auth/migrations"
 )
 
 type App struct {
@@ -82,6 +89,7 @@ func New(cfg Config) (*App, error) {
 	}
 
 	if err := database.RunModuleMigrations(sqlDB, []database.ModuleMigration{
+		{Name: "auth", FS: authmigrations.FS, TableName: "goose_auth"},
 		{Name: "customer", FS: customermigrations.FS, TableName: "goose_customer"},
 		{Name: "product", FS: productmigrations.FS, TableName: "goose_product"},
 		{Name: "invoice", FS: invoicemigrations.FS, TableName: "goose_invoice"},
@@ -172,9 +180,27 @@ func New(cfg Config) (*App, error) {
 	listDebtQuery := debtqueries.NewListDebtStatusesHandler(reader)
 	debtRoutes := debthttp.NewHandlers(syncDebtCmd, listDebtQuery, subscriber)
 
-	// 11. Router
-	router := infrahttp.NewRouter(reader,
-		customerRoutes, productRoutes, invoiceRoutes,
+	// 11. Wire Auth module
+	userRepo := authpersistence.NewGormUserRepository(writer, reader)
+	sessionRepo := authpersistence.NewGormSessionRepository(writer, reader)
+	loginCmd := authcommands.NewLoginHandler(userRepo, sessionRepo)
+	logoutCmd := authcommands.NewLogoutHandler(sessionRepo)
+	createUserCmd := authcommands.NewCreateUserHandler(userRepo)
+	deleteUserCmd := authcommands.NewDeleteUserHandler(userRepo, sessionRepo)
+	listUsersQuery := authqueries.NewListUsersHandler(userRepo)
+	getCurrentUserQuery := authqueries.NewGetCurrentUserHandler(userRepo, sessionRepo)
+	authRoutes := authhttp.NewHandlers(loginCmd, logoutCmd, createUserCmd, deleteUserCmd, listUsersQuery, getCurrentUserQuery)
+
+	// Seed initial admin if configured
+	if cfg.AdminUser != "" && cfg.AdminPassword != "" {
+		if err := seedAdmin(context.Background(), userRepo, cfg.AdminUser, cfg.AdminPassword); err != nil {
+			log.Printf("warn: seed admin: %v", err)
+		}
+	}
+
+	// 12. Router (with auth middleware)
+	router := infrahttp.NewRouter(reader, getCurrentUserQuery,
+		authRoutes, customerRoutes, productRoutes, invoiceRoutes,
 		recurringRoutes, paymentRoutes, debtRoutes,
 	)
 
@@ -207,4 +233,21 @@ func (a *App) Shutdown(ctx context.Context) error {
 	a.NATSConn.Close()
 	a.NATSServer.WaitForShutdown()
 	return err
+}
+
+// seedAdmin creates or updates the admin user on startup.
+func seedAdmin(ctx context.Context, users domain.UserRepository, username, password string) error {
+	existing, err := users.FindByUsername(ctx, username)
+	if err == nil {
+		// User exists — update password
+		if err := existing.ChangePassword(password); err != nil {
+			return err
+		}
+		return users.Save(ctx, existing)
+	}
+	u, err := domain.NewUser(username, password, domain.RoleAdmin)
+	if err != nil {
+		return err
+	}
+	return users.Save(ctx, u)
 }
