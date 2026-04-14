@@ -38,7 +38,7 @@ func LoginPage(errMsg string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" class=\"dark\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Login | VVS ISP Manager</title><script src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></script><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js\"></script></head><body class=\"bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center\"><div class=\"w-full max-w-sm\" data-signals=\"{username:'',password:''}\"><div class=\"bg-gray-900 border border-gray-800 rounded-xl p-8 shadow-xl\"><div class=\"text-orange-500 font-bold text-2xl text-center mb-8\">VVS ISP</div><form data-on-submit=\"@post('/api/login')\" class=\"flex flex-col gap-4\"><div class=\"flex flex-col gap-1\"><label class=\"text-sm text-gray-400\">Username</label> <input type=\"text\" name=\"username\" data-bind-username autocomplete=\"username\" class=\"bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-sm text-gray-400\">Password</label> <input type=\"password\" name=\"password\" data-bind-password autocomplete=\"current-password\" class=\"bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" class=\"dark\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Login | VVS ISP Manager</title><script src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></script><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js\"></script></head><body class=\"bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center\"><div class=\"w-full max-w-sm\" data-signals=\"{username:'',password:''}\"><div class=\"bg-gray-900 border border-gray-800 rounded-xl p-8 shadow-xl\"><div class=\"text-orange-500 font-bold text-2xl text-center mb-8\">VVS ISP</div><div class=\"flex flex-col gap-4\"><div class=\"flex flex-col gap-1\"><label class=\"text-sm text-gray-400\">Username</label> <input type=\"text\" data-bind:username autocomplete=\"username\" class=\"bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-sm text-gray-400\">Password</label> <input type=\"password\" data-bind:password autocomplete=\"current-password\" class=\"bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -50,7 +50,7 @@ func LoginPage(errMsg string) templ.Component {
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(errMsg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 54, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 49, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -66,7 +66,7 @@ func LoginPage(errMsg string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<button type=\"submit\" class=\"bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 rounded-lg transition-colors mt-2\">Sign in</button></form></div></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<button type=\"button\" data-on:click=\"@post('/api/login')\" class=\"bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 rounded-lg transition-colors mt-2\">Sign in</button></div></div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -102,7 +102,7 @@ func loginError(msg string) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 72, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 68, Col: 69}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -149,7 +149,7 @@ func UserListPage() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"flex items-center justify-between mb-6\"><h1 class=\"text-2xl font-bold\">Users</h1><button data-on-click=\"$showCreate=true\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors\">Add User</button></div><div data-signals=\"{showCreate:false,newUsername:'',newPassword:'',newRole:'operator'}\" data-init=\"@get('/api/users')\"><div id=\"user-table\"></div><div data-show=\"$showCreate\" class=\"fixed inset-0 bg-black/60 flex items-center justify-center z-50\"><div class=\"bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-sm\"><h2 class=\"text-lg font-semibold mb-4\">New User</h2><form data-on-submit=\"@post('/api/users')\" class=\"flex flex-col gap-3\"><input type=\"text\" placeholder=\"Username\" data-bind-new-username class=\"bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500\"> <input type=\"password\" placeholder=\"Password\" data-bind-new-password class=\"bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500\"> <select data-bind-new-role class=\"bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500\"><option value=\"operator\">Operator</option> <option value=\"admin\">Admin</option></select><div id=\"create-user-error\"></div><div class=\"flex gap-2 mt-1\"><button type=\"button\" data-on-click=\"$showCreate=false\" class=\"flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg text-sm transition-colors\">Cancel</button> <button type=\"submit\" class=\"flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg text-sm font-medium transition-colors\">Create</button></div></form></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<div class=\"flex items-center justify-between mb-6\"><h1 class=\"text-2xl font-bold\">Users</h1><button data-on:click=\"$showCreate=true\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors\">Add User</button></div><div data-signals=\"{showCreate:false,newUsername:'',newPassword:'',newRole:'operator'}\" data-init=\"@get('/api/users')\"><div id=\"user-table\"></div><div data-show=\"$showCreate\" class=\"fixed inset-0 bg-black/60 flex items-center justify-center z-50\"><div class=\"bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-sm\"><h2 class=\"text-lg font-semibold mb-4\">New User</h2><div class=\"flex flex-col gap-3\"><input type=\"text\" placeholder=\"Username\" data-bind:newUsername class=\"bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500\"> <input type=\"password\" placeholder=\"Password\" data-bind:newPassword class=\"bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500\"> <select data-bind:newRole class=\"bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500\"><option value=\"operator\">Operator</option> <option value=\"admin\">Admin</option></select><div id=\"create-user-error\"></div><div class=\"flex gap-2 mt-1\"><button type=\"button\" data-on:click=\"$showCreate=false\" class=\"flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg text-sm transition-colors\">Cancel</button> <button type=\"button\" data-on:click=\"@post('/api/users')\" class=\"flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg text-sm font-medium transition-colors\">Create</button></div></div></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -245,7 +245,7 @@ func userRow(row queries.UserRow, currentUserID string) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(row.Username)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 163, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 160, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -266,7 +266,7 @@ func userRow(row queries.UserRow, currentUserID string) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(formatDate(row.CreatedAt))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 167, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 164, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -277,14 +277,14 @@ func userRow(row queries.UserRow, currentUserID string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if row.ID != currentUserID {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<button data-on-click=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<button data-on:click=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/users/%s')", row.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 171, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 168, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -372,7 +372,7 @@ func createUserError(msg string) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 192, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 189, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {

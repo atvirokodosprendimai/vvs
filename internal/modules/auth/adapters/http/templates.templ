@@ -26,16 +26,12 @@ templ LoginPage(errMsg string) {
 		>
 			<div class="bg-gray-900 border border-gray-800 rounded-xl p-8 shadow-xl">
 				<div class="text-orange-500 font-bold text-2xl text-center mb-8">VVS ISP</div>
-				<form
-					data-on-submit="@post('/api/login')"
-					class="flex flex-col gap-4"
-				>
+				<div class="flex flex-col gap-4">
 					<div class="flex flex-col gap-1">
 						<label class="text-sm text-gray-400">Username</label>
 						<input
 							type="text"
-							name="username"
-							data-bind-username
+							data-bind:username
 							autocomplete="username"
 							class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
 						/>
@@ -44,8 +40,7 @@ templ LoginPage(errMsg string) {
 						<label class="text-sm text-gray-400">Password</label>
 						<input
 							type="password"
-							name="password"
-							data-bind-password
+							data-bind:password
 							autocomplete="current-password"
 							class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
 						/>
@@ -56,12 +51,13 @@ templ LoginPage(errMsg string) {
 						<div id="login-error"></div>
 					}
 					<button
-						type="submit"
+						type="button"
+						data-on:click="@post('/api/login')"
 						class="bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 rounded-lg transition-colors mt-2"
 					>
 						Sign in
 					</button>
-				</form>
+				</div>
 			</div>
 		</div>
 	</body>
@@ -77,7 +73,7 @@ templ UserListPage() {
 		<div class="flex items-center justify-between mb-6">
 			<h1 class="text-2xl font-bold">Users</h1>
 			<button
-				data-on-click="$showCreate=true"
+				data-on:click="$showCreate=true"
 				class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
 			>
 				Add User
@@ -91,21 +87,21 @@ templ UserListPage() {
 			<div data-show="$showCreate" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
 				<div class="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-sm">
 					<h2 class="text-lg font-semibold mb-4">New User</h2>
-					<form data-on-submit="@post('/api/users')" class="flex flex-col gap-3">
+					<div class="flex flex-col gap-3">
 						<input
 							type="text"
 							placeholder="Username"
-							data-bind-new-username
+							data-bind:newUsername
 							class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500"
 						/>
 						<input
 							type="password"
 							placeholder="Password"
-							data-bind-new-password
+							data-bind:newPassword
 							class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500"
 						/>
 						<select
-							data-bind-new-role
+							data-bind:newRole
 							class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500"
 						>
 							<option value="operator">Operator</option>
@@ -115,19 +111,20 @@ templ UserListPage() {
 						<div class="flex gap-2 mt-1">
 							<button
 								type="button"
-								data-on-click="$showCreate=false"
+								data-on:click="$showCreate=false"
 								class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg text-sm transition-colors"
 							>
 								Cancel
 							</button>
 							<button
-								type="submit"
+								type="button"
+								data-on:click="@post('/api/users')"
 								class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg text-sm font-medium transition-colors"
 							>
 								Create
 							</button>
 						</div>
-					</form>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -168,7 +165,7 @@ templ userRow(row queries.UserRow, currentUserID string) {
 		<td class="px-4 py-3 text-right">
 			if row.ID != currentUserID {
 				<button
-					data-on-click={ fmt.Sprintf("@delete('/api/users/%s')", row.ID) }
+					data-on:click={ fmt.Sprintf("@delete('/api/users/%s')", row.ID) }
 					class="text-red-400 hover:text-red-300 text-xs transition-colors"
 				>
 					Delete

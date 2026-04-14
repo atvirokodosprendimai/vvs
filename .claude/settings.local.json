@@ -39,7 +39,8 @@
       "Bash(git commit -m ':*)",
       "Bash(cp /Users/mind/.claude/plugins/marketplaces/eidos/copy/seed.md /Users/mind/code/ai/vvs/eidos/seed.md)",
       "Bash(cp /Users/mind/.claude/plugins/marketplaces/eidos/copy/human.md /Users/mind/code/ai/vvs/memory/human.md)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(python3:*)"
     ]
   }
 }

@@ -120,7 +120,7 @@ templ Pagination(page int, totalPages int, baseURL string) {
 			if page <= 1 {
 				disabled
 			}
-			data-on-click={ fmt.Sprintf("$page = %d; @get('%s')", max(1, page-1), baseURL) }
+			data-on:click={ fmt.Sprintf("$page = %d; @get('%s')", max(1, page-1), baseURL) }
 			class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed border border-gray-700"
 		>
 			Previous
@@ -132,7 +132,7 @@ templ Pagination(page int, totalPages int, baseURL string) {
 			if page >= totalPages {
 				disabled
 			}
-			data-on-click={ fmt.Sprintf("$page = %d; @get('%s')", min(totalPages, page+1), baseURL) }
+			data-on:click={ fmt.Sprintf("$page = %d; @get('%s')", min(totalPages, page+1), baseURL) }
 			class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed border border-gray-700"
 		>
 			Next

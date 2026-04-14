@@ -50,7 +50,7 @@ func DebtListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div class=\"flex justify-end mb-4\"><button data-on-click=\"@post('/api/debt/sync')\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors\">Sync from itax.lt</button></div><div id=\"debt-table\" data-init=\"@get('/api/debt')\"><div class=\"text-gray-500 py-8 text-center\">Loading...</div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div class=\"flex justify-end mb-4\"><button data-on:click=\"@post('/api/debt/sync')\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors\">Sync from itax.lt</button></div><div id=\"debt-table\" data-init=\"@get('/api/debt')\"><div class=\"text-gray-500 py-8 text-center\">Loading...</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

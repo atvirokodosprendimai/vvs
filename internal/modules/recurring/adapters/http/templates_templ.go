@@ -54,7 +54,7 @@ func RecurringListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"recurring-content\" data-signals=\"{search: '', status: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/recurring')\"><div class=\"flex items-center justify-between mb-4\"><div class=\"flex items-center gap-3\"><input type=\"text\" data-bind-search data-on-input__debounce.500ms=\"$page = 1; @get('/api/recurring')\" placeholder=\"Search recurring invoices...\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-4 py-2 w-80 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <select data-bind-status data-on-change=\"$page = 1; @get('/api/recurring')\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"\">All Statuses</option> <option value=\"active\">Active</option> <option value=\"paused\">Paused</option> <option value=\"cancelled\">Cancelled</option></select></div><a href=\"/recurring/new\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors\">+ New Recurring Invoice</a></div><div id=\"recurring-table\"><div class=\"text-gray-500 py-8 text-center\">Loading...</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"recurring-content\" data-signals=\"{search: '', status: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/recurring')\"><div class=\"flex items-center justify-between mb-4\"><div class=\"flex items-center gap-3\"><input type=\"text\" data-bind:search data-on:input__debounce.500ms=\"$page = 1; @get('/api/recurring')\" placeholder=\"Search recurring invoices...\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-4 py-2 w-80 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <select data-bind:status data-on:change=\"$page = 1; @get('/api/recurring')\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"\">All Statuses</option> <option value=\"active\">Active</option> <option value=\"paused\">Paused</option> <option value=\"cancelled\">Cancelled</option></select></div><a href=\"/recurring/new\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors\">+ New Recurring Invoice</a></div><div id=\"recurring-table\"><div class=\"text-gray-500 py-8 text-center\">Loading...</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -351,7 +351,7 @@ func RecurringFormPage(invoice *domain.RecurringInvoice) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<form data-signals=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div data-signals=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -364,20 +364,7 @@ func RecurringFormPage(invoice *domain.RecurringInvoice) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" data-on-submit__prevent=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var17 string
-				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(recurringFormAction(invoice))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 133, Col: 59}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" class=\"flex flex-col gap-4\"><div class=\"grid grid-cols-2 gap-4\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" class=\"flex flex-col gap-4\"><div class=\"grid grid-cols-2 gap-4\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -389,7 +376,7 @@ func RecurringFormPage(invoice *domain.RecurringInvoice) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div><div class=\"grid grid-cols-2 gap-4\"><div class=\"flex flex-col gap-1.5\"><label for=\"frequency\" class=\"text-sm font-medium text-gray-300\">Frequency *</label> <select id=\"frequency\" data-bind-frequency class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"monthly\">Monthly</option> <option value=\"quarterly\">Quarterly</option> <option value=\"yearly\">Yearly</option></select></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div><div class=\"grid grid-cols-2 gap-4\"><div class=\"flex flex-col gap-1.5\"><label for=\"frequency\" class=\"text-sm font-medium text-gray-300\">Frequency *</label> <select id=\"frequency\" data-bind:frequency class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"monthly\">Monthly</option> <option value=\"quarterly\">Quarterly</option> <option value=\"yearly\">Yearly</option></select></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -397,7 +384,20 @@ func RecurringFormPage(invoice *domain.RecurringInvoice) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div><div class=\"border-t border-gray-800 pt-4 mt-2\"><h3 class=\"text-sm font-medium text-gray-300 mb-3\">Invoice Lines</h3><div class=\"flex flex-col gap-3\"><div class=\"grid grid-cols-12 gap-2 text-xs text-gray-500 uppercase tracking-wider\"><div class=\"col-span-4\">Product Name</div><div class=\"col-span-3\">Description</div><div class=\"col-span-2\">Qty</div><div class=\"col-span-3\">Unit Price</div></div><div class=\"grid grid-cols-12 gap-2\"><input type=\"text\" data-bind-lineProductNames.0 placeholder=\"Product name\" class=\"col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"text\" data-bind-lineDescriptions.0 placeholder=\"Description\" class=\"col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"number\" data-bind-lineQuantities.0 placeholder=\"1\" class=\"col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"text\" data-bind-lineUnitPrices.0 placeholder=\"0.00\" class=\"col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"></div><div class=\"grid grid-cols-12 gap-2\"><input type=\"text\" data-bind-lineProductNames.1 placeholder=\"Product name\" class=\"col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"text\" data-bind-lineDescriptions.1 placeholder=\"Description\" class=\"col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"number\" data-bind-lineQuantities.1 placeholder=\"1\" class=\"col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"text\" data-bind-lineUnitPrices.1 placeholder=\"0.00\" class=\"col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"></div><div class=\"grid grid-cols-12 gap-2\"><input type=\"text\" data-bind-lineProductNames.2 placeholder=\"Product name\" class=\"col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"text\" data-bind-lineDescriptions.2 placeholder=\"Description\" class=\"col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"number\" data-bind-lineQuantities.2 placeholder=\"1\" class=\"col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"text\" data-bind-lineUnitPrices.2 placeholder=\"0.00\" class=\"col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"></div></div></div><div id=\"form-errors\"></div><div class=\"flex items-center gap-3 pt-2\"><button type=\"submit\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition-colors\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div><div class=\"border-t border-gray-800 pt-4 mt-2\"><h3 class=\"text-sm font-medium text-gray-300 mb-3\">Invoice Lines</h3><div class=\"flex flex-col gap-3\"><div class=\"grid grid-cols-12 gap-2 text-xs text-gray-500 uppercase tracking-wider\"><div class=\"col-span-4\">Product Name</div><div class=\"col-span-3\">Description</div><div class=\"col-span-2\">Qty</div><div class=\"col-span-3\">Unit Price</div></div><div class=\"grid grid-cols-12 gap-2\"><input type=\"text\" data-bind:lineProductNames.0 placeholder=\"Product name\" class=\"col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"text\" data-bind:lineDescriptions.0 placeholder=\"Description\" class=\"col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"number\" data-bind:lineQuantities.0 placeholder=\"1\" class=\"col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"text\" data-bind:lineUnitPrices.0 placeholder=\"0.00\" class=\"col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"></div><div class=\"grid grid-cols-12 gap-2\"><input type=\"text\" data-bind:lineProductNames.1 placeholder=\"Product name\" class=\"col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"text\" data-bind:lineDescriptions.1 placeholder=\"Description\" class=\"col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"number\" data-bind:lineQuantities.1 placeholder=\"1\" class=\"col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"text\" data-bind:lineUnitPrices.1 placeholder=\"0.00\" class=\"col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"></div><div class=\"grid grid-cols-12 gap-2\"><input type=\"text\" data-bind:lineProductNames.2 placeholder=\"Product name\" class=\"col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"text\" data-bind:lineDescriptions.2 placeholder=\"Description\" class=\"col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"number\" data-bind:lineQuantities.2 placeholder=\"1\" class=\"col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <input type=\"text\" data-bind:lineUnitPrices.2 placeholder=\"0.00\" class=\"col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"></div></div></div><div id=\"form-errors\"></div><div class=\"flex items-center gap-3 pt-2\"><button type=\"button\" data-on:click=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var17 string
+				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(recurringFormAction(invoice))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/recurring/adapters/http/templates.templ`, Line: 247, Col: 51}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition-colors\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -410,7 +410,7 @@ func RecurringFormPage(invoice *domain.RecurringInvoice) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</button> <a href=\"/recurring\" class=\"bg-gray-800 hover:bg-gray-700 text-gray-300 px-6 py-2 rounded-lg font-medium transition-colors border border-gray-700\">Cancel</a></div></form>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</button> <a href=\"/recurring\" class=\"bg-gray-800 hover:bg-gray-700 text-gray-300 px-6 py-2 rounded-lg font-medium transition-colors border border-gray-700\">Cancel</a></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -497,7 +497,7 @@ func RecurringDetailPage(inv *domain.RecurringInvoice) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if inv.Status != domain.StatusCancelled {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<button data-on-click=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<button data-on:click=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -530,7 +530,7 @@ func RecurringDetailPage(inv *domain.RecurringInvoice) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<button data-on-click=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<button data-on:click=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

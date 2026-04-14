@@ -10,7 +10,7 @@ templ DebtListPage() {
 		@templates.PageHeader("Debt Management", "Credit status synced from itax.lt")
 		<div class="flex justify-end mb-4">
 			<button
-				data-on-click="@post('/api/debt/sync')"
+				data-on:click="@post('/api/debt/sync')"
 				class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
 			>
 				Sync from itax.lt

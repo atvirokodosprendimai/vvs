@@ -53,7 +53,7 @@ func ProductListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"product-content\" data-signals=\"{search: '', filterType: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/products')\"><div class=\"flex items-center justify-between mb-4\"><div class=\"flex items-center gap-3\"><input type=\"text\" data-bind-search data-on-input__debounce.500ms=\"$page = 1; @get('/api/products')\" placeholder=\"Search products...\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-4 py-2 w-64 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <select data-bind-filter-type data-on-change=\"$page = 1; @get('/api/products')\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"\">All Types</option> <option value=\"internet\">Internet</option> <option value=\"voip\">VoIP</option> <option value=\"hosting\">Hosting</option> <option value=\"custom\">Custom</option></select></div><a href=\"/products/new\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors\">+ New Product</a></div><div id=\"product-table\"><div class=\"text-gray-500 py-8 text-center\">Loading...</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"product-content\" data-signals=\"{search: '', filterType: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/products')\"><div class=\"flex items-center justify-between mb-4\"><div class=\"flex items-center gap-3\"><input type=\"text\" data-bind:search data-on:input__debounce.500ms=\"$page = 1; @get('/api/products')\" placeholder=\"Search products...\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-4 py-2 w-64 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <select data-bind:filterType data-on:change=\"$page = 1; @get('/api/products')\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"\">All Types</option> <option value=\"internet\">Internet</option> <option value=\"voip\">VoIP</option> <option value=\"hosting\">Hosting</option> <option value=\"custom\">Custom</option></select></div><a href=\"/products/new\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors\">+ New Product</a></div><div id=\"product-table\"><div class=\"text-gray-500 py-8 text-center\">Loading...</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -409,7 +409,7 @@ func ProductFormPage(product *domain.Product) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<form data-signals=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div data-signals=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -422,20 +422,7 @@ func ProductFormPage(product *domain.Product) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" data-on-submit__prevent=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var18 string
-				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(prodFormAction(product))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 152, Col: 54}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" class=\"flex flex-col gap-4\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" class=\"flex flex-col gap-4\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -443,7 +430,7 @@ func ProductFormPage(product *domain.Product) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"flex flex-col gap-1.5\"><label for=\"description\" class=\"text-sm font-medium text-gray-300\">Description</label> <textarea id=\"description\" data-bind-description rows=\"3\" placeholder=\"Enter product description...\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"></textarea></div><div class=\"flex flex-col gap-1.5\"><label for=\"productType\" class=\"text-sm font-medium text-gray-300\">Type *</label> <select id=\"productType\" data-bind-productType class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"internet\">Internet</option> <option value=\"voip\">VoIP</option> <option value=\"hosting\">Hosting</option> <option value=\"custom\">Custom</option></select></div><div class=\"grid grid-cols-2 gap-4\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<div class=\"flex flex-col gap-1.5\"><label for=\"description\" class=\"text-sm font-medium text-gray-300\">Description</label> <textarea id=\"description\" data-bind:description rows=\"3\" placeholder=\"Enter product description...\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"></textarea></div><div class=\"flex flex-col gap-1.5\"><label for=\"productType\" class=\"text-sm font-medium text-gray-300\">Type *</label> <select id=\"productType\" data-bind:productType class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"internet\">Internet</option> <option value=\"voip\">VoIP</option> <option value=\"hosting\">Hosting</option> <option value=\"custom\">Custom</option></select></div><div class=\"grid grid-cols-2 gap-4\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -451,7 +438,20 @@ func ProductFormPage(product *domain.Product) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"flex flex-col gap-1.5\"><label for=\"priceCurrency\" class=\"text-sm font-medium text-gray-300\">Currency</label> <select id=\"priceCurrency\" data-bind-priceCurrency class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"EUR\">EUR</option> <option value=\"USD\">USD</option> <option value=\"GBP\">GBP</option></select></div></div><div class=\"flex flex-col gap-1.5\"><label for=\"billingPeriod\" class=\"text-sm font-medium text-gray-300\">Billing Period *</label> <select id=\"billingPeriod\" data-bind-billingPeriod class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"monthly\">Monthly</option> <option value=\"quarterly\">Quarterly</option> <option value=\"yearly\">Yearly</option></select></div><div id=\"form-errors\"></div><div class=\"flex items-center gap-3 pt-2\"><button type=\"submit\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition-colors\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"flex flex-col gap-1.5\"><label for=\"priceCurrency\" class=\"text-sm font-medium text-gray-300\">Currency</label> <select id=\"priceCurrency\" data-bind:priceCurrency class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"EUR\">EUR</option> <option value=\"USD\">USD</option> <option value=\"GBP\">GBP</option></select></div></div><div class=\"flex flex-col gap-1.5\"><label for=\"billingPeriod\" class=\"text-sm font-medium text-gray-300\">Billing Period *</label> <select id=\"billingPeriod\" data-bind:billingPeriod class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"monthly\">Monthly</option> <option value=\"quarterly\">Quarterly</option> <option value=\"yearly\">Yearly</option></select></div><div id=\"form-errors\"></div><div class=\"flex items-center gap-3 pt-2\"><button type=\"button\" data-on:click=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var18 string
+				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(prodFormAction(product))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 209, Col: 46}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition-colors\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -464,7 +464,7 @@ func ProductFormPage(product *domain.Product) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</button> <a href=\"/products\" class=\"bg-gray-800 hover:bg-gray-700 text-gray-300 px-6 py-2 rounded-lg font-medium transition-colors border border-gray-700\">Cancel</a></div></form>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</button> <a href=\"/products\" class=\"bg-gray-800 hover:bg-gray-700 text-gray-300 px-6 py-2 rounded-lg font-medium transition-colors border border-gray-700\">Cancel</a></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -550,7 +550,7 @@ func ProductDetailPage(p *domain.Product) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors\">Edit</a> <button data-on-click=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors\">Edit</a> <button data-on:click=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
