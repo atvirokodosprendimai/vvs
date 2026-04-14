@@ -76,7 +76,7 @@ func (h *Handlers) loginSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set cookie BEFORE writing any response bytes — NewSSE locks headers.
+	// Set cookie BEFORE NewSSE — NewSSE locks headers.
 	http.SetCookie(w, &http.Cookie{
 		Name:     cookieName,
 		Value:    result.Token,
@@ -85,7 +85,8 @@ func (h *Handlers) loginSSE(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   86400,
 	})
-	http.Redirect(w, r, "/", http.StatusFound)
+	sse := datastar.NewSSE(w, r)
+	sse.Redirect("/")
 }
 
 func (h *Handlers) logoutSSE(w http.ResponseWriter, r *http.Request) {
