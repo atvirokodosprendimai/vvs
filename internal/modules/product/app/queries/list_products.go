@@ -2,6 +2,7 @@ package queries
 
 import (
 	"context"
+	"time"
 
 	"github.com/vvs/isp/internal/modules/product/domain"
 	shareddomain "github.com/vvs/isp/internal/shared/domain"
@@ -80,8 +81,8 @@ type ProductReadModel struct {
 	PriceCurrency string
 	BillingPeriod string
 	IsActive      bool
-	CreatedAt     int64
-	UpdatedAt     int64
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 func (ProductReadModel) TableName() string { return "products" }
