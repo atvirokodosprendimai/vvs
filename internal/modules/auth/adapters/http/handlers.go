@@ -1,6 +1,8 @@
 package http
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -62,17 +64,19 @@ func (h *Handlers) loginSSE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	sse := datastar.NewSSE(w, r)
 
 	result, err := h.loginCmd.Handle(r.Context(), commands.LoginCommand{
 		Username: signals.Username,
 		Password: signals.Password,
 	})
 	if err != nil {
+		// Only create SSE on the error path so headers stay unlocked for cookie on success.
+		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(loginError("Invalid username or password"))
 		return
 	}
 
+	// Set cookie BEFORE writing any response bytes — NewSSE locks headers.
 	http.SetCookie(w, &http.Cookie{
 		Name:     cookieName,
 		Value:    result.Token,
@@ -81,13 +85,16 @@ func (h *Handlers) loginSSE(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   86400,
 	})
-	sse.Redirect("/")
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (h *Handlers) logoutSSE(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie(cookieName)
 	if err == nil {
-		_ = h.logoutCmd.Handle(r.Context(), commands.LogoutCommand{TokenHash: cookie.Value})
+		sum := sha256.Sum256([]byte(cookie.Value))
+		_ = h.logoutCmd.Handle(r.Context(), commands.LogoutCommand{
+			TokenHash: hex.EncodeToString(sum[:]),
+		})
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     cookieName,
