@@ -1,6 +1,6 @@
 ---
 tldr: Fix login cookie never being sent (Set-Cookie after headers locked) and logout session not found (raw token passed as hash)
-status: active
+status: completed
 ---
 
 # Plan: Fix auth cookie and session lookup
@@ -18,20 +18,17 @@ status: active
 
 ## Phases
 
-### Phase 1 — Fix login cookie timing — status: open
+### Phase 1 — Fix login cookie timing — status: completed
 
-1. [ ] Fix `loginSSE` in `modules/auth/adapters/http/handlers.go`
-   - Move command execution before `NewSSE`
-   - On success: set cookie THEN call `NewSSE` THEN redirect
-   - On error: create `NewSSE` only on the error path (for `PatchElementTempl`)
-   - Use `http.Redirect(w, r, "/", http.StatusFound)` for success path (no SSE needed — just a plain redirect after cookie is set)
+1. [x] Fix `loginSSE` in `modules/auth/adapters/http/handlers.go`
+   - => execute command first; on error create SSE and patch error element; on success set cookie then `http.Redirect(302)` — no SSE needed for success path
+   - => `NewSSE` is now only called on the error path so headers stay unlocked for `Set-Cookie`
 
-### Phase 2 — Fix logout token hashing — status: open
+### Phase 2 — Fix logout token hashing — status: completed
 
-2. [ ] Fix `logoutSSE` in `modules/auth/adapters/http/handlers.go`
-   - Hash `cookie.Value` with SHA-256 before passing to `LogoutCommand`
-   - OR change `LogoutCommand` to accept raw token and hash internally (keeps hashing logic in one place)
-   - Prefer: hash in the command — consistent with `LoginHandler` and `GetCurrentUserHandler`
+2. [x] Fix `logoutSSE` in `modules/auth/adapters/http/handlers.go`
+   - => SHA-256 hash the raw `cookie.Value` in the handler before passing `LogoutCommand{TokenHash: hex}`
+   - => hashing stays at the adapter boundary; `LogoutCommand` keeps its current contract
 
 ## Verification
 
@@ -41,4 +38,6 @@ status: active
 - After logout, old cookie value rejected (redirects to /login)
 
 ## Progress Log
+
+- 2604141316 — Both fixes applied in one commit; build clean, all tests pass
 
