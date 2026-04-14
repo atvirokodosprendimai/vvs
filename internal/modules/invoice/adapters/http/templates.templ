@@ -162,51 +162,48 @@ templ InvoiceFormPage(invoice *domain.Invoice) {
 						@templates.DataInput("dueDate", "Due Date *", "date", "", "dueDate")
 						@templates.DataInput("taxRate", "Tax Rate (%)", "number", "21", "taxRate")
 					</div>
-					<!-- Line items with product autocomplete -->
+					<!-- Line items table + add-line row -->
 					<div class="border-t border-gray-800 pt-4 mt-2">
 						<h3 class="text-sm font-medium text-gray-300 mb-3">Line Items</h3>
-						<div id="line-items" class="flex flex-col gap-4">
-							<div class="grid grid-cols-12 gap-2 text-xs text-gray-500 uppercase tracking-wider px-1">
-								<div class="col-span-3">Product</div>
-								<div class="col-span-4">Description</div>
-								<div class="col-span-2">Qty</div>
-								<div class="col-span-3">Unit Price</div>
+						@InvoiceLineTable(nil)
+						<!-- Add line row -->
+						<div class="grid grid-cols-12 gap-2 items-start mt-3">
+							<div class="col-span-3 relative">
+								<input
+									type="text"
+									data-bind:newLineSearch
+									data-on:input__debounce.50ms="@get('/api/autocomplete/products')"
+									placeholder="Search product..."
+									class="w-full bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+								/>
+								<div id="new-line-product-ac"></div>
 							</div>
-							for _, row := range []struct{ idx int; query string }{
-								{0, "line0Query"}, {1, "line1Query"}, {2, "line2Query"},
-							} {
-								<div class="grid grid-cols-12 gap-2 items-start">
-									<div class="col-span-3 relative">
-										<input
-											type="text"
-											data-bind={ row.query }
-											data-on:input__debounce.50ms={ fmt.Sprintf("@get('/api/autocomplete/products?line=%d')", row.idx) }
-											placeholder="Search product..."
-											class="w-full bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
-										/>
-										<div id={ fmt.Sprintf("product-ac-%d", row.idx) }></div>
-									</div>
-									<input
-										type="text"
-										data-bind={ fmt.Sprintf("lines[%d].description", row.idx) }
-										placeholder="Description"
-										class="col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
-									/>
-									<input
-										type="number"
-										data-bind={ fmt.Sprintf("lines[%d].quantity", row.idx) }
-										placeholder="1"
-										min="1"
-										class="col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
-									/>
-									<input
-										type="text"
-										data-bind={ fmt.Sprintf("lines[%d].unitPrice", row.idx) }
-										placeholder="0.00"
-										class="col-span-3 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
-									/>
-								</div>
-							}
+							<input
+								type="text"
+								data-bind:newLineDescription
+								placeholder="Description"
+								class="col-span-4 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+							/>
+							<input
+								type="number"
+								data-bind:newLineQty
+								placeholder="1"
+								min="1"
+								class="col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+							/>
+							<input
+								type="text"
+								data-bind:newLineUnitPrice
+								placeholder="0.00"
+								class="col-span-2 bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
+							/>
+							<button
+								type="button"
+								data-on:click="@post('/api/invoices/lines')"
+								class="col-span-1 bg-orange-600 hover:bg-orange-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+							>
+								Add
+							</button>
 						</div>
 					</div>
 					<div id="form-errors"></div>
@@ -342,19 +339,19 @@ func invoiceFormSubtitle(inv *domain.Invoice) string {
 }
 
 func invoiceFormSignals(inv *domain.Invoice) string {
-	emptyLines := `[{productId:'',productName:'',description:'',quantity:1,unitPrice:''},{productId:'',productName:'',description:'',quantity:1,unitPrice:''},{productId:'',productName:'',description:'',quantity:1,unitPrice:''}]`
+	newLineDefaults := `newLineSearch:'',newLineProductId:'',newLineProductName:'',newLineDescription:'',newLineQty:1,newLineUnitPrice:''`
 	if inv == nil {
 		today := time.Now().Format("2006-01-02")
 		due := time.Now().AddDate(0, 0, 30).Format("2006-01-02")
 		return fmt.Sprintf(
-			`{customerSearch:'',customerId:'',customerName:'',issueDate:'%s',dueDate:'%s',taxRate:21,line0Query:'',line1Query:'',line2Query:'',lines:%s}`,
-			today, due, emptyLines,
+			`{customerSearch:'',customerId:'',customerName:'',issueDate:'%s',dueDate:'%s',taxRate:21,lines:[],%s}`,
+			today, due, newLineDefaults,
 		)
 	}
 	return fmt.Sprintf(
-		`{customerSearch:'%s',customerId:'%s',customerName:'%s',issueDate:'%s',dueDate:'%s',taxRate:%d,line0Query:'',line1Query:'',line2Query:'',lines:%s}`,
+		`{customerSearch:'%s',customerId:'%s',customerName:'%s',issueDate:'%s',dueDate:'%s',taxRate:%d,lines:[],%s}`,
 		inv.CustomerName, inv.CustomerID, inv.CustomerName,
-		inv.IssueDate.Format("2006-01-02"), inv.DueDate.Format("2006-01-02"), inv.TaxRate, emptyLines,
+		inv.IssueDate.Format("2006-01-02"), inv.DueDate.Format("2006-01-02"), inv.TaxRate, newLineDefaults,
 	)
 }
 

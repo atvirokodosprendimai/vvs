@@ -26,19 +26,64 @@ templ CustomerSuggestions(rows []customerSuggestion) {
 	</div>
 }
 
-templ ProductSuggestions(rows []productSuggestion, line int) {
-	<div id={ fmt.Sprintf("product-ac-%d", line) }>
+// ProductSuggestions renders the new-line product autocomplete dropdown.
+// id="new-line-product-ac" is the Datastar patch target.
+templ ProductSuggestions(rows []productSuggestion) {
+	<div id="new-line-product-ac">
 		if len(rows) > 0 {
 			<ul class="absolute z-50 w-full mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-auto max-h-48">
 				for _, row := range rows {
 					<li
 						class="px-4 py-2 hover:bg-orange-500/20 cursor-pointer text-sm text-gray-100"
-						data-on:click={ fmt.Sprintf("@get('/api/autocomplete/products/select?id=%s&line=%d')", row.ID, line) }
+						data-on:click={ fmt.Sprintf("@get('/api/autocomplete/products/select?id=%s')", row.ID) }
 					>
 						{ row.Name }
 					</li>
 				}
 			</ul>
+		}
+	</div>
+}
+
+// InvoiceLineTable renders the current line items as a table.
+// id="invoice-lines" is the Datastar patch target.
+templ InvoiceLineTable(lines []lineItem) {
+	<div id="invoice-lines">
+		if len(lines) == 0 {
+			<p class="text-gray-500 text-sm italic text-center py-3">No line items yet. Add a product below.</p>
+		} else {
+			<div class="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="border-b border-gray-800">
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-3 py-2">Product</th>
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-3 py-2">Description</th>
+							<th class="text-right text-xs font-medium text-gray-400 uppercase tracking-wider px-3 py-2">Qty</th>
+							<th class="text-right text-xs font-medium text-gray-400 uppercase tracking-wider px-3 py-2">Unit Price</th>
+							<th class="px-3 py-2"></th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-gray-800">
+						for i, line := range lines {
+							<tr class="hover:bg-gray-800/40">
+								<td class="px-3 py-2 text-gray-100">{ line.ProductName }</td>
+								<td class="px-3 py-2 text-gray-300">{ line.Description }</td>
+								<td class="px-3 py-2 text-right text-gray-100">{ fmt.Sprintf("%d", line.Quantity) }</td>
+								<td class="px-3 py-2 text-right text-gray-100 font-mono">{ line.UnitPrice }</td>
+								<td class="px-3 py-2 text-right">
+									<button
+										type="button"
+										data-on:click={ fmt.Sprintf("@delete('/api/invoices/lines?idx=%d')", i) }
+										class="text-red-400 hover:text-red-300 text-xs font-medium"
+									>
+										Remove
+									</button>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
 		}
 	</div>
 }

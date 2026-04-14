@@ -21,6 +21,16 @@ type productSuggestion struct {
 	Currency  string
 }
 
+// lineItem is the shape of each element in the `lines` Datastar signal array.
+// JSON tags must match the signal field names sent by the browser.
+type lineItem struct {
+	ProductID   string `json:"productId"`
+	ProductName string `json:"productName"`
+	Description string `json:"description"`
+	Quantity    int    `json:"quantity"`
+	UnitPrice   string `json:"unitPrice"`
+}
+
 // GET /api/autocomplete/customers
 // Reads customerSearch signal; returns PatchElementTempl(CustomerSuggestions) with matching rows.
 func (h *Handlers) customerAutocompleteSSE(w http.ResponseWriter, r *http.Request) {
@@ -95,17 +105,11 @@ func (h *Handlers) customerSelectSSE(w http.ResponseWriter, r *http.Request) {
 	sse.PatchElementTempl(CustomerSuggestions(nil))
 }
 
-// GET /api/autocomplete/products?line=N
-// Reads line{N}Query signal; returns PatchElementTempl(ProductSuggestions) for the given line.
+// GET /api/autocomplete/products
+// Reads newLineSearch signal; returns PatchElementTempl(ProductSuggestions) for the new-line row.
 func (h *Handlers) productAutocompleteSSE(w http.ResponseWriter, r *http.Request) {
-	lineStr := r.URL.Query().Get("line")
-	lineIdx := 0
-	fmt.Sscanf(lineStr, "%d", &lineIdx)
-
 	var signals struct {
-		Line0Query string `json:"line0Query"`
-		Line1Query string `json:"line1Query"`
-		Line2Query string `json:"line2Query"`
+		NewLineSearch string `json:"newLineSearch"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -113,22 +117,12 @@ func (h *Handlers) productAutocompleteSSE(w http.ResponseWriter, r *http.Request
 	}
 	sse := datastar.NewSSE(w, r)
 
-	var query string
-	switch lineIdx {
-	case 0:
-		query = signals.Line0Query
-	case 1:
-		query = signals.Line1Query
-	case 2:
-		query = signals.Line2Query
-	}
-
-	if query == "" {
-		sse.PatchElementTempl(ProductSuggestions(nil, lineIdx))
+	if signals.NewLineSearch == "" {
+		sse.PatchElementTempl(ProductSuggestions(nil))
 		return
 	}
 
-	search := "%" + query + "%"
+	search := "%" + signals.NewLineSearch + "%"
 	type row struct {
 		ID            string
 		Name          string
@@ -148,41 +142,16 @@ func (h *Handlers) productAutocompleteSSE(w http.ResponseWriter, r *http.Request
 	for i, r := range rows {
 		suggestions[i] = productSuggestion{ID: r.ID, Name: r.Name, UnitPrice: r.PriceAmount, Currency: r.PriceCurrency}
 	}
-	sse.PatchElementTempl(ProductSuggestions(suggestions, lineIdx))
+	sse.PatchElementTempl(ProductSuggestions(suggestions))
 }
 
-// GET /api/autocomplete/products/select?id=X&line=N
-// Reads all current line signals; updates lines[N].productName + unitPrice and line{N}Query; clears dropdown.
+// GET /api/autocomplete/products/select?id=X
+// Fetches product by ID; sets newLine* signals (search, productId, productName, unitPrice); clears dropdown.
 func (h *Handlers) productSelectSSE(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
-	lineStr := r.URL.Query().Get("line")
-	if id == "" || lineStr == "" {
-		http.Error(w, "missing id or line", http.StatusBadRequest)
+	if id == "" {
+		http.Error(w, "missing id", http.StatusBadRequest)
 		return
-	}
-
-	lineIdx := 0
-	fmt.Sscanf(lineStr, "%d", &lineIdx)
-
-	type lineSignal struct {
-		ProductID   string `json:"productId"`
-		ProductName string `json:"productName"`
-		Description string `json:"description"`
-		Quantity    int    `json:"quantity"`
-		UnitPrice   string `json:"unitPrice"`
-	}
-	var signals struct {
-		Line0Query string       `json:"line0Query"`
-		Line1Query string       `json:"line1Query"`
-		Line2Query string       `json:"line2Query"`
-		Lines      []lineSignal `json:"lines"`
-	}
-	// ReadSignals returns nil when datastar param is absent — safe to ignore error here
-	_ = datastar.ReadSignals(r, &signals)
-
-	// Pad Lines so lineIdx is in range
-	for len(signals.Lines) <= lineIdx {
-		signals.Lines = append(signals.Lines, lineSignal{Quantity: 1})
 	}
 
 	type row struct {
@@ -197,21 +166,21 @@ func (h *Handlers) productSelectSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	unitPriceStr := fmt.Sprintf("%.2f", float64(p.PriceAmount)/100)
-	signals.Lines[lineIdx].ProductID = p.ID
-	signals.Lines[lineIdx].ProductName = p.Name
-	signals.Lines[lineIdx].UnitPrice = unitPriceStr
-
-	switch lineIdx {
-	case 0:
-		signals.Line0Query = p.Name
-	case 1:
-		signals.Line1Query = p.Name
-	case 2:
-		signals.Line2Query = p.Name
-	}
-
 	sse := datastar.NewSSE(w, r)
-	sse.MarshalAndPatchSignals(signals)
-	sse.PatchElementTempl(ProductSuggestions(nil, lineIdx))
+
+	unitPriceStr := fmt.Sprintf("%.2f", float64(p.PriceAmount)/100)
+	signals := struct {
+		NewLineSearch      string `json:"newLineSearch"`
+		NewLineProductID   string `json:"newLineProductId"`
+		NewLineProductName string `json:"newLineProductName"`
+		NewLineUnitPrice   string `json:"newLineUnitPrice"`
+	}{
+		NewLineSearch:      p.Name,
+		NewLineProductID:   p.ID,
+		NewLineProductName: p.Name,
+		NewLineUnitPrice:   unitPriceStr,
+	}
+	b, _ := json.Marshal(signals)
+	sse.PatchSignals(b)
+	sse.PatchElementTempl(ProductSuggestions(nil))
 }

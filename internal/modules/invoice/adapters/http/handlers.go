@@ -56,6 +56,9 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Put("/api/invoices/{id}/void", h.voidSSE)
 	r.Delete("/api/invoices/{id}", h.deleteSSE)
 
+	r.Post("/api/invoices/lines", h.addLineSSE)
+	r.Delete("/api/invoices/lines", h.removeLineSSE)
+
 	r.Get("/api/autocomplete/customers", h.customerAutocompleteSSE)
 	r.Get("/api/autocomplete/customers/select", h.customerSelectSSE)
 	r.Get("/api/autocomplete/products", h.productAutocompleteSSE)
