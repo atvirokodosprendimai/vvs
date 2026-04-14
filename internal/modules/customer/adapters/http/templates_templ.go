@@ -53,7 +53,7 @@ func CustomerListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"customer-content\" data-signals=\"{search: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/customers')\"><div class=\"flex items-center justify-between mb-4\"><input type=\"text\" data-bind:search data-on:input__debounce.500ms=\"$page = 1; @get('/api/customers')\" placeholder=\"Search customers...\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-4 py-2 w-80 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <a href=\"/customers/new\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors\">+ New Customer</a></div><div id=\"customer-table\"><div class=\"text-gray-500 py-8 text-center\">Loading...</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"customer-content\" data-signals=\"{search: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/customers')\"><div class=\"flex items-center justify-between mb-4\"><input type=\"text\" data-bind-search data-on-input__debounce.500ms=\"$page = 1; @get('/api/customers')\" placeholder=\"Search customers...\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-4 py-2 w-80 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <a href=\"/customers/new\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors\">+ New Customer</a></div><div id=\"customer-table\"><div class=\"text-gray-500 py-8 text-center\">Loading...</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -363,7 +363,7 @@ func CustomerFormPage(customer *domain.Customer) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" data-on:submit__prevent=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" data-on-submit__prevent=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -432,7 +432,7 @@ func CustomerFormPage(customer *domain.Customer) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"flex flex-col gap-1.5\"><label for=\"notes\" class=\"text-sm font-medium text-gray-300\">Notes</label> <textarea id=\"notes\" data-bind:notes rows=\"3\" placeholder=\"Enter notes...\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"></textarea></div><div id=\"form-errors\"></div><div class=\"flex items-center gap-3 pt-2\"><button type=\"submit\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition-colors\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"flex flex-col gap-1.5\"><label for=\"notes\" class=\"text-sm font-medium text-gray-300\">Notes</label> <textarea id=\"notes\" data-bind-notes rows=\"3\" placeholder=\"Enter notes...\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"></textarea></div><div id=\"form-errors\"></div><div class=\"flex items-center gap-3 pt-2\"><button type=\"submit\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg font-medium transition-colors\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -527,7 +527,7 @@ func CustomerDetailPage(c *domain.Customer) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors\">Edit</a> <button data-on:click=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors\">Edit</a> <button data-on-click=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

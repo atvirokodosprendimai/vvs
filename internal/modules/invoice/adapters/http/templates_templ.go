@@ -55,7 +55,7 @@ func InvoiceListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"invoice-content\" data-signals=\"{search: '', status: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/invoices')\"><div class=\"flex items-center justify-between mb-4\"><div class=\"flex items-center gap-3\"><input type=\"text\" data-bind:search data-on:input__debounce.500ms=\"$page = 1; @get('/api/invoices')\" placeholder=\"Search invoices...\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-4 py-2 w-64 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <select data-bind:status data-on:change=\"$page = 1; @get('/api/invoices')\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"\">All Statuses</option> <option value=\"draft\">Draft</option> <option value=\"finalized\">Finalized</option> <option value=\"sent\">Sent</option> <option value=\"paid\">Paid</option> <option value=\"overdue\">Overdue</option> <option value=\"void\">Void</option></select></div><a href=\"/invoices/new\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors\">+ New Invoice</a></div><div id=\"invoice-table\"><div class=\"text-gray-500 py-8 text-center\">Loading...</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"invoice-content\" data-signals=\"{search: '', status: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/invoices')\"><div class=\"flex items-center justify-between mb-4\"><div class=\"flex items-center gap-3\"><input type=\"text\" data-bind-search data-on-input__debounce.500ms=\"$page = 1; @get('/api/invoices')\" placeholder=\"Search invoices...\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-4 py-2 w-64 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500\"> <select data-bind-status data-on-change=\"$page = 1; @get('/api/invoices')\" class=\"bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500\"><option value=\"\">All Statuses</option> <option value=\"draft\">Draft</option> <option value=\"finalized\">Finalized</option> <option value=\"sent\">Sent</option> <option value=\"paid\">Paid</option> <option value=\"overdue\">Overdue</option> <option value=\"void\">Void</option></select></div><a href=\"/invoices/new\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors\">+ New Invoice</a></div><div id=\"invoice-table\"><div class=\"text-gray-500 py-8 text-center\">Loading...</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -393,7 +393,7 @@ func InvoiceFormPage(invoice *domain.Invoice) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" data-on:submit__prevent=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" data-on-submit__prevent=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -517,7 +517,7 @@ func InvoiceDetailPage(inv *domain.Invoice) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if inv.Status == domain.StatusDraft {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<button data-on:click=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<button data-on-click=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -549,7 +549,7 @@ func InvoiceDetailPage(inv *domain.Invoice) templ.Component {
 				}
 			}
 			if inv.Status == domain.StatusDraft || inv.Status == domain.StatusFinalized {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<button data-on:click=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<button data-on-click=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

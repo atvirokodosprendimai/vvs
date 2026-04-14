@@ -20,14 +20,14 @@ templ PaymentListPage() {
 				<div class="flex items-center gap-3">
 					<input
 						type="text"
-						data-bind:search
-						data-on:input__debounce.500ms="$page = 1; @get('/api/payments')"
+						data-bind-search
+						data-on-input__debounce.500ms="$page = 1; @get('/api/payments')"
 						placeholder="Search payments..."
 						class="bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-4 py-2 w-80 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
 					/>
 					<select
-						data-bind:status
-						data-on:change="$page = 1; @get('/api/payments')"
+						data-bind-status
+						data-on-change="$page = 1; @get('/api/payments')"
 						class="bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
 					>
 						<option value="">All Statuses</option>
@@ -193,18 +193,18 @@ templ PaymentDetailPage(p *domain.Payment) {
 					>
 						<input
 							type="text"
-							data-bind:invoiceID
+							data-bind-invoiceID
 							placeholder="Invoice ID"
 							class="bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500 w-40"
 						/>
 						<input
 							type="text"
-							data-bind:customerID
+							data-bind-customerID
 							placeholder="Customer ID"
 							class="bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500 w-40"
 						/>
 						<button
-							data-on:click={ fmt.Sprintf("@put('/api/payments/%s/match')", p.ID) }
+							data-on-click={ fmt.Sprintf("@put('/api/payments/%s/match')", p.ID) }
 							class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
 						>
 							Match

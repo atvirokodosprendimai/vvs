@@ -176,8 +176,8 @@ func (h *Handlers) matchSSE(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	var signals struct {
-		InvoiceID  string `json:"invoiceID"`
-		CustomerID string `json:"customerID"`
+		InvoiceID  string `json:"invoiceId"`
+		CustomerID string `json:"customerId"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
