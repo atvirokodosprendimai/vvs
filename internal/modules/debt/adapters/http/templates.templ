@@ -1,0 +1,69 @@
+package http
+
+import (
+	"github.com/vvs/isp/internal/infrastructure/http/templates"
+	"github.com/vvs/isp/internal/modules/debt/app/queries"
+)
+
+templ DebtListPage() {
+	@templates.Layout("Debt Management") {
+		@templates.PageHeader("Debt Management", "Credit status synced from itax.lt")
+		<div class="flex justify-end mb-4">
+			<button
+				data-on:click="@post('/api/debt/sync')"
+				class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+			>
+				Sync from itax.lt
+			</button>
+		</div>
+		<div
+			id="debt-table"
+			data-init="@get('/api/debt')"
+		>
+			<div class="text-gray-500 py-8 text-center">Loading...</div>
+		</div>
+	}
+}
+
+templ DebtTable(rows []queries.DebtStatusRow) {
+	<div id="debt-table">
+		if len(rows) == 0 {
+			@templates.EmptyState("No debt data — set Tax IDs on customers then sync from itax.lt")
+		} else {
+			<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="border-b border-gray-800">
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Code</th>
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Company</th>
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Tax ID</th>
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Credit Status</th>
+							<th class="text-left text-xs font-medium text-gray-400 uppercase tracking-wider px-4 py-3">Last Synced</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, row := range rows {
+							@debtRow(row)
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+templ debtRow(row queries.DebtStatusRow) {
+	<tr class="border-b border-gray-800 last:border-0 hover:bg-gray-800/50 transition-colors">
+		<td class="px-4 py-3 font-mono text-orange-400 text-xs">{ row.CustomerCode }</td>
+		<td class="px-4 py-3 text-gray-100">{ row.CompanyName }</td>
+		<td class="px-4 py-3 text-gray-400 font-mono text-xs">{ row.TaxID }</td>
+		<td class="px-4 py-3">
+			if row.OverCreditBudget {
+				@templates.Badge("danger", "Over credit limit")
+			} else {
+				@templates.Badge("success", "Within limit")
+			}
+		</td>
+		<td class="px-4 py-3 text-gray-500 text-xs">{ row.SyncedAt.Format("2006-01-02 15:04") }</td>
+	</tr>
+}

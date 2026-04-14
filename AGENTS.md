@@ -1,3 +1,5 @@
+You are expert level golang engineer with hexagonal architecture mindset and very good at UX/UI in dark mode with orange accents
+
 # VVS ISP Manager - Agent Guide
 
 ## What This Is
@@ -181,6 +183,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 Datastar morphs DOM by element `id`. The fragment templ must render an element with a stable `id`.
 
 **Common mistakes to avoid:**
+- ❌ `NewSSE` before `ReadSignals` — `NewSSE` closes the request body; always call `ReadSignals` first, then `NewSSE`. Use `http.Error` for errors before SSE is created:
+  ```go
+  // CORRECT order:
+  var signals struct { Name string `json:"name"` }
+  if err := datastar.ReadSignals(r, &signals); err != nil {
+      http.Error(w, err.Error(), http.StatusBadRequest)
+      return
+  }
+  sse := datastar.NewSSE(w, r) // always AFTER ReadSignals
+  ```
 - ❌ `data-on-load` → use `data-init` instead
 - ❌ `data-bind-x` → use `data-bind:x` (colon)
 - ❌ `MergeFragmentTempl()` → renamed to `PatchElementTempl()` in new SDK

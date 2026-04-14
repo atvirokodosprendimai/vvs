@@ -14,12 +14,12 @@ import (
 )
 
 type Handlers struct {
-	createCmd    *commands.CreateInvoiceHandler
-	finalizeCmd  *commands.FinalizeInvoiceHandler
-	voidCmd      *commands.VoidInvoiceHandler
-	listQuery    *queries.ListInvoicesHandler
-	getQuery     *queries.GetInvoiceHandler
-	subscriber   events.EventSubscriber
+	createCmd   *commands.CreateInvoiceHandler
+	finalizeCmd *commands.FinalizeInvoiceHandler
+	voidCmd     *commands.VoidInvoiceHandler
+	listQuery   *queries.ListInvoicesHandler
+	getQuery    *queries.GetInvoiceHandler
+	subscriber  events.EventSubscriber
 }
 
 func NewHandlers(
@@ -82,8 +82,6 @@ func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
-
 	var signals struct {
 		Search   string `json:"search"`
 		Status   string `json:"status"`
@@ -91,9 +89,10 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		PageSize int    `json:"pageSize"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	if signals.PageSize == 0 {
 		signals.PageSize = 25
@@ -114,8 +113,6 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
-
 	var signals struct {
 		CustomerID   string `json:"customerId"`
 		CustomerName string `json:"customerName"`
@@ -131,9 +128,10 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		} `json:"lines"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	issueDate, err := time.Parse("2006-01-02", signals.IssueDate)
 	if err != nil {

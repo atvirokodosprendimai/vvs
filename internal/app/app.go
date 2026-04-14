@@ -43,6 +43,13 @@ import (
 	paymentcommands "github.com/vvs/isp/internal/modules/payment/app/commands"
 	paymentqueries "github.com/vvs/isp/internal/modules/payment/app/queries"
 	paymentmigrations "github.com/vvs/isp/internal/modules/payment/migrations"
+
+	"github.com/vvs/isp/internal/infrastructure/itaxtlt"
+	debthttp "github.com/vvs/isp/internal/modules/debt/adapters/http"
+	debtpersistence "github.com/vvs/isp/internal/modules/debt/adapters/persistence"
+	debtcommands "github.com/vvs/isp/internal/modules/debt/app/commands"
+	debtqueries "github.com/vvs/isp/internal/modules/debt/app/queries"
+	debtmigrations "github.com/vvs/isp/internal/modules/debt/migrations"
 )
 
 type App struct {
@@ -80,6 +87,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "invoice", FS: invoicemigrations.FS, TableName: "goose_invoice"},
 		{Name: "recurring", FS: recurringmigrations.FS, TableName: "goose_recurring"},
 		{Name: "payment", FS: paymentmigrations.FS, TableName: "goose_payment"},
+		{Name: "debt", FS: debtmigrations.FS, TableName: "goose_debt"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -157,10 +165,17 @@ func New(cfg Config) (*App, error) {
 		listPaymentsQuery, getPaymentQuery, unmatchedPaymentsQuery, subscriber,
 	)
 
-	// 10. Router
+	// 10. Wire Debt module
+	debtProvider := itaxtlt.NewStubDebtorProvider() // swap for itaxtlt.NewHTTPDebtorClient once credentials are ready
+	debtRepo := debtpersistence.NewGormDebtRepository(writer, reader)
+	syncDebtCmd := debtcommands.NewSyncDebtorsHandler(debtProvider, debtRepo, reader, publisher)
+	listDebtQuery := debtqueries.NewListDebtStatusesHandler(reader)
+	debtRoutes := debthttp.NewHandlers(syncDebtCmd, listDebtQuery, subscriber)
+
+	// 11. Router
 	router := infrahttp.NewRouter(reader,
 		customerRoutes, productRoutes, invoiceRoutes,
-		recurringRoutes, paymentRoutes,
+		recurringRoutes, paymentRoutes, debtRoutes,
 	)
 
 	httpServer := infrahttp.NewServer(cfg.ListenAddr, router)

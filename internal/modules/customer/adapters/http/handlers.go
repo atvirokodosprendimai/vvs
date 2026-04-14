@@ -11,12 +11,12 @@ import (
 )
 
 type Handlers struct {
-	createCmd   *commands.CreateCustomerHandler
-	updateCmd   *commands.UpdateCustomerHandler
-	deleteCmd   *commands.DeleteCustomerHandler
-	listQuery   *queries.ListCustomersHandler
-	getQuery    *queries.GetCustomerHandler
-	subscriber  events.EventSubscriber
+	createCmd  *commands.CreateCustomerHandler
+	updateCmd  *commands.UpdateCustomerHandler
+	deleteCmd  *commands.DeleteCustomerHandler
+	listQuery  *queries.ListCustomersHandler
+	getQuery   *queries.GetCustomerHandler
+	subscriber events.EventSubscriber
 }
 
 func NewHandlers(
@@ -78,17 +78,16 @@ func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
-
 	var signals struct {
 		Search   string `json:"search"`
 		Page     int    `json:"page"`
 		PageSize int    `json:"pageSize"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	if signals.PageSize == 0 {
 		signals.PageSize = 25
@@ -108,8 +107,6 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
-
 	var signals struct {
 		CompanyName string `json:"companyName"`
 		ContactName string `json:"contactName"`
@@ -117,9 +114,10 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		Phone       string `json:"phone"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	_, err := h.createCmd.Handle(r.Context(), commands.CreateCustomerCommand{
 		CompanyName: signals.CompanyName,
@@ -136,7 +134,6 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
 	id := chi.URLParam(r, "id")
 
 	var signals struct {
@@ -152,9 +149,10 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		Notes       string `json:"notes"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	err := h.updateCmd.Handle(r.Context(), commands.UpdateCustomerCommand{
 		ID:          id,

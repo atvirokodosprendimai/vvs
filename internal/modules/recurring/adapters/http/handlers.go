@@ -80,8 +80,6 @@ func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
-
 	var signals struct {
 		Search   string `json:"search"`
 		Status   string `json:"status"`
@@ -89,9 +87,10 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		PageSize int    `json:"pageSize"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	if signals.PageSize == 0 {
 		signals.PageSize = 25
@@ -112,8 +111,6 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
-
 	var signals struct {
 		CustomerID   string `json:"customerID"`
 		CustomerName string `json:"customerName"`
@@ -127,9 +124,10 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		LineUnitPrices   []string `json:"lineUnitPrices"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	dayOfMonth, _ := strconv.Atoi(signals.DayOfMonth)
 
@@ -174,7 +172,6 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
 	id := chi.URLParam(r, "id")
 
 	var signals struct {
@@ -190,9 +187,10 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		LineUnitPrices   []string `json:"lineUnitPrices"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	dayOfMonth, _ := strconv.Atoi(signals.DayOfMonth)
 
@@ -264,9 +262,6 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func parseAmountCents(s string) int64 {
-	var whole, frac int64
 	n, _ := strconv.ParseFloat(s, 64)
-	whole = int64(n)
-	frac = int64((n - float64(whole)) * 100)
-	return whole*100 + frac
+	return int64(n * 100)
 }

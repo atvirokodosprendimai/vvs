@@ -41,6 +41,28 @@ func (s *Subscriber) Subscribe(subject string, handler events.EventHandler) erro
 	return nil
 }
 
+// ChanSubscription subscribes to subject and returns a channel of events plus
+// a cancel func. The caller MUST call cancel when done to unsubscribe and
+// prevent leaking the NATS subscription (e.g. defer cancel() in SSE handlers).
+func (s *Subscriber) ChanSubscription(subject string) (<-chan events.DomainEvent, func()) {
+	ch := make(chan events.DomainEvent, 16)
+	sub, _ := s.nc.Subscribe(subject, func(msg *nats.Msg) {
+		var event events.DomainEvent
+		if err := json.Unmarshal(msg.Data, &event); err != nil {
+			return
+		}
+		select {
+		case ch <- event:
+		default: // drop if consumer is slow
+		}
+	})
+	cancel := func() {
+		_ = sub.Unsubscribe()
+		close(ch)
+	}
+	return ch, cancel
+}
+
 func (s *Subscriber) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

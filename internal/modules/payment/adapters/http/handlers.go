@@ -13,13 +13,13 @@ import (
 )
 
 type Handlers struct {
-	recordCmd    *commands.RecordPaymentHandler
-	importCmd    *commands.ImportPaymentsHandler
-	matchCmd     *commands.MatchPaymentHandler
-	listQuery    *queries.ListPaymentsHandler
-	getQuery     *queries.GetPaymentHandler
-	unmatchedQ   *queries.UnmatchedPaymentsHandler
-	subscriber   events.EventSubscriber
+	recordCmd  *commands.RecordPaymentHandler
+	importCmd  *commands.ImportPaymentsHandler
+	matchCmd   *commands.MatchPaymentHandler
+	listQuery  *queries.ListPaymentsHandler
+	getQuery   *queries.GetPaymentHandler
+	unmatchedQ *queries.UnmatchedPaymentsHandler
+	subscriber events.EventSubscriber
 }
 
 func NewHandlers(
@@ -73,8 +73,6 @@ func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
-
 	var signals struct {
 		Search   string `json:"search"`
 		Status   string `json:"status"`
@@ -82,9 +80,10 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		PageSize int    `json:"pageSize"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	if signals.PageSize == 0 {
 		signals.PageSize = 25
@@ -105,8 +104,6 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
-
 	var signals struct {
 		Amount      string `json:"amount"`
 		Reference   string `json:"reference"`
@@ -115,9 +112,10 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		BookingDate string `json:"bookingDate"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	amountCents := parseAmountCents(signals.Amount)
 
@@ -175,7 +173,6 @@ func (h *Handlers) importSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) matchSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
 	id := chi.URLParam(r, "id")
 
 	var signals struct {
@@ -183,9 +180,10 @@ func (h *Handlers) matchSSE(w http.ResponseWriter, r *http.Request) {
 		CustomerID string `json:"customerID"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	err := h.matchCmd.Handle(r.Context(), commands.MatchPaymentCommand{
 		PaymentID:  id,

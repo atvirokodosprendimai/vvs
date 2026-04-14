@@ -3,6 +3,7 @@ package queries
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/vvs/isp/internal/modules/customer/domain"
 	shareddomain "github.com/vvs/isp/internal/shared/domain"
@@ -87,8 +88,8 @@ type CustomerReadModel struct {
 	TaxID       string
 	Status      string
 	Notes       string
-	CreatedAt   int64
-	UpdatedAt   int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 func (CustomerReadModel) TableName() string { return "customers" }

@@ -79,8 +79,6 @@ func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
-
 	var signals struct {
 		Search   string `json:"search"`
 		Type     string `json:"filterType"`
@@ -88,9 +86,10 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		PageSize int    `json:"pageSize"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	if signals.PageSize == 0 {
 		signals.PageSize = 25
@@ -111,8 +110,6 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
-
 	var signals struct {
 		Name          string `json:"name"`
 		Description   string `json:"description"`
@@ -122,9 +119,10 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		BillingPeriod string `json:"billingPeriod"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	priceAmount, err := parsePriceCents(signals.PriceAmount)
 	if err != nil {
@@ -154,7 +152,6 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
 	id := chi.URLParam(r, "id")
 
 	var signals struct {
@@ -166,9 +163,10 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		BillingPeriod string `json:"billingPeriod"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.ConsoleError(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	priceAmount, err := parsePriceCents(signals.PriceAmount)
 	if err != nil {
