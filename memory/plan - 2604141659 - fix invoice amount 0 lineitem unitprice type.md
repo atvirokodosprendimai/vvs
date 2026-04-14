@@ -1,5 +1,5 @@
 ---
-tldr: Invoice list shows amount 0 — lineItem.UnitPrice is string, Datastar may coerce to JSON number on submit, Go string field rejects JSON number → empty → 0 price
+tldr: Invoice list shows amount 0 — root cause was user skipping Add button; also fixed lineItem.UnitPrice string→int64 coercion
 status: completed
 ---
 
@@ -50,7 +50,14 @@ Change `lineItem.UnitPrice` from `string` to `int64` (cents). Parsed once in `ad
 - Create invoice with one line (product at €29.99) → list shows total ~€36.28 (with 21% tax)
 - `go test ./internal/modules/invoice/adapters/http/...` all pass
 
+### Phase 2 — Auto-include add-line row in createSSE — status: completed
+
+6. [x] Extend `createSSE` signals struct with `newLine*` fields
+7. [x] After Lines loop, if `NewLineProductName != ""` append auto-included line using `parseMoneyInput(NewLineUnitPrice)`
+   - => handles UX case where user fills add-line row but skips clicking Add before Create Invoice
+
 ## Progress Log
 
 - 2604141659 — Plan created
-- 2604141712 — All 5 actions done; 23 tests pass
+- 2604141712 — All 5 actions (phase 1) done; 23 tests pass
+- 2604141730 — Phase 2: real root cause — user skips Add button; added auto-include of newLine* row in createSSE
