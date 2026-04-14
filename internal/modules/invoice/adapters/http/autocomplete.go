@@ -23,12 +23,14 @@ type productSuggestion struct {
 
 // lineItem is the shape of each element in the `lines` Datastar signal array.
 // JSON tags must match the signal field names sent by the browser.
+// UnitPrice is stored as int64 cents (e.g. 2999 for €29.99) to avoid JSON
+// string/number type coercion that occurs when Datastar serializes signals.
 type lineItem struct {
 	ProductID   string `json:"productId"`
 	ProductName string `json:"productName"`
 	Description string `json:"description"`
 	Quantity    int    `json:"quantity"`
-	UnitPrice   string `json:"unitPrice"`
+	UnitPrice   int64  `json:"unitPrice"`
 }
 
 // GET /api/autocomplete/customers

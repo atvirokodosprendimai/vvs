@@ -352,6 +352,27 @@ func TestAddLine_ValidLine(t *testing.T) {
 	if !strings.Contains(body, `"newLineSearch":""`) {
 		t.Errorf("expected newLineSearch cleared; body: %s", body)
 	}
+	// UnitPrice stored as int64 cents (2999) not string "29.99"
+	if !strings.Contains(body, `"unitPrice":2999`) {
+		t.Errorf("expected unitPrice stored as 2999 cents; body: %s", body)
+	}
+}
+
+func TestAddLine_UnitPriceStoredAsCents(t *testing.T) {
+	h := &Handlers{}
+	req := sseBodyRequest("POST", "/api/invoices/lines",
+		`{"lines":[],"newLineProductName":"Widget","newLineQty":1,"newLineUnitPrice":"49.99"}`)
+	w := httptest.NewRecorder()
+
+	h.addLineSSE(w, req)
+
+	body := w.Body.String()
+	if !strings.Contains(body, `"unitPrice":4999`) {
+		t.Errorf("expected 49.99 stored as 4999 cents; body: %s", body)
+	}
+	if strings.Contains(body, `"unitPrice":"`) {
+		t.Errorf("unitPrice must not be a JSON string; body: %s", body)
+	}
 }
 
 func TestAddLine_EmptyProductName(t *testing.T) {
@@ -371,7 +392,7 @@ func TestAddLine_EmptyProductName(t *testing.T) {
 func TestAddLine_PreservesExistingLines(t *testing.T) {
 	h := &Handlers{}
 	req := sseBodyRequest("POST", "/api/invoices/lines",
-		`{"lines":[{"productId":"p1","productName":"Existing Product","description":"","quantity":1,"unitPrice":"10.00"}],"newLineProductId":"p2","newLineProductName":"New Product","newLineDescription":"","newLineQty":1,"newLineUnitPrice":"20.00","newLineSearch":""}`)
+		`{"lines":[{"productId":"p1","productName":"Existing Product","description":"","quantity":1,"unitPrice":1000}],"newLineProductId":"p2","newLineProductName":"New Product","newLineDescription":"","newLineQty":1,"newLineUnitPrice":"20.00","newLineSearch":""}`)
 	w := httptest.NewRecorder()
 
 	h.addLineSSE(w, req)
@@ -405,7 +426,7 @@ func TestAddLine_DefaultsQtyToOne(t *testing.T) {
 func TestRemoveLine_ValidIndex(t *testing.T) {
 	h := &Handlers{}
 	req := sseBodyRequest("DELETE", "/api/invoices/lines?idx=0",
-		`{"lines":[{"productId":"p1","productName":"Product A","description":"","quantity":1,"unitPrice":"10.00"},{"productId":"p2","productName":"Product B","description":"","quantity":1,"unitPrice":"20.00"}]}`)
+		`{"lines":[{"productId":"p1","productName":"Product A","description":"","quantity":1,"unitPrice":1000},{"productId":"p2","productName":"Product B","description":"","quantity":1,"unitPrice":2000}]}`)
 	w := httptest.NewRecorder()
 
 	h.removeLineSSE(w, req)
@@ -422,7 +443,7 @@ func TestRemoveLine_ValidIndex(t *testing.T) {
 func TestRemoveLine_LastLine(t *testing.T) {
 	h := &Handlers{}
 	req := sseBodyRequest("DELETE", "/api/invoices/lines?idx=0",
-		`{"lines":[{"productId":"p1","productName":"Only Product","description":"","quantity":1,"unitPrice":"10.00"}]}`)
+		`{"lines":[{"productId":"p1","productName":"Only Product","description":"","quantity":1,"unitPrice":1000}]}`)
 	w := httptest.NewRecorder()
 
 	h.removeLineSSE(w, req)
@@ -439,7 +460,7 @@ func TestRemoveLine_LastLine(t *testing.T) {
 func TestRemoveLine_InvalidIndex(t *testing.T) {
 	h := &Handlers{}
 	req := sseBodyRequest("DELETE", "/api/invoices/lines?idx=99",
-		`{"lines":[{"productId":"p1","productName":"Product A","description":"","quantity":1,"unitPrice":"10.00"}]}`)
+		`{"lines":[{"productId":"p1","productName":"Product A","description":"","quantity":1,"unitPrice":1000}]}`)
 	w := httptest.NewRecorder()
 
 	h.removeLineSSE(w, req)
@@ -453,7 +474,7 @@ func TestRemoveLine_InvalidIndex(t *testing.T) {
 func TestRemoveLine_RendersTableTarget(t *testing.T) {
 	h := &Handlers{}
 	req := sseBodyRequest("DELETE", "/api/invoices/lines?idx=0",
-		`{"lines":[{"productId":"p1","productName":"Product A","description":"","quantity":1,"unitPrice":"10.00"}]}`)
+		`{"lines":[{"productId":"p1","productName":"Product A","description":"","quantity":1,"unitPrice":1000}]}`)
 	w := httptest.NewRecorder()
 
 	h.removeLineSSE(w, req)

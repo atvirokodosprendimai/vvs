@@ -136,7 +136,7 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 			ProductName string `json:"productName"`
 			Description string `json:"description"`
 			Quantity    int    `json:"quantity"`
-			UnitPrice   string `json:"unitPrice"`
+			UnitPrice   int64  `json:"unitPrice"` // stored as cents by addLineSSE
 		} `json:"lines"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
@@ -158,14 +158,9 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var lines []commands.CreateInvoiceLineInput
-	for i, l := range signals.Lines {
+	for _, l := range signals.Lines {
 		if l.ProductName == "" {
 			continue // skip empty line rows
-		}
-		unitPrice, err := parseMoneyInput(l.UnitPrice)
-		if err != nil {
-			sse.PatchElementTempl(formError("Invalid unit price for line " + strconv.Itoa(i+1)))
-			return
 		}
 		qty := l.Quantity
 		if qty <= 0 {
@@ -176,7 +171,7 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 			ProductName: l.ProductName,
 			Description: l.Description,
 			Quantity:    qty,
-			UnitPrice:   unitPrice,
+			UnitPrice:   l.UnitPrice, // already in cents (int64) from addLineSSE
 		})
 	}
 

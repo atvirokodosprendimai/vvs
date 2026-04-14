@@ -116,7 +116,7 @@ templ InvoiceLineTable(lines []lineItem) {
 								<td class="px-3 py-2 text-gray-100">{ line.ProductName }</td>
 								<td class="px-3 py-2 text-gray-300">{ line.Description }</td>
 								<td class="px-3 py-2 text-right text-gray-100">{ fmt.Sprintf("%d", line.Quantity) }</td>
-								<td class="px-3 py-2 text-right text-gray-100 font-mono">{ line.UnitPrice }</td>
+								<td class="px-3 py-2 text-right text-gray-100 font-mono">{ fmt.Sprintf("%.2f", float64(line.UnitPrice)/100) }</td>
 								<td class="px-3 py-2 text-right">
 									<button
 										type="button"

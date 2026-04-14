@@ -38,12 +38,14 @@ func (h *Handlers) addLineSSE(w http.ResponseWriter, r *http.Request) {
 		qty = 1
 	}
 
+	unitPrice, _ := parseMoneyInput(signals.NewLineUnitPrice)
+
 	signals.Lines = append(signals.Lines, lineItem{
 		ProductID:   signals.NewLineProductID,
 		ProductName: signals.NewLineProductName,
 		Description: signals.NewLineDescription,
 		Quantity:    qty,
-		UnitPrice:   signals.NewLineUnitPrice,
+		UnitPrice:   unitPrice,
 	})
 
 	// Reset the add-line form

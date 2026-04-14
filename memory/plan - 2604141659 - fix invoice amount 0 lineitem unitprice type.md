@@ -1,6 +1,6 @@
 ---
 tldr: Invoice list shows amount 0 — lineItem.UnitPrice is string, Datastar may coerce to JSON number on submit, Go string field rejects JSON number → empty → 0 price
-status: active
+status: completed
 ---
 
 # Plan: Fix Invoice Amount 0
@@ -25,26 +25,25 @@ Change `lineItem.UnitPrice` from `string` to `int64` (cents). Parsed once in `ad
 
 ## Phases
 
-### Phase 1 — Change lineItem.UnitPrice to int64 — status: open
+### Phase 1 — Change lineItem.UnitPrice to int64 — status: completed
 
-1. [ ] Update `lineItem` struct in `autocomplete.go`: `UnitPrice string` → `UnitPrice int64`
+1. [x] Update `lineItem` struct in `autocomplete.go`: `UnitPrice string` → `UnitPrice int64`
+   - => added comment explaining why (JSON string/number coercion)
 
-2. [ ] Update `addLineSSE` in `line_items.go`:
-   - Parse `signals.NewLineUnitPrice` to int64 cents: `price, _ := parseMoneyInput(signals.NewLineUnitPrice)` (reuse existing func)
-   - Build `lineItem{..., UnitPrice: price}`
-   - `signals.NewLineUnitPrice = ""` reset stays (it's the input signal, not lineItem)
+2. [x] Update `addLineSSE` in `line_items.go`:
+   - => `price, _ := parseMoneyInput(signals.NewLineUnitPrice)` → `UnitPrice: price`
+   - => `signals.NewLineUnitPrice = ""` reset unchanged (it's the input signal)
 
-3. [ ] Update `InvoiceLineTable` in `fragments.templ`:
-   - `line.UnitPrice` is now `int64` — format for display: `fmt.Sprintf("%.2f", float64(line.UnitPrice)/100)`
+3. [x] Update `InvoiceLineTable` in `fragments.templ`:
+   - => `fmt.Sprintf("%.2f", float64(line.UnitPrice)/100)`
 
-4. [ ] Update `createSSE` anonymous struct in `handlers.go`:
-   - Change `UnitPrice string` → `UnitPrice int64` (JSON number ← no parseMoneyInput needed)
-   - Remove `parseMoneyInput(l.UnitPrice)` call → use `l.UnitPrice` directly as cents
+4. [x] Update `createSSE` anonymous struct in `handlers.go`:
+   - => `UnitPrice int64` — uses `l.UnitPrice` directly (already cents)
+   - => removed `parseMoneyInput` call; also removed unused `i` from loop
 
-5. [ ] Update tests in `autocomplete_test.go`:
-   - Change all `"unitPrice":"X.XX"` → `"unitPrice":CENTS` (integer cents) in signal bodies
-   - e.g. `"unitPrice":"10.00"` → `"unitPrice":1000`, `"unitPrice":"20.00"` → `"unitPrice":2000`
-   - Add/update test asserting that `addLineSSE` correctly converts `newLineUnitPrice:"29.99"` → stored as `2999` in lines signal
+5. [x] Updated tests — `"unitPrice":"X.XX"` → `"unitPrice":CENTS` in all signal bodies
+   - => Added `TestAddLine_ValidLine` assertion: `"unitPrice":2999` present
+   - => Added `TestAddLine_UnitPriceStoredAsCents`: 49.99 → 4999, not a JSON string
 
 ## Verification
 
@@ -54,3 +53,4 @@ Change `lineItem.UnitPrice` from `string` to `int64` (cents). Parsed once in `ad
 ## Progress Log
 
 - 2604141659 — Plan created
+- 2604141712 — All 5 actions done; 23 tests pass
