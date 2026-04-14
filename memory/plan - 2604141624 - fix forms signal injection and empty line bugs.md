@@ -1,6 +1,6 @@
 ---
 tldr: Fix three form bugs — single-quote JS injection in formSignals, parseMoneyInput empty string, recurring empty-line submission
-status: active
+status: completed
 ---
 
 # Plan: Fix Forms — Signal Injection + Empty Lines + Unit Price
@@ -54,29 +54,27 @@ fmt.Sprintf(`{companyName:'%s',...}`, c.CompanyName, ...)
 
 2. [x] Mark [[plan - 2604141423 - fix invalid unit price on invoice create.md]] as completed
 
-### Phase 2 — Fix formSignals injection — status: open
+### Phase 2 — Fix formSignals injection — status: completed
 
-3. [ ] Fix `formSignals(c)` in `customer/adapters/http/templates.templ:233`
-   - Replace `fmt.Sprintf` with `json.Marshal` of a struct
-   - Test: create/edit customer with apostrophe in name → form loads, saves correctly
+3. [x] Fix `formSignals(c)` in `customer/adapters/http/templates.templ:233`
+   - => replaced with `json.Marshal` of `sig` struct; `encoding/json` import added
 
-4. [ ] Fix `prodFormSignals(p)` in `product/adapters/http/templates.templ:290`
-   - Same approach: marshal struct to JSON
+4. [x] Fix `prodFormSignals(p)` in `product/adapters/http/templates.templ:290`
+   - => same pattern; preserved default values (productType: "internet", priceCurrency: "EUR", billingPeriod: "monthly")
 
-5. [ ] Fix `recurringFormSignals(inv)` in `recurring/adapters/http/templates.templ:365`
-   - Same approach: marshal struct to JSON
-   - Note: parallel array structure `lineProductNames:['x','y','z']` must be preserved
+5. [x] Fix `recurringFormSignals(inv)` in `recurring/adapters/http/templates.templ:365`
+   - => parallel arrays now `[]string` fields marshaled as JSON arrays; `strconv` import added
 
-6. [ ] Fix `invoiceFormSignals(inv)` in `invoice/adapters/http/templates.templ:341`
-   - Same approach: marshal struct to JSON
+6. [x] Fix `invoiceFormSignals(inv)` in `invoice/adapters/http/templates.templ:303`
+   - => full struct with `lines:[]any{}` (empty slice → `[]`), `newLineQty:1` preserved
 
-### Phase 3 — Fix recurring empty line submission — status: open
+### Phase 3 — Fix recurring empty line submission — status: completed
 
-7. [ ] Fix `createSSE` in `recurring/adapters/http/handlers.go:135`
-   - Add `if i >= len(signals.LineProductNames) || signals.LineProductNames[i] == "" { continue }`
+7. [x] Fix `createSSE` in `recurring/adapters/http/handlers.go:135`
+   - => `if signals.LineProductNames[i] == "" { continue }` added at top of loop
 
-8. [ ] Fix `updateSSE` in `recurring/adapters/http/handlers.go:198`
-   - Same empty-line skip
+8. [x] Fix `updateSSE` in `recurring/adapters/http/handlers.go:198`
+   - => same skip added
 
 ## Verification
 
@@ -89,3 +87,4 @@ fmt.Sprintf(`{companyName:'%s',...}`, c.CompanyName, ...)
 
 - 2604141624 — Plan created
 - 2604141640 — Phase 1 done: parseMoneyInput empty string fix + 4 tests; plan 2604141423 closed
+- 2604141650 — Phase 2+3 done: all formSignals use json.Marshal; recurring empty lines skipped

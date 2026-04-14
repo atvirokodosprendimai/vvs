@@ -133,6 +133,9 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 
 	var lines []commands.RecurringLineInput
 	for i := 0; i < len(signals.LineProductNames); i++ {
+		if signals.LineProductNames[i] == "" {
+			continue
+		}
 		qty, _ := strconv.Atoi(signals.LineQuantities[i])
 		if qty < 1 {
 			qty = 1
@@ -196,6 +199,9 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 
 	var lines []commands.RecurringLineInput
 	for i := 0; i < len(signals.LineProductNames); i++ {
+		if signals.LineProductNames[i] == "" {
+			continue
+		}
 		qty, _ := strconv.Atoi(signals.LineQuantities[i])
 		if qty < 1 {
 			qty = 1
