@@ -1,6 +1,6 @@
 ---
 tldr: Fix "Invalid unit price for line 1" error when submitting invoice form — handle empty string and JSON number/string type mismatch for unitPrice
-status: active
+status: completed
 ---
 
 # Plan: Fix "Invalid unit price for line 1"

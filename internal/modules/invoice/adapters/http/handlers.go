@@ -251,6 +251,9 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func parseMoneyInput(s string) (int64, error) {
+	if s == "" {
+		return 0, nil
+	}
 	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return 0, err

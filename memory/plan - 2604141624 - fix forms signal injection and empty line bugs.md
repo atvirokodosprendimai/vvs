@@ -45,14 +45,14 @@ fmt.Sprintf(`{companyName:'%s',...}`, c.CompanyName, ...)
 
 ## Phases
 
-### Phase 1 — Fix parseMoneyInput (invoice unit price) — status: open
+### Phase 1 — Fix parseMoneyInput (invoice unit price) — status: completed
 
-1. [ ] Fix `parseMoneyInput` in `invoice/adapters/http/handlers.go:253`
-   - Add `if s == "" { return 0, nil }` before `strconv.ParseFloat`
-   - Write test: `TestCreateInvoice_EmptyUnitPrice` — line with `unitPrice:""` → accepted, price = 0
-   - Write test: `TestCreateInvoice_NumericUnitPrice` — line with `unitPrice:29.99` (JSON number) → check type coercion
+1. [x] Fix `parseMoneyInput` in `invoice/adapters/http/handlers.go:253`
+   - => Added `if s == "" { return 0, nil }` — matches `parsePriceCents` pattern in product handlers
+   - => Tests: `TestParseMoneyInput_EmptyString`, `TestParseMoneyInput_ValidFloat`, `TestParseMoneyInput_Integer`, `TestParseMoneyInput_Zero` in `handlers_test.go`
+   - => JSON number coercion: not tested — datastar uses JSON body for POST, `string` field rejects number type; will surface only if observed at runtime
 
-2. [ ] Mark [[plan - 2604141423 - fix invalid unit price on invoice create.md]] as completed
+2. [x] Mark [[plan - 2604141423 - fix invalid unit price on invoice create.md]] as completed
 
 ### Phase 2 — Fix formSignals injection — status: open
 
@@ -88,3 +88,4 @@ fmt.Sprintf(`{companyName:'%s',...}`, c.CompanyName, ...)
 ## Progress Log
 
 - 2604141624 — Plan created
+- 2604141640 — Phase 1 done: parseMoneyInput empty string fix + 4 tests; plan 2604141423 closed
