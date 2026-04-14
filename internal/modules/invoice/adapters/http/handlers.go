@@ -126,18 +126,24 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
-		CustomerID   string `json:"customerId"`
-		CustomerName string `json:"customerName"`
-		IssueDate    string `json:"issueDate"`
-		DueDate      string `json:"dueDate"`
-		TaxRate      int    `json:"taxRate"`
-		Lines        []struct {
+		CustomerID         string `json:"customerId"`
+		CustomerName       string `json:"customerName"`
+		IssueDate          string `json:"issueDate"`
+		DueDate            string `json:"dueDate"`
+		TaxRate            int    `json:"taxRate"`
+		Lines              []struct {
 			ProductID   string `json:"productId"`
 			ProductName string `json:"productName"`
 			Description string `json:"description"`
 			Quantity    int    `json:"quantity"`
 			UnitPrice   int64  `json:"unitPrice"` // stored as cents by addLineSSE
 		} `json:"lines"`
+		// new-line row fields — included if user didn't click Add before submitting
+		NewLineProductID   string `json:"newLineProductId"`
+		NewLineProductName string `json:"newLineProductName"`
+		NewLineDescription string `json:"newLineDescription"`
+		NewLineQty         int    `json:"newLineQty"`
+		NewLineUnitPrice   string `json:"newLineUnitPrice"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -172,6 +178,21 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 			Description: l.Description,
 			Quantity:    qty,
 			UnitPrice:   l.UnitPrice, // already in cents (int64) from addLineSSE
+		})
+	}
+	// auto-include add-line row if user didn't click Add before submitting
+	if signals.NewLineProductName != "" {
+		qty := signals.NewLineQty
+		if qty <= 0 {
+			qty = 1
+		}
+		price, _ := parseMoneyInput(signals.NewLineUnitPrice)
+		lines = append(lines, commands.CreateInvoiceLineInput{
+			ProductID:   signals.NewLineProductID,
+			ProductName: signals.NewLineProductName,
+			Description: signals.NewLineDescription,
+			Quantity:    qty,
+			UnitPrice:   price,
 		})
 	}
 
