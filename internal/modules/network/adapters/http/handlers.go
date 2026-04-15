@@ -111,12 +111,13 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
-		Name     string `json:"name"`
-		Host     string `json:"host"`
-		Port     string `json:"port"`
-		Username string `json:"username"`
-		Password string `json:"password"`
-		Notes    string `json:"notes"`
+		Name       string `json:"name"`
+		RouterType string `json:"router_type"`
+		Host       string `json:"host"`
+		Port       string `json:"port"`
+		Username   string `json:"username"`
+		Password   string `json:"password"`
+		Notes      string `json:"notes"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -124,15 +125,16 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	sse := datastar.NewSSE(w, r)
 
-	port := parsePort(signals.Port)
+	port := parsePort(signals.Port, signals.RouterType)
 
 	_, err := h.createCmd.Handle(r.Context(), commands.CreateRouterCommand{
-		Name:     signals.Name,
-		Host:     signals.Host,
-		Port:     port,
-		Username: signals.Username,
-		Password: signals.Password,
-		Notes:    signals.Notes,
+		Name:       signals.Name,
+		RouterType: signals.RouterType,
+		Host:       signals.Host,
+		Port:       port,
+		Username:   signals.Username,
+		Password:   signals.Password,
+		Notes:      signals.Notes,
 	})
 	if err != nil {
 		sse.PatchElementTempl(formError(err.Error()))
@@ -145,12 +147,13 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	var signals struct {
-		Name     string `json:"name"`
-		Host     string `json:"host"`
-		Port     string `json:"port"`
-		Username string `json:"username"`
-		Password string `json:"password"` // empty = keep existing
-		Notes    string `json:"notes"`
+		Name       string `json:"name"`
+		RouterType string `json:"router_type"`
+		Host       string `json:"host"`
+		Port       string `json:"port"`
+		Username   string `json:"username"`
+		Password   string `json:"password"` // empty = keep existing
+		Notes      string `json:"notes"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -158,16 +161,17 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	sse := datastar.NewSSE(w, r)
 
-	port := parsePort(signals.Port)
+	port := parsePort(signals.Port, signals.RouterType)
 
 	_, err := h.updateCmd.Handle(r.Context(), commands.UpdateRouterCommand{
-		ID:       id,
-		Name:     signals.Name,
-		Host:     signals.Host,
-		Port:     port,
-		Username: signals.Username,
-		Password: signals.Password,
-		Notes:    signals.Notes,
+		ID:         id,
+		Name:       signals.Name,
+		RouterType: signals.RouterType,
+		Host:       signals.Host,
+		Port:       port,
+		Username:   signals.Username,
+		Password:   signals.Password,
+		Notes:      signals.Notes,
 	})
 	if err != nil {
 		sse.PatchElementTempl(formError(err.Error()))
@@ -187,13 +191,14 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 	sse.Redirect("/routers")
 }
 
-func parsePort(s string) int {
-	if s == "" {
-		return 8728
+func parsePort(s, routerType string) int {
+	if s != "" {
+		if p, err := strconv.Atoi(s); err == nil && p > 0 {
+			return p
+		}
 	}
-	p, err := strconv.Atoi(s)
-	if err != nil || p <= 0 {
-		return 8728
+	if routerType == "arista" {
+		return 443
 	}
-	return p
+	return 8728
 }

@@ -41,6 +41,7 @@ templ RouterTable(routers []queries.RouterReadModel) {
 					<thead>
 						<tr class="border-b border-slate-800">
 							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Name</th>
+							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Type</th>
 							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Host</th>
 							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Port</th>
 							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Username</th>
@@ -61,6 +62,9 @@ templ RouterTable(routers []queries.RouterReadModel) {
 templ RouterRow(r queries.RouterReadModel) {
 	<tr class="hover:bg-slate-800/40 transition-colors" id={ fmt.Sprintf("router-%s", r.ID) }>
 		<td class="px-4 py-3 font-medium text-slate-100">{ r.Name }</td>
+		<td class="px-4 py-3 text-sm">
+			@routerTypeBadge(r.RouterType)
+		</td>
 		<td class="px-4 py-3 font-mono text-sm text-cyan-400">{ r.Host }</td>
 		<td class="px-4 py-3 font-mono text-sm text-slate-400">{ fmt.Sprintf("%d", r.Port) }</td>
 		<td class="px-4 py-3 text-slate-400 text-sm">{ r.Username }</td>
@@ -93,8 +97,19 @@ templ RouterFormPage(router *queries.RouterReadModel) {
 					class="flex flex-col gap-3"
 				>
 					@templates.DataInput("name", "Name *", "text", "e.g. Edge-01", "name")
+					<div class="flex flex-col gap-1">
+						<label for="router_type" class="text-xs font-medium text-slate-400 uppercase tracking-wider">Type *</label>
+						<select
+							id="router_type"
+							data-bind:router_type
+							class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+						>
+							<option value="mikrotik">MikroTik</option>
+							<option value="arista">Arista EOS</option>
+						</select>
+					</div>
 					@templates.DataInput("host", "Host *", "text", "IP or hostname", "host")
-					@templates.DataInput("port", "Port", "number", "8728", "port")
+					@templates.DataInput("port", "Port", "number", "8728 / 443", "port")
 					@templates.DataInput("username", "Username", "text", "admin", "username")
 					<div class="flex flex-col gap-1">
 						<label for="password" class="text-xs font-medium text-slate-400 uppercase tracking-wider">
@@ -160,6 +175,7 @@ templ RouterDetailPage(r queries.RouterReadModel) {
 			@templates.Card() {
 				<div class="grid grid-cols-2 gap-5">
 					@routerDetailField("Name", r.Name)
+					@routerDetailField("Type", routerTypeLabel(r.RouterType))
 					@routerDetailField("Host", r.Host)
 					@routerDetailField("Port", fmt.Sprintf("%d", r.Port))
 					@routerDetailField("Username", r.Username)
@@ -201,25 +217,34 @@ func routerFormSubtitle(r *queries.RouterReadModel) string {
 
 func routerFormSignals(r *queries.RouterReadModel) string {
 	type sig struct {
-		Name     string `json:"name"`
-		Host     string `json:"host"`
-		Port     string `json:"port"`
-		Username string `json:"username"`
-		Password string `json:"password"`
-		Notes    string `json:"notes"`
+		Name       string `json:"name"`
+		RouterType string `json:"router_type"`
+		Host       string `json:"host"`
+		Port       string `json:"port"`
+		Username   string `json:"username"`
+		Password   string `json:"password"`
+		Notes      string `json:"notes"`
 	}
 	if r == nil {
-		b, _ := json.Marshal(sig{Port: "8728"})
+		b, _ := json.Marshal(sig{RouterType: "mikrotik", Port: "8728"})
 		return string(b)
 	}
 	b, _ := json.Marshal(sig{
-		Name:     r.Name,
-		Host:     r.Host,
-		Port:     fmt.Sprintf("%d", r.Port),
-		Username: r.Username,
-		Notes:    r.Notes,
+		Name:       r.Name,
+		RouterType: r.RouterType,
+		Host:       r.Host,
+		Port:       fmt.Sprintf("%d", r.Port),
+		Username:   r.Username,
+		Notes:      r.Notes,
 	})
 	return string(b)
+}
+
+func routerTypeLabel(t string) string {
+	if t == "arista" {
+		return "Arista EOS"
+	}
+	return "MikroTik"
 }
 
 func routerFormAction(r *queries.RouterReadModel) string {
@@ -234,4 +259,12 @@ func routerFormButtonText(r *queries.RouterReadModel) string {
 		return "Create Router"
 	}
 	return "Save Changes"
+}
+
+templ routerTypeBadge(t string) {
+	if t == "arista" {
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-500/10 text-orange-400 border border-orange-500/20">Arista</span>
+	} else {
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">MikroTik</span>
+	}
 }

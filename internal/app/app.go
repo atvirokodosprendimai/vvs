@@ -41,6 +41,7 @@ import (
 	networksubscribers "github.com/vvs/isp/internal/modules/network/app/subscribers"
 	networkmigrations "github.com/vvs/isp/internal/modules/network/migrations"
 
+	"github.com/vvs/isp/internal/infrastructure/arista"
 	"github.com/vvs/isp/internal/infrastructure/mikrotik"
 	"github.com/vvs/isp/internal/infrastructure/netbox"
 	networkdomain "github.com/vvs/isp/internal/modules/network/domain"
@@ -172,7 +173,10 @@ func New(cfg Config) (*App, error) {
 			customerRoutes.WithReader(gdb.R)
 		}
 
-		mikrotikClient := mikrotik.New()
+		provisioner := &provisionerDispatcher{
+			mikrotik: mikrotik.New(),
+			arista:   arista.New(),
+		}
 
 		var ipamProvider networkdomain.IPAMProvider
 		if cfg.NetBoxURL != "" && cfg.NetBoxToken != "" {
@@ -181,7 +185,7 @@ func New(cfg Config) (*App, error) {
 		}
 
 		syncARPCmd := networkcommands.NewSyncCustomerARPHandler(
-			&customerARPBridge{repo: customerRepo}, routerRepo, mikrotikClient, ipamProvider, publisher,
+			&customerARPBridge{repo: customerRepo}, routerRepo, provisioner, ipamProvider, publisher,
 		)
 
 		arpWorker := networksubscribers.NewARPWorker(syncARPCmd)
@@ -255,6 +259,32 @@ func (b *customerARPBridge) UpdateNetworkInfo(ctx context.Context, id, routerID,
 	}
 	c.SetNetworkInfo(routerID, ip, mac)
 	return b.repo.Save(ctx, c)
+}
+
+// provisionerDispatcher picks the right RouterProvisioner based on conn.RouterType.
+// Lives here (composition root) so neither infrastructure package imports the other.
+type provisionerDispatcher struct {
+	mikrotik networkdomain.RouterProvisioner
+	arista   networkdomain.RouterProvisioner
+}
+
+func (d *provisionerDispatcher) SetARPStatic(ctx context.Context, conn networkdomain.RouterConn, ip, mac, customerID string) error {
+	return d.pick(conn).SetARPStatic(ctx, conn, ip, mac, customerID)
+}
+
+func (d *provisionerDispatcher) DisableARP(ctx context.Context, conn networkdomain.RouterConn, ip string) error {
+	return d.pick(conn).DisableARP(ctx, conn, ip)
+}
+
+func (d *provisionerDispatcher) GetARPEntry(ctx context.Context, conn networkdomain.RouterConn, ip string) (*networkdomain.ARPEntry, error) {
+	return d.pick(conn).GetARPEntry(ctx, conn, ip)
+}
+
+func (d *provisionerDispatcher) pick(conn networkdomain.RouterConn) networkdomain.RouterProvisioner {
+	if conn.RouterType == networkdomain.RouterTypeArista {
+		return d.arista
+	}
+	return d.mikrotik
 }
 
 // seedAdmin creates or updates the admin user on startup.

@@ -15,11 +15,12 @@ type ARPEntry struct {
 // RouterConn holds the connection parameters for a specific router.
 // Passed per-call so the provisioner can be a single shared instance.
 type RouterConn struct {
-	RouterID string // pool key — used to reuse existing TCP connections
-	Host     string
-	Port     int // default 8728
-	Username string
-	Password string
+	RouterID   string // pool key — used to reuse existing TCP connections
+	RouterType string // "mikrotik" | "arista" — used by ProvisionerDispatcher
+	Host       string
+	Port       int // default 8728
+	Username   string
+	Password   string
 }
 
 // RouterProvisioner is a vendor-agnostic port for L2 access control.

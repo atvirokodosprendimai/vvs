@@ -11,12 +11,13 @@ import (
 )
 
 type CreateRouterCommand struct {
-	Name     string
-	Host     string
-	Port     int
-	Username string
-	Password string
-	Notes    string
+	Name       string
+	RouterType string
+	Host       string
+	Port       int
+	Username   string
+	Password   string
+	Notes      string
 }
 
 type CreateRouterHandler struct {
@@ -29,7 +30,7 @@ func NewCreateRouterHandler(repo domain.RouterRepository, pub events.EventPublis
 }
 
 func (h *CreateRouterHandler) Handle(ctx context.Context, cmd CreateRouterCommand) (*domain.Router, error) {
-	router, err := domain.NewRouter(cmd.Name, cmd.Host, cmd.Port, cmd.Username, cmd.Password, cmd.Notes)
+	router, err := domain.NewRouter(cmd.Name, cmd.RouterType, cmd.Host, cmd.Port, cmd.Username, cmd.Password, cmd.Notes)
 	if err != nil {
 		return nil, err
 	}

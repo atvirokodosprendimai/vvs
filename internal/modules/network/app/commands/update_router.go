@@ -11,13 +11,14 @@ import (
 )
 
 type UpdateRouterCommand struct {
-	ID       string
-	Name     string
-	Host     string
-	Port     int
-	Username string
-	Password string // empty = keep existing
-	Notes    string
+	ID         string
+	Name       string
+	RouterType string
+	Host       string
+	Port       int
+	Username   string
+	Password   string // empty = keep existing
+	Notes      string
 }
 
 type UpdateRouterHandler struct {
@@ -35,7 +36,7 @@ func (h *UpdateRouterHandler) Handle(ctx context.Context, cmd UpdateRouterComman
 		return nil, err
 	}
 
-	if err := router.Update(cmd.Name, cmd.Host, cmd.Port, cmd.Username, cmd.Password, cmd.Notes); err != nil {
+	if err := router.Update(cmd.Name, cmd.RouterType, cmd.Host, cmd.Port, cmd.Username, cmd.Password, cmd.Notes); err != nil {
 		return nil, err
 	}
 

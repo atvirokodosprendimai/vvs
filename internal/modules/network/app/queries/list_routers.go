@@ -9,14 +9,15 @@ import (
 
 // RouterReadModel is the flat read representation for SSE/HTTP responses.
 type RouterReadModel struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	Host      string    `json:"host"`
-	Port      int       `json:"port"`
-	Username  string    `json:"username"`
-	Notes     string    `json:"notes"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID         string    `json:"id"`
+	Name       string    `json:"name"`
+	RouterType string    `json:"router_type"`
+	Host       string    `json:"host"`
+	Port       int       `json:"port"`
+	Username   string    `json:"username"`
+	Notes      string    `json:"notes"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 	// Password intentionally omitted from read model
 }
 
@@ -42,13 +43,14 @@ func (h *ListRoutersHandler) Handle(ctx context.Context) ([]RouterReadModel, err
 
 func domainToReadModel(r *domain.Router) RouterReadModel {
 	return RouterReadModel{
-		ID:        r.ID,
-		Name:      r.Name,
-		Host:      r.Host,
-		Port:      r.Port,
-		Username:  r.Username,
-		Notes:     r.Notes,
-		CreatedAt: r.CreatedAt,
-		UpdatedAt: r.UpdatedAt,
+		ID:         r.ID,
+		Name:       r.Name,
+		RouterType: r.RouterType,
+		Host:       r.Host,
+		Port:       r.Port,
+		Username:   r.Username,
+		Notes:      r.Notes,
+		CreatedAt:  r.CreatedAt,
+		UpdatedAt:  r.UpdatedAt,
 	}
 }
