@@ -13,7 +13,7 @@ templ ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThread
 	@templates.Layout("Chat") {
 		<div
 			class="flex h-full -m-6 overflow-hidden min-h-0"
-			data-signals={ fmt.Sprintf("{threadid:'%s',chatmsg:'',newdm:false,newchannel:false,channelname:'',isprivate:false,newdmtarget:''}", initialThreadID) }
+			data-signals={ fmt.Sprintf("{threadid:'%s',chatmsg:'',_newdm:false,_newchannel:false,channelname:'',isprivate:false,newdmtarget:''}", initialThreadID) }
 		>
 			<!-- Thread sidebar -->
 			<div
@@ -42,14 +42,14 @@ templ ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThread
 		</div>
 		<!-- New DM modal -->
 		<div
-			data-show="$newdm"
+			data-show="$_newdm"
 			class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
 			style="display:none"
 		>
 			<div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-80 flex flex-col gap-4">
 				<div class="flex items-center justify-between">
 					<span class="text-sm font-medium text-slate-200">New Direct Message</span>
-					<button data-on:click="$newdm=false" class="text-slate-500 hover:text-slate-300">
+					<button data-on:click="$_newdm=false" class="text-slate-500 hover:text-slate-300">
 						<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
 					</button>
 				</div>
@@ -60,7 +60,7 @@ templ ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThread
 					class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500"
 				/>
 				<button
-					data-on:click="@post('/api/chat/threads/direct') && ($newdm=false)"
+					data-on:click="@post('/api/chat/threads/direct') && ($_newdm=false)"
 					class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm"
 				>
 					Start conversation
@@ -69,14 +69,14 @@ templ ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThread
 		</div>
 		<!-- New Channel modal -->
 		<div
-			data-show="$newchannel"
+			data-show="$_newchannel"
 			class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
 			style="display:none"
 		>
 			<div class="bg-slate-900 border border-slate-700 rounded-xl p-6 w-80 flex flex-col gap-4">
 				<div class="flex items-center justify-between">
 					<span class="text-sm font-medium text-slate-200">New Channel</span>
-					<button data-on:click="$newchannel=false" class="text-slate-500 hover:text-slate-300">
+					<button data-on:click="$_newchannel=false" class="text-slate-500 hover:text-slate-300">
 						<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
 					</button>
 				</div>
@@ -91,7 +91,7 @@ templ ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThread
 					Private channel
 				</label>
 				<button
-					data-on:click="@post('/api/chat/threads/channel') && ($newchannel=false)"
+					data-on:click="@post('/api/chat/threads/channel') && ($_newchannel=false)"
 					class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm"
 				>
 					Create channel
@@ -108,7 +108,7 @@ templ ChatThreadList(threads []chat.ThreadSummary, currentUserID string) {
 			<div class="flex items-center justify-between">
 				<span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Channels</span>
 				<button
-					data-on:click="$newchannel=true"
+					data-on:click="$_newchannel=true"
 					class="text-slate-500 hover:text-cyan-400 transition-colors"
 					title="New channel"
 				>
@@ -125,7 +125,7 @@ templ ChatThreadList(threads []chat.ThreadSummary, currentUserID string) {
 			<div class="flex items-center justify-between mb-1">
 				<span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Direct Messages</span>
 				<button
-					data-on:click="$newdm=true"
+					data-on:click="$_newdm=true"
 					class="text-slate-500 hover:text-cyan-400 transition-colors"
 					title="New DM"
 				>
