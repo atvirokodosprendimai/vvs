@@ -9,19 +9,22 @@ import (
 )
 
 type CustomerModel struct {
-	ID          string `gorm:"primaryKey;type:text"`
-	Code        string `gorm:"uniqueIndex;type:text;not null"`
-	CompanyName string `gorm:"type:text;not null"`
-	ContactName string `gorm:"type:text"`
-	Email       string `gorm:"type:text"`
-	Phone       string `gorm:"type:text"`
-	Street      string `gorm:"type:text"`
-	City        string `gorm:"type:text"`
-	PostalCode  string `gorm:"type:text"`
-	Country     string `gorm:"type:text"`
-	TaxID       string `gorm:"type:text"`
-	Status      string `gorm:"type:text;not null;default:'active'"`
-	Notes       string `gorm:"type:text"`
+	ID          string  `gorm:"primaryKey;type:text"`
+	Code        string  `gorm:"uniqueIndex;type:text;not null"`
+	CompanyName string  `gorm:"type:text;not null"`
+	ContactName string  `gorm:"type:text"`
+	Email       string  `gorm:"type:text"`
+	Phone       string  `gorm:"type:text"`
+	Street      string  `gorm:"type:text"`
+	City        string  `gorm:"type:text"`
+	PostalCode  string  `gorm:"type:text"`
+	Country     string  `gorm:"type:text"`
+	TaxID       string  `gorm:"type:text"`
+	Status      string  `gorm:"type:text;not null;default:'active'"`
+	Notes       string  `gorm:"type:text"`
+	RouterID    *string `gorm:"type:text"`
+	IPAddress   string  `gorm:"type:text"`
+	MACAddress  string  `gorm:"type:text"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
@@ -43,6 +46,9 @@ func toModel(c *domain.Customer) *CustomerModel {
 		TaxID:       c.TaxID,
 		Status:      string(c.Status),
 		Notes:       c.Notes,
+		RouterID:    c.RouterID,
+		IPAddress:   c.IPAddress,
+		MACAddress:  c.MACAddress,
 		CreatedAt:   c.CreatedAt,
 		UpdatedAt:   c.UpdatedAt,
 	}
@@ -63,6 +69,9 @@ func toDomain(m *CustomerModel) *domain.Customer {
 		TaxID:       m.TaxID,
 		Status:      domain.CustomerStatus(m.Status),
 		Notes:       m.Notes,
+		RouterID:    m.RouterID,
+		IPAddress:   m.IPAddress,
+		MACAddress:  m.MACAddress,
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 	}

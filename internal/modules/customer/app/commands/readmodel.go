@@ -21,6 +21,9 @@ func domainToReadModel(c *domain.Customer) queries.CustomerReadModel {
 		TaxID:       c.TaxID,
 		Status:      string(c.Status),
 		Notes:       c.Notes,
+		RouterID:    c.RouterID,
+		IPAddress:   c.IPAddress,
+		MACAddress:  c.MACAddress,
 		CreatedAt:   c.CreatedAt,
 		UpdatedAt:   c.UpdatedAt,
 	}

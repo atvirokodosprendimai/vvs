@@ -92,3 +92,37 @@ func TestCustomer_Activate_AlreadyActive(t *testing.T) {
 	err := c.Activate()
 	assert.ErrorIs(t, err, ErrAlreadyActive)
 }
+
+func TestCustomer_SetNetworkInfo(t *testing.T) {
+	code := domain.NewCompanyCode("CLI", 1)
+	c, _ := NewCustomer(code, "ACME", "", "", "")
+
+	c.SetNetworkInfo("router-1", "10.0.1.55", "AA:BB:CC:DD:EE:FF")
+
+	assert.NotNil(t, c.RouterID)
+	assert.Equal(t, "router-1", *c.RouterID)
+	assert.Equal(t, "10.0.1.55", c.IPAddress)
+	assert.Equal(t, "AA:BB:CC:DD:EE:FF", c.MACAddress)
+}
+
+func TestCustomer_SetNetworkInfo_ClearsRouterID(t *testing.T) {
+	code := domain.NewCompanyCode("CLI", 1)
+	c, _ := NewCustomer(code, "ACME", "", "", "")
+	c.SetNetworkInfo("router-1", "10.0.1.55", "AA:BB:CC:DD:EE:FF")
+
+	c.SetNetworkInfo("", "", "")
+
+	assert.Nil(t, c.RouterID)
+	assert.Empty(t, c.IPAddress)
+	assert.Empty(t, c.MACAddress)
+}
+
+func TestCustomer_HasNetworkProvisioning(t *testing.T) {
+	code := domain.NewCompanyCode("CLI", 1)
+	c, _ := NewCustomer(code, "ACME", "", "", "")
+
+	assert.False(t, c.HasNetworkProvisioning())
+
+	c.SetNetworkInfo("router-1", "10.0.1.55", "AA:BB:CC:DD:EE:FF")
+	assert.True(t, c.HasNetworkProvisioning())
+}

@@ -88,6 +88,9 @@ type CustomerReadModel struct {
 	TaxID       string    `json:"tax_id"`
 	Status      string    `json:"status"`
 	Notes       string    `json:"notes"`
+	RouterID    *string   `json:"router_id"`
+	IPAddress   string    `json:"ip_address"`
+	MACAddress  string    `json:"mac_address"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -110,6 +113,9 @@ func (m *CustomerReadModel) ToDomain() *domain.Customer {
 		TaxID:       m.TaxID,
 		Status:      domain.CustomerStatus(m.Status),
 		Notes:       m.Notes,
+		RouterID:    m.RouterID,
+		IPAddress:   m.IPAddress,
+		MACAddress:  m.MACAddress,
 	}
 }
 

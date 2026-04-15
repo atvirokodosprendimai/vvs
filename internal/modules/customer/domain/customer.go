@@ -38,8 +38,12 @@ type Customer struct {
 	TaxID       string
 	Status      CustomerStatus
 	Notes       string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	// Network provisioning fields — set when customer has a managed network connection
+	RouterID   *string // FK to routers table; nil = no provisioning
+	IPAddress  string  // e.g. "10.0.1.55"
+	MACAddress string  // e.g. "AA:BB:CC:DD:EE:FF"
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 func NewCustomer(code domain.CompanyCode, companyName, contactName, email, phone string) (*Customer, error) {
@@ -89,6 +93,24 @@ func (c *Customer) Suspend() error {
 	c.Status = StatusSuspended
 	c.UpdatedAt = time.Now().UTC()
 	return nil
+}
+
+// SetNetworkInfo assigns or clears the customer's network provisioning details.
+// Pass empty routerID to remove provisioning.
+func (c *Customer) SetNetworkInfo(routerID, ipAddress, macAddress string) {
+	if routerID == "" {
+		c.RouterID = nil
+	} else {
+		c.RouterID = &routerID
+	}
+	c.IPAddress = strings.TrimSpace(ipAddress)
+	c.MACAddress = strings.TrimSpace(macAddress)
+	c.UpdatedAt = time.Now().UTC()
+}
+
+// HasNetworkProvisioning reports whether this customer has a router assigned.
+func (c *Customer) HasNetworkProvisioning() bool {
+	return c.RouterID != nil && *c.RouterID != ""
 }
 
 func (c *Customer) Activate() error {
