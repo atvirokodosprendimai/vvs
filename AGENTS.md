@@ -24,6 +24,10 @@ internal/
     database/               # SQLite setup, WriteSerializer, Goose migrations
     nats/                   # Embedded NATS server, Publisher, Subscriber
     http/                   # Server, middleware, router, dashboard templ
+    notifications/          # DB-backed per-user notifications (store, worker, SSE handler)
+    chat/                   # DB-backed team chat (store, SSE handler, message history)
+    arista/                 # Arista EOS eAPI client (RouterProvisioner)
+    mikrotik/               # MikroTik API client (RouterProvisioner)
   modules/                  # Each module is a bounded context
     {module}/
       domain/               # Aggregate root, value objects, repository port (interface)
@@ -45,6 +49,28 @@ specs/                      # SDD specification documents per module
 | invoice | INV-2026-00001 | Invoice + InvoiceLine | Status: Draft->Finalized->Paid/Void |
 | recurring | - | RecurringInvoice | Schedule: Monthly/Quarterly/Yearly on day X |
 | payment | - | Payment | SEPA CSV import, invoice matching |
+| network | - | Router | RouterType: mikrotik/arista; provisionerDispatcher in app.go picks client at runtime |
+
+## Cross-cutting Infrastructure
+
+| Package | Purpose |
+|---------|---------|
+| `infrastructure/notifications` | Worker subscribes `isp.>`, creates DB rows for notable events; SSE handler pushes badge+list per user |
+| `infrastructure/chat` | Team chat with DB history; SSE streams history then appends new messages in real-time |
+| `infrastructure/arista` | Arista EOS eAPI (JSON-RPC over HTTPS); implements `domain.RouterProvisioner` |
+| `infrastructure/mikrotik` | MikroTik API; implements `domain.RouterProvisioner` |
+
+**Multi-vendor provisioner pattern (composition root):**
+`provisionerDispatcher` in `app.go` implements `RouterProvisioner` and routes calls based on `RouterConn.RouterType`:
+```go
+func (d *provisionerDispatcher) pick(conn networkdomain.RouterConn) networkdomain.RouterProvisioner {
+    if conn.RouterType == networkdomain.RouterTypeArista {
+        return d.arista
+    }
+    return d.mikrotik
+}
+```
+Neither infrastructure package imports the other — routing lives at the composition root only.
 
 ## Key Patterns
 
@@ -89,22 +115,61 @@ func listHandler(querySvc *queries.ListHandler, sub events.EventSubscriber) http
         // 1. Initial render
         result, _ := querySvc.Handle(r.Context(), query)
         sse.PatchElementTempl(ListTemplate(result))
-        // 2. Subscribe to NATS for live updates
-        ch := make(chan *nats.Msg, 16)
-        natsSub, _ := sub.ChanSubscribe("isp.customer.*", ch)
-        defer natsSub.Unsubscribe()
+        // 2. Subscribe to NATS for live updates — ChanSubscription returns (chan DomainEvent, cancelFunc)
+        ch, cancel := sub.ChanSubscription("isp.customer.*")
+        defer cancel()
         for {
             select {
             case <-r.Context().Done():
                 return
-            case <-ch:
-                if sse.IsClosed() { return }
+            case event, ok := <-ch:
+                if !ok { return }
                 result, _ = querySvc.Handle(r.Context(), query)
                 sse.PatchElementTempl(ListTemplate(result))
             }
         }
     }
 }
+```
+
+**SSE delete event routing — CRITICAL:**
+Delete event payloads only contain `{id, code}` — NOT the full entity. If you unmarshal a delete payload
+into your read model struct and call `PatchElementTempl(Row(emptyModel))`, it pushes empty rows to all clients.
+Always check `event.Type` before deciding what to do:
+```go
+case event, ok := <-ch:
+    if !ok { return }
+    if event.Type == "customer.deleted" {
+        sse.PatchElements("",
+            datastar.WithSelector("#customer-"+event.AggregateID),
+            datastar.WithMode(datastar.ElementPatchModeRemove),
+        )
+        continue
+    }
+    // safe to re-query and re-render for other event types
+    result, _ := querySvc.Handle(r.Context(), query)
+    sse.PatchElementTempl(ListTemplate(result))
+```
+
+**`PatchElements` for append/remove without full re-render:**
+```go
+// Append a single item (e.g. new chat message)
+var buf bytes.Buffer
+MyItemTempl(item).Render(ctx, &buf)
+sse.PatchElements(buf.String(),
+    datastar.WithSelector("#container-id"),
+    datastar.WithMode(datastar.ElementPatchModeAppend),
+)
+// Remove an item by selector
+sse.PatchElements("",
+    datastar.WithSelector("#item-"+id),
+    datastar.WithMode(datastar.ElementPatchModeRemove),
+)
+```
+
+**`ExecuteScript` for imperative DOM ops:**
+```go
+sse.ExecuteScript(`(function(){var el=document.getElementById('x');if(el)el.scrollTop=el.scrollHeight})()`)
 ```
 
 ### WriteSerializer
@@ -181,6 +246,42 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 ```
 Datastar morphs DOM by element `id`. The fragment templ must render an element with a stable `id`.
+
+**Chaining expressions in data-on — use `&&`, NEVER `;`:**
+```html
+data-on:click="@post('/api/x') && ($signal='')"         ✅ correct
+data-on:click="@post('/api/x'); $signal=''"             ❌ wrong — Datastar uses regexp on &&, semicolons break parsing
+```
+For signal assignment before action, wrap in parens to avoid precedence issues:
+```html
+data-on:click="($page=1) && @get('/api/items')"         ✅
+```
+
+**DOM event object is `evt`, NOT `$event`:**
+```html
+data-on:keydown="evt.key==='Enter' && ..."    ✅
+data-on:keydown="$event.key==='Enter' && ..."  ❌ — $event does not exist; $x is only for signals
+```
+Signals use `$signalName`. The native DOM event is always `evt`.
+
+**`evt.preventDefault()` in a `&&` chain:**
+`preventDefault()` returns `undefined` (falsy), which would short-circuit the chain.
+Use negation: `!evt.preventDefault()` evaluates to `true`, so the chain continues:
+```html
+data-on:keydown="evt.key==='Enter' && !evt.shiftKey && !evt.preventDefault() && @post('/api/x') && ($msg='')"
+```
+
+**Signal names for `data-bind` must be lowercase:**
+HTML attribute names are lowercased by browsers. `data-bind:chatMsg` becomes `data-bind:chatmsg` in the DOM,
+so Datastar binds to signal `chatmsg`, not `chatMsg`. If you define `data-signals="{chatMsg:''}"` (camelCase)
+and bind with `data-bind:chatMsg`, they refer to different signals — clearing `$chatMsg` won't update the input.
+**Rule:** use all-lowercase signal names for any signal you intend to bind with `data-bind:`.
+
+**`data-init` — `el` refers to the current element:**
+```html
+<div data-init="el.scrollIntoView()"></div>    ✅ — el is the element itself
+<div data-init="@get('/sse/chat')"></div>       ✅ — opens SSE stream on init
+```
 
 **Common mistakes to avoid:**
 - ❌ `NewSSE` before `ReadSignals` — `NewSSE` closes the request body; always call `ReadSignals` first, then `NewSSE`. Use `http.Error` for errors before SSE is created:
