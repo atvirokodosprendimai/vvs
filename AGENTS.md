@@ -289,6 +289,15 @@ Use negation: `!evt.preventDefault()` evaluates to `true`, so the chain continue
 data-on:keydown="evt.key==='Enter' && !evt.shiftKey && !evt.preventDefault() && @post('/api/x') && ($msg='')"
 ```
 
+**Frontend-only signals — `_` prefix:**
+Signals prefixed with `_` (e.g. `_toastType`, `_open`) are **not sent to the backend** on any `@post`/`@get` request.
+Use them for pure UI state (modal open/closed, active tab, local toggle) that the backend doesn't need.
+The backend can still patch/set them via SSE (`sse.PatchSignals(...)` or inline `data-signals` in patched HTML).
+```html
+data-signals="{_open:false, name:''}"
+<!-- _open stays client-only; name is sent with every @post -->
+```
+
 **Signal names for `data-bind` must be lowercase:**
 HTML attribute names are lowercased by browsers. `data-bind:chatMsg` becomes `data-bind:chatmsg` in the DOM,
 so Datastar binds to signal `chatmsg`, not `chatMsg`. If you define `data-signals="{chatMsg:''}"` (camelCase)
