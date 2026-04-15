@@ -156,33 +156,36 @@ func (s *Store) FindDirectThread(ctx context.Context, userA, userB string) (Thre
 
 // ListThreadsForUser returns all threads the user is a member of with read-model extras.
 func (s *Store) ListThreadsForUser(ctx context.Context, userID string) ([]ThreadSummary, error) {
+	// Use string for time columns to avoid driver scan issues with COALESCE returning TEXT.
 	type summaryRow struct {
-		ID          string    `gorm:"column:id"`
-		Type        string    `gorm:"column:type"`
-		Name        string    `gorm:"column:name"`
-		IsPrivate   int       `gorm:"column:is_private"`
-		CreatedBy   string    `gorm:"column:created_by"`
-		CreatedAt   time.Time `gorm:"column:created_at"`
-		LastMessage string    `gorm:"column:last_message"`
-		LastAt      time.Time `gorm:"column:last_at"`
-		UnreadCount int       `gorm:"column:unread_count"`
+		ID          string `gorm:"column:id"`
+		Type        string `gorm:"column:type"`
+		Name        string `gorm:"column:name"`
+		IsPrivate   int    `gorm:"column:is_private"`
+		CreatedBy   string `gorm:"column:created_by"`
+		CreatedAt   string `gorm:"column:created_at"`
+		LastMessage string `gorm:"column:last_message"`
+		LastAt      string `gorm:"column:last_at"`
+		UnreadCount int    `gorm:"column:unread_count"`
 	}
 
 	var rows []summaryRow
 	err := s.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
 		return tx.Raw(`
 			SELECT
-				t.id, t.type, t.name, t.is_private, t.created_by, t.created_at,
+				t.id, t.type, t.name, t.is_private, t.created_by,
+				CAST(t.created_at AS TEXT) AS created_at,
 				COALESCE((
 					SELECT body FROM chat_messages
 					WHERE thread_id = t.id
 					ORDER BY created_at DESC LIMIT 1
 				), '') AS last_message,
-				COALESCE((
-					SELECT created_at FROM chat_messages
-					WHERE thread_id = t.id
-					ORDER BY created_at DESC LIMIT 1
-				), t.created_at) AS last_at,
+				COALESCE(
+					(SELECT CAST(created_at AS TEXT) FROM chat_messages
+					 WHERE thread_id = t.id
+					 ORDER BY created_at DESC LIMIT 1),
+					CAST(t.created_at AS TEXT)
+				) AS last_at,
 				(
 					SELECT COUNT(*) FROM chat_messages cm
 					LEFT JOIN chat_thread_reads r
@@ -209,10 +212,10 @@ func (s *Store) ListThreadsForUser(ctx context.Context, userID string) ([]Thread
 				Name:      r.Name,
 				IsPrivate: r.IsPrivate != 0,
 				CreatedBy: r.CreatedBy,
-				CreatedAt: r.CreatedAt,
+				CreatedAt: parseTime(r.CreatedAt),
 			},
 			LastMessage: r.LastMessage,
-			LastAt:      r.LastAt,
+			LastAt:      parseTime(r.LastAt),
 			UnreadCount: r.UnreadCount,
 		}
 		if r.Type == "direct" {
@@ -342,4 +345,21 @@ func boolToInt(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+// parseTime parses SQLite text timestamps in various formats.
+func parseTime(s string) time.Time {
+	formats := []string{
+		time.RFC3339Nano,
+		"2006-01-02 15:04:05.999999999-07:00",
+		"2006-01-02 15:04:05.999999999",
+		"2006-01-02 15:04:05",
+		"2006-01-02",
+	}
+	for _, f := range formats {
+		if t, err := time.Parse(f, s); err == nil {
+			return t
+		}
+	}
+	return time.Time{}
 }
