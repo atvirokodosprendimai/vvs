@@ -137,12 +137,19 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	sse.PatchElementTempl(CustomerTable(result))
 
-	// Live updates: patch individual row per NATS event
+	// Live updates: route by event type — delete removes the row, create/update patches it
 	for {
 		select {
 		case event, ok := <-ch:
 			if !ok {
 				return
+			}
+			if event.Type == "customer.deleted" {
+				sse.PatchElements("",
+					datastar.WithSelector("#customer-"+event.AggregateID),
+					datastar.WithMode(datastar.ElementPatchModeRemove),
+				)
+				continue
 			}
 			var rm queries.CustomerReadModel
 			if err := json.Unmarshal(event.Data, &rm); err != nil {

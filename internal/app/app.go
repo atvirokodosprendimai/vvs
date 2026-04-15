@@ -158,7 +158,7 @@ func New(cfg Config) (*App, error) {
 	routerRepo := networkpersistence.NewGormRouterRepository(gdb)
 	createRouterCmd := networkcommands.NewCreateRouterHandler(routerRepo, publisher)
 	updateRouterCmd := networkcommands.NewUpdateRouterHandler(routerRepo, publisher)
-	deleteRouterCmd := networkcommands.NewDeleteRouterHandler(routerRepo)
+	deleteRouterCmd := networkcommands.NewDeleteRouterHandler(routerRepo, publisher)
 	listRoutersQuery := networkqueries.NewListRoutersHandler(routerRepo)
 	getRouterQuery := networkqueries.NewGetRouterHandler(routerRepo)
 

@@ -112,12 +112,19 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	sse.PatchElementTempl(ProductTable(result))
 
-	// Live updates: patch individual row per NATS event — no re-query
+	// Live updates: route by event type — delete removes the row, create/update patches it
 	for {
 		select {
 		case event, ok := <-ch:
 			if !ok {
 				return
+			}
+			if event.Type == "product.deleted" {
+				sse.PatchElements("",
+					datastar.WithSelector("#product-"+event.AggregateID),
+					datastar.WithMode(datastar.ElementPatchModeRemove),
+				)
+				continue
 			}
 			var rm queries.ProductReadModel
 			if err := json.Unmarshal(event.Data, &rm); err != nil {

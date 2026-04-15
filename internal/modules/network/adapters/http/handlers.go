@@ -98,6 +98,13 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				return
 			}
+			if event.Type == "network.router.deleted" {
+				sse.PatchElements("",
+					datastar.WithSelector("#router-"+event.AggregateID),
+					datastar.WithMode(datastar.ElementPatchModeRemove),
+				)
+				continue
+			}
 			var rm queries.RouterReadModel
 			if err := json.Unmarshal(event.Data, &rm); err != nil {
 				continue
