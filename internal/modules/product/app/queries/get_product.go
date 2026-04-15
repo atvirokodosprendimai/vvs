@@ -3,6 +3,7 @@ package queries
 import (
 	"context"
 
+	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
 	"github.com/vvs/isp/internal/modules/product/domain"
 	"gorm.io/gorm"
 )
@@ -12,16 +13,19 @@ type GetProductQuery struct {
 }
 
 type GetProductHandler struct {
-	db *gorm.DB
+	db *gormsqlite.DB
 }
 
-func NewGetProductHandler(db *gorm.DB) *GetProductHandler {
+func NewGetProductHandler(db *gormsqlite.DB) *GetProductHandler {
 	return &GetProductHandler{db: db}
 }
 
-func (h *GetProductHandler) Handle(_ context.Context, q GetProductQuery) (*domain.Product, error) {
+func (h *GetProductHandler) Handle(ctx context.Context, q GetProductQuery) (*domain.Product, error) {
 	var model ProductReadModel
-	if err := h.db.Table("products").Where("id = ?", q.ID).First(&model).Error; err != nil {
+	err := h.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Table("products").Where("id = ?", q.ID).First(&model).Error
+	})
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, domain.ErrProductNotFound
 		}

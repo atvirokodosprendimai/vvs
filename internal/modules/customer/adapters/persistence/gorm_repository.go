@@ -4,24 +4,23 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/vvs/isp/internal/infrastructure/database"
+	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
 	"github.com/vvs/isp/internal/modules/customer/domain"
 	shareddomain "github.com/vvs/isp/internal/shared/domain"
 	"gorm.io/gorm"
 )
 
 type GormCustomerRepository struct {
-	writer *database.WriteSerializer
-	reader *gorm.DB
+	db *gormsqlite.DB
 }
 
-func NewGormCustomerRepository(writer *database.WriteSerializer, reader *gorm.DB) *GormCustomerRepository {
-	return &GormCustomerRepository{writer: writer, reader: reader}
+func NewGormCustomerRepository(db *gormsqlite.DB) *GormCustomerRepository {
+	return &GormCustomerRepository{db: db}
 }
 
 func (r *GormCustomerRepository) NextCode(ctx context.Context) (shareddomain.CompanyCode, error) {
 	var code shareddomain.CompanyCode
-	err := r.writer.Execute(ctx, func(tx *gorm.DB) error {
+	err := r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
 		var seq struct {
 			Prefix     string
 			LastNumber int
@@ -39,14 +38,17 @@ func (r *GormCustomerRepository) NextCode(ctx context.Context) (shareddomain.Com
 
 func (r *GormCustomerRepository) Save(ctx context.Context, customer *domain.Customer) error {
 	model := toModel(customer)
-	return r.writer.Execute(ctx, func(tx *gorm.DB) error {
+	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
 		return tx.Save(model).Error
 	})
 }
 
-func (r *GormCustomerRepository) FindByID(_ context.Context, id string) (*domain.Customer, error) {
+func (r *GormCustomerRepository) FindByID(ctx context.Context, id string) (*domain.Customer, error) {
 	var model CustomerModel
-	if err := r.reader.Where("id = ?", id).First(&model).Error; err != nil {
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("id = ?", id).First(&model).Error
+	})
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, domain.ErrCustomerNotFound
 		}
@@ -55,9 +57,12 @@ func (r *GormCustomerRepository) FindByID(_ context.Context, id string) (*domain
 	return toDomain(&model), nil
 }
 
-func (r *GormCustomerRepository) FindByCode(_ context.Context, code string) (*domain.Customer, error) {
+func (r *GormCustomerRepository) FindByCode(ctx context.Context, code string) (*domain.Customer, error) {
 	var model CustomerModel
-	if err := r.reader.Where("code = ?", code).First(&model).Error; err != nil {
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("code = ?", code).First(&model).Error
+	})
+	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, domain.ErrCustomerNotFound
 		}
@@ -66,40 +71,45 @@ func (r *GormCustomerRepository) FindByCode(_ context.Context, code string) (*do
 	return toDomain(&model), nil
 }
 
-func (r *GormCustomerRepository) FindAll(_ context.Context, filter domain.CustomerFilter, page shareddomain.Pagination) ([]*domain.Customer, int64, error) {
-	query := r.reader.Model(&CustomerModel{})
-
-	if filter.Search != "" {
-		search := "%" + filter.Search + "%"
-		query = query.Where("company_name LIKE ? OR code LIKE ? OR email LIKE ? OR contact_name LIKE ?",
-			search, search, search, search)
-	}
-	if filter.Status != "" {
-		query = query.Where("status = ?", filter.Status)
-	}
-
+func (r *GormCustomerRepository) FindAll(ctx context.Context, filter domain.CustomerFilter, page shareddomain.Pagination) ([]*domain.Customer, int64, error) {
+	var customers []*domain.Customer
 	var total int64
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
 
-	var models []CustomerModel
-	if err := query.Order("created_at DESC").
-		Offset(page.Offset()).Limit(page.PageSize).
-		Find(&models).Error; err != nil {
-		return nil, 0, err
-	}
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		query := tx.Model(&CustomerModel{})
 
-	customers := make([]*domain.Customer, len(models))
-	for i, m := range models {
-		customers[i] = toDomain(&m)
-	}
+		if filter.Search != "" {
+			search := "%" + filter.Search + "%"
+			query = query.Where("company_name LIKE ? OR code LIKE ? OR email LIKE ? OR contact_name LIKE ?",
+				search, search, search, search)
+		}
+		if filter.Status != "" {
+			query = query.Where("status = ?", filter.Status)
+		}
 
-	return customers, total, nil
+		if err := query.Count(&total).Error; err != nil {
+			return err
+		}
+
+		var models []CustomerModel
+		if err := query.Order("created_at DESC").
+			Offset(page.Offset()).Limit(page.PageSize).
+			Find(&models).Error; err != nil {
+			return err
+		}
+
+		customers = make([]*domain.Customer, len(models))
+		for i, m := range models {
+			customers[i] = toDomain(&m)
+		}
+		return nil
+	})
+
+	return customers, total, err
 }
 
 func (r *GormCustomerRepository) Delete(ctx context.Context, id string) error {
-	return r.writer.Execute(ctx, func(tx *gorm.DB) error {
+	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
 		return tx.Delete(&CustomerModel{}, "id = ?", id).Error
 	})
 }

@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
 	"github.com/vvs/isp/internal/modules/product/domain"
 	shareddomain "github.com/vvs/isp/internal/shared/domain"
-	"gorm.io/gorm"
 )
 
 type ListProductsQuery struct {
@@ -25,51 +25,55 @@ type ListProductsResult struct {
 }
 
 type ListProductsHandler struct {
-	db *gorm.DB
+	db *gormsqlite.DB
 }
 
-func NewListProductsHandler(db *gorm.DB) *ListProductsHandler {
+func NewListProductsHandler(db *gormsqlite.DB) *ListProductsHandler {
 	return &ListProductsHandler{db: db}
 }
 
-func (h *ListProductsHandler) Handle(_ context.Context, q ListProductsQuery) (ListProductsResult, error) {
+func (h *ListProductsHandler) Handle(ctx context.Context, q ListProductsQuery) (ListProductsResult, error) {
 	page := shareddomain.NewPagination(q.Page, q.PageSize)
 
-	query := h.db.Table("products")
+	var result ListProductsResult
+	err := h.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		query := tx.Table("products")
 
-	if q.Search != "" {
-		search := "%" + q.Search + "%"
-		query = query.Where("name LIKE ? OR description LIKE ?", search, search)
-	}
+		if q.Search != "" {
+			search := "%" + q.Search + "%"
+			query = query.Where("name LIKE ? OR description LIKE ?", search, search)
+		}
+		if q.Type != "" {
+			query = query.Where("type = ?", q.Type)
+		}
 
-	if q.Type != "" {
-		query = query.Where("type = ?", q.Type)
-	}
+		var total int64
+		if err := query.Count(&total).Error; err != nil {
+			return err
+		}
 
-	var total int64
-	if err := query.Count(&total).Error; err != nil {
-		return ListProductsResult{}, err
-	}
+		var models []ProductReadModel
+		if err := query.Order("created_at DESC").
+			Offset(page.Offset()).Limit(page.PageSize).
+			Find(&models).Error; err != nil {
+			return err
+		}
 
-	var models []ProductReadModel
-	if err := query.Order("created_at DESC").
-		Offset(page.Offset()).Limit(page.PageSize).
-		Find(&models).Error; err != nil {
-		return ListProductsResult{}, err
-	}
+		products := make([]*domain.Product, len(models))
+		for i, m := range models {
+			products[i] = m.ToDomain()
+		}
 
-	products := make([]*domain.Product, len(models))
-	for i, m := range models {
-		products[i] = m.ToDomain()
-	}
-
-	return ListProductsResult{
-		Products:   products,
-		Total:      total,
-		Page:       page.Page,
-		PageSize:   page.PageSize,
-		TotalPages: page.TotalPages(total),
-	}, nil
+		result = ListProductsResult{
+			Products:   products,
+			Total:      total,
+			Page:       page.Page,
+			PageSize:   page.PageSize,
+			TotalPages: page.TotalPages(total),
+		}
+		return nil
+	})
+	return result, err
 }
 
 type ProductReadModel struct {

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
 	"github.com/vvs/isp/internal/modules/customer/domain"
 	shareddomain "github.com/vvs/isp/internal/shared/domain"
-	"gorm.io/gorm"
 )
 
 type ListCustomersQuery struct {
@@ -26,52 +26,56 @@ type ListCustomersResult struct {
 }
 
 type ListCustomersHandler struct {
-	db *gorm.DB
+	db *gormsqlite.DB
 }
 
-func NewListCustomersHandler(db *gorm.DB) *ListCustomersHandler {
+func NewListCustomersHandler(db *gormsqlite.DB) *ListCustomersHandler {
 	return &ListCustomersHandler{db: db}
 }
 
-func (h *ListCustomersHandler) Handle(_ context.Context, q ListCustomersQuery) (ListCustomersResult, error) {
+func (h *ListCustomersHandler) Handle(ctx context.Context, q ListCustomersQuery) (ListCustomersResult, error) {
 	page := shareddomain.NewPagination(q.Page, q.PageSize)
 
-	query := h.db.Table("customers")
+	var result ListCustomersResult
+	err := h.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		query := tx.Table("customers")
 
-	if q.Search != "" {
-		search := "%" + q.Search + "%"
-		query = query.Where("company_name LIKE ? OR code LIKE ? OR email LIKE ? OR contact_name LIKE ?",
-			search, search, search, search)
-	}
+		if q.Search != "" {
+			search := "%" + q.Search + "%"
+			query = query.Where("company_name LIKE ? OR code LIKE ? OR email LIKE ? OR contact_name LIKE ?",
+				search, search, search, search)
+		}
+		if q.Status != "" {
+			query = query.Where("status = ?", q.Status)
+		}
 
-	if q.Status != "" {
-		query = query.Where("status = ?", q.Status)
-	}
+		var total int64
+		if err := query.Count(&total).Error; err != nil {
+			return err
+		}
 
-	var total int64
-	if err := query.Count(&total).Error; err != nil {
-		return ListCustomersResult{}, err
-	}
+		var models []CustomerReadModel
+		if err := query.Order("created_at DESC").
+			Offset(page.Offset()).Limit(page.PageSize).
+			Find(&models).Error; err != nil {
+			return err
+		}
 
-	var models []CustomerReadModel
-	if err := query.Order("created_at DESC").
-		Offset(page.Offset()).Limit(page.PageSize).
-		Find(&models).Error; err != nil {
-		return ListCustomersResult{}, err
-	}
+		customers := make([]*domain.Customer, len(models))
+		for i, m := range models {
+			customers[i] = m.ToDomain()
+		}
 
-	customers := make([]*domain.Customer, len(models))
-	for i, m := range models {
-		customers[i] = m.ToDomain()
-	}
-
-	return ListCustomersResult{
-		Customers:  customers,
-		Total:      total,
-		Page:       page.Page,
-		PageSize:   page.PageSize,
-		TotalPages: page.TotalPages(total),
-	}, nil
+		result = ListCustomersResult{
+			Customers:  customers,
+			Total:      total,
+			Page:       page.Page,
+			PageSize:   page.PageSize,
+			TotalPages: page.TotalPages(total),
+		}
+		return nil
+	})
+	return result, err
 }
 
 type CustomerReadModel struct {

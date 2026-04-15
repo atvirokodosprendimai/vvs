@@ -6,10 +6,10 @@ import (
 	"log"
 
 	"github.com/nats-io/nats.go"
-	"gorm.io/gorm"
 
 	natsserver "github.com/nats-io/nats-server/v2/server"
 	"github.com/vvs/isp/internal/infrastructure/database"
+	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
 	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
 	infranats "github.com/vvs/isp/internal/infrastructure/nats"
 	"github.com/vvs/isp/internal/shared/events"
@@ -47,35 +47,26 @@ import (
 )
 
 type App struct {
-	Writer     *database.WriteSerializer
+	DB         *gormsqlite.DB
 	NATSServer *natsserver.Server
 	NATSConn   *nats.Conn
 	Publisher  events.EventPublisher
 	Subscriber events.EventSubscriber
 	HTTPServer *infrahttp.Server
-	DB         *gorm.DB
-	Reader     *gorm.DB
 }
 
 func New(cfg Config) (*App, error) {
-	// 1. Database
-	db, err := database.OpenSQLite(cfg.DatabasePath)
+	// 1. Database — single gormsqlite.DB for the whole app
+	gdb, err := gormsqlite.Open(cfg.DatabasePath)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}
 
-	reader, err := database.OpenSQLiteReader(cfg.DatabasePath)
-	if err != nil {
-		return nil, fmt.Errorf("open reader database: %w", err)
-	}
-
 	// 2. Run migrations for ALL modules regardless of enabled flags
-	//    (schema must stay consistent even if a module is not serving routes)
-	sqlDB, err := db.DB()
+	sqlDB, err := gdb.W.DB()
 	if err != nil {
 		return nil, fmt.Errorf("get sql.DB: %w", err)
 	}
-
 	if err := database.RunModuleMigrations(sqlDB, []database.ModuleMigration{
 		{Name: "auth", FS: authmigrations.FS, TableName: "goose_auth"},
 		{Name: "customer", FS: customermigrations.FS, TableName: "goose_customer"},
@@ -85,10 +76,7 @@ func New(cfg Config) (*App, error) {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
 
-	// 3. Write serializer
-	writer := database.NewWriteSerializer(db)
-
-	// 4. NATS — embedded or external
+	// 3. NATS — embedded or external
 	var ns *natsserver.Server
 	var nc *nats.Conn
 	if cfg.NATSUrl != "" {
@@ -110,9 +98,9 @@ func New(cfg Config) (*App, error) {
 	publisher := infranats.NewPublisher(nc)
 	subscriber := infranats.NewSubscriber(nc)
 
-	// 5. Auth module — always wired (session middleware depends on it)
-	userRepo := authpersistence.NewGormUserRepository(writer, reader)
-	sessionRepo := authpersistence.NewGormSessionRepository(writer, reader)
+	// 4. Auth module — always wired (session middleware depends on it)
+	userRepo := authpersistence.NewGormUserRepository(gdb)
+	sessionRepo := authpersistence.NewGormSessionRepository(gdb)
 	loginCmd := authcommands.NewLoginHandler(userRepo, sessionRepo)
 	logoutCmd := authcommands.NewLogoutHandler(sessionRepo)
 	createUserCmd := authcommands.NewCreateUserHandler(userRepo)
@@ -127,17 +115,16 @@ func New(cfg Config) (*App, error) {
 		}
 	}
 
-	// Module routes collected here; only enabled modules are added
 	var moduleRoutes []infrahttp.ModuleRoutes
-	moduleRoutes = append(moduleRoutes, authRoutes) // auth always mounted
+	moduleRoutes = append(moduleRoutes, authRoutes)
 
-	// 6. Customer module
-	customerRepo := customerpersistence.NewGormCustomerRepository(writer, reader)
+	// 5. Customer module
+	customerRepo := customerpersistence.NewGormCustomerRepository(gdb)
 	createCustomerCmd := customercommands.NewCreateCustomerHandler(customerRepo, publisher)
 	updateCustomerCmd := customercommands.NewUpdateCustomerHandler(customerRepo, publisher)
 	deleteCustomerCmd := customercommands.NewDeleteCustomerHandler(customerRepo, publisher)
-	listCustomersQuery := customerqueries.NewListCustomersHandler(reader)
-	getCustomerQuery := customerqueries.NewGetCustomerHandler(reader)
+	listCustomersQuery := customerqueries.NewListCustomersHandler(gdb)
+	getCustomerQuery := customerqueries.NewGetCustomerHandler(gdb)
 
 	var customerRoutes *customerhttp.Handlers
 	if cfg.IsEnabled("customer") {
@@ -149,13 +136,13 @@ func New(cfg Config) (*App, error) {
 		log.Printf("module enabled: customer")
 	}
 
-	// 7. Product module
-	productRepo := productpersistence.NewGormProductRepository(writer, reader)
+	// 6. Product module
+	productRepo := productpersistence.NewGormProductRepository(gdb)
 	createProductCmd := productcommands.NewCreateProductHandler(productRepo, publisher)
 	updateProductCmd := productcommands.NewUpdateProductHandler(productRepo, publisher)
 	deleteProductCmd := productcommands.NewDeleteProductHandler(productRepo, publisher)
-	listProductsQuery := productqueries.NewListProductsHandler(reader)
-	getProductQuery := productqueries.NewGetProductHandler(reader)
+	listProductsQuery := productqueries.NewListProductsHandler(gdb)
+	getProductQuery := productqueries.NewGetProductHandler(gdb)
 
 	if cfg.IsEnabled("product") {
 		productRoutes := producthttp.NewHandlers(
@@ -166,8 +153,8 @@ func New(cfg Config) (*App, error) {
 		log.Printf("module enabled: product")
 	}
 
-	// 8. Network module
-	routerRepo := networkpersistence.NewGormRouterRepository(writer, reader)
+	// 7. Network module
+	routerRepo := networkpersistence.NewGormRouterRepository(gdb)
 	createRouterCmd := networkcommands.NewCreateRouterHandler(routerRepo, publisher)
 	updateRouterCmd := networkcommands.NewUpdateRouterHandler(routerRepo, publisher)
 	deleteRouterCmd := networkcommands.NewDeleteRouterHandler(routerRepo)
@@ -181,9 +168,8 @@ func New(cfg Config) (*App, error) {
 		)
 		moduleRoutes = append(moduleRoutes, networkRoutes)
 
-		// Customer form router dropdown (only when both modules are active)
 		if customerRoutes != nil {
-			customerRoutes.WithReader(reader)
+			customerRoutes.WithReader(gdb.R)
 		}
 
 		mikrotikClient := mikrotik.New()
@@ -204,8 +190,8 @@ func New(cfg Config) (*App, error) {
 		log.Printf("module enabled: network")
 	}
 
-	// 9. HTTP router
-	router := infrahttp.NewRouter(reader, getCurrentUserQuery, moduleRoutes...)
+	// 8. HTTP router — pass gdb.R to dashboard handler
+	router := infrahttp.NewRouter(gdb.R, getCurrentUserQuery, moduleRoutes...)
 	httpServer := infrahttp.NewServer(cfg.ListenAddr, router)
 
 	enabled := cfg.EnabledModules
@@ -215,14 +201,12 @@ func New(cfg Config) (*App, error) {
 	log.Printf("VVS ISP Manager initialized (db: %s, modules: %v)", cfg.DatabasePath, enabled)
 
 	return &App{
-		Writer:     writer,
+		DB:         gdb,
 		NATSServer: ns,
 		NATSConn:   nc,
 		Publisher:  publisher,
 		Subscriber: subscriber,
 		HTTPServer: httpServer,
-		DB:         db,
-		Reader:     reader,
 	}, nil
 }
 
@@ -232,7 +216,6 @@ func (a *App) Start() error {
 
 func (a *App) Shutdown(ctx context.Context) error {
 	err := a.HTTPServer.Shutdown(ctx)
-	a.Writer.Close()
 	if a.Subscriber != nil {
 		a.Subscriber.Close()
 	}
@@ -240,6 +223,7 @@ func (a *App) Shutdown(ctx context.Context) error {
 	if a.NATSServer != nil {
 		a.NATSServer.WaitForShutdown()
 	}
+	_ = a.DB.Close()
 	return err
 }
 

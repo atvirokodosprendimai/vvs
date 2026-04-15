@@ -1,6 +1,6 @@
 ---
 tldr: Restyle all UI from orange/gray-950 to cyan+lime accents on slate base — flatter, more professional
-status: active
+status: completed
 ---
 
 # Plan: UI Redesign — Cyan + Lime on Slate
@@ -65,15 +65,15 @@ Module templates:
 
 ## Phases
 
-### Phase 1 — Shared components + layout — status: open
+### Phase 1 — Shared components + layout — status: completed
 
-1. [ ] Restyle `layout.templ`
+1. [x] Restyle `layout.templ`
    - slate body + sidebar background
    - cyan nav hover/active accents
    - sidebar brand color: `text-cyan-400` instead of `text-orange-500`
    - clock/logout area: slate tones
 
-2. [ ] Restyle `components.templ`
+2. [x] Restyle `components.templ`
    - PageHeader: slate text
    - Card: slate bg + border, `rounded-lg` (was `rounded-xl`)
    - StatCard: cyan icon tint, slate bg
@@ -84,49 +84,42 @@ Module templates:
    - EmptyState: slate muted
    - Pagination: slate, cyan focus
 
-3. [ ] Restyle `dashboard.templ` — StatCard icon references (already uses shared StatCard)
-   - verify no inline orange refs
-   - `rounded-lg` for any inline containers
+3. [x] Restyle `dashboard.templ`
+   - => gap-3, smaller w-4 icons, section header uppercase tracking-wider
+4. [x] `templ generate` + `go build` — clean
 
-4. [ ] `templ generate` + `go build` — verify no compile errors
+### Phase 2 — Auth module — status: completed
 
-### Phase 2 — Auth module — status: open
+5. [x] Restyle `auth/adapters/http/templates.templ`
+   - => login: max-w-xs, slate card, cyan-400 brand, rounded inputs/button
+   - => users table: rounded-lg, roleBadge cyan for admin
+   - => modal: slate, rounded inputs
 
-5. [ ] Restyle `auth/adapters/http/templates.templ`
-   - login page: slate card, cyan button, cyan focus rings
-   - `rounded` buttons
+### Phase 3 — Customer module — status: completed
 
-### Phase 3 — Customer module — status: open
+6. [x] Restyle `customer/adapters/http/templates.templ`
+   - => table rounded-lg, lime active badge, cyan code mono, hover:slate-800/40
+   - => form max-w-xl gap-3 rounded, xs uppercase labels
+   - => detail xs labels, slate-200 values, em-dash empty, lime ARP enable button
+7. [x] `customer/adapters/http/fragments.templ` — rounded text-xs
 
-6. [ ] Restyle `customer/adapters/http/templates.templ`
-   - list page: slate table, cyan pagination, lime active badge
-   - form page: slate inputs, cyan submit button, `rounded` buttons
-   - detail page: slate fields, cyan edit button, ARP enable/disable buttons
-   - `rounded-lg` for table container
+### Phase 4 — Product module — status: completed
 
-7. [ ] Restyle `customer/adapters/http/fragments.templ`
-   - form error: keep red tone (matches danger)
+8. [x] Restyle `product/adapters/http/templates.templ`
+   - => cyan-400 price mono, rounded-lg table, lowercase badges, rounded forms
+9. [x] `product/adapters/http/fragments.templ` — rounded text-xs
 
-### Phase 4 — Product module — status: open
+### Phase 5 — Network module — status: completed
 
-8. [ ] Restyle `product/adapters/http/templates.templ`
-   - same pattern as customer
-   - mono price text: `text-cyan-400` (was `text-orange-400`)
+10. [x] Restyle `network/adapters/http/templates.templ`
+    - => cyan-400 host mono, rounded-lg table, rounded forms
+11. [x] `network/adapters/http/fragments.templ` — rounded text-xs
 
-9. [ ] Restyle `product/adapters/http/fragments.templ`
+### Phase 6 — Final build + verification — status: completed
 
-### Phase 5 — Network module — status: open
-
-10. [ ] Restyle `network/adapters/http/templates.templ`
-11. [ ] Restyle `network/adapters/http/fragments.templ`
-
-### Phase 6 — Final build + verification — status: open
-
-12. [ ] `templ generate ./...` — regenerate all `_templ.go` files
-13. [ ] `go build ./...` — clean build
-14. [ ] Browser smoke test: login → dashboard → customers → products → routers
-    - verify cyan accents, lime active badges, flat cards, professional look
-    - verify no orange remnants
+12. [x] `templ generate ./...` — all pass
+13. [x] `go build ./...` — clean build
+14. [x] Grep verified: zero `orange-`, `gray-9/8/7`, `rounded-xl` in any .templ file
 
 ## Verification
 
