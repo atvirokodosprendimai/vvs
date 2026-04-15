@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"reflect"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -126,33 +127,34 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	ch, cancel := h.subscriber.ChanSubscription("isp.customer.*")
 	defer cancel()
 
-	result, err := h.listQuery.Handle(r.Context(), queries.ListCustomersQuery{
+	q := queries.ListCustomersQuery{
 		Search:   signals.Search,
 		Page:     signals.Page,
 		PageSize: signals.PageSize,
-	})
+	}
+
+	// current is the server-side record of what FE has rendered
+	current, err := h.listQuery.Handle(r.Context(), q)
 	if err != nil {
 		sse.ConsoleError(err)
 		return
 	}
-	sse.PatchElementTempl(CustomerTable(result))
+	sse.PatchElementTempl(CustomerTable(current))
 
-	// Live updates: re-render full table on any event — Datastar morph handles add/update/delete
 	for {
 		select {
 		case _, ok := <-ch:
 			if !ok {
 				return
 			}
-			result, err = h.listQuery.Handle(r.Context(), queries.ListCustomersQuery{
-				Search:   signals.Search,
-				Page:     signals.Page,
-				PageSize: signals.PageSize,
-			})
+			next, err := h.listQuery.Handle(r.Context(), q)
 			if err != nil {
 				continue
 			}
-			sse.PatchElementTempl(CustomerTable(result))
+			if !reflect.DeepEqual(current, next) {
+				sse.PatchElementTempl(CustomerTable(next))
+				current = next
+			}
 		case <-r.Context().Done():
 			return
 		}

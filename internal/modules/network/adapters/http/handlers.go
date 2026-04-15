@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"reflect"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -84,25 +85,27 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	ch, cancel := h.subscriber.ChanSubscription("isp.network.router.*")
 	defer cancel()
 
-	routers, err := h.listQuery.Handle(r.Context())
+	current, err := h.listQuery.Handle(r.Context())
 	if err != nil {
 		sse.ConsoleError(err)
 		return
 	}
-	sse.PatchElementTempl(RouterTable(routers))
+	sse.PatchElementTempl(RouterTable(current))
 
-	// Live updates: re-render full table on any event — Datastar morph handles add/update/delete
 	for {
 		select {
 		case _, ok := <-ch:
 			if !ok {
 				return
 			}
-			routers, err = h.listQuery.Handle(r.Context())
+			next, err := h.listQuery.Handle(r.Context())
 			if err != nil {
 				continue
 			}
-			sse.PatchElementTempl(RouterTable(routers))
+			if !reflect.DeepEqual(current, next) {
+				sse.PatchElementTempl(RouterTable(next))
+				current = next
+			}
 		case <-r.Context().Done():
 			return
 		}

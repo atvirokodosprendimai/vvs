@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"reflect"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
@@ -99,35 +100,34 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	ch, cancel := h.subscriber.ChanSubscription("isp.product.*")
 	defer cancel()
 
-	result, err := h.listQuery.Handle(r.Context(), queries.ListProductsQuery{
+	q := queries.ListProductsQuery{
 		Search:   signals.Search,
 		Type:     signals.Type,
 		Page:     signals.Page,
 		PageSize: signals.PageSize,
-	})
+	}
+
+	current, err := h.listQuery.Handle(r.Context(), q)
 	if err != nil {
 		sse.ConsoleError(err)
 		return
 	}
-	sse.PatchElementTempl(ProductTable(result))
+	sse.PatchElementTempl(ProductTable(current))
 
-	// Live updates: re-render full table on any event — Datastar morph handles add/update/delete
 	for {
 		select {
 		case _, ok := <-ch:
 			if !ok {
 				return
 			}
-			result, err = h.listQuery.Handle(r.Context(), queries.ListProductsQuery{
-				Search:   signals.Search,
-				Type:     signals.Type,
-				Page:     signals.Page,
-				PageSize: signals.PageSize,
-			})
+			next, err := h.listQuery.Handle(r.Context(), q)
 			if err != nil {
 				continue
 			}
-			sse.PatchElementTempl(ProductTable(result))
+			if !reflect.DeepEqual(current, next) {
+				sse.PatchElementTempl(ProductTable(next))
+				current = next
+			}
 		case <-r.Context().Done():
 			return
 		}
