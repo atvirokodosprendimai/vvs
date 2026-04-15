@@ -1,6 +1,6 @@
 ---
 tldr: Events carry full read-model payload; SSE handlers subscribe and patch individual rows — no re-query on live update
-status: active
+status: completed
 ---
 
 # NATS Per-Item Event Payload Streaming
@@ -53,11 +53,11 @@ Currently `listSSE` renders once (no NATS live updates at all). Commands publish
    - exits on `r.Context().Done()` (client disconnect)
    - => no re-query on live update path
 
-### Phase 4 — Rollout to other modules — status: open
+### Phase 4 — Rollout to other modules — status: completed
 
-9. [ ] Customer module — same pattern: json tags on read model, `domainToReadModel`, publish full model, listSSE stays alive
-10. [ ] Product module
-11. [ ] Recurring module
+9. [x] Customer module — json tags on `CustomerReadModel`, `domainToReadModel`, all commands publish full model, listSSE subscribes to `isp.customer.*`
+10. [x] Product module — same; json tags on `ProductReadModel`
+11. [x] Recurring module — `RecurringFullReadModel` (with `Lines []RecurringLineReadModel`) for payload so `Total()` works in row; toggle command also updated
 
 ## Verification
 
@@ -70,3 +70,4 @@ Currently `listSSE` renders once (no NATS live updates at all). Commands publish
 
 - 2604150940 — Plan created; spec [[spec - nats - per item event payload streaming]] written first
 - 2604151100 — Phase 1-3 complete: ChanSubscriptionOf[T], full read model events, live listSSE for invoice
+- 2604151130 — Phase 4 complete: customer, product, recurring rolled out; all listSSE handlers live
