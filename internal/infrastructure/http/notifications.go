@@ -1,6 +1,7 @@
 package http
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/starfederation/datastar-go/datastar"
@@ -62,7 +63,8 @@ func (h *NotifHandler) markRead(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.MarkAllRead(r.Context(), user.ID); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("markRead: MarkAllRead: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -72,8 +74,14 @@ func (h *NotifHandler) markRead(w http.ResponseWriter, r *http.Request) {
 
 // patch queries the DB and sends badge + list updates to the client.
 func (h *NotifHandler) patch(r *http.Request, sse *datastar.ServerSentEventGenerator, userID string) {
-	count, _ := h.store.UnreadCount(r.Context(), userID)
-	notifs, _ := h.store.List(r.Context(), userID, notifListLimit)
+	count, err := h.store.UnreadCount(r.Context(), userID)
+	if err != nil {
+		log.Printf("notif patch: UnreadCount: %v", err)
+	}
+	notifs, err := h.store.List(r.Context(), userID, notifListLimit)
+	if err != nil {
+		log.Printf("notif patch: List: %v", err)
+	}
 	sse.PatchElementTempl(NotifBadge(count))
 	sse.PatchElementTempl(NotifList(notifs))
 }

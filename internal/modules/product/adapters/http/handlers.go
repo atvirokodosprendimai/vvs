@@ -1,6 +1,7 @@
 package http
 
 import (
+	"log"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -87,7 +88,8 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		PageSize int    `json:"pageSize"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("handler: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	sse := datastar.NewSSE(w, r)
@@ -109,7 +111,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 
 	current, err := h.listQuery.Handle(r.Context(), q)
 	if err != nil {
-		sse.ConsoleError(err)
+		log.Printf("handler error: %v", err)
 		return
 	}
 	sse.PatchElementTempl(ProductTable(current))
@@ -144,7 +146,8 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		BillingPeriod string `json:"billingPeriod"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("handler: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	sse := datastar.NewSSE(w, r)
@@ -188,7 +191,8 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		BillingPeriod string `json:"billingPeriod"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("handler: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	sse := datastar.NewSSE(w, r)
@@ -227,7 +231,7 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 
 	err := h.deleteCmd.Handle(r.Context(), commands.DeleteProductCommand{ID: id})
 	if err != nil {
-		sse.ConsoleError(err)
+		log.Printf("handler error: %v", err)
 		return
 	}
 

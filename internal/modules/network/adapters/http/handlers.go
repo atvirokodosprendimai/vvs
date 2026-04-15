@@ -1,6 +1,7 @@
 package http
 
 import (
+	"log"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -87,7 +88,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 
 	current, err := h.listQuery.Handle(r.Context())
 	if err != nil {
-		sse.ConsoleError(err)
+		log.Printf("handler error: %v", err)
 		return
 	}
 	sse.PatchElementTempl(RouterTable(current))
@@ -123,7 +124,8 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		Notes      string `json:"notes"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("handler: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	sse := datastar.NewSSE(w, r)
@@ -159,7 +161,8 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		Notes      string `json:"notes"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("handler: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	sse := datastar.NewSSE(w, r)
@@ -188,7 +191,7 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	if err := h.deleteCmd.Handle(r.Context(), id); err != nil {
-		sse.ConsoleError(err)
+		log.Printf("handler error: %v", err)
 		return
 	}
 	sse.Redirect("/routers")

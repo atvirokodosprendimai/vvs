@@ -3,6 +3,7 @@ package http
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -61,7 +62,8 @@ func (h *Handlers) loginSSE(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("loginSSE: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
@@ -129,7 +131,7 @@ func (h *Handlers) listUsersSSE(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.listUsersQuery.Handle(r.Context())
 	if err != nil {
-		sse.ConsoleError(err)
+		log.Printf("listUsersSSE: %v", err)
 		return
 	}
 	sse.PatchElementTempl(UserTable(rows, currentID))
@@ -148,7 +150,8 @@ func (h *Handlers) createUserSSE(w http.ResponseWriter, r *http.Request) {
 		NewRole     string `json:"newRole"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("createUserSSE: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	sse := datastar.NewSSE(w, r)
@@ -165,7 +168,7 @@ func (h *Handlers) createUserSSE(w http.ResponseWriter, r *http.Request) {
 
 	rows, err := h.listUsersQuery.Handle(r.Context())
 	if err != nil {
-		sse.ConsoleError(err)
+		log.Printf("createUserSSE: listUsersQuery: %v", err)
 		return
 	}
 	currentID := ""
@@ -184,20 +187,19 @@ func (h *Handlers) deleteUserSSE(w http.ResponseWriter, r *http.Request) {
 
 	id := chi.URLParam(r, "id")
 	if id == current.ID {
-		sse := datastar.NewSSE(w, r)
-		sse.ConsoleError(nil)
+		http.Error(w, "cannot delete own account", http.StatusBadRequest)
 		return
 	}
 
 	sse := datastar.NewSSE(w, r)
 	if err := h.deleteUserCmd.Handle(r.Context(), commands.DeleteUserCommand{ID: id}); err != nil {
-		sse.ConsoleError(err)
+		log.Printf("deleteUserSSE: deleteUserCmd: %v", err)
 		return
 	}
 
 	rows, err := h.listUsersQuery.Handle(r.Context())
 	if err != nil {
-		sse.ConsoleError(err)
+		log.Printf("deleteUserSSE: listUsersQuery: %v", err)
 		return
 	}
 	sse.PatchElementTempl(UserTable(rows, current.ID))

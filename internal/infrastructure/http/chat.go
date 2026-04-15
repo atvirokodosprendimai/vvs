@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"reflect"
 	"strings"
@@ -38,20 +39,15 @@ func (h *ChatHandler) chatPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
-	_ = h.store.EnsurePublicMembership(r.Context(), user.ID)
-	threadID := r.URL.Query().Get("thread")
-	threads, _ := h.store.ListThreadsForUser(r.Context(), user.ID)
-	ChatPage(threads, user.ID, threadID).Render(r.Context(), w)
-}
-
-// chatSSE is the widget SSE — always streams the #general thread.
-func (h *ChatHandler) chatSSE(w http.ResponseWriter, r *http.Request) {
-	user := authhttp.UserFromContext(r.Context())
-	if user == nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
+	if err := h.store.EnsurePublicMembership(r.Context(), user.ID); err != nil {
+		log.Printf("chatPage: EnsurePublicMembership: %v", err)
 	}
-	h.streamMessages(w, r, "general", user.ID)
+	threadID := r.URL.Query().Get("thread")
+	threads, err := h.store.ListThreadsForUser(r.Context(), user.ID)
+	if err != nil {
+		log.Printf("chatPage: ListThreadsForUser: %v", err)
+	}
+	ChatPage(threads, user.ID, threadID).Render(r.Context(), w)
 }
 
 // threadMessagesSSE streams messages for a specific thread (used by /chat page).
@@ -70,12 +66,17 @@ func (h *ChatHandler) threadMessagesSSE(w http.ResponseWriter, r *http.Request) 
 	// For public channels, auto-join on first access.
 	member, err := h.store.IsMember(r.Context(), threadID, user.ID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("threadMessagesSSE: IsMember: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 	if !member {
-		// Check if it's a public channel; if so, add as member.
-		channels, _ := h.store.ListPublicChannels(r.Context())
+		channels, err := h.store.ListPublicChannels(r.Context())
+		if err != nil {
+			log.Printf("threadMessagesSSE: ListPublicChannels: %v", err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
 		isPublic := false
 		for _, c := range channels {
 			if c.ID == threadID {
@@ -87,11 +88,15 @@ func (h *ChatHandler) threadMessagesSSE(w http.ResponseWriter, r *http.Request) 
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
-		_ = h.store.AddMember(r.Context(), threadID, user.ID)
+		if err := h.store.AddMember(r.Context(), threadID, user.ID); err != nil {
+			log.Printf("threadMessagesSSE: AddMember: %v", err)
+		}
 	}
 
 	// Mark thread as read on connect and notify threadsSSE to refresh badge.
-	if err := h.store.MarkRead(r.Context(), threadID, user.ID); err == nil {
+	if err := h.store.MarkRead(r.Context(), threadID, user.ID); err != nil {
+		log.Printf("threadMessagesSSE: MarkRead: %v", err)
+	} else {
 		h.publisher.Publish(r.Context(), "isp.chat.read."+threadID, events.DomainEvent{
 			ID:          uuid.Must(uuid.NewV7()).String(),
 			Type:        "chat.read",
@@ -110,7 +115,10 @@ func (h *ChatHandler) streamMessages(w http.ResponseWriter, r *http.Request, thr
 	ch, cancel := h.subscriber.ChanSubscription("isp.chat.message." + threadID)
 	defer cancel()
 
-	msgs, _ := h.store.Recent(r.Context(), threadID, chatHistoryLimit)
+	msgs, err := h.store.Recent(r.Context(), threadID, chatHistoryLimit)
+	if err != nil {
+		log.Printf("streamMessages: Recent: %v", err)
+	}
 	sse.PatchElementTempl(ChatMessages(msgs, userID))
 	scrollToBottom(sse)
 
@@ -122,6 +130,7 @@ func (h *ChatHandler) streamMessages(w http.ResponseWriter, r *http.Request, thr
 			}
 			var msg chat.Message
 			if err := json.Unmarshal(event.Data, &msg); err != nil {
+				log.Printf("streamMessages: unmarshal event: %v", err)
 				continue
 			}
 			var buf bytes.Buffer
@@ -145,7 +154,9 @@ func (h *ChatHandler) threadsSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = h.store.EnsurePublicMembership(r.Context(), user.ID)
+	if err := h.store.EnsurePublicMembership(r.Context(), user.ID); err != nil {
+		log.Printf("threadsSSE: EnsurePublicMembership: %v", err)
+	}
 
 	sse := datastar.NewSSE(w, r)
 
@@ -153,7 +164,10 @@ func (h *ChatHandler) threadsSSE(w http.ResponseWriter, r *http.Request) {
 	ch, cancel := h.subscriber.ChanSubscription("isp.chat.>")
 	defer cancel()
 
-	current, _ := h.store.ListThreadsForUser(r.Context(), user.ID)
+	current, err := h.store.ListThreadsForUser(r.Context(), user.ID)
+	if err != nil {
+		log.Printf("threadsSSE: ListThreadsForUser: %v", err)
+	}
 	sse.PatchElementTempl(ChatThreadList(current, user.ID))
 
 	for {
@@ -165,10 +179,13 @@ func (h *ChatHandler) threadsSSE(w http.ResponseWriter, r *http.Request) {
 			// Only re-ensure membership when a new thread is created (avoids write
 			// contention on the single SQLite writer for every chat message).
 			if event.Type == "chat.thread.created" {
-				_ = h.store.EnsurePublicMembership(r.Context(), user.ID)
+				if err := h.store.EnsurePublicMembership(r.Context(), user.ID); err != nil {
+					log.Printf("threadsSSE: EnsurePublicMembership: %v", err)
+				}
 			}
 			next, err := h.store.ListThreadsForUser(r.Context(), user.ID)
 			if err != nil {
+				log.Printf("threadsSSE: ListThreadsForUser: %v", err)
 				continue
 			}
 			if !reflect.DeepEqual(current, next) {
@@ -194,7 +211,8 @@ func (h *ChatHandler) chatSend(w http.ResponseWriter, r *http.Request) {
 		ThreadID string `json:"threadid"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("chatSend: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
@@ -218,7 +236,8 @@ func (h *ChatHandler) chatSend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.store.Save(r.Context(), msg); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("chatSend: Save: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -246,7 +265,8 @@ func (h *ChatHandler) createDirect(w http.ResponseWriter, r *http.Request) {
 		TargetUserID string `json:"targetuserid"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("createDirect: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	if signals.TargetUserID == "" || signals.TargetUserID == user.ID {
@@ -263,11 +283,16 @@ func (h *ChatHandler) createDirect(w http.ResponseWriter, r *http.Request) {
 			CreatedAt: time.Now().UTC(),
 		}
 		if err := h.store.CreateThread(r.Context(), thread); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("createDirect: CreateThread: %v", err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
-		_ = h.store.AddMember(r.Context(), thread.ID, user.ID)
-		_ = h.store.AddMember(r.Context(), thread.ID, signals.TargetUserID)
+		if err := h.store.AddMember(r.Context(), thread.ID, user.ID); err != nil {
+			log.Printf("createDirect: AddMember (self): %v", err)
+		}
+		if err := h.store.AddMember(r.Context(), thread.ID, signals.TargetUserID); err != nil {
+			log.Printf("createDirect: AddMember (target): %v", err)
+		}
 		h.publisher.Publish(r.Context(), "isp.chat.thread.created", events.DomainEvent{
 			ID:          uuid.Must(uuid.NewV7()).String(),
 			Type:        "chat.thread.created",
@@ -275,7 +300,8 @@ func (h *ChatHandler) createDirect(w http.ResponseWriter, r *http.Request) {
 			OccurredAt:  thread.CreatedAt,
 		})
 	} else if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("createDirect: FindDirectThread: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -296,7 +322,8 @@ func (h *ChatHandler) createChannel(w http.ResponseWriter, r *http.Request) {
 		IsPrivate   bool   `json:"isprivate"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("createChannel: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	name := strings.TrimSpace(signals.ChannelName)
@@ -314,10 +341,13 @@ func (h *ChatHandler) createChannel(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: time.Now().UTC(),
 	}
 	if err := h.store.CreateThread(r.Context(), thread); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("createChannel: CreateThread: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	_ = h.store.AddMember(r.Context(), thread.ID, user.ID)
+	if err := h.store.AddMember(r.Context(), thread.ID, user.ID); err != nil {
+		log.Printf("createChannel: AddMember: %v", err)
+	}
 
 	h.publisher.Publish(r.Context(), "isp.chat.thread.created", events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
@@ -339,7 +369,12 @@ func (h *ChatHandler) addMember(w http.ResponseWriter, r *http.Request) {
 	}
 
 	threadID := chi.URLParam(r, "threadID")
-	member, _ := h.store.IsMember(r.Context(), threadID, user.ID)
+	member, err := h.store.IsMember(r.Context(), threadID, user.ID)
+	if err != nil {
+		log.Printf("addMember: IsMember: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
 	if !member {
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
@@ -349,11 +384,13 @@ func (h *ChatHandler) addMember(w http.ResponseWriter, r *http.Request) {
 		UserID string `json:"userid"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("addMember: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	if err := h.store.AddMember(r.Context(), threadID, signals.UserID); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("addMember: AddMember: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -367,7 +404,9 @@ func (h *ChatHandler) markRead(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	threadID := chi.URLParam(r, "threadID")
-	_ = h.store.MarkRead(r.Context(), threadID, user.ID)
+	if err := h.store.MarkRead(r.Context(), threadID, user.ID); err != nil {
+		log.Printf("markRead: %v", err)
+	}
 	w.WriteHeader(http.StatusNoContent)
 }
 

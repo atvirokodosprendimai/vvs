@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -46,7 +47,10 @@ func (h *GlobalHandler) globalSSE(w http.ResponseWriter, r *http.Request) {
 	// Initial state
 	sse.PatchElementTempl(ClockFragment(time.Now().Format("15:04:05")))
 	h.sendNotif(r, sse, user.ID)
-	msgs, _ := h.chatStore.Recent(r.Context(), "general", chatHistoryLimit)
+	msgs, err := h.chatStore.Recent(r.Context(), "general", chatHistoryLimit)
+	if err != nil {
+		log.Printf("globalSSE: Recent: %v", err)
+	}
 	sse.PatchElementTempl(ChatWidgetMessages(msgs, user.ID))
 	widgetScrollToBottom(sse)
 
@@ -83,8 +87,14 @@ func (h *GlobalHandler) globalSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *GlobalHandler) sendNotif(r *http.Request, sse *datastar.ServerSentEventGenerator, userID string) {
-	count, _ := h.notifStore.UnreadCount(r.Context(), userID)
-	notifs, _ := h.notifStore.List(r.Context(), userID, notifListLimit)
+	count, err := h.notifStore.UnreadCount(r.Context(), userID)
+	if err != nil {
+		log.Printf("globalSSE: UnreadCount: %v", err)
+	}
+	notifs, err := h.notifStore.List(r.Context(), userID, notifListLimit)
+	if err != nil {
+		log.Printf("globalSSE: List notifications: %v", err)
+	}
 	sse.PatchElementTempl(NotifBadge(count))
 	sse.PatchElementTempl(NotifList(notifs))
 }

@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"reflect"
 	"time"
@@ -114,7 +115,8 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		PageSize int    `json:"pageSize"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("handler: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	sse := datastar.NewSSE(w, r)
@@ -136,7 +138,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	// current is the server-side record of what FE has rendered
 	current, err := h.listQuery.Handle(r.Context(), q)
 	if err != nil {
-		sse.ConsoleError(err)
+		log.Printf("handler error: %v", err)
 		return
 	}
 	sse.PatchElementTempl(CustomerTable(current))
@@ -169,7 +171,8 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		Phone       string `json:"phone"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("handler: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	sse := datastar.NewSSE(w, r)
@@ -207,7 +210,8 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		MACAddress  string `json:"macAddress"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("handler: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 	sse := datastar.NewSSE(w, r)
@@ -242,7 +246,7 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 
 	err := h.deleteCmd.Handle(r.Context(), commands.DeleteCustomerCommand{ID: id})
 	if err != nil {
-		sse.ConsoleError(err)
+		log.Printf("handler error: %v", err)
 		return
 	}
 
@@ -259,7 +263,8 @@ func (h *Handlers) arpSSE(w http.ResponseWriter, r *http.Request) {
 		Action string `json:"arpAction"` // "enable" | "disable"
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Printf("handler: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
