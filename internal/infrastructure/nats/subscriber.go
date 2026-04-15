@@ -63,6 +63,33 @@ func (s *Subscriber) ChanSubscription(subject string) (<-chan events.DomainEvent
 	return ch, cancel
 }
 
+// ChanSubscriptionOf subscribes to subject and returns a typed channel of T plus
+// a cancel func. event.Data (not the DomainEvent envelope) is unmarshalled into T.
+// The caller MUST call cancel when done (e.g. defer cancel() in SSE handlers).
+// Wildcard subjects (e.g. "isp.invoice.*") are supported.
+func ChanSubscriptionOf[T any](s *Subscriber, subject string) (<-chan T, func()) {
+	ch := make(chan T, 16)
+	sub, _ := s.nc.Subscribe(subject, func(msg *nats.Msg) {
+		var event events.DomainEvent
+		if err := json.Unmarshal(msg.Data, &event); err != nil {
+			return
+		}
+		var item T
+		if err := json.Unmarshal(event.Data, &item); err != nil {
+			return
+		}
+		select {
+		case ch <- item:
+		default: // drop if consumer is slow
+		}
+	})
+	cancel := func() {
+		_ = sub.Unsubscribe()
+		close(ch)
+	}
+	return ch, cancel
+}
+
 func (s *Subscriber) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
