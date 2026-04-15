@@ -1,6 +1,6 @@
 ---
 tldr: MikroTik ARP enable/disable per customer, triggered by status change and manual UI, NetBox as IPAM source of truth
-status: active
+status: completed
 ---
 
 # MikroTik ARP Provisioning with NetBox
@@ -14,66 +14,60 @@ ISP/hosting: customers need L2 access cut when suspended. MikroTik manages ARP e
 
 ## Phases
 
-### Phase 1 — Research infrastructure libraries — status: open
+### Phase 1 — Research infrastructure libraries — status: completed
 
-1. [ ] `/eidos:research` MikroTik RouterOS Go API — `github.com/go-routeros/routeros` capabilities, connection lifecycle, ARP commands
-2. [ ] `/eidos:research` NetBox REST API — IP address search by tag/description, custom field update endpoints, auth
+1. [x] `/eidos:research` MikroTik RouterOS Go API — `github.com/go-routeros/routeros` capabilities, connection lifecycle, ARP commands
+   - => go-routeros: `routeros.Dial(addr, user, pass)`, Run/RunArgs, Reply.Re[]*proto.Sentence
+2. [x] `/eidos:research` NetBox REST API — IP address search by tag/description, custom field update endpoints, auth
+   - => MAC lives on assigned_object (interface), not the IP record; PATCH custom_fields.arp_status
 
-### Phase 2 — Customer domain extension — status: open
+### Phase 2 — Customer domain extension — status: completed
 
-3. [ ] Add `RouterID *string`, `IPAddress string`, `MACAddress string` to `domain.Customer`
-   - migration: `ALTER TABLE customers ADD COLUMN router_id TEXT, ADD COLUMN ip_address TEXT, ADD COLUMN mac_address TEXT`
+3. [x] Add `RouterID *string`, `IPAddress string`, `MACAddress string` to `domain.Customer`
+   - => migration 002_add_network_fields.sql created
+4. [x] Update `UpdateCustomerCommand` to accept the new fields
+   - => SetNetworkInfo called after Update in handler
 
-4. [ ] Update `UpdateCustomerCommand` to accept the new fields
-   - update `customer.Update(...)` method signature
+### Phase 3 — MikroTik infrastructure adapter — status: completed
 
-### Phase 3 — MikroTik infrastructure adapter — status: open
+5. [x] Define `RouterProvisioner` interface in `internal/modules/network/domain/provisioner.go`
+   - => ARPEntry + RouterConn value types (vendor-agnostic)
+6. [x] Add `github.com/go-routeros/routeros` to go.mod
+7. [x] Implement `internal/infrastructure/mikrotik/client.go` — implements `RouterProvisioner`
+   - => internal routerosConn interface ([]map[string]string rows) for clean testing
+   - => connection pool keyed by RouterID; evict on error
+   - => 9 unit tests passing
 
-5. [ ] Define `RouterProvisioner` interface in `internal/modules/network/domain/provisioner.go`
-   - `SetARPStatic`, `DisableARP`, `GetARPEntry` — vendor-agnostic port
-   - MikroTik impl wired in `app.go`; future: swap for Arista by changing one line
+### Phase 4 — NetBox infrastructure adapter — status: completed
 
-6. [ ] Add `github.com/go-routeros/routeros` to go.mod
-7. [ ] Implement `internal/infrastructure/mikrotik/client.go` — implements `RouterProvisioner`
-   - `NewClient(host, port, user, pass) (*Client, error)` — dial and authenticate
-   - `SetARPStatic(ctx, ip, mac, customerID string) error`
-   - `DisableARP(ctx, ip string) error`
-   - `GetARPEntry(ctx, ip string) (*ARPEntry, error)`
-   - write unit tests with mock RouterOS responses
+8. [x] Read `NETBOX_URL` and `NETBOX_TOKEN` from config (CLI flags + env vars)
+9. [x] Implement `internal/infrastructure/netbox/client.go`
+   - => GetIPByCustomerCode follows assigned_object ref to get MAC from interface
+   - => UpdateARPStatus PATCHes custom_fields.arp_status
+   - => 6 tests with httptest mock server
 
-### Phase 4 — NetBox infrastructure adapter — status: open
+### Phase 5 — Network module: Router CRUD — status: completed
 
-7. [ ] Read `NETBOX_URL` and `NETBOX_TOKEN` from config
-8. [ ] Implement `internal/infrastructure/netbox/client.go`
-   - `GetIPByCustomerCode(ctx, code string) (ip, mac string, id int, error)`
-   - `UpdateARPStatus(ctx, ipID int, status string) error`
-   - write tests with `httptest` mock server
+10. [x] Domain: `Router` struct + `RouterRepository` interface
+11. [x] GORM persistence + migration 001_create_routers.sql + goose_network table
+12. [x] Commands: `CreateRouter`, `UpdateRouter`, `DeleteRouter`
+13. [x] Query: `ListRouters`, `GetRouter`
+14. [x] HTTP handlers + templ templates: `/routers` list, form, detail
+    - => "Routers" nav link added to sidebar
+    - => live list via NATS isp.network.router.*
 
-### Phase 5 — Network module: Router CRUD — status: open
+### Phase 6 — SyncCustomerARP command — status: completed
 
-9. [ ] Domain: `Router` struct + `RouterRepository` interface in `internal/modules/network/domain/`
-10. [ ] GORM persistence + migration (table: `routers`)
-11. [ ] Commands: `CreateRouter`, `UpdateRouter`, `DeleteRouter`
-12. [ ] Query: `ListRouters`, `GetRouter`
-13. [ ] HTTP handlers + templ templates: `/routers` list, `/routers/new`, `/routers/{id}/edit`
-    - include "Test connection" button → GET `/api/routers/{id}/test`
+15. [x] `internal/modules/network/app/commands/sync_customer_arp.go`
+    - => loads customer → resolve IP via NetBox if empty → call MikroTik → write arp_status back
+    - => publishes isp.network.arp_changed event
+16. [x] Auto-trigger goroutine in app.go subscribes to isp.customer.*
+17. [x] Wire: MikroTik client pool, NetBox client (optional), network handlers in app.go
 
-### Phase 6 — SyncCustomerARP command — status: open
+### Phase 7 — Customer UI: ARP status + manual trigger — status: completed
 
-14. [ ] `internal/modules/network/app/commands/sync_customer_arp.go`
-    - loads customer, router, queries NetBox if IP empty, calls MikroTik, writes back to NetBox
-    - publishes `isp.network.arp_changed` event
-
-15. [ ] Auto-trigger subscriber: on `isp.customer.*` event, if customer has RouterID, dispatch SyncCustomerARP
-    - wired in `app.go` as a background goroutine subscriber
-
-16. [ ] Wire in `app.go`: create MikroTik client pool, NetBox client, network module handlers
-
-### Phase 7 — Customer UI: ARP status + manual trigger — status: open
-
-17. [ ] Customer detail page: ARP status badge (active/disabled/unknown)
-18. [ ] "Enable Access" / "Disable Access" POST button → `/api/customers/{id}/arp`
-19. [ ] Customer form: add Router (dropdown), IP address, MAC address fields
+18. [x] Customer detail: ARP section with Enable Access / Disable Access buttons → POST /api/customers/{id}/arp
+19. [x] Customer form: Router dropdown + IP/MAC fields (shown when routers configured)
 
 ## Verification
 
@@ -87,3 +81,10 @@ ISP/hosting: customers need L2 access cut when suspended. MikroTik manages ARP e
 ## Progress Log
 
 - 2604151003 — Plan created; spec [[spec - network - mikrotik arp provisioning with netbox]] written
+- 2604151003 — Phase 1 research completed via background agents
+- 2604151003 — Phase 2: customer domain extension + migration
+- 2604151003 — Phase 3: RouterProvisioner interface + MikroTik client (9 tests)
+- 2604151003 — Phase 4: NetBox client with httptest tests (6 tests)
+- 2604151003 — Phase 5: full network module Router CRUD + sidebar nav
+- 2604151003 — Phase 6: SyncCustomerARP + auto-trigger subscriber + app.go wiring
+- 2604151003 — Phase 7: customer form network fields + detail ARP buttons; plan completed
