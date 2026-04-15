@@ -106,6 +106,7 @@ func New(cfg Config) (*App, error) {
 		createCustomerCmd, updateCustomerCmd, deleteCustomerCmd,
 		listCustomersQuery, getCustomerQuery, subscriber,
 	)
+	// Network provisioning injected after routers are wired (below)
 
 	// 6. Wire Product module
 	productRepo := productpersistence.NewGormProductRepository(writer, reader)
@@ -163,6 +164,9 @@ func New(cfg Config) (*App, error) {
 	syncARPCmd := networkcommands.NewSyncCustomerARPHandler(
 		customerRepo, routerRepo, mikrotikClient, ipamProvider, publisher,
 	)
+
+	// Inject network provisioning into customer handlers
+	customerRoutes.WithNetworkProvisioning(listRoutersQuery, syncARPCmd)
 
 	// Auto-trigger: subscribe to isp.customer.* — on status change, sync ARP
 	go runCustomerARPSubscriber(context.Background(), subscriber, syncARPCmd)

@@ -8,6 +8,8 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 	"github.com/vvs/isp/internal/modules/customer/app/commands"
 	"github.com/vvs/isp/internal/modules/customer/app/queries"
+	networkcommands "github.com/vvs/isp/internal/modules/network/app/commands"
+	networkqueries "github.com/vvs/isp/internal/modules/network/app/queries"
 	"github.com/vvs/isp/internal/shared/events"
 )
 
@@ -18,6 +20,9 @@ type Handlers struct {
 	listQuery  *queries.ListCustomersHandler
 	getQuery   *queries.GetCustomerHandler
 	subscriber events.EventSubscriber
+	// Network provisioning (optional — nil = no ARP management)
+	routerList *networkqueries.ListRoutersHandler
+	arpCmd     *networkcommands.SyncCustomerARPHandler
 }
 
 func NewHandlers(
@@ -38,6 +43,16 @@ func NewHandlers(
 	}
 }
 
+// WithNetworkProvisioning injects the router list + ARP sync command.
+func (h *Handlers) WithNetworkProvisioning(
+	routerList *networkqueries.ListRoutersHandler,
+	arpCmd *networkcommands.SyncCustomerARPHandler,
+) *Handlers {
+	h.routerList = routerList
+	h.arpCmd = arpCmd
+	return h
+}
+
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/customers", h.listPage)
 	r.Get("/customers/new", h.createPage)
@@ -48,6 +63,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/customers", h.createSSE)
 	r.Put("/api/customers/{id}", h.updateSSE)
 	r.Delete("/api/customers/{id}", h.deleteSSE)
+	r.Post("/api/customers/{id}/arp", h.arpSSE)
 }
 
 func (h *Handlers) listPage(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +71,8 @@ func (h *Handlers) listPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) createPage(w http.ResponseWriter, r *http.Request) {
-	CustomerFormPage(nil).Render(r.Context(), w)
+	routers := h.loadRouters(r)
+	CustomerFormPage(nil, routers).Render(r.Context(), w)
 }
 
 func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
@@ -75,7 +92,8 @@ func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Customer not found", http.StatusNotFound)
 		return
 	}
-	CustomerFormPage(customer).Render(r.Context(), w)
+	routers := h.loadRouters(r)
+	CustomerFormPage(customer, routers).Render(r.Context(), w)
 }
 
 func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
@@ -168,6 +186,9 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		Country     string `json:"country"`
 		TaxID       string `json:"taxId"`
 		Notes       string `json:"notes"`
+		RouterID    string `json:"routerId"`
+		IPAddress   string `json:"ipAddress"`
+		MACAddress  string `json:"macAddress"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -187,6 +208,9 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		Country:     signals.Country,
 		TaxID:       signals.TaxID,
 		Notes:       signals.Notes,
+		RouterID:    signals.RouterID,
+		IPAddress:   signals.IPAddress,
+		MACAddress:  signals.MACAddress,
 	})
 	if err != nil {
 		sse.PatchElementTempl(formError(err.Error()))
@@ -207,4 +231,45 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sse.Redirect("/customers")
+}
+
+func (h *Handlers) arpSSE(w http.ResponseWriter, r *http.Request) {
+	sse := datastar.NewSSE(w, r)
+	id := chi.URLParam(r, "id")
+
+	if h.arpCmd == nil {
+		sse.PatchElementTempl(formError("ARP management not configured"))
+		return
+	}
+
+	var signals struct {
+		Action string `json:"arpAction"` // "enable" | "disable"
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.arpCmd.Handle(r.Context(), networkcommands.SyncCustomerARPCommand{
+		CustomerID: id,
+		Action:     signals.Action,
+	}); err != nil {
+		sse.PatchElementTempl(formError(err.Error()))
+		return
+	}
+
+	// Redirect back to detail page — ARP status will reflect in real-time if wired
+	sse.Redirect("/customers/" + id)
+}
+
+// loadRouters fetches available routers for the form dropdown; returns empty on error.
+func (h *Handlers) loadRouters(r *http.Request) []networkqueries.RouterReadModel {
+	if h.routerList == nil {
+		return nil
+	}
+	routers, err := h.routerList.Handle(r.Context())
+	if err != nil {
+		return nil
+	}
+	return routers
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/vvs/isp/internal/modules/customer/domain"
 	"github.com/vvs/isp/internal/modules/customer/app/queries"
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
+	networkqueries "github.com/vvs/isp/internal/modules/network/app/queries"
 )
 
 templ CustomerListPage() {
@@ -111,7 +112,7 @@ templ customerStatusBadge(status domain.CustomerStatus) {
 	}
 }
 
-templ CustomerFormPage(customer *domain.Customer) {
+templ CustomerFormPage(customer *domain.Customer, routers []networkqueries.RouterReadModel) {
 	@templates.Layout(formTitle(customer)) {
 		@templates.PageHeader(formTitle(customer), formSubtitle(customer))
 		<div class="max-w-2xl">
@@ -143,6 +144,30 @@ templ CustomerFormPage(customer *domain.Customer) {
 							class="bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 placeholder-gray-500"
 						></textarea>
 					</div>
+					if len(routers) > 0 {
+						<div class="border-t border-gray-800 pt-4">
+							<p class="text-sm font-medium text-gray-400 mb-3">Network Provisioning</p>
+							<div class="flex flex-col gap-3">
+								<div class="flex flex-col gap-1.5">
+									<label for="routerId" class="text-sm font-medium text-gray-300">Router</label>
+									<select
+										id="routerId"
+										data-bind:routerId
+										class="bg-gray-800 text-gray-100 border border-gray-700 rounded-lg px-3 py-2 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+									>
+										<option value="">— None —</option>
+										for _, rt := range routers {
+											<option value={ rt.ID }>{ rt.Name } ({ rt.Host })</option>
+										}
+									</select>
+								</div>
+								<div class="grid grid-cols-2 gap-3">
+									@templates.DataInput("ipAddress", "IP Address", "text", "e.g. 10.0.1.55", "ipAddress")
+									@templates.DataInput("macAddress", "MAC Address", "text", "e.g. AA:BB:CC:DD:EE:FF", "macAddress")
+								</div>
+							</div>
+						</div>
+					}
 					<div id="form-errors"></div>
 					<div class="flex items-center gap-3 pt-2">
 						<button
@@ -201,6 +226,33 @@ templ CustomerDetailPage(c *domain.Customer) {
 						@detailField("Notes", c.Notes)
 					</div>
 				}
+				if c.HasNetworkProvisioning() {
+					<div class="mt-6 pt-6 border-t border-gray-800">
+						<p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Network Provisioning</p>
+						<div class="grid grid-cols-2 gap-6 mb-4">
+							@detailField("IP Address", c.IPAddress)
+							@detailField("MAC Address", c.MACAddress)
+						</div>
+						<div
+							data-signals="{arpAction: 'enable'}"
+							class="flex items-center gap-3"
+						>
+							<button
+								data-on:click={ fmt.Sprintf("$arpAction='enable'; @post('/api/customers/%s/arp')", c.ID) }
+								class="bg-green-600/10 hover:bg-green-600/20 text-green-400 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors border border-green-600/30"
+							>
+								Enable Access
+							</button>
+							<button
+								data-on:click={ fmt.Sprintf("$arpAction='disable'; @post('/api/customers/%s/arp')", c.ID) }
+								class="bg-yellow-600/10 hover:bg-yellow-600/20 text-yellow-400 px-4 py-1.5 rounded-lg text-sm font-medium transition-colors border border-yellow-600/30"
+							>
+								Disable Access
+							</button>
+							<div id="arp-error"></div>
+						</div>
+					</div>
+				}
 			}
 		</div>
 	}
@@ -243,10 +295,17 @@ func formSignals(c *domain.Customer) string {
 		Country     string `json:"country"`
 		TaxID       string `json:"taxId"`
 		Notes       string `json:"notes"`
+		RouterID    string `json:"routerId"`
+		IPAddress   string `json:"ipAddress"`
+		MACAddress  string `json:"macAddress"`
 	}
 	if c == nil {
 		b, _ := json.Marshal(sig{})
 		return string(b)
+	}
+	routerID := ""
+	if c.RouterID != nil {
+		routerID = *c.RouterID
 	}
 	b, _ := json.Marshal(sig{
 		CompanyName: c.CompanyName,
@@ -259,6 +318,9 @@ func formSignals(c *domain.Customer) string {
 		Country:     c.Country,
 		TaxID:       c.TaxID,
 		Notes:       c.Notes,
+		RouterID:    routerID,
+		IPAddress:   c.IPAddress,
+		MACAddress:  c.MACAddress,
 	})
 	return string(b)
 }
