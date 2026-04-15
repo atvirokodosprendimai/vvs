@@ -17,6 +17,7 @@ templ ChatMessages(msgs []chat.Message, currentUserID string) {
 				@ChatMessageItem(m, currentUserID)
 			}
 		}
+		<div data-init="el.scrollIntoView()"></div>
 	</div>
 }
 
