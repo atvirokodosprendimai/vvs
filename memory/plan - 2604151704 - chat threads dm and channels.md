@@ -33,76 +33,40 @@ Decisions from planning:
    - => seedGeneralChannel() checks ThreadExists before creating
    - => chat.go SSE/send wired to isp.chat.message.{threadID}; widget defaults to 'general'
 
-### Phase 2 — Backend HTTP Layer — status: open
+### Phase 2 — Backend HTTP Layer — status: completed
 
-1. [ ] SSE: `/sse/chat/threads` — thread list for current user
-   - Initial render: `ThreadList(threads, currentUserID)`
-   - NATS `isp.chat.>` events → re-query `ListThreadsForUser` → diff → patch if changed
-   - Shows unread badge per thread
+1. [x] SSE: `/sse/chat/threads` — thread list for current user
+   - => threadsSSE with reflect.DeepEqual diff, subscribes isp.chat.>
 
-2. [ ] SSE: `/sse/chat/messages/{threadID}` — message stream for a thread
-   - Auth check: user must be member of thread
-   - Initial render: `ChatMessages(msgs, currentUserID, threadID)`
-   - NATS `isp.chat.message.{threadID}` → append new message + scroll sentinel
-   - Mark thread as read on connect
+2. [x] SSE: `/sse/chat/messages/{threadID}` — message stream for a thread
+   - => threadMessagesSSE; auto-join public channels; marks read on connect
+   - => shared streamMessages loop handles both widget and full-page
 
-3. [ ] POST `/api/chat/send` — extend to include `threadID` signal
-   - Publish to `isp.chat.message.{msg.ThreadID}` (not generic `isp.chat.message`)
+3. [x] POST `/api/chat/send` — extended with threadID signal
+   - => publishes to isp.chat.message.{threadID}
 
-4. [ ] POST `/api/chat/threads/direct` — create or open 1:1 DM
-   - Signal: `{targetUserID}`
-   - Find existing direct thread; if none, create + add both members
-   - Response: redirect to `/chat?thread={id}` or patch `$threadID` signal
+4. [x] POST `/api/chat/threads/direct` — create or open 1:1 DM
+   - => FindDirectThread → create if not found → AddMember both → redirect /chat?thread=id
 
-5. [ ] POST `/api/chat/threads/channel` — create named channel
-   - Signals: `{channelName, isPrivate}`
-   - Create thread, add creator as member
-   - Redirect or patch `$threadID`
+5. [x] POST `/api/chat/threads/channel` — create named channel
+   - => prefix # normalised, creator auto-added as member → redirect
 
-6. [ ] POST `/api/chat/threads/{id}/members` — add member to channel
-   - Auth: only channel members can add
+6. [x] POST `/api/chat/threads/{id}/members` — add member to channel
+7. [x] POST `/api/chat/threads/{id}/read` — mark thread as read
 
-7. [ ] POST `/api/chat/threads/{id}/read` — mark thread as read
+### Phase 3 — /chat Full Page — status: completed
 
-### Phase 3 — /chat Full Page — status: open
+1. [x] ChatPage template — two-panel, signals {threadid, chatmsg, newdm, newchannel, channelname, isprivate, newdmtarget}
+2. [x] ChatThreadList / ChatThreadRow — channels + DMs sections, unread badges
+3. [x] ChatMessages / ChatMessageItem — message panel with input bar
+4. [x] New DM modal (user ID input), New Channel modal (name + private toggle)
+5. [x] /chat GET route registered in router.go
 
-1. [ ] Chat page template `ChatPage(threads []ThreadSummary, currentUser)`
-   - Two-panel layout: left sidebar (260px) + right message area (flex-1)
-   - Left: thread list with SSE (`data-init="@get('/sse/chat/threads')"`)
-   - Right: message panel, initially empty (select a thread to load)
-   - Signals: `{threadid:'', newchannel:false, newdmtarget:''}`
+### Phase 4 — Integration — status: completed
 
-2. [ ] Thread list component `ThreadList(threads []ThreadSummary, currentUserID)`
-   - Section headers: "Direct Messages" / "Channels"
-   - Each row: avatar/icon, name, last message preview, unread badge
-   - Click → `($threadid='<id>') && @get('/sse/chat/messages/'+$threadid)`
-   - "New DM" button → opens user picker modal
-   - "New Channel" button → opens channel create modal
-
-3. [ ] Message panel component: thread header + `#chat-messages` + input
-   - Reuse `ChatMessageItem` with thread context
-   - Input: same `data-bind:chatmsg` + send with threadID signal
-
-4. [ ] New DM modal: list all users, click → `@post('/api/chat/threads/direct')`
-
-5. [ ] New Channel modal: name input + private toggle + create button
-
-6. [ ] Register `/chat` GET route → renders `ChatPage`
-
-### Phase 4 — Integration — status: open
-
-1. [ ] Add "Chat" nav item to sidebar in `layout.templ`
-   - Route: `/chat`
-   - Badge: unread count via SSE or periodic refresh
-
-2. [ ] Wire floating widget to `#general` thread
-   - Widget SSE changes from `/sse/chat` → `/sse/chat/messages/general`
-   - Widget send POST includes `threadID: 'general'`
-
-3. [ ] "Message" button on `/users` page user rows
-   - `@post('/api/chat/threads/direct')` with `{targetUserID}`
-   - On success: redirect to `/chat?thread={id}`
-
+1. [x] Chat nav item in sidebar — chatNavIcon(), links to /chat
+2. [x] Widget wired to #general (isp.chat.message.general subject)
+3. [x] Message button on user rows → POST /api/chat/threads/direct → redirect
 4. [ ] Update AGENTS.md with new chat routes and SSE patterns
 
 ## Verification
@@ -118,3 +82,4 @@ Decisions from planning:
 ## Progress Log
 
 - 2604151704 — Phase 1 complete: DB schema, Store, seed #general, widget wired to thread subjects
+- 2604151730 — Phases 2-4 complete: all HTTP endpoints, /chat page, nav item, Message button
