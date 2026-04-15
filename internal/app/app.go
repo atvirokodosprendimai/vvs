@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 
@@ -38,6 +37,7 @@ import (
 	networkpersistence "github.com/vvs/isp/internal/modules/network/adapters/persistence"
 	networkcommands "github.com/vvs/isp/internal/modules/network/app/commands"
 	networkqueries "github.com/vvs/isp/internal/modules/network/app/queries"
+	networksubscribers "github.com/vvs/isp/internal/modules/network/app/subscribers"
 	networkmigrations "github.com/vvs/isp/internal/modules/network/migrations"
 
 	"github.com/vvs/isp/internal/infrastructure/mikrotik"
@@ -117,9 +117,8 @@ func New(cfg Config) (*App, error) {
 	getCustomerQuery := customerqueries.NewGetCustomerHandler(reader)
 	customerRoutes := customerhttp.NewHandlers(
 		createCustomerCmd, updateCustomerCmd, deleteCustomerCmd,
-		listCustomersQuery, getCustomerQuery, subscriber,
+		listCustomersQuery, getCustomerQuery, subscriber, publisher,
 	)
-	// Network provisioning injected after routers are wired (below)
 
 	// 6. Wire Product module
 	productRepo := productpersistence.NewGormProductRepository(writer, reader)
@@ -178,11 +177,12 @@ func New(cfg Config) (*App, error) {
 		customerRepo, routerRepo, mikrotikClient, ipamProvider, publisher,
 	)
 
-	// Inject network provisioning into customer handlers
-	customerRoutes.WithNetworkProvisioning(listRoutersQuery, syncARPCmd)
+	// Customer form router dropdown — read routers table via shared reader
+	customerRoutes.WithReader(reader)
 
-	// Auto-trigger: subscribe to isp.customer.* — on status change, sync ARP
-	go runCustomerARPSubscriber(context.Background(), subscriber, syncARPCmd)
+	// ARP worker: handles isp.customer.* (auto-sync) + isp.network.arp_requested (manual)
+	arpWorker := networksubscribers.NewARPWorker(syncARPCmd)
+	go arpWorker.Run(context.Background(), subscriber)
 
 	// 9. Router (with auth middleware)
 	router := infrahttp.NewRouter(reader, getCurrentUserQuery,
@@ -222,46 +222,6 @@ func (a *App) Shutdown(ctx context.Context) error {
 	return err
 }
 
-// runCustomerARPSubscriber listens to isp.customer.* events and triggers
-// SyncCustomerARP for customers that have a router assigned.
-func runCustomerARPSubscriber(ctx context.Context, sub events.EventSubscriber, cmd *networkcommands.SyncCustomerARPHandler) {
-	ch, cancel := sub.ChanSubscription("isp.customer.*")
-	defer cancel()
-
-	type minCustomer struct {
-		ID       string  `json:"id"`
-		Status   string  `json:"status"`
-		RouterID *string `json:"router_id"`
-	}
-
-	for {
-		select {
-		case event, ok := <-ch:
-			if !ok {
-				return
-			}
-			var c minCustomer
-			if err := json.Unmarshal(event.Data, &c); err != nil {
-				continue
-			}
-			if c.RouterID == nil || *c.RouterID == "" {
-				continue
-			}
-			action := networkcommands.ARPActionEnable
-			if c.Status == "suspended" || c.Status == "churned" {
-				action = networkcommands.ARPActionDisable
-			}
-			if err := cmd.Handle(ctx, networkcommands.SyncCustomerARPCommand{
-				CustomerID: c.ID,
-				Action:     action,
-			}); err != nil {
-				log.Printf("warn: sync arp for customer %s: %v", c.ID, err)
-			}
-		case <-ctx.Done():
-			return
-		}
-	}
-}
 
 // seedAdmin creates or updates the admin user on startup.
 func seedAdmin(ctx context.Context, users domain.UserRepository, username, password string) error {

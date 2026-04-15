@@ -7,7 +7,6 @@ import (
 	"github.com/vvs/isp/internal/modules/customer/domain"
 	"github.com/vvs/isp/internal/modules/customer/app/queries"
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
-	networkqueries "github.com/vvs/isp/internal/modules/network/app/queries"
 )
 
 templ CustomerListPage() {
@@ -112,7 +111,7 @@ templ customerStatusBadge(status domain.CustomerStatus) {
 	}
 }
 
-templ CustomerFormPage(customer *domain.Customer, routers []networkqueries.RouterReadModel) {
+templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary) {
 	@templates.Layout(formTitle(customer)) {
 		@templates.PageHeader(formTitle(customer), formSubtitle(customer))
 		<div class="max-w-xl">

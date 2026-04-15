@@ -1,17 +1,28 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/starfederation/datastar-go/datastar"
+	"gorm.io/gorm"
+
 	"github.com/vvs/isp/internal/modules/customer/app/commands"
 	"github.com/vvs/isp/internal/modules/customer/app/queries"
-	networkcommands "github.com/vvs/isp/internal/modules/network/app/commands"
-	networkqueries "github.com/vvs/isp/internal/modules/network/app/queries"
 	"github.com/vvs/isp/internal/shared/events"
 )
+
+// RouterSummary is the minimal router data needed for the customer form dropdown.
+// Populated by reading the routers table directly — avoids importing the network module.
+type RouterSummary struct {
+	ID   string
+	Name string
+	Host string
+}
 
 type Handlers struct {
 	createCmd  *commands.CreateCustomerHandler
@@ -20,9 +31,8 @@ type Handlers struct {
 	listQuery  *queries.ListCustomersHandler
 	getQuery   *queries.GetCustomerHandler
 	subscriber events.EventSubscriber
-	// Network provisioning (optional — nil = no ARP management)
-	routerList *networkqueries.ListRoutersHandler
-	arpCmd     *networkcommands.SyncCustomerARPHandler
+	publisher  events.EventPublisher
+	reader     *gorm.DB // optional — for router dropdown; nil = no network section shown
 }
 
 func NewHandlers(
@@ -32,6 +42,7 @@ func NewHandlers(
 	listQuery *queries.ListCustomersHandler,
 	getQuery *queries.GetCustomerHandler,
 	subscriber events.EventSubscriber,
+	publisher events.EventPublisher,
 ) *Handlers {
 	return &Handlers{
 		createCmd:  createCmd,
@@ -40,16 +51,15 @@ func NewHandlers(
 		listQuery:  listQuery,
 		getQuery:   getQuery,
 		subscriber: subscriber,
+		publisher:  publisher,
 	}
 }
 
-// WithNetworkProvisioning injects the router list + ARP sync command.
-func (h *Handlers) WithNetworkProvisioning(
-	routerList *networkqueries.ListRoutersHandler,
-	arpCmd *networkcommands.SyncCustomerARPHandler,
-) *Handlers {
-	h.routerList = routerList
-	h.arpCmd = arpCmd
+// WithReader enables the router dropdown on the customer form by reading the
+// routers table from the shared SQLite reader. Call from app.go when the
+// network module is enabled.
+func (h *Handlers) WithReader(reader *gorm.DB) *Handlers {
+	h.reader = reader
 	return h
 }
 
@@ -71,7 +81,7 @@ func (h *Handlers) listPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) createPage(w http.ResponseWriter, r *http.Request) {
-	routers := h.loadRouters(r)
+	routers := h.loadRouters(r.Context())
 	CustomerFormPage(nil, routers).Render(r.Context(), w)
 }
 
@@ -92,7 +102,7 @@ func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Customer not found", http.StatusNotFound)
 		return
 	}
-	routers := h.loadRouters(r)
+	routers := h.loadRouters(r.Context())
 	CustomerFormPage(customer, routers).Render(r.Context(), w)
 }
 
@@ -127,7 +137,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	sse.PatchElementTempl(CustomerTable(result))
 
-	// Live updates: patch individual row per NATS event — no re-query
+	// Live updates: patch individual row per NATS event
 	for {
 		select {
 		case event, ok := <-ch:
@@ -233,14 +243,11 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 	sse.Redirect("/customers")
 }
 
+// arpSSE publishes isp.network.arp_requested and redirects back to the detail page.
+// The network module's ARPWorker handles the event asynchronously.
 func (h *Handlers) arpSSE(w http.ResponseWriter, r *http.Request) {
 	sse := datastar.NewSSE(w, r)
 	id := chi.URLParam(r, "id")
-
-	if h.arpCmd == nil {
-		sse.PatchElementTempl(formError("ARP management not configured"))
-		return
-	}
 
 	var signals struct {
 		Action string `json:"arpAction"` // "enable" | "disable"
@@ -250,26 +257,37 @@ func (h *Handlers) arpSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.arpCmd.Handle(r.Context(), networkcommands.SyncCustomerARPCommand{
-		CustomerID: id,
-		Action:     signals.Action,
-	}); err != nil {
-		sse.PatchElementTempl(formError(err.Error()))
-		return
+	type arpRequestedPayload struct {
+		CustomerID string `json:"customer_id"`
+		Action     string `json:"action"`
 	}
+	data, _ := json.Marshal(arpRequestedPayload{CustomerID: id, Action: signals.Action})
+	h.publisher.Publish(r.Context(), "isp.network.arp_requested", events.DomainEvent{
+		ID:          uuid.Must(uuid.NewV7()).String(),
+		Type:        "network.arp_requested",
+		AggregateID: id,
+		OccurredAt:  time.Now().UTC(),
+		Data:        data,
+	})
 
-	// Redirect back to detail page — ARP status will reflect in real-time if wired
 	sse.Redirect("/customers/" + id)
 }
 
-// loadRouters fetches available routers for the form dropdown; returns empty on error.
-func (h *Handlers) loadRouters(r *http.Request) []networkqueries.RouterReadModel {
-	if h.routerList == nil {
+// loadRouters reads the routers table directly from the shared SQLite reader.
+// Returns nil when reader is not set (network module disabled).
+func (h *Handlers) loadRouters(ctx context.Context) []RouterSummary {
+	if h.reader == nil {
 		return nil
 	}
-	routers, err := h.routerList.Handle(r.Context())
-	if err != nil {
-		return nil
+	var rows []struct {
+		ID   string `gorm:"column:id"`
+		Name string `gorm:"column:name"`
+		Host string `gorm:"column:host"`
 	}
-	return routers
+	h.reader.WithContext(ctx).Raw("SELECT id, name, host FROM routers ORDER BY name").Scan(&rows)
+	summaries := make([]RouterSummary, len(rows))
+	for i, row := range rows {
+		summaries[i] = RouterSummary{ID: row.ID, Name: row.Name, Host: row.Host}
+	}
+	return summaries
 }
