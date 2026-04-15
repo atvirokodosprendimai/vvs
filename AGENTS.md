@@ -132,19 +132,37 @@ func listHandler(querySvc *queries.ListHandler, sub events.EventSubscriber) http
 }
 ```
 
-**SSE live updates — always re-render the full component:**
+**SSE live updates — per-connection view state + diff before patch:**
 Datastar is backend-driven UI. The browser holds no state — it renders whatever HTML the backend sends.
-On any NATS event (create, update, delete), re-query the current state and send the full component HTML.
-Datastar's morphing algorithm reconciles the DOM: adds new rows, removes deleted ones, updates changed ones.
+Each SSE connection tracks `current` (exactly what the FE has rendered). On NATS event, re-query → compare
+→ only patch if the view actually changed. Backend is the authoritative record of FE state.
 
 ```go
-// CORRECT: re-render full list on every event
-case _, ok := <-ch:
-    if !ok { return }
-    result, err = querySvc.Handle(r.Context(), query)
-    if err != nil { continue }
-    sse.PatchElementTempl(ListTemplate(result))
+// Establish view state on connect
+current, err := querySvc.Handle(r.Context(), q)
+sse.PatchElementTempl(ListTemplate(current))
+
+for {
+    select {
+    case _, ok := <-ch:
+        if !ok { return }
+        next, err := querySvc.Handle(r.Context(), q)
+        if err != nil { continue }
+        if !reflect.DeepEqual(current, next) {   // only emit if FE view actually changes
+            sse.PatchElementTempl(ListTemplate(next))
+            current = next
+        }
+    case <-r.Context().Done():
+        return
+    }
+}
 ```
+
+Why this works:
+- User on page 2 with search filter doesn't see SSE traffic for events that don't affect page 2.
+- Delete of an item not in the current view → re-query returns same result → no patch emitted.
+- Backend tracks FE state, so it never pushes HTML for elements the FE doesn't have.
+- Datastar morph handles adds/updates/deletes purely from the HTML diff.
 
 ❌ **WRONG: selector-based remove**
 ```go
