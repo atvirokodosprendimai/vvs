@@ -19,41 +19,41 @@ templ LoginPage(errMsg string) {
 		<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 		<script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js"></script>
 	</head>
-	<body class="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center">
+	<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center">
 		<div
-			class="w-full max-w-sm"
+			class="w-full max-w-xs"
 			data-signals="{username:'',password:''}"
 		>
-			<div class="bg-gray-900 border border-gray-800 rounded-xl p-8 shadow-xl">
-				<div class="text-orange-500 font-bold text-2xl text-center mb-8">VVS ISP</div>
-				<div class="flex flex-col gap-4">
+			<div class="bg-slate-900 border border-slate-800 rounded-lg p-8">
+				<div class="text-cyan-400 font-bold text-lg tracking-widest uppercase text-center mb-8">VVS ISP</div>
+				<div class="flex flex-col gap-3">
 					<div class="flex flex-col gap-1">
-						<label class="text-sm text-gray-400">Username</label>
+						<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Username</label>
 						<input
 							type="text"
 							data-bind:username
 							autocomplete="username"
-							class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+							class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 						/>
 					</div>
 					<div class="flex flex-col gap-1">
-						<label class="text-sm text-gray-400">Password</label>
+						<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Password</label>
 						<input
 							type="password"
 							data-bind:password
 							autocomplete="current-password"
-							class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+							class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 						/>
 					</div>
 					if errMsg != "" {
-						<div id="login-error" class="text-red-400 text-sm text-center">{ errMsg }</div>
+						<div id="login-error" class="text-red-400 text-xs text-center">{ errMsg }</div>
 					} else {
 						<div id="login-error"></div>
 					}
 					<button
 						type="button"
 						data-on:click="@post('/api/login')"
-						class="bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 rounded-lg transition-colors mt-2"
+						class="bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium py-2 rounded transition-colors mt-1"
 					>
 						Sign in
 					</button>
@@ -65,18 +65,18 @@ templ LoginPage(errMsg string) {
 }
 
 templ loginError(msg string) {
-	<div id="login-error" class="text-red-400 text-sm text-center">{ msg }</div>
+	<div id="login-error" class="text-red-400 text-xs text-center">{ msg }</div>
 }
 
 templ UserListPage() {
 	@templates.Layout("User Management") {
-		<div class="flex items-center justify-between mb-6">
-			<h1 class="text-2xl font-bold">Users</h1>
+		@templates.PageHeader("Users", "Manage system users")
+		<div class="flex justify-end mb-4">
 			<button
 				data-on:click="$showCreate=true"
-				class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+				class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
 			>
-				Add User
+				+ Add User
 			</button>
 		</div>
 		<div
@@ -84,25 +84,25 @@ templ UserListPage() {
 			data-init="@get('/api/users')"
 		>
 			<div id="user-table"></div>
-			<div data-show="$showCreate" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-				<div class="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-sm">
-					<h2 class="text-lg font-semibold mb-4">New User</h2>
+			<div data-show="$showCreate" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+				<div class="bg-slate-900 border border-slate-800 rounded-lg p-6 w-full max-w-sm">
+					<h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">New User</h2>
 					<div class="flex flex-col gap-3">
 						<input
 							type="text"
 							placeholder="Username"
 							data-bind:newUsername
-							class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500"
+							class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
 						/>
 						<input
 							type="password"
 							placeholder="Password"
 							data-bind:newPassword
-							class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500"
+							class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
 						/>
 						<select
 							data-bind:newRole
-							class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-orange-500"
+							class="bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 						>
 							<option value="operator">Operator</option>
 							<option value="admin">Admin</option>
@@ -112,14 +112,14 @@ templ UserListPage() {
 							<button
 								type="button"
 								data-on:click="$showCreate=false"
-								class="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg text-sm transition-colors"
+								class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded text-sm transition-colors border border-slate-700"
 							>
 								Cancel
 							</button>
 							<button
 								type="button"
 								data-on:click="@post('/api/users')"
-								class="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg text-sm font-medium transition-colors"
+								class="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-2 rounded text-sm font-medium transition-colors"
 							>
 								Create
 							</button>
@@ -132,16 +132,16 @@ templ UserListPage() {
 }
 
 templ UserTable(rows []queries.UserRow, currentUserID string) {
-	<div id="user-table" class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+	<div id="user-table" class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
 		if len(rows) == 0 {
-			<div class="p-8 text-center text-gray-500">No users found.</div>
+			<div class="p-8 text-center text-slate-600 text-sm">No users found.</div>
 		} else {
 			<table class="w-full text-sm">
-				<thead class="border-b border-gray-800">
-					<tr class="text-gray-400">
-						<th class="text-left px-4 py-3">Username</th>
-						<th class="text-left px-4 py-3">Role</th>
-						<th class="text-left px-4 py-3">Created</th>
+				<thead class="border-b border-slate-800">
+					<tr>
+						<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Username</th>
+						<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Role</th>
+						<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Created</th>
 						<th class="px-4 py-3"></th>
 					</tr>
 				</thead>
@@ -156,12 +156,12 @@ templ UserTable(rows []queries.UserRow, currentUserID string) {
 }
 
 templ userRow(row queries.UserRow, currentUserID string) {
-	<tr class="border-b border-gray-800 last:border-0 hover:bg-gray-800/50">
-		<td class="px-4 py-3 font-medium">{ row.Username }</td>
+	<tr class="border-b border-slate-800 last:border-0 hover:bg-slate-800/40 transition-colors">
+		<td class="px-4 py-3 font-medium text-slate-100">{ row.Username }</td>
 		<td class="px-4 py-3">
 			@roleBadge(row.Role)
 		</td>
-		<td class="px-4 py-3 text-gray-400">{ formatDate(row.CreatedAt) }</td>
+		<td class="px-4 py-3 text-slate-500">{ formatDate(row.CreatedAt) }</td>
 		<td class="px-4 py-3 text-right">
 			if row.ID != currentUserID {
 				<button
@@ -171,7 +171,7 @@ templ userRow(row queries.UserRow, currentUserID string) {
 					Delete
 				</button>
 			} else {
-				<span class="text-gray-600 text-xs">you</span>
+				<span class="text-slate-700 text-xs">you</span>
 			}
 		</td>
 	</tr>
@@ -179,14 +179,14 @@ templ userRow(row queries.UserRow, currentUserID string) {
 
 templ roleBadge(role domain.Role) {
 	if role == domain.RoleAdmin {
-		<span class="bg-orange-900/50 text-orange-400 text-xs px-2 py-0.5 rounded-full">admin</span>
+		<span class="bg-cyan-500/10 text-cyan-400 text-xs px-2 py-0.5 rounded border border-cyan-500/20">admin</span>
 	} else {
-		<span class="bg-gray-800 text-gray-400 text-xs px-2 py-0.5 rounded-full">operator</span>
+		<span class="bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded border border-slate-700">operator</span>
 	}
 }
 
 templ createUserError(msg string) {
-	<div id="create-user-error" class="text-red-400 text-sm">{ msg }</div>
+	<div id="create-user-error" class="text-red-400 text-xs">{ msg }</div>
 }
 
 func formatDate(t time.Time) string {
