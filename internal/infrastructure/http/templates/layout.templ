@@ -13,7 +13,7 @@ templ Layout(title string) {
 			body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
 		</style>
 	</head>
-	<body class="bg-gray-950 text-gray-100 min-h-screen">
+	<body class="bg-slate-950 text-slate-100 min-h-screen">
 		<div class="flex min-h-screen">
 			@Sidebar()
 			<main class="flex-1 p-6 overflow-auto">
@@ -26,28 +26,28 @@ templ Layout(title string) {
 }
 
 templ Sidebar() {
-	<nav class="w-64 bg-gray-900 border-r border-gray-800 p-4 flex flex-col justify-between">
-		<div class="flex flex-col gap-1">
-		<div class="text-orange-500 font-bold text-xl mb-6 px-3">VVS ISP</div>
-		@NavItem("/", "Dashboard", dashboardIcon())
-		@NavItem("/customers", "Customers", customersIcon())
-		@NavItem("/products", "Products", productsIcon())
-		@NavItem("/routers", "Routers", routersIcon())
-		@NavItem("/users", "Users", usersIcon())
+	<nav class="w-56 bg-slate-900 border-r border-slate-800 p-3 flex flex-col justify-between">
+		<div class="flex flex-col gap-0.5">
+			<div class="text-cyan-400 font-bold text-base tracking-widest uppercase mb-5 px-2 pt-1">VVS ISP</div>
+			@NavItem("/", "Dashboard", dashboardIcon())
+			@NavItem("/customers", "Customers", customersIcon())
+			@NavItem("/products", "Products", productsIcon())
+			@NavItem("/routers", "Routers", routersIcon())
+			@NavItem("/users", "Users", usersIcon())
 		</div>
-		<div class="flex flex-col gap-2 border-t border-gray-800 pt-3">
+		<div class="flex flex-col gap-1 border-t border-slate-800 pt-3">
 			<div
 				id="server-clock"
 				data-init="@get('/sse/clock')"
-				class="px-3 py-2 text-xs text-gray-500 font-mono"
+				class="px-2 py-1.5 text-xs text-slate-600 font-mono"
 			>
 				--:--:--
 			</div>
 			<button
 				data-on:click="@post('/api/logout')"
-				class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-gray-800 transition-colors text-sm w-full"
+				class="flex items-center gap-2.5 px-2 py-1.5 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors text-sm w-full"
 			>
-				<span class="w-5 h-5">@templ.Raw(logoutIcon())</span>
+				<span class="w-4 h-4">@templ.Raw(logoutIcon())</span>
 				Sign out
 			</button>
 		</div>
@@ -57,9 +57,9 @@ templ Sidebar() {
 templ NavItem(href string, label string, icon string) {
 	<a
 		href={ templ.SafeURL(href) }
-		class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-orange-400 hover:bg-gray-800 transition-colors"
+		class="flex items-center gap-2.5 px-2 py-1.5 rounded text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition-colors text-sm"
 	>
-		<span class="w-5 h-5">
+		<span class="w-4 h-4">
 			@templ.Raw(icon)
 		</span>
 		{ label }
@@ -74,7 +74,7 @@ templ Toast() {
 	>
 		<div
 			data-show="$toastVisible"
-			class="px-4 py-3 rounded-lg shadow-lg border border-gray-700 bg-gray-800 text-gray-100 min-w-[300px]"
+			class="px-4 py-3 rounded shadow-lg border border-slate-700 bg-slate-800 text-slate-100 min-w-[300px] text-sm"
 		>
 			<span data-text="$toastMessage"></span>
 		</div>
@@ -104,4 +104,3 @@ func productsIcon() string {
 func routersIcon() string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>`
 }
-

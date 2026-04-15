@@ -42,7 +42,7 @@ func Layout(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " | VVS ISP Manager</title><script src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></script><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js\"></script><style>\n\t\t\tbody { font-family: 'Inter', system-ui, -apple-system, sans-serif; }\n\t\t</style></head><body class=\"bg-gray-950 text-gray-100 min-h-screen\"><div class=\"flex min-h-screen\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " | VVS ISP Manager</title><script src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></script><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js\"></script><style>\n\t\t\tbody { font-family: 'Inter', system-ui, -apple-system, sans-serif; }\n\t\t</style></head><body class=\"bg-slate-950 text-slate-100 min-h-screen\"><div class=\"flex min-h-screen\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -95,7 +95,7 @@ func Sidebar() templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<nav class=\"w-64 bg-gray-900 border-r border-gray-800 p-4 flex flex-col justify-between\"><div class=\"flex flex-col gap-1\"><div class=\"text-orange-500 font-bold text-xl mb-6 px-3\">VVS ISP</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<nav class=\"w-56 bg-slate-900 border-r border-slate-800 p-3 flex flex-col justify-between\"><div class=\"flex flex-col gap-0.5\"><div class=\"text-cyan-400 font-bold text-base tracking-widest uppercase mb-5 px-2 pt-1\">VVS ISP</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -119,7 +119,7 @@ func Sidebar() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div class=\"flex flex-col gap-2 border-t border-gray-800 pt-3\"><div id=\"server-clock\" data-init=\"@get('/sse/clock')\" class=\"px-3 py-2 text-xs text-gray-500 font-mono\">--:--:--</div><button data-on:click=\"@post('/api/logout')\" class=\"flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-gray-800 transition-colors text-sm w-full\"><span class=\"w-5 h-5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div class=\"flex flex-col gap-1 border-t border-slate-800 pt-3\"><div id=\"server-clock\" data-init=\"@get('/sse/clock')\" class=\"px-2 py-1.5 text-xs text-slate-600 font-mono\">--:--:--</div><button data-on:click=\"@post('/api/logout')\" class=\"flex items-center gap-2.5 px-2 py-1.5 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors text-sm w-full\"><span class=\"w-4 h-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -169,7 +169,7 @@ func NavItem(href string, label string, icon string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" class=\"flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-orange-400 hover:bg-gray-800 transition-colors\"><span class=\"w-5 h-5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" class=\"flex items-center gap-2.5 px-2 py-1.5 rounded text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition-colors text-sm\"><span class=\"w-4 h-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -219,7 +219,7 @@ func Toast() templ.Component {
 			templ_7745c5c3_Var7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div id=\"toast-container\" class=\"fixed top-4 right-4 z-50 flex flex-col gap-2\" data-signals=\"{toastMessage: '', toastType: 'info', toastVisible: false}\"><div data-show=\"$toastVisible\" class=\"px-4 py-3 rounded-lg shadow-lg border border-gray-700 bg-gray-800 text-gray-100 min-w-[300px]\"><span data-text=\"$toastMessage\"></span></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div id=\"toast-container\" class=\"fixed top-4 right-4 z-50 flex flex-col gap-2\" data-signals=\"{toastMessage: '', toastType: 'info', toastVisible: false}\"><div data-show=\"$toastVisible\" class=\"px-4 py-3 rounded shadow-lg border border-slate-700 bg-slate-800 text-slate-100 min-w-[300px] text-sm\"><span data-text=\"$toastMessage\"></span></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
