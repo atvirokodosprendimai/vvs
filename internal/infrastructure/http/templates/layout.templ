@@ -29,7 +29,7 @@ templ Layout(title string) {
 // chatWidget is the floating chat button + panel, always present in the layout.
 templ chatWidget() {
 	<div
-		data-signals="{chatOpen:false,chatMsg:''}"
+		data-signals="{chatOpen:false,chatmsg:''}"
 		class="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3"
 	>
 		<!-- Panel (hidden until $chatOpen) -->
@@ -56,14 +56,14 @@ templ chatWidget() {
 			</div>
 			<div class="border-t border-slate-800 px-3 py-2 flex gap-2 items-end">
 				<textarea
-					data-bind:chatMsg
+					data-bind:chatmsg
 					placeholder="Message…"
 					rows="1"
-					data-on:keydown="if(evt.key==='Enter'&&!evt.shiftKey){evt.preventDefault();@post('/api/chat/send');$chatMsg=''}"
+					data-on:keydown="if(evt.key==='Enter'&&!evt.shiftKey){evt.preventDefault();@post('/api/chat/send');$chatmsg=''}"
 					class="flex-1 bg-slate-800 text-slate-100 border border-slate-700 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
 				></textarea>
 				<button
-					data-on:click="@post('/api/chat/send');$chatMsg=''"
+					data-on:click="@post('/api/chat/send');$chatmsg=''"
 					class="bg-cyan-600 hover:bg-cyan-700 text-white p-2 rounded-lg transition-colors flex-shrink-0"
 					title="Send"
 				>

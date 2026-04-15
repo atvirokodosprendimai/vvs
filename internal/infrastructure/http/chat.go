@@ -79,7 +79,7 @@ func (h *ChatHandler) chatSend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var signals struct {
-		ChatMsg string `json:"chatMsg"`
+		ChatMsg string `json:"chatmsg"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
