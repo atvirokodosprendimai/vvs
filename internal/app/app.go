@@ -50,6 +50,12 @@ import (
 	"github.com/vvs/isp/internal/infrastructure/notifications"
 	notifmigrations "github.com/vvs/isp/internal/infrastructure/notifications/migrations"
 	networkdomain "github.com/vvs/isp/internal/modules/network/domain"
+
+	servicehttp "github.com/vvs/isp/internal/modules/service/adapters/http"
+	servicepersistence "github.com/vvs/isp/internal/modules/service/adapters/persistence"
+	servicecommands "github.com/vvs/isp/internal/modules/service/app/commands"
+	servicequeries "github.com/vvs/isp/internal/modules/service/app/queries"
+	servicemigrations "github.com/vvs/isp/internal/modules/service/migrations"
 )
 
 type App struct {
@@ -80,6 +86,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "network", FS: networkmigrations.FS, TableName: "goose_network"},
 		{Name: "notifications", FS: notifmigrations.FS, TableName: "goose_notifications"},
 		{Name: "chat", FS: chatmigrations.FS, TableName: "goose_chat"},
+		{Name: "service", FS: servicemigrations.FS, TableName: "goose_service"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -126,7 +133,11 @@ func New(cfg Config) (*App, error) {
 	var moduleRoutes []infrahttp.ModuleRoutes
 	moduleRoutes = append(moduleRoutes, authRoutes)
 
-	// 5. Customer module
+	// 5. Service repository — wired early so customer detail page can list services
+	serviceRepo := servicepersistence.NewGormServiceRepository(gdb)
+	listServicesQuery := servicequeries.NewListServicesForCustomerHandler(serviceRepo)
+
+	// 6. Customer module
 	customerRepo := customerpersistence.NewGormCustomerRepository(gdb)
 	createCustomerCmd := customercommands.NewCreateCustomerHandler(customerRepo, publisher)
 	updateCustomerCmd := customercommands.NewUpdateCustomerHandler(customerRepo, publisher)
@@ -139,6 +150,7 @@ func New(cfg Config) (*App, error) {
 		customerRoutes = customerhttp.NewHandlers(
 			createCustomerCmd, updateCustomerCmd, deleteCustomerCmd,
 			listCustomersQuery, getCustomerQuery, subscriber, publisher,
+			listServicesQuery,
 		)
 		moduleRoutes = append(moduleRoutes, customerRoutes)
 		log.Printf("module enabled: customer")
@@ -201,13 +213,28 @@ func New(cfg Config) (*App, error) {
 		log.Printf("module enabled: network")
 	}
 
-	// 8. Notifications — global cross-cutting concern
+	// 8. Service module — commands + route registration
+	assignServiceCmd := servicecommands.NewAssignServiceHandler(serviceRepo, publisher)
+	suspendServiceCmd := servicecommands.NewSuspendServiceHandler(serviceRepo, publisher)
+	reactivateServiceCmd := servicecommands.NewReactivateServiceHandler(serviceRepo, publisher)
+	cancelServiceCmd := servicecommands.NewCancelServiceHandler(serviceRepo, publisher)
+
+	if cfg.IsEnabled("service") {
+		serviceRoutes := servicehttp.NewServiceHandlers(
+			assignServiceCmd, suspendServiceCmd, reactivateServiceCmd, cancelServiceCmd,
+			listServicesQuery, subscriber, publisher,
+		)
+		moduleRoutes = append(moduleRoutes, serviceRoutes)
+		log.Printf("module enabled: service")
+	}
+
+	// 10. Notifications — global cross-cutting concern
 	notifStore := notifications.NewStore(gdb)
 	notifWorker := notifications.NewWorker(notifStore, publisher)
 	go notifWorker.Run(context.Background(), subscriber)
 	notifHandler := infrahttp.NewNotifHandler(notifStore, subscriber)
 
-	// 9. Chat
+	// 11. Chat
 	chatStore := chat.NewStore(gdb)
 	if err := seedGeneralChannel(context.Background(), chatStore); err != nil {
 		log.Printf("warn: seed #general channel: %v", err)
@@ -215,7 +242,7 @@ func New(cfg Config) (*App, error) {
 	chatHandler := infrahttp.NewChatHandler(chatStore, subscriber, publisher)
 	globalHandler := infrahttp.NewGlobalHandler(notifStore, chatStore, subscriber)
 
-	// 10. HTTP router — pass gdb.R to dashboard handler
+	// 12. HTTP router — pass gdb.R to dashboard handler
 	router := infrahttp.NewRouter(gdb.R, getCurrentUserQuery, notifHandler, chatHandler, globalHandler, moduleRoutes...)
 	httpServer := infrahttp.NewServer(cfg.ListenAddr, router)
 

@@ -7,6 +7,8 @@ import (
 	"github.com/vvs/isp/internal/modules/customer/domain"
 	"github.com/vvs/isp/internal/modules/customer/app/queries"
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
+	serviceQueries "github.com/vvs/isp/internal/modules/service/app/queries"
+	servicehttp "github.com/vvs/isp/internal/modules/service/adapters/http"
 )
 
 templ CustomerListPage() {
@@ -189,7 +191,7 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary) {
 	}
 }
 
-templ CustomerDetailPage(c *domain.Customer) {
+templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel) {
 	@templates.Layout(c.CompanyName) {
 		@templates.PageHeader(c.CompanyName, fmt.Sprintf("Customer %s", c.Code.String()))
 		<div class="max-w-2xl">
@@ -254,6 +256,7 @@ templ CustomerDetailPage(c *domain.Customer) {
 				}
 			}
 		</div>
+		@servicehttp.ServiceSection(c.ID, services)
 	}
 }
 

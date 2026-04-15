@@ -15,6 +15,7 @@ import (
 
 	"github.com/vvs/isp/internal/modules/customer/app/commands"
 	"github.com/vvs/isp/internal/modules/customer/app/queries"
+	serviceQueries "github.com/vvs/isp/internal/modules/service/app/queries"
 	"github.com/vvs/isp/internal/shared/events"
 )
 
@@ -27,14 +28,15 @@ type RouterSummary struct {
 }
 
 type Handlers struct {
-	createCmd  *commands.CreateCustomerHandler
-	updateCmd  *commands.UpdateCustomerHandler
-	deleteCmd  *commands.DeleteCustomerHandler
-	listQuery  *queries.ListCustomersHandler
-	getQuery   *queries.GetCustomerHandler
-	subscriber events.EventSubscriber
-	publisher  events.EventPublisher
-	reader     *gorm.DB // optional — for router dropdown; nil = no network section shown
+	createCmd         *commands.CreateCustomerHandler
+	updateCmd         *commands.UpdateCustomerHandler
+	deleteCmd         *commands.DeleteCustomerHandler
+	listQuery         *queries.ListCustomersHandler
+	getQuery          *queries.GetCustomerHandler
+	subscriber        events.EventSubscriber
+	publisher         events.EventPublisher
+	reader            *gorm.DB // optional — for router dropdown; nil = no network section shown
+	listServicesQuery *serviceQueries.ListServicesForCustomerHandler
 }
 
 func NewHandlers(
@@ -45,15 +47,17 @@ func NewHandlers(
 	getQuery *queries.GetCustomerHandler,
 	subscriber events.EventSubscriber,
 	publisher events.EventPublisher,
+	listServicesQuery *serviceQueries.ListServicesForCustomerHandler,
 ) *Handlers {
 	return &Handlers{
-		createCmd:  createCmd,
-		updateCmd:  updateCmd,
-		deleteCmd:  deleteCmd,
-		listQuery:  listQuery,
-		getQuery:   getQuery,
-		subscriber: subscriber,
-		publisher:  publisher,
+		createCmd:         createCmd,
+		updateCmd:         updateCmd,
+		deleteCmd:         deleteCmd,
+		listQuery:         listQuery,
+		getQuery:          getQuery,
+		subscriber:        subscriber,
+		publisher:         publisher,
+		listServicesQuery: listServicesQuery,
 	}
 }
 
@@ -94,7 +98,15 @@ func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Customer not found", http.StatusNotFound)
 		return
 	}
-	CustomerDetailPage(customer).Render(r.Context(), w)
+	var services []serviceQueries.ServiceReadModel
+	if h.listServicesQuery != nil {
+		services, err = h.listServicesQuery.Handle(r.Context(), serviceQueries.ListServicesForCustomerQuery{CustomerID: id})
+		if err != nil {
+			log.Printf("detailPage: list services: %v", err)
+			services = nil
+		}
+	}
+	CustomerDetailPage(customer, services).Render(r.Context(), w)
 }
 
 func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
