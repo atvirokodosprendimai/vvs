@@ -137,25 +137,22 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	sse.PatchElementTempl(CustomerTable(result))
 
-	// Live updates: route by event type — delete removes the row, create/update patches it
+	// Live updates: re-render full table on any event — Datastar morph handles add/update/delete
 	for {
 		select {
-		case event, ok := <-ch:
+		case _, ok := <-ch:
 			if !ok {
 				return
 			}
-			if event.Type == "customer.deleted" {
-				sse.PatchElements("",
-					datastar.WithSelector("#customer-"+event.AggregateID),
-					datastar.WithMode(datastar.ElementPatchModeRemove),
-				)
+			result, err = h.listQuery.Handle(r.Context(), queries.ListCustomersQuery{
+				Search:   signals.Search,
+				Page:     signals.Page,
+				PageSize: signals.PageSize,
+			})
+			if err != nil {
 				continue
 			}
-			var rm queries.CustomerReadModel
-			if err := json.Unmarshal(event.Data, &rm); err != nil {
-				continue
-			}
-			sse.PatchElementTempl(CustomerRow(rm.ToDomain()))
+			sse.PatchElementTempl(CustomerTable(result))
 		case <-r.Context().Done():
 			return
 		}

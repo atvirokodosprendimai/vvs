@@ -1,7 +1,6 @@
 package http
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -112,25 +111,23 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	sse.PatchElementTempl(ProductTable(result))
 
-	// Live updates: route by event type — delete removes the row, create/update patches it
+	// Live updates: re-render full table on any event — Datastar morph handles add/update/delete
 	for {
 		select {
-		case event, ok := <-ch:
+		case _, ok := <-ch:
 			if !ok {
 				return
 			}
-			if event.Type == "product.deleted" {
-				sse.PatchElements("",
-					datastar.WithSelector("#product-"+event.AggregateID),
-					datastar.WithMode(datastar.ElementPatchModeRemove),
-				)
+			result, err = h.listQuery.Handle(r.Context(), queries.ListProductsQuery{
+				Search:   signals.Search,
+				Type:     signals.Type,
+				Page:     signals.Page,
+				PageSize: signals.PageSize,
+			})
+			if err != nil {
 				continue
 			}
-			var rm queries.ProductReadModel
-			if err := json.Unmarshal(event.Data, &rm); err != nil {
-				continue
-			}
-			sse.PatchElementTempl(ProductRow(rm.ToDomain()))
+			sse.PatchElementTempl(ProductTable(result))
 		case <-r.Context().Done():
 			return
 		}

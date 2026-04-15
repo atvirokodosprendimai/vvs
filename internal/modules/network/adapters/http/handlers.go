@@ -1,7 +1,6 @@
 package http
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -92,24 +91,18 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	sse.PatchElementTempl(RouterTable(routers))
 
+	// Live updates: re-render full table on any event — Datastar morph handles add/update/delete
 	for {
 		select {
-		case event, ok := <-ch:
+		case _, ok := <-ch:
 			if !ok {
 				return
 			}
-			if event.Type == "network.router.deleted" {
-				sse.PatchElements("",
-					datastar.WithSelector("#router-"+event.AggregateID),
-					datastar.WithMode(datastar.ElementPatchModeRemove),
-				)
+			routers, err = h.listQuery.Handle(r.Context())
+			if err != nil {
 				continue
 			}
-			var rm queries.RouterReadModel
-			if err := json.Unmarshal(event.Data, &rm); err != nil {
-				continue
-			}
-			sse.PatchElementTempl(RouterRow(rm))
+			sse.PatchElementTempl(RouterTable(routers))
 		case <-r.Context().Done():
 			return
 		}
