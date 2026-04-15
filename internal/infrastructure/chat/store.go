@@ -191,12 +191,13 @@ func (s *Store) ListThreadsForUser(ctx context.Context, userID string) ([]Thread
 					LEFT JOIN chat_thread_reads r
 						ON r.thread_id = cm.thread_id AND r.user_id = ?
 					WHERE cm.thread_id = t.id
+					  AND cm.user_id != ?
 					  AND (r.last_read_at IS NULL OR cm.created_at > r.last_read_at)
 				) AS unread_count
 			FROM chat_threads t
 			JOIN chat_thread_members m ON m.thread_id = t.id AND m.user_id = ?
 			ORDER BY last_at DESC
-		`, userID, userID).Scan(&rows).Error
+		`, userID, userID, userID).Scan(&rows).Error
 	})
 	if err != nil {
 		return nil, err
@@ -323,8 +324,9 @@ func (s *Store) TotalUnread(ctx context.Context, userID string) (int, error) {
 			SELECT COUNT(*) FROM chat_messages cm
 			JOIN chat_thread_members m ON m.thread_id = cm.thread_id AND m.user_id = ?
 			LEFT JOIN chat_thread_reads r ON r.thread_id = cm.thread_id AND r.user_id = ?
-			WHERE r.last_read_at IS NULL OR cm.created_at > r.last_read_at
-		`, userID, userID).Scan(&count).Error
+			WHERE cm.user_id != ?
+			  AND (r.last_read_at IS NULL OR cm.created_at > r.last_read_at)
+		`, userID, userID, userID).Scan(&count).Error
 	})
 	return count, err
 }
