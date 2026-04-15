@@ -95,7 +95,7 @@ func Sidebar() templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<nav class=\"w-56 bg-slate-900 border-r border-slate-800 p-3 flex flex-col justify-between\"><div class=\"flex flex-col gap-0.5\"><div class=\"text-cyan-400 font-bold text-base tracking-widest uppercase mb-5 px-2 pt-1\">VVS ISP</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<nav class=\"w-56 bg-slate-900 border-r border-slate-800 p-3 flex flex-col justify-between\" data-signals=\"{notifOpen:false}\"><div class=\"flex flex-col gap-0.5\"><div class=\"flex items-center justify-between mb-5 px-2 pt-1\"><span class=\"text-cyan-400 font-bold text-base tracking-widest uppercase\">VVS ISP</span><!-- Notification bell --><div id=\"notif-container\" data-init=\"@get('/sse/notifications')\" class=\"relative\"><button data-on:click=\"$notifOpen = !$notifOpen; @post('/api/notifications/read')\" class=\"relative p-1 text-slate-500 hover:text-slate-300 transition-colors\" title=\"Notifications\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0\"></path></svg> <span id=\"notif-badge\"></span></button></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -119,7 +119,7 @@ func Sidebar() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div class=\"flex flex-col gap-1 border-t border-slate-800 pt-3\"><div id=\"server-clock\" data-init=\"@get('/sse/clock')\" class=\"px-2 py-1.5 text-xs text-slate-600 font-mono\">--:--:--</div><button data-on:click=\"@post('/api/logout')\" class=\"flex items-center gap-2.5 px-2 py-1.5 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors text-sm w-full\"><span class=\"w-4 h-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><!-- Notification panel — shown when $notifOpen is true --><div data-show=\"$notifOpen\" class=\"absolute left-0 top-0 w-56 h-full bg-slate-900 border-r border-slate-800 flex flex-col z-10\" style=\"display:none\"><div class=\"flex items-center justify-between px-4 py-3 border-b border-slate-800\"><span class=\"text-sm font-medium text-slate-200\">Notifications</span> <button data-on:click=\"$notifOpen = false\" class=\"text-slate-500 hover:text-slate-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex-1 overflow-y-auto\"><ul id=\"notifications\" class=\"flex flex-col divide-y divide-slate-800\"><li class=\"px-4 py-6 text-center text-xs text-slate-600\">Loading...</li></ul></div></div><div class=\"flex flex-col gap-1 border-t border-slate-800 pt-3\"><div id=\"server-clock\" data-init=\"@get('/sse/clock')\" class=\"px-2 py-1.5 text-xs text-slate-600 font-mono\">--:--:--</div><button data-on:click=\"@post('/api/logout')\" class=\"flex items-center gap-2.5 px-2 py-1.5 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors text-sm w-full\"><span class=\"w-4 h-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -163,7 +163,7 @@ func NavItem(href string, label string, icon string) templ.Component {
 		var templ_7745c5c3_Var5 templ.SafeURL
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 59, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 106, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -184,7 +184,7 @@ func NavItem(href string, label string, icon string) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 65, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 112, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {

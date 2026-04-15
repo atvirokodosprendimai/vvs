@@ -1,0 +1,73 @@
+package http
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/vvs/isp/internal/infrastructure/notifications"
+)
+
+// NotifBadge is the unread-count badge on the bell icon. Patched by SSE.
+templ NotifBadge(unread int) {
+	<span id="notif-badge">
+		if unread > 0 {
+			<span class="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">
+				if unread > 9 {
+					9+
+				} else {
+					{ fmt.Sprintf("%d", unread) }
+				}
+			</span>
+		}
+	</span>
+}
+
+// NotifList is the full notification list. Patched by SSE.
+templ NotifList(notifs []notifications.Notification) {
+	<ul id="notifications" class="flex flex-col divide-y divide-slate-800">
+		if len(notifs) == 0 {
+			<li class="px-4 py-6 text-center text-xs text-slate-600">No notifications</li>
+		} else {
+			for _, n := range notifs {
+				@notifItem(n)
+			}
+		}
+	</ul>
+}
+
+templ notifItem(n notifications.Notification) {
+	<li class={ notifItemClass(n.Read) }>
+		if n.URL != "" {
+			<a href={ templ.SafeURL(n.URL) } class="block hover:text-cyan-400 transition-colors">
+				<p class="text-sm leading-snug">{ n.Title }</p>
+				<p class="text-xs text-slate-600 mt-0.5">{ notifAge(n.CreatedAt) }</p>
+			</a>
+		} else {
+			<div>
+				<p class="text-sm leading-snug">{ n.Title }</p>
+				<p class="text-xs text-slate-600 mt-0.5">{ notifAge(n.CreatedAt) }</p>
+			</div>
+		}
+	</li>
+}
+
+func notifItemClass(read bool) string {
+	if read {
+		return "px-4 py-3 text-slate-500"
+	}
+	return "px-4 py-3 text-slate-200"
+}
+
+func notifAge(t time.Time) string {
+	d := time.Since(t)
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		return fmt.Sprintf("%dm ago", int(d.Minutes()))
+	case d < 24*time.Hour:
+		return fmt.Sprintf("%dh ago", int(d.Hours()))
+	default:
+		return fmt.Sprintf("%dd ago", int(d.Hours()/24))
+	}
+}

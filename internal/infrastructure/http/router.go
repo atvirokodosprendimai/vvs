@@ -13,7 +13,7 @@ type ModuleRoutes interface {
 	RegisterRoutes(r chi.Router)
 }
 
-func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, modules ...ModuleRoutes) http.Handler {
+func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, notif *NotifHandler, modules ...ModuleRoutes) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Recoverer)
@@ -35,6 +35,10 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 		// SSE endpoints
 		r.Get("/sse/clock", clockSSE)
 		r.Get("/api/dashboard/stats", newDashboardStatsHandler(reader))
+
+		// Notifications
+		r.Get("/sse/notifications", notif.notificationsSSE)
+		r.Post("/api/notifications/read", notif.markRead)
 
 		// Register all module routes
 		for _, m := range modules {

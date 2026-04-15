@@ -44,6 +44,8 @@ import (
 	"github.com/vvs/isp/internal/infrastructure/arista"
 	"github.com/vvs/isp/internal/infrastructure/mikrotik"
 	"github.com/vvs/isp/internal/infrastructure/netbox"
+	"github.com/vvs/isp/internal/infrastructure/notifications"
+	notifmigrations "github.com/vvs/isp/internal/infrastructure/notifications/migrations"
 	networkdomain "github.com/vvs/isp/internal/modules/network/domain"
 )
 
@@ -73,6 +75,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "customer", FS: customermigrations.FS, TableName: "goose_customer"},
 		{Name: "product", FS: productmigrations.FS, TableName: "goose_product"},
 		{Name: "network", FS: networkmigrations.FS, TableName: "goose_network"},
+		{Name: "notifications", FS: notifmigrations.FS, TableName: "goose_notifications"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -194,8 +197,15 @@ func New(cfg Config) (*App, error) {
 		log.Printf("module enabled: network")
 	}
 
-	// 8. HTTP router — pass gdb.R to dashboard handler
-	router := infrahttp.NewRouter(gdb.R, getCurrentUserQuery, moduleRoutes...)
+	// 8. Notifications — global cross-cutting concern
+	notifStore := notifications.NewStore(gdb)
+	notifWorker := notifications.NewWorker(notifStore, publisher)
+	go notifWorker.Run(context.Background(), subscriber)
+
+	notifHandler := infrahttp.NewNotifHandler(notifStore, subscriber)
+
+	// 9. HTTP router — pass gdb.R to dashboard handler
+	router := infrahttp.NewRouter(gdb.R, getCurrentUserQuery, notifHandler, moduleRoutes...)
 	httpServer := infrahttp.NewServer(cfg.ListenAddr, router)
 
 	enabled := cfg.EnabledModules
