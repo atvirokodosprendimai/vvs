@@ -27,46 +27,44 @@ status: active
 
 ## Phases
 
-### Phase 1 — Spec: event contracts and module boundary rules — status: open
+### Phase 1 — Spec: event contracts and module boundary rules — status: completed
 
-1. [ ] `/eidos:spec` — event driven module boundaries
-   - Define canonical NATS subject taxonomy: `isp.{module}.{verb}` (current subjects + new ones needed)
-   - Rule: modules may not import each other's packages; only `internal/shared/` and `internal/infrastructure/`
-   - Exception: `app.go` is composition root — it may import all modules for wiring only
-   - New subject needed: `isp.network.arp_requested` (manual trigger from customer UI)
-   - Document `Module` interface pattern: `Name() string`, `Register(AppDeps) error`
+1. [x] `/eidos:spec` — event driven module boundaries
+   - => [[spec - events - event driven module boundaries and nats subject taxonomy]] created
+   - => Full subject taxonomy documented: customer/product/network (current) + invoice/recurring/payment (planned)
+   - => New subject defined: `isp.network.arp_requested` (manual ARP trigger from customer UI)
+   - => Import rules, cross-module read pattern, Module interface pattern all specified
 
-### Phase 2 — External NATS support — status: open
+### Phase 2 — External NATS support — status: completed
 
-2. [ ] Add `NATS_URL` and `NATS_LISTEN_ADDR` config + flags
-   - `config.go`: `NATSUrl string`, `NATSListenAddr string`
-   - `main.go`: `--nats-url` / `NATS_URL`, `--nats-listen` / `NATS_LISTEN_ADDR`
-   - `embedded.go`: `StartEmbedded(listenAddr string)` — if listenAddr != "", set `opts.Host` + `opts.Port` so TCP is exposed
-   - New: `ConnectExternal(url string) (*nats.Conn, error)` — plain `nats.Connect(url)`
-   - `app.go`: if `cfg.NATSUrl != ""` → connect external; else → start embedded (with optional listen addr)
+2. [x] Add `NATS_URL` and `NATS_LISTEN_ADDR` config + flags
+   - => `config.go`: `NATSUrl`, `NATSListenAddr`, `EnabledModules`, `IsEnabled()` helper
+   - => `embedded.go`: `StartEmbedded(listenAddr string)` — `DontListen: true` when empty, TCP when set
+   - => `ConnectExternal(url string)` added
+   - => `app.go`: external NATS branch + nil-safe `ns.WaitForShutdown()`
+   - => `main.go`: `--nats-url`, `--nats-listen`, `--modules` flags + comma-split parsing
 
-3. [ ] Write test: embedded NATS with listen addr exposes TCP port
-   - Start embedded with `:0`, verify `nats.Connect("nats://127.0.0.1:<port>")` works from a second goroutine
+3. [x] Write test: embedded NATS with listen addr exposes TCP port
+   - => `embedded_test.go` — 3 tests: in-process, listen+external-connect (`:0`), invalid-url error
+   - => All pass
 
-### Phase 3 — Decouple network ↔ customer cross-module calls — status: open
+### Phase 3 — Decouple network ↔ customer cross-module calls — status: completed
 
-4. [ ] Remove `WithNetworkProvisioning` from customer HTTP handlers
-   - Customer ARP enable/disable endpoint (`POST /api/customers/{id}/arp`) currently calls `syncARPCmd` directly
-   - Replace: publish `isp.network.arp_requested` with payload `{customer_id, action}` instead
-   - Remove network module imports from `customer/adapters/http/handlers.go`
-   - Customer form router dropdown: read `routers` table directly via SQLite reader (allowed per arch spec — "cross-module reads go through shared SQLite reader, never through another module's domain layer")
-     - Add `ListRouters(ctx, reader) ([]RouterRow, error)` function in customer module reading `routers` table by SQL
-     - No import of network module needed
+4. [x] Remove `WithNetworkProvisioning` from customer HTTP handlers
+   - => `arpSSE`: publishes `isp.network.arp_requested` via `EventPublisher` (no network import)
+   - => `RouterSummary{ID,Name,Host}` local type; `loadRouters` reads `routers` table with raw SQL
+   - => `WithReader(reader)` replaces `WithNetworkProvisioning`
+   - => `publisher` added to `NewHandlers` constructor
+   - => `networkqueries` and `networkcommands` imports removed from both `handlers.go` and `templates.templ`
 
-5. [ ] Move subscriber workers into their own module
-   - Create `network/app/subscribers/arp_worker.go`: `ARPWorker` struct with `Run(ctx, sub, cmd)`
-   - Subscribes to both `isp.customer.*` (auto-sync on status change) and `isp.network.arp_requested` (manual trigger)
-   - Replaces `runCustomerARPSubscriber` in `app.go` — delete it from there
-   - `app.go` just calls `go arpWorker.Run(ctx, subscriber, syncARPCmd)`
+5. [x] Move subscriber workers into their own module
+   - => `network/app/subscribers/arp_worker.go` — `ARPWorker` subscribes `isp.customer.*` + `isp.network.arp_requested`
+   - => `runCustomerARPSubscriber` deleted from `app.go`
+   - => `app.go` calls `go arpWorker.Run(ctx, subscriber)`
 
-6. [ ] Verify zero cross-module imports
-   - `grep -r "modules/" --include="*.go" internal/modules/customer/` must show no `network` imports
-   - `grep -r "modules/" --include="*.go" internal/modules/network/` must show no `customer` imports
+6. [x] Verify zero cross-module imports
+   - => grep confirms: no network imports in customer/, no customer imports in network/
+   - => `go test ./... -race` — all pass
 
 ### Phase 4 — Module enable flags — status: open
 

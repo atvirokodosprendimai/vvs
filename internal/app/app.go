@@ -68,7 +68,8 @@ func New(cfg Config) (*App, error) {
 		return nil, fmt.Errorf("open reader database: %w", err)
 	}
 
-	// 2. Run migrations
+	// 2. Run migrations for ALL modules regardless of enabled flags
+	//    (schema must stay consistent even if a module is not serving routes)
 	sqlDB, err := db.DB()
 	if err != nil {
 		return nil, fmt.Errorf("get sql.DB: %w", err)
@@ -108,31 +109,7 @@ func New(cfg Config) (*App, error) {
 	publisher := infranats.NewPublisher(nc)
 	subscriber := infranats.NewSubscriber(nc)
 
-	// 5. Wire Customer module
-	customerRepo := customerpersistence.NewGormCustomerRepository(writer, reader)
-	createCustomerCmd := customercommands.NewCreateCustomerHandler(customerRepo, publisher)
-	updateCustomerCmd := customercommands.NewUpdateCustomerHandler(customerRepo, publisher)
-	deleteCustomerCmd := customercommands.NewDeleteCustomerHandler(customerRepo, publisher)
-	listCustomersQuery := customerqueries.NewListCustomersHandler(reader)
-	getCustomerQuery := customerqueries.NewGetCustomerHandler(reader)
-	customerRoutes := customerhttp.NewHandlers(
-		createCustomerCmd, updateCustomerCmd, deleteCustomerCmd,
-		listCustomersQuery, getCustomerQuery, subscriber, publisher,
-	)
-
-	// 6. Wire Product module
-	productRepo := productpersistence.NewGormProductRepository(writer, reader)
-	createProductCmd := productcommands.NewCreateProductHandler(productRepo, publisher)
-	updateProductCmd := productcommands.NewUpdateProductHandler(productRepo, publisher)
-	deleteProductCmd := productcommands.NewDeleteProductHandler(productRepo, publisher)
-	listProductsQuery := productqueries.NewListProductsHandler(reader)
-	getProductQuery := productqueries.NewGetProductHandler(reader)
-	productRoutes := producthttp.NewHandlers(
-		createProductCmd, updateProductCmd, deleteProductCmd,
-		listProductsQuery, getProductQuery, subscriber,
-	)
-
-	// 7. Wire Auth module
+	// 5. Auth module — always wired (session middleware depends on it)
 	userRepo := authpersistence.NewGormUserRepository(writer, reader)
 	sessionRepo := authpersistence.NewGormSessionRepository(writer, reader)
 	loginCmd := authcommands.NewLoginHandler(userRepo, sessionRepo)
@@ -143,55 +120,98 @@ func New(cfg Config) (*App, error) {
 	getCurrentUserQuery := authqueries.NewGetCurrentUserHandler(userRepo, sessionRepo)
 	authRoutes := authhttp.NewHandlers(loginCmd, logoutCmd, createUserCmd, deleteUserCmd, listUsersQuery, getCurrentUserQuery)
 
-	// Seed initial admin if configured
 	if cfg.AdminUser != "" && cfg.AdminPassword != "" {
 		if err := seedAdmin(context.Background(), userRepo, cfg.AdminUser, cfg.AdminPassword); err != nil {
 			log.Printf("warn: seed admin: %v", err)
 		}
 	}
 
-	// 8. Wire Network module
+	// Module routes collected here; only enabled modules are added
+	var moduleRoutes []infrahttp.ModuleRoutes
+	moduleRoutes = append(moduleRoutes, authRoutes) // auth always mounted
+
+	// 6. Customer module
+	customerRepo := customerpersistence.NewGormCustomerRepository(writer, reader)
+	createCustomerCmd := customercommands.NewCreateCustomerHandler(customerRepo, publisher)
+	updateCustomerCmd := customercommands.NewUpdateCustomerHandler(customerRepo, publisher)
+	deleteCustomerCmd := customercommands.NewDeleteCustomerHandler(customerRepo, publisher)
+	listCustomersQuery := customerqueries.NewListCustomersHandler(reader)
+	getCustomerQuery := customerqueries.NewGetCustomerHandler(reader)
+
+	var customerRoutes *customerhttp.Handlers
+	if cfg.IsEnabled("customer") {
+		customerRoutes = customerhttp.NewHandlers(
+			createCustomerCmd, updateCustomerCmd, deleteCustomerCmd,
+			listCustomersQuery, getCustomerQuery, subscriber, publisher,
+		)
+		moduleRoutes = append(moduleRoutes, customerRoutes)
+		log.Printf("module enabled: customer")
+	}
+
+	// 7. Product module
+	productRepo := productpersistence.NewGormProductRepository(writer, reader)
+	createProductCmd := productcommands.NewCreateProductHandler(productRepo, publisher)
+	updateProductCmd := productcommands.NewUpdateProductHandler(productRepo, publisher)
+	deleteProductCmd := productcommands.NewDeleteProductHandler(productRepo, publisher)
+	listProductsQuery := productqueries.NewListProductsHandler(reader)
+	getProductQuery := productqueries.NewGetProductHandler(reader)
+
+	if cfg.IsEnabled("product") {
+		productRoutes := producthttp.NewHandlers(
+			createProductCmd, updateProductCmd, deleteProductCmd,
+			listProductsQuery, getProductQuery, subscriber,
+		)
+		moduleRoutes = append(moduleRoutes, productRoutes)
+		log.Printf("module enabled: product")
+	}
+
+	// 8. Network module
 	routerRepo := networkpersistence.NewGormRouterRepository(writer, reader)
 	createRouterCmd := networkcommands.NewCreateRouterHandler(routerRepo, publisher)
 	updateRouterCmd := networkcommands.NewUpdateRouterHandler(routerRepo, publisher)
 	deleteRouterCmd := networkcommands.NewDeleteRouterHandler(routerRepo)
 	listRoutersQuery := networkqueries.NewListRoutersHandler(routerRepo)
 	getRouterQuery := networkqueries.NewGetRouterHandler(routerRepo)
-	networkRoutes := networkhttp.NewHandlers(
-		createRouterCmd, updateRouterCmd, deleteRouterCmd,
-		listRoutersQuery, getRouterQuery, subscriber,
-	)
 
-	// MikroTik provisioner (shared connection pool)
-	mikrotikClient := mikrotik.New()
+	if cfg.IsEnabled("network") {
+		networkRoutes := networkhttp.NewHandlers(
+			createRouterCmd, updateRouterCmd, deleteRouterCmd,
+			listRoutersQuery, getRouterQuery, subscriber,
+		)
+		moduleRoutes = append(moduleRoutes, networkRoutes)
 
-	// NetBox IPAM (optional — only if configured)
-	var ipamProvider networkdomain.IPAMProvider
-	if cfg.NetBoxURL != "" && cfg.NetBoxToken != "" {
-		ipamProvider = netbox.New(cfg.NetBoxURL, cfg.NetBoxToken)
-		log.Printf("NetBox IPAM configured: %s", cfg.NetBoxURL)
+		// Customer form router dropdown (only when both modules are active)
+		if customerRoutes != nil {
+			customerRoutes.WithReader(reader)
+		}
+
+		mikrotikClient := mikrotik.New()
+
+		var ipamProvider networkdomain.IPAMProvider
+		if cfg.NetBoxURL != "" && cfg.NetBoxToken != "" {
+			ipamProvider = netbox.New(cfg.NetBoxURL, cfg.NetBoxToken)
+			log.Printf("NetBox IPAM configured: %s", cfg.NetBoxURL)
+		}
+
+		syncARPCmd := networkcommands.NewSyncCustomerARPHandler(
+			customerRepo, routerRepo, mikrotikClient, ipamProvider, publisher,
+		)
+
+		arpWorker := networksubscribers.NewARPWorker(syncARPCmd)
+		go arpWorker.Run(context.Background(), subscriber)
+
+		log.Printf("module enabled: network")
 	}
 
-	// SyncCustomerARP command
-	syncARPCmd := networkcommands.NewSyncCustomerARPHandler(
-		customerRepo, routerRepo, mikrotikClient, ipamProvider, publisher,
-	)
-
-	// Customer form router dropdown — read routers table via shared reader
-	customerRoutes.WithReader(reader)
-
-	// ARP worker: handles isp.customer.* (auto-sync) + isp.network.arp_requested (manual)
-	arpWorker := networksubscribers.NewARPWorker(syncARPCmd)
-	go arpWorker.Run(context.Background(), subscriber)
-
-	// 9. Router (with auth middleware)
-	router := infrahttp.NewRouter(reader, getCurrentUserQuery,
-		authRoutes, customerRoutes, productRoutes, networkRoutes,
-	)
-
+	// 9. HTTP router
+	router := infrahttp.NewRouter(reader, getCurrentUserQuery, moduleRoutes...)
 	httpServer := infrahttp.NewServer(cfg.ListenAddr, router)
 
-	log.Printf("VVS ISP Manager initialized (db: %s)", cfg.DatabasePath)
+	enabled := cfg.EnabledModules
+	if len(enabled) == 0 {
+		enabled = []string{"all"}
+	}
+	log.Printf("VVS ISP Manager initialized (db: %s, modules: %v)", cfg.DatabasePath, enabled)
 
 	return &App{
 		Writer:     writer,
@@ -221,7 +241,6 @@ func (a *App) Shutdown(ctx context.Context) error {
 	}
 	return err
 }
-
 
 // seedAdmin creates or updates the admin user on startup.
 func seedAdmin(ctx context.Context, users domain.UserRepository, username, password string) error {
