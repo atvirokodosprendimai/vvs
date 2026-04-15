@@ -132,38 +132,38 @@ func listHandler(querySvc *queries.ListHandler, sub events.EventSubscriber) http
 }
 ```
 
-**SSE delete event routing — CRITICAL:**
-Delete event payloads only contain `{id, code}` — NOT the full entity. If you unmarshal a delete payload
-into your read model struct and call `PatchElementTempl(Row(emptyModel))`, it pushes empty rows to all clients.
-Always check `event.Type` before deciding what to do:
+**SSE live updates — always re-render the full component:**
+Datastar is backend-driven UI. The browser holds no state — it renders whatever HTML the backend sends.
+On any NATS event (create, update, delete), re-query the current state and send the full component HTML.
+Datastar's morphing algorithm reconciles the DOM: adds new rows, removes deleted ones, updates changed ones.
+
 ```go
-case event, ok := <-ch:
+// CORRECT: re-render full list on every event
+case _, ok := <-ch:
     if !ok { return }
-    if event.Type == "customer.deleted" {
-        sse.PatchElements("",
-            datastar.WithSelector("#customer-"+event.AggregateID),
-            datastar.WithMode(datastar.ElementPatchModeRemove),
-        )
-        continue
-    }
-    // safe to re-query and re-render for other event types
-    result, _ := querySvc.Handle(r.Context(), query)
+    result, err = querySvc.Handle(r.Context(), query)
+    if err != nil { continue }
     sse.PatchElementTempl(ListTemplate(result))
 ```
 
-**`PatchElements` for append/remove without full re-render:**
+❌ **WRONG: selector-based remove**
 ```go
-// Append a single item (e.g. new chat message)
+// DON'T do this — if element is absent from DOM, Datastar fails;
+// also violates "backend is source of truth" principle
+sse.PatchElements("",
+    datastar.WithSelector("#item-"+event.AggregateID),
+    datastar.WithMode(datastar.ElementPatchModeRemove),
+)
+```
+
+**`PatchElements` append — only for append-only streams (e.g. chat history):**
+```go
+// OK for chat/log — content only grows, re-sending full history is expensive
 var buf bytes.Buffer
 MyItemTempl(item).Render(ctx, &buf)
 sse.PatchElements(buf.String(),
     datastar.WithSelector("#container-id"),
     datastar.WithMode(datastar.ElementPatchModeAppend),
-)
-// Remove an item by selector
-sse.PatchElements("",
-    datastar.WithSelector("#item-"+id),
-    datastar.WithMode(datastar.ElementPatchModeRemove),
 )
 ```
 
