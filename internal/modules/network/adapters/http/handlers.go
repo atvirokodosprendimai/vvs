@@ -1,0 +1,199 @@
+package http
+
+import (
+	"encoding/json"
+	"net/http"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/starfederation/datastar-go/datastar"
+	"github.com/vvs/isp/internal/modules/network/app/commands"
+	"github.com/vvs/isp/internal/modules/network/app/queries"
+	"github.com/vvs/isp/internal/shared/events"
+)
+
+type Handlers struct {
+	createCmd  *commands.CreateRouterHandler
+	updateCmd  *commands.UpdateRouterHandler
+	deleteCmd  *commands.DeleteRouterHandler
+	listQuery  *queries.ListRoutersHandler
+	getQuery   *queries.GetRouterHandler
+	subscriber events.EventSubscriber
+}
+
+func NewHandlers(
+	createCmd *commands.CreateRouterHandler,
+	updateCmd *commands.UpdateRouterHandler,
+	deleteCmd *commands.DeleteRouterHandler,
+	listQuery *queries.ListRoutersHandler,
+	getQuery *queries.GetRouterHandler,
+	subscriber events.EventSubscriber,
+) *Handlers {
+	return &Handlers{
+		createCmd:  createCmd,
+		updateCmd:  updateCmd,
+		deleteCmd:  deleteCmd,
+		listQuery:  listQuery,
+		getQuery:   getQuery,
+		subscriber: subscriber,
+	}
+}
+
+func (h *Handlers) RegisterRoutes(r chi.Router) {
+	r.Get("/routers", h.listPage)
+	r.Get("/routers/new", h.createPage)
+	r.Get("/routers/{id}", h.detailPage)
+	r.Get("/routers/{id}/edit", h.editPage)
+
+	r.Get("/api/routers", h.listSSE)
+	r.Post("/api/routers", h.createSSE)
+	r.Put("/api/routers/{id}", h.updateSSE)
+	r.Delete("/api/routers/{id}", h.deleteSSE)
+}
+
+func (h *Handlers) listPage(w http.ResponseWriter, r *http.Request) {
+	RouterListPage().Render(r.Context(), w)
+}
+
+func (h *Handlers) createPage(w http.ResponseWriter, r *http.Request) {
+	RouterFormPage(nil).Render(r.Context(), w)
+}
+
+func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	router, err := h.getQuery.Handle(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Router not found", http.StatusNotFound)
+		return
+	}
+	RouterDetailPage(router).Render(r.Context(), w)
+}
+
+func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	router, err := h.getQuery.Handle(r.Context(), id)
+	if err != nil {
+		http.Error(w, "Router not found", http.StatusNotFound)
+		return
+	}
+	RouterFormPage(&router).Render(r.Context(), w)
+}
+
+func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
+	sse := datastar.NewSSE(w, r)
+
+	ch, cancel := h.subscriber.ChanSubscription("isp.network.router.*")
+	defer cancel()
+
+	routers, err := h.listQuery.Handle(r.Context())
+	if err != nil {
+		sse.ConsoleError(err)
+		return
+	}
+	sse.PatchElementTempl(RouterTable(routers))
+
+	for {
+		select {
+		case event, ok := <-ch:
+			if !ok {
+				return
+			}
+			var rm queries.RouterReadModel
+			if err := json.Unmarshal(event.Data, &rm); err != nil {
+				continue
+			}
+			sse.PatchElementTempl(RouterRow(rm))
+		case <-r.Context().Done():
+			return
+		}
+	}
+}
+
+func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
+	var signals struct {
+		Name     string `json:"name"`
+		Host     string `json:"host"`
+		Port     string `json:"port"`
+		Username string `json:"username"`
+		Password string `json:"password"`
+		Notes    string `json:"notes"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+
+	port := parsePort(signals.Port)
+
+	_, err := h.createCmd.Handle(r.Context(), commands.CreateRouterCommand{
+		Name:     signals.Name,
+		Host:     signals.Host,
+		Port:     port,
+		Username: signals.Username,
+		Password: signals.Password,
+		Notes:    signals.Notes,
+	})
+	if err != nil {
+		sse.PatchElementTempl(formError(err.Error()))
+		return
+	}
+	sse.Redirect("/routers")
+}
+
+func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	var signals struct {
+		Name     string `json:"name"`
+		Host     string `json:"host"`
+		Port     string `json:"port"`
+		Username string `json:"username"`
+		Password string `json:"password"` // empty = keep existing
+		Notes    string `json:"notes"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+
+	port := parsePort(signals.Port)
+
+	_, err := h.updateCmd.Handle(r.Context(), commands.UpdateRouterCommand{
+		ID:       id,
+		Name:     signals.Name,
+		Host:     signals.Host,
+		Port:     port,
+		Username: signals.Username,
+		Password: signals.Password,
+		Notes:    signals.Notes,
+	})
+	if err != nil {
+		sse.PatchElementTempl(formError(err.Error()))
+		return
+	}
+	sse.Redirect("/routers/" + id)
+}
+
+func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
+	sse := datastar.NewSSE(w, r)
+	id := chi.URLParam(r, "id")
+
+	if err := h.deleteCmd.Handle(r.Context(), id); err != nil {
+		sse.ConsoleError(err)
+		return
+	}
+	sse.Redirect("/routers")
+}
+
+func parsePort(s string) int {
+	if s == "" {
+		return 8728
+	}
+	p, err := strconv.Atoi(s)
+	if err != nil || p <= 0 {
+		return 8728
+	}
+	return p
+}

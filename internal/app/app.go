@@ -32,6 +32,12 @@ import (
 	authqueries "github.com/vvs/isp/internal/modules/auth/app/queries"
 	"github.com/vvs/isp/internal/modules/auth/domain"
 	authmigrations "github.com/vvs/isp/internal/modules/auth/migrations"
+
+	networkhttp "github.com/vvs/isp/internal/modules/network/adapters/http"
+	networkpersistence "github.com/vvs/isp/internal/modules/network/adapters/persistence"
+	networkcommands "github.com/vvs/isp/internal/modules/network/app/commands"
+	networkqueries "github.com/vvs/isp/internal/modules/network/app/queries"
+	networkmigrations "github.com/vvs/isp/internal/modules/network/migrations"
 )
 
 type App struct {
@@ -67,6 +73,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "auth", FS: authmigrations.FS, TableName: "goose_auth"},
 		{Name: "customer", FS: customermigrations.FS, TableName: "goose_customer"},
 		{Name: "product", FS: productmigrations.FS, TableName: "goose_product"},
+		{Name: "network", FS: networkmigrations.FS, TableName: "goose_network"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -125,9 +132,21 @@ func New(cfg Config) (*App, error) {
 		}
 	}
 
-	// 8. Router (with auth middleware)
+	// 8. Wire Network module
+	routerRepo := networkpersistence.NewGormRouterRepository(writer, reader)
+	createRouterCmd := networkcommands.NewCreateRouterHandler(routerRepo, publisher)
+	updateRouterCmd := networkcommands.NewUpdateRouterHandler(routerRepo, publisher)
+	deleteRouterCmd := networkcommands.NewDeleteRouterHandler(routerRepo)
+	listRoutersQuery := networkqueries.NewListRoutersHandler(routerRepo)
+	getRouterQuery := networkqueries.NewGetRouterHandler(routerRepo)
+	networkRoutes := networkhttp.NewHandlers(
+		createRouterCmd, updateRouterCmd, deleteRouterCmd,
+		listRoutersQuery, getRouterQuery, subscriber,
+	)
+
+	// 9. Router (with auth middleware)
 	router := infrahttp.NewRouter(reader, getCurrentUserQuery,
-		authRoutes, customerRoutes, productRoutes,
+		authRoutes, customerRoutes, productRoutes, networkRoutes,
 	)
 
 	httpServer := infrahttp.NewServer(cfg.ListenAddr, router)
