@@ -114,9 +114,7 @@ func (h *ChatHandler) chatSend(w http.ResponseWriter, r *http.Request) {
 		Data:        data,
 	})
 
-	// Clear the input signal for the sender.
-	sse := datastar.NewSSE(w, r)
-	sse.MarshalAndPatchSignals(map[string]any{"chatMsg": ""})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func scrollToBottom(sse *datastar.ServerSentEventGenerator) {
