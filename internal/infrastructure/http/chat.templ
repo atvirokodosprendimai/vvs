@@ -1,0 +1,56 @@
+package http
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/vvs/isp/internal/infrastructure/chat"
+)
+
+// ChatMessages is the full messages container — patched on initial SSE connect.
+templ ChatMessages(msgs []chat.Message, currentUserID string) {
+	<div id="chat-messages" class="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
+		if len(msgs) == 0 {
+			<div class="text-xs text-slate-600 text-center py-4">No messages yet. Say hello!</div>
+		} else {
+			for _, m := range msgs {
+				@ChatMessageItem(m, currentUserID)
+			}
+		}
+	</div>
+}
+
+// ChatMessageItem renders one chat message. Own messages are right-aligned orange;
+// others are left-aligned slate.
+templ ChatMessageItem(msg chat.Message, currentUserID string) {
+	if msg.UserID == currentUserID {
+		<!-- Own message: right-aligned -->
+		<div class="flex flex-col items-end gap-0.5">
+			<div class="max-w-[85%] bg-orange-600/20 border border-orange-500/30 text-slate-100 text-sm px-3 py-2 rounded-2xl rounded-br-sm">
+				{ msg.Body }
+			</div>
+			<span class="text-[10px] text-slate-600">{ chatAge(msg.CreatedAt) }</span>
+		</div>
+	} else {
+		<!-- Other's message: left-aligned -->
+		<div class="flex flex-col items-start gap-0.5">
+			<span class="text-[10px] text-slate-500 px-1">{ msg.Username }</span>
+			<div class="max-w-[85%] bg-slate-800 border border-slate-700 text-slate-200 text-sm px-3 py-2 rounded-2xl rounded-bl-sm">
+				{ msg.Body }
+			</div>
+			<span class="text-[10px] text-slate-600 px-1">{ chatAge(msg.CreatedAt) }</span>
+		</div>
+	}
+}
+
+func chatAge(t time.Time) string {
+	d := time.Since(t)
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		return fmt.Sprintf("%dm ago", int(d.Minutes()))
+	default:
+		return t.Format("15:04")
+	}
+}

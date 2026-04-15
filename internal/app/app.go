@@ -42,6 +42,8 @@ import (
 	networkmigrations "github.com/vvs/isp/internal/modules/network/migrations"
 
 	"github.com/vvs/isp/internal/infrastructure/arista"
+	"github.com/vvs/isp/internal/infrastructure/chat"
+	chatmigrations "github.com/vvs/isp/internal/infrastructure/chat/migrations"
 	"github.com/vvs/isp/internal/infrastructure/mikrotik"
 	"github.com/vvs/isp/internal/infrastructure/netbox"
 	"github.com/vvs/isp/internal/infrastructure/notifications"
@@ -76,6 +78,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "product", FS: productmigrations.FS, TableName: "goose_product"},
 		{Name: "network", FS: networkmigrations.FS, TableName: "goose_network"},
 		{Name: "notifications", FS: notifmigrations.FS, TableName: "goose_notifications"},
+		{Name: "chat", FS: chatmigrations.FS, TableName: "goose_chat"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -201,11 +204,14 @@ func New(cfg Config) (*App, error) {
 	notifStore := notifications.NewStore(gdb)
 	notifWorker := notifications.NewWorker(notifStore, publisher)
 	go notifWorker.Run(context.Background(), subscriber)
-
 	notifHandler := infrahttp.NewNotifHandler(notifStore, subscriber)
 
-	// 9. HTTP router — pass gdb.R to dashboard handler
-	router := infrahttp.NewRouter(gdb.R, getCurrentUserQuery, notifHandler, moduleRoutes...)
+	// 9. Chat
+	chatStore := chat.NewStore(gdb)
+	chatHandler := infrahttp.NewChatHandler(chatStore, subscriber, publisher)
+
+	// 10. HTTP router — pass gdb.R to dashboard handler
+	router := infrahttp.NewRouter(gdb.R, getCurrentUserQuery, notifHandler, chatHandler, moduleRoutes...)
 	httpServer := infrahttp.NewServer(cfg.ListenAddr, router)
 
 	enabled := cfg.EnabledModules

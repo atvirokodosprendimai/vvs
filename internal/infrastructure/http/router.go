@@ -13,7 +13,7 @@ type ModuleRoutes interface {
 	RegisterRoutes(r chi.Router)
 }
 
-func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, notif *NotifHandler, modules ...ModuleRoutes) http.Handler {
+func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, notif *NotifHandler, chatHandler *ChatHandler, modules ...ModuleRoutes) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Recoverer)
@@ -39,6 +39,10 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 		// Notifications
 		r.Get("/sse/notifications", notif.notificationsSSE)
 		r.Post("/api/notifications/read", notif.markRead)
+
+		// Chat
+		r.Get("/sse/chat", chatHandler.chatSSE)
+		r.Post("/api/chat/send", chatHandler.chatSend)
 
 		// Register all module routes
 		for _, m := range modules {
