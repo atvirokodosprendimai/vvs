@@ -37,10 +37,7 @@ func (h *VoidInvoiceHandler) Handle(ctx context.Context, cmd VoidInvoiceCommand)
 		return err
 	}
 
-	data, _ := json.Marshal(map[string]string{
-		"id":     invoice.ID,
-		"number": invoice.InvoiceNumber,
-	})
+	data, _ := json.Marshal(domainToReadModel(invoice))
 
 	h.publisher.Publish(ctx, "isp.invoice.voided", events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),

@@ -62,10 +62,7 @@ func (h *CreateInvoiceHandler) Handle(ctx context.Context, cmd CreateInvoiceComm
 		return nil, err
 	}
 
-	data, _ := json.Marshal(map[string]string{
-		"id":     invoice.ID,
-		"number": invoice.InvoiceNumber,
-	})
+	data, _ := json.Marshal(domainToReadModel(invoice))
 
 	h.publisher.Publish(ctx, "isp.invoice.created", events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),

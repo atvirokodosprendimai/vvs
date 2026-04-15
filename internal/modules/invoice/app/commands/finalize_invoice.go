@@ -37,10 +37,7 @@ func (h *FinalizeInvoiceHandler) Handle(ctx context.Context, cmd FinalizeInvoice
 		return err
 	}
 
-	data, _ := json.Marshal(map[string]string{
-		"id":     invoice.ID,
-		"number": invoice.InvoiceNumber,
-	})
+	data, _ := json.Marshal(domainToReadModel(invoice))
 
 	h.publisher.Publish(ctx, "isp.invoice.finalized", events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),

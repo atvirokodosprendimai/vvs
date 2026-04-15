@@ -25,24 +25,24 @@ type ListInvoicesResult struct {
 }
 
 type InvoiceReadModel struct {
-	ID             string `gorm:"primaryKey"`
-	InvoiceNumber  string
-	CustomerID     string
-	CustomerName   string
-	SubtotalAmount int64
-	SubtotalCurrency string
-	TaxRate        int
-	TaxAmount      int64
-	TaxCurrency    string
-	TotalAmount    int64
-	TotalCurrency  string
-	Status         string
-	IssueDate      time.Time
-	DueDate        time.Time
-	PaidDate       *time.Time
-	RecurringID    *string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID               string     `gorm:"primaryKey" json:"id"`
+	InvoiceNumber    string     `json:"invoice_number"`
+	CustomerID       string     `json:"customer_id"`
+	CustomerName     string     `json:"customer_name"`
+	SubtotalAmount   int64      `json:"subtotal_amount"`
+	SubtotalCurrency string     `json:"subtotal_currency"`
+	TaxRate          int        `json:"tax_rate"`
+	TaxAmount        int64      `json:"tax_amount"`
+	TaxCurrency      string     `json:"tax_currency"`
+	TotalAmount      int64      `json:"total_amount"`
+	TotalCurrency    string     `json:"total_currency"`
+	Status           string     `json:"status"`
+	IssueDate        time.Time  `json:"issue_date"`
+	DueDate          time.Time  `json:"due_date"`
+	PaidDate         *time.Time `json:"paid_date"`
+	RecurringID      *string    `json:"recurring_id"`
+	CreatedAt        time.Time  `json:"created_at"`
+	UpdatedAt        time.Time  `json:"updated_at"`
 }
 
 func (InvoiceReadModel) TableName() string { return "invoices" }
