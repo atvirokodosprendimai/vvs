@@ -21,7 +21,7 @@ templ CustomerListPage() {
 				<input
 					type="text"
 					data-bind:search
-					data-on:input__debounce.500ms="$page = 1; @get('/api/customers')"
+					data-on:input__debounce.500ms="($page = 1) && @get('/api/customers')"
 					placeholder="Search customers..."
 					class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm w-72 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
 				/>
@@ -237,13 +237,13 @@ templ CustomerDetailPage(c *domain.Customer) {
 							class="flex items-center gap-2"
 						>
 							<button
-								data-on:click={ fmt.Sprintf("$arpAction='enable'; @post('/api/customers/%s/arp')", c.ID) }
+								data-on:click={ fmt.Sprintf("($arpAction='enable') && @post('/api/customers/%s/arp')", c.ID) }
 								class="bg-lime-500/10 hover:bg-lime-500/20 text-lime-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-lime-500/20"
 							>
 								Enable Access
 							</button>
 							<button
-								data-on:click={ fmt.Sprintf("$arpAction='disable'; @post('/api/customers/%s/arp')", c.ID) }
+								data-on:click={ fmt.Sprintf("($arpAction='disable') && @post('/api/customers/%s/arp')", c.ID) }
 								class="bg-slate-800 hover:bg-slate-700 text-slate-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-slate-700"
 							>
 								Disable Access

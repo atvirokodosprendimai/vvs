@@ -752,9 +752,9 @@ func Pagination(page int, totalPages int, baseURL string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var38 string
-		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$page = %d; @get('%s')", max(1, page-1), baseURL))
+		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($page = %d) && @get('%s')", max(1, page-1), baseURL))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/components.templ`, Line: 123, Col: 81}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/components.templ`, Line: 123, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {
@@ -801,9 +801,9 @@ func Pagination(page int, totalPages int, baseURL string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var41 string
-		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$page = %d; @get('%s')", min(totalPages, page+1), baseURL))
+		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($page = %d) && @get('%s')", min(totalPages, page+1), baseURL))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/components.templ`, Line: 135, Col: 90}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/components.templ`, Line: 135, Col: 94}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {

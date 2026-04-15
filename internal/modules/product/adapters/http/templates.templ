@@ -22,13 +22,13 @@ templ ProductListPage() {
 					<input
 						type="text"
 						data-bind:search
-						data-on:input__debounce.500ms="$page = 1; @get('/api/products')"
+						data-on:input__debounce.500ms="($page = 1) && @get('/api/products')"
 						placeholder="Search products..."
 						class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm w-60 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
 					/>
 					<select
 						data-bind:filterType
-						data-on:change="$page = 1; @get('/api/products')"
+						data-on:change="($page = 1) && @get('/api/products')"
 						class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 					>
 						<option value="">All Types</option>

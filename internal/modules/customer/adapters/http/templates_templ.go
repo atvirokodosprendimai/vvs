@@ -54,7 +54,7 @@ func CustomerListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"customer-content\" data-signals=\"{search: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/customers')\"><div class=\"flex items-center justify-between mb-4\"><input type=\"text\" data-bind:search data-on:input__debounce.500ms=\"$page = 1; @get('/api/customers')\" placeholder=\"Search customers...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm w-72 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"> <a href=\"/customers/new\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ New Customer</a></div><div id=\"customer-table\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"customer-content\" data-signals=\"{search: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/customers')\"><div class=\"flex items-center justify-between mb-4\"><input type=\"text\" data-bind:search data-on:input__debounce.500ms=\"($page = 1) && @get('/api/customers')\" placeholder=\"Search customers...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm w-72 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"> <a href=\"/customers/new\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ New Customer</a></div><div id=\"customer-table\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -708,9 +708,9 @@ func CustomerDetailPage(c *domain.Customer) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var27 string
-					templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$arpAction='enable'; @post('/api/customers/%s/arp')", c.ID))
+					templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($arpAction='enable') && @post('/api/customers/%s/arp')", c.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 240, Col: 96}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 240, Col: 100}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 					if templ_7745c5c3_Err != nil {
@@ -721,9 +721,9 @@ func CustomerDetailPage(c *domain.Customer) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var28 string
-					templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$arpAction='disable'; @post('/api/customers/%s/arp')", c.ID))
+					templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($arpAction='disable') && @post('/api/customers/%s/arp')", c.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 246, Col: 97}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 246, Col: 101}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 					if templ_7745c5c3_Err != nil {
