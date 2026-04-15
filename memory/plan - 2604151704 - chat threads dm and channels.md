@@ -16,29 +16,22 @@ Decisions from planning:
 
 ## Phases
 
-### Phase 1 — DB Schema — status: open
+### Phase 1 — DB Schema — status: completed
 
-1. [ ] Migration `002_add_threads.sql`
-   - `chat_threads(id, type CHECK('direct'|'channel'), name, is_private, created_by, created_at)`
-   - `chat_thread_members(thread_id FK, user_id, joined_at) PK(thread_id, user_id)`
-   - `chat_thread_reads(thread_id, user_id, last_read_at) PK(thread_id, user_id)` — unread tracking
-   - `ALTER TABLE chat_messages ADD COLUMN thread_id TEXT NOT NULL DEFAULT ''`
-   - Seed: INSERT `#general` channel (id='general', type='channel', is_private=0)
-   - Backfill: UPDATE chat_messages SET thread_id='general' WHERE thread_id=''
+1. [x] Migration `002_add_threads.sql`
+   - => `chat_threads`, `chat_thread_members`, `chat_thread_reads` created
+   - => `ALTER TABLE chat_messages ADD COLUMN thread_id`; backfill to 'general'
+   - => #general seeded in migration SQL
 
-2. [ ] Update `chat.Store` with new types and methods
-   - Add types: `Thread`, `ThreadMember`
-   - `CreateThread(ctx, Thread) error`
-   - `FindDirectThread(ctx, userA, userB string) (Thread, error)` — find existing DM
-   - `AddMember(ctx, threadID, userID string) error`
-   - `ListThreadsForUser(ctx, userID string) ([]ThreadSummary, error)` — includes last message + unread count
-   - `Recent(ctx, threadID string, limit int) ([]Message, error)` — filter by thread_id
-   - `Save(ctx, Message) error` — Message now has ThreadID field
-   - `MarkRead(ctx, threadID, userID string) error`
-   - `UnreadCount(ctx, userID string) (int, error)` — total unread across all threads
+2. [x] Update `chat.Store` with new types and methods
+   - => Thread, ThreadSummary, Message (with ThreadID) types
+   - => CreateThread, ThreadExists, FindDirectThread, AddMember, IsMember
+   - => ListThreadsForUser (with last message + unread count via SQL)
+   - => ListPublicChannels, Recent(threadID), MarkRead, TotalUnread
 
-3. [ ] Seed `#general` channel on app startup in `app.go`
-   - If thread 'general' doesn't exist, create it with all existing users as members
+3. [x] Seed `#general` channel on app startup in `app.go`
+   - => seedGeneralChannel() checks ThreadExists before creating
+   - => chat.go SSE/send wired to isp.chat.message.{threadID}; widget defaults to 'general'
 
 ### Phase 2 — Backend HTTP Layer — status: open
 
@@ -124,4 +117,4 @@ Decisions from planning:
 
 ## Progress Log
 
-<!-- Updated after every completed action -->
+- 2604151704 — Phase 1 complete: DB schema, Store, seed #general, widget wired to thread subjects
