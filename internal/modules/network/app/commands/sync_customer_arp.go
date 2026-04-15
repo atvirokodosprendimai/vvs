@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	customerdomain "github.com/vvs/isp/internal/modules/customer/domain"
 	"github.com/vvs/isp/internal/modules/network/domain"
 	"github.com/vvs/isp/internal/shared/events"
 )
@@ -32,7 +31,7 @@ type ARPChangedEvent struct {
 }
 
 type SyncCustomerARPHandler struct {
-	customers   customerdomain.CustomerRepository
+	customers   domain.CustomerARPProvider
 	routers     domain.RouterRepository
 	provisioner domain.RouterProvisioner
 	ipam        domain.IPAMProvider // may be nil if not configured
@@ -40,7 +39,7 @@ type SyncCustomerARPHandler struct {
 }
 
 func NewSyncCustomerARPHandler(
-	customers customerdomain.CustomerRepository,
+	customers domain.CustomerARPProvider,
 	routers domain.RouterRepository,
 	provisioner domain.RouterProvisioner,
 	ipam domain.IPAMProvider,
@@ -56,32 +55,33 @@ func NewSyncCustomerARPHandler(
 }
 
 func (h *SyncCustomerARPHandler) Handle(ctx context.Context, cmd SyncCustomerARPCommand) error {
-	customer, err := h.customers.FindByID(ctx, cmd.CustomerID)
+	arpData, err := h.customers.FindARPData(ctx, cmd.CustomerID)
 	if err != nil {
 		return fmt.Errorf("sync arp: load customer: %w", err)
 	}
 
-	if !customer.HasNetworkProvisioning() {
+	if !arpData.HasNetworkProvisioning() {
 		return nil // no router assigned — nothing to do
 	}
 
 	// If IP unknown and IPAM configured, resolve from NetBox
-	if customer.IPAddress == "" && h.ipam != nil {
-		ip, mac, _, err := h.ipam.GetIPByCustomerCode(ctx, customer.Code.String())
+	if arpData.IPAddress == "" && h.ipam != nil {
+		ip, mac, _, err := h.ipam.GetIPByCustomerCode(ctx, arpData.Code)
 		if err != nil {
 			return fmt.Errorf("sync arp: resolve IP: %w", err)
 		}
-		customer.SetNetworkInfo(*customer.RouterID, ip, mac)
-		if err := h.customers.Save(ctx, customer); err != nil {
+		if err := h.customers.UpdateNetworkInfo(ctx, arpData.ID, *arpData.RouterID, ip, mac); err != nil {
 			log.Printf("warn: sync arp: save customer after IP resolve: %v", err)
 		}
+		arpData.IPAddress = ip
+		arpData.MACAddress = mac
 	}
 
-	if customer.IPAddress == "" {
+	if arpData.IPAddress == "" {
 		return fmt.Errorf("sync arp: customer %s has no IP address", cmd.CustomerID)
 	}
 
-	router, err := h.routers.FindByID(ctx, *customer.RouterID)
+	router, err := h.routers.FindByID(ctx, *arpData.RouterID)
 	if err != nil {
 		return fmt.Errorf("sync arp: load router: %w", err)
 	}
@@ -91,15 +91,15 @@ func (h *SyncCustomerARPHandler) Handle(ctx context.Context, cmd SyncCustomerARP
 	var arpStatus string
 	switch cmd.Action {
 	case ARPActionEnable:
-		if customer.MACAddress == "" {
+		if arpData.MACAddress == "" {
 			return fmt.Errorf("sync arp: customer %s has no MAC address", cmd.CustomerID)
 		}
-		if err := h.provisioner.SetARPStatic(ctx, conn, customer.IPAddress, customer.MACAddress, customer.ID); err != nil {
+		if err := h.provisioner.SetARPStatic(ctx, conn, arpData.IPAddress, arpData.MACAddress, arpData.ID); err != nil {
 			return fmt.Errorf("sync arp: set static: %w", err)
 		}
 		arpStatus = "active"
 	case ARPActionDisable:
-		if err := h.provisioner.DisableARP(ctx, conn, customer.IPAddress); err != nil {
+		if err := h.provisioner.DisableARP(ctx, conn, arpData.IPAddress); err != nil {
 			return fmt.Errorf("sync arp: disable: %w", err)
 		}
 		arpStatus = "disabled"
@@ -109,7 +109,7 @@ func (h *SyncCustomerARPHandler) Handle(ctx context.Context, cmd SyncCustomerARP
 
 	// Write ARP status back to NetBox (best-effort)
 	if h.ipam != nil {
-		_, _, ipID, err := h.ipam.GetIPByCustomerCode(ctx, customer.Code.String())
+		_, _, ipID, err := h.ipam.GetIPByCustomerCode(ctx, arpData.Code)
 		if err == nil && ipID > 0 {
 			if err := h.ipam.UpdateARPStatus(ctx, ipID, arpStatus); err != nil {
 				log.Printf("warn: sync arp: update netbox arp_status: %v", err)
@@ -118,15 +118,15 @@ func (h *SyncCustomerARPHandler) Handle(ctx context.Context, cmd SyncCustomerARP
 	}
 
 	data, _ := json.Marshal(ARPChangedEvent{
-		CustomerID: customer.ID,
-		IP:         customer.IPAddress,
+		CustomerID: arpData.ID,
+		IP:         arpData.IPAddress,
 		Action:     cmd.Action,
 		Status:     arpStatus,
 	})
 	h.publisher.Publish(ctx, "isp.network.arp_changed", events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "network.arp_changed",
-		AggregateID: customer.ID,
+		AggregateID: arpData.ID,
 		OccurredAt:  time.Now().UTC(),
 		Data:        data,
 	})

@@ -18,6 +18,7 @@ import (
 	customerpersistence "github.com/vvs/isp/internal/modules/customer/adapters/persistence"
 	customercommands "github.com/vvs/isp/internal/modules/customer/app/commands"
 	customerqueries "github.com/vvs/isp/internal/modules/customer/app/queries"
+	customerdomain "github.com/vvs/isp/internal/modules/customer/domain"
 	customermigrations "github.com/vvs/isp/internal/modules/customer/migrations"
 
 	producthttp "github.com/vvs/isp/internal/modules/product/adapters/http"
@@ -194,7 +195,7 @@ func New(cfg Config) (*App, error) {
 		}
 
 		syncARPCmd := networkcommands.NewSyncCustomerARPHandler(
-			customerRepo, routerRepo, mikrotikClient, ipamProvider, publisher,
+			&customerARPBridge{repo: customerRepo}, routerRepo, mikrotikClient, ipamProvider, publisher,
 		)
 
 		arpWorker := networksubscribers.NewARPWorker(syncARPCmd)
@@ -240,6 +241,36 @@ func (a *App) Shutdown(ctx context.Context) error {
 		a.NATSServer.WaitForShutdown()
 	}
 	return err
+}
+
+// customerARPBridge adapts the customer repository to the network module's
+// CustomerARPProvider interface. Lives here (composition root) so the network
+// module does not import the customer domain package.
+type customerARPBridge struct {
+	repo customerdomain.CustomerRepository
+}
+
+func (b *customerARPBridge) FindARPData(ctx context.Context, id string) (networkdomain.CustomerARPData, error) {
+	c, err := b.repo.FindByID(ctx, id)
+	if err != nil {
+		return networkdomain.CustomerARPData{}, err
+	}
+	return networkdomain.CustomerARPData{
+		ID:         c.ID,
+		Code:       c.Code.String(),
+		RouterID:   c.RouterID,
+		IPAddress:  c.IPAddress,
+		MACAddress: c.MACAddress,
+	}, nil
+}
+
+func (b *customerARPBridge) UpdateNetworkInfo(ctx context.Context, id, routerID, ip, mac string) error {
+	c, err := b.repo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	c.SetNetworkInfo(routerID, ip, mac)
+	return b.repo.Save(ctx, c)
 }
 
 // seedAdmin creates or updates the admin user on startup.
