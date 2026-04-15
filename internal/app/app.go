@@ -26,31 +26,6 @@ import (
 	productqueries "github.com/vvs/isp/internal/modules/product/app/queries"
 	productmigrations "github.com/vvs/isp/internal/modules/product/migrations"
 
-	invoicehttp "github.com/vvs/isp/internal/modules/invoice/adapters/http"
-	invoicepersistence "github.com/vvs/isp/internal/modules/invoice/adapters/persistence"
-	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
-	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
-	invoicemigrations "github.com/vvs/isp/internal/modules/invoice/migrations"
-
-	recurringhttp "github.com/vvs/isp/internal/modules/recurring/adapters/http"
-	recurringpersistence "github.com/vvs/isp/internal/modules/recurring/adapters/persistence"
-	recurringcommands "github.com/vvs/isp/internal/modules/recurring/app/commands"
-	recurringqueries "github.com/vvs/isp/internal/modules/recurring/app/queries"
-	recurringmigrations "github.com/vvs/isp/internal/modules/recurring/migrations"
-
-	paymenthttp "github.com/vvs/isp/internal/modules/payment/adapters/http"
-	paymentpersistence "github.com/vvs/isp/internal/modules/payment/adapters/persistence"
-	paymentcommands "github.com/vvs/isp/internal/modules/payment/app/commands"
-	paymentqueries "github.com/vvs/isp/internal/modules/payment/app/queries"
-	paymentmigrations "github.com/vvs/isp/internal/modules/payment/migrations"
-
-	"github.com/vvs/isp/internal/infrastructure/itaxtlt"
-	debthttp "github.com/vvs/isp/internal/modules/debt/adapters/http"
-	debtpersistence "github.com/vvs/isp/internal/modules/debt/adapters/persistence"
-	debtcommands "github.com/vvs/isp/internal/modules/debt/app/commands"
-	debtqueries "github.com/vvs/isp/internal/modules/debt/app/queries"
-	debtmigrations "github.com/vvs/isp/internal/modules/debt/migrations"
-
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
 	authpersistence "github.com/vvs/isp/internal/modules/auth/adapters/persistence"
 	authcommands "github.com/vvs/isp/internal/modules/auth/app/commands"
@@ -92,10 +67,6 @@ func New(cfg Config) (*App, error) {
 		{Name: "auth", FS: authmigrations.FS, TableName: "goose_auth"},
 		{Name: "customer", FS: customermigrations.FS, TableName: "goose_customer"},
 		{Name: "product", FS: productmigrations.FS, TableName: "goose_product"},
-		{Name: "invoice", FS: invoicemigrations.FS, TableName: "goose_invoice"},
-		{Name: "recurring", FS: recurringmigrations.FS, TableName: "goose_recurring"},
-		{Name: "payment", FS: paymentmigrations.FS, TableName: "goose_payment"},
-		{Name: "debt", FS: debtmigrations.FS, TableName: "goose_debt"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -136,51 +107,7 @@ func New(cfg Config) (*App, error) {
 		listProductsQuery, getProductQuery, subscriber,
 	)
 
-	// 7. Wire Invoice module
-	invoiceRepo := invoicepersistence.NewGormInvoiceRepository(writer, reader)
-	createInvoiceCmd := invoicecommands.NewCreateInvoiceHandler(invoiceRepo, publisher)
-	finalizeInvoiceCmd := invoicecommands.NewFinalizeInvoiceHandler(invoiceRepo, publisher)
-	voidInvoiceCmd := invoicecommands.NewVoidInvoiceHandler(invoiceRepo, publisher)
-	listInvoicesQuery := invoicequeries.NewListInvoicesHandler(reader)
-	getInvoiceQuery := invoicequeries.NewGetInvoiceHandler(reader)
-	invoiceRoutes := invoicehttp.NewHandlers(
-		createInvoiceCmd, finalizeInvoiceCmd, voidInvoiceCmd,
-		listInvoicesQuery, getInvoiceQuery, subscriber, reader,
-	)
-
-	// 8. Wire Recurring module
-	recurringRepo := recurringpersistence.NewGormRecurringRepository(writer, reader)
-	createRecurringCmd := recurringcommands.NewCreateRecurringHandler(recurringRepo, publisher)
-	updateRecurringCmd := recurringcommands.NewUpdateRecurringHandler(recurringRepo, publisher)
-	toggleRecurringCmd := recurringcommands.NewToggleRecurringHandler(recurringRepo, publisher)
-	listRecurringQuery := recurringqueries.NewListRecurringHandler(reader)
-	getRecurringQuery := recurringqueries.NewGetRecurringHandler(reader)
-	recurringRoutes := recurringhttp.NewHandlers(
-		createRecurringCmd, updateRecurringCmd, toggleRecurringCmd,
-		listRecurringQuery, getRecurringQuery, subscriber,
-	)
-
-	// 9. Wire Payment module
-	paymentRepo := paymentpersistence.NewGormPaymentRepository(writer, reader)
-	recordPaymentCmd := paymentcommands.NewRecordPaymentHandler(paymentRepo, publisher)
-	importPaymentsCmd := paymentcommands.NewImportPaymentsHandler(paymentRepo, publisher)
-	matchPaymentCmd := paymentcommands.NewMatchPaymentHandler(paymentRepo, publisher)
-	listPaymentsQuery := paymentqueries.NewListPaymentsHandler(reader)
-	getPaymentQuery := paymentqueries.NewGetPaymentHandler(reader)
-	unmatchedPaymentsQuery := paymentqueries.NewUnmatchedPaymentsHandler(reader)
-	paymentRoutes := paymenthttp.NewHandlers(
-		recordPaymentCmd, importPaymentsCmd, matchPaymentCmd,
-		listPaymentsQuery, getPaymentQuery, unmatchedPaymentsQuery, subscriber,
-	)
-
-	// 10. Wire Debt module
-	debtProvider := itaxtlt.NewStubDebtorProvider() // swap for itaxtlt.NewHTTPDebtorClient once credentials are ready
-	debtRepo := debtpersistence.NewGormDebtRepository(writer, reader)
-	syncDebtCmd := debtcommands.NewSyncDebtorsHandler(debtProvider, debtRepo, reader, publisher)
-	listDebtQuery := debtqueries.NewListDebtStatusesHandler(reader)
-	debtRoutes := debthttp.NewHandlers(syncDebtCmd, listDebtQuery, subscriber)
-
-	// 11. Wire Auth module
+	// 7. Wire Auth module
 	userRepo := authpersistence.NewGormUserRepository(writer, reader)
 	sessionRepo := authpersistence.NewGormSessionRepository(writer, reader)
 	loginCmd := authcommands.NewLoginHandler(userRepo, sessionRepo)
@@ -198,10 +125,9 @@ func New(cfg Config) (*App, error) {
 		}
 	}
 
-	// 12. Router (with auth middleware)
+	// 8. Router (with auth middleware)
 	router := infrahttp.NewRouter(reader, getCurrentUserQuery,
-		authRoutes, customerRoutes, productRoutes, invoiceRoutes,
-		recurringRoutes, paymentRoutes, debtRoutes,
+		authRoutes, customerRoutes, productRoutes,
 	)
 
 	httpServer := infrahttp.NewServer(cfg.ListenAddr, router)
@@ -239,7 +165,6 @@ func (a *App) Shutdown(ctx context.Context) error {
 func seedAdmin(ctx context.Context, users domain.UserRepository, username, password string) error {
 	existing, err := users.FindByUsername(ctx, username)
 	if err == nil {
-		// User exists — update password
 		if err := existing.ChangePassword(password); err != nil {
 			return err
 		}
