@@ -13,8 +13,8 @@ templ Layout(title string) {
 			body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
 		</style>
 	</head>
-	<body class="bg-slate-950 text-slate-100 min-h-screen">
-		<div class="flex min-h-screen">
+	<body class="bg-slate-950 text-slate-100 h-screen overflow-hidden">
+		<div class="flex h-full">
 			@Sidebar()
 			<main class="flex-1 p-6 overflow-auto">
 				{ children... }

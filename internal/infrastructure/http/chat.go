@@ -38,6 +38,7 @@ func (h *ChatHandler) chatPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
+	_ = h.store.EnsurePublicMembership(r.Context(), user.ID)
 	threadID := r.URL.Query().Get("thread")
 	threads, _ := h.store.ListThreadsForUser(r.Context(), user.ID)
 	ChatPage(threads, user.ID, threadID).Render(r.Context(), w)
@@ -137,6 +138,8 @@ func (h *ChatHandler) threadsSSE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
+
+	_ = h.store.EnsurePublicMembership(r.Context(), user.ID)
 
 	sse := datastar.NewSSE(w, r)
 

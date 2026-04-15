@@ -231,6 +231,19 @@ func (s *Store) threadMemberIDs(ctx context.Context, threadID string) ([]string,
 	return ids, err
 }
 
+// EnsurePublicMembership adds the user to every public channel they are not yet a member of.
+// Called on chat page load so users automatically see all public channels.
+func (s *Store) EnsurePublicMembership(ctx context.Context, userID string) error {
+	return s.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Exec(`
+			INSERT OR IGNORE INTO chat_thread_members (thread_id, user_id, joined_at)
+			SELECT id, ?, CURRENT_TIMESTAMP
+			FROM chat_threads
+			WHERE type = 'channel' AND is_private = 0
+		`, userID).Error
+	})
+}
+
 // ListPublicChannels returns all public channels (for the join/discover UI).
 func (s *Store) ListPublicChannels(ctx context.Context) ([]Thread, error) {
 	var rows []threadModel

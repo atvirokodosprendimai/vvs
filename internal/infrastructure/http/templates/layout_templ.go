@@ -42,7 +42,7 @@ func Layout(title string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " | VVS ISP Manager</title><script src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></script><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js\"></script><style>\n\t\t\tbody { font-family: 'Inter', system-ui, -apple-system, sans-serif; }\n\t\t</style></head><body class=\"bg-slate-950 text-slate-100 min-h-screen\"><div class=\"flex min-h-screen\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " | VVS ISP Manager</title><script src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></script><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@1.0.0-RC.8/bundles/datastar.js\"></script><style>\n\t\t\tbody { font-family: 'Inter', system-ui, -apple-system, sans-serif; }\n\t\t</style></head><body class=\"bg-slate-950 text-slate-100 h-screen overflow-hidden\"><div class=\"flex h-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
