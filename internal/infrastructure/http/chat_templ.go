@@ -50,7 +50,7 @@ func ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThreadI
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex h-full -m-6\" data-signals=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex h-full -m-6 overflow-hidden min-h-0\" data-signals=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -63,7 +63,7 @@ func ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThreadI
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><!-- Thread sidebar --><div id=\"chat-threads\" data-init=\"@get('/sse/chat/threads')\" class=\"w-64 border-r border-slate-800 flex flex-col flex-shrink-0\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><!-- Thread sidebar --><div id=\"chat-threads\" data-init=\"@get('/sse/chat/threads')\" class=\"w-64 border-r border-slate-800 flex flex-col flex-shrink-0 min-h-0 overflow-y-auto\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -71,7 +71,7 @@ func ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThreadI
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><!-- Message panel --><div class=\"flex-1 flex flex-col min-w-0\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><!-- Message panel --><div class=\"flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -89,7 +89,7 @@ func ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThreadI
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" class=\"flex-1 flex flex-col\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" class=\"flex-1 flex flex-col min-h-0\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -102,7 +102,7 @@ func ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThreadI
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div id=\"chat-panel\" class=\"flex-1 flex flex-col\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div id=\"chat-panel\" class=\"flex-1 flex flex-col min-h-0\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -388,7 +388,7 @@ func ChatMessages(msgs []chat.Message, currentUserID string) templ.Component {
 			templ_7745c5c3_Var14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div id=\"chat-panel\" class=\"flex-1 flex flex-col\"><div id=\"chat-messages\" class=\"flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div id=\"chat-panel\" class=\"flex-1 flex flex-col min-h-0\"><div id=\"chat-messages\" class=\"flex-1 overflow-y-auto min-h-0 px-4 py-4 flex flex-col gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

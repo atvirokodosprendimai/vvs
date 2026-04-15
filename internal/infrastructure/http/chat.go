@@ -156,6 +156,8 @@ func (h *ChatHandler) threadsSSE(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				return
 			}
+			// Re-ensure membership so newly created public channels appear immediately.
+			_ = h.store.EnsurePublicMembership(r.Context(), user.ID)
 			next, err := h.store.ListThreadsForUser(r.Context(), user.ID)
 			if err != nil {
 				continue
