@@ -90,8 +90,15 @@ func (h *ChatHandler) threadMessagesSSE(w http.ResponseWriter, r *http.Request) 
 		_ = h.store.AddMember(r.Context(), threadID, user.ID)
 	}
 
-	// Mark thread as read on connect.
-	_ = h.store.MarkRead(r.Context(), threadID, user.ID)
+	// Mark thread as read on connect and notify threadsSSE to refresh badge.
+	if err := h.store.MarkRead(r.Context(), threadID, user.ID); err == nil {
+		h.publisher.Publish(r.Context(), "isp.chat.read."+threadID, events.DomainEvent{
+			ID:          uuid.Must(uuid.NewV7()).String(),
+			Type:        "chat.read",
+			AggregateID: threadID,
+			OccurredAt:  time.Now().UTC(),
+		})
+	}
 
 	h.streamMessages(w, r, threadID, user.ID)
 }
