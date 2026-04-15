@@ -38,11 +38,13 @@ func (h *ChatHandler) chatSSE(w http.ResponseWriter, r *http.Request) {
 
 	sse := datastar.NewSSE(w, r)
 
-	ch, cancel := h.subscriber.ChanSubscription("isp.chat.message")
+	threadID := "general"
+
+	ch, cancel := h.subscriber.ChanSubscription("isp.chat.message." + threadID)
 	defer cancel()
 
 	// Initial history — full replace of #chat-messages
-	msgs, _ := h.store.Recent(r.Context(), chatHistoryLimit)
+	msgs, _ := h.store.Recent(r.Context(), threadID, chatHistoryLimit)
 	sse.PatchElementTempl(ChatMessages(msgs, user.ID))
 	scrollToBottom(sse)
 
@@ -79,7 +81,8 @@ func (h *ChatHandler) chatSend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var signals struct {
-		ChatMsg string `json:"chatmsg"`
+		ChatMsg  string `json:"chatmsg"`
+		ThreadID string `json:"threadid"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -91,9 +94,14 @@ func (h *ChatHandler) chatSend(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
+	threadID := signals.ThreadID
+	if threadID == "" {
+		threadID = "general"
+	}
 
 	msg := chat.Message{
 		ID:        uuid.Must(uuid.NewV7()).String(),
+		ThreadID:  threadID,
 		UserID:    user.ID,
 		Username:  user.Username,
 		Body:      body,
@@ -106,7 +114,7 @@ func (h *ChatHandler) chatSend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data, _ := json.Marshal(msg)
-	h.publisher.Publish(r.Context(), "isp.chat.message", events.DomainEvent{
+	h.publisher.Publish(r.Context(), "isp.chat.message."+threadID, events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "chat.message",
 		AggregateID: msg.ID,

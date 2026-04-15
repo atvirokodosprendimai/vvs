@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/nats-io/nats.go"
 
@@ -208,6 +209,9 @@ func New(cfg Config) (*App, error) {
 
 	// 9. Chat
 	chatStore := chat.NewStore(gdb)
+	if err := seedGeneralChannel(context.Background(), chatStore); err != nil {
+		log.Printf("warn: seed #general channel: %v", err)
+	}
 	chatHandler := infrahttp.NewChatHandler(chatStore, subscriber, publisher)
 
 	// 10. HTTP router — pass gdb.R to dashboard handler
@@ -301,6 +305,22 @@ func (d *provisionerDispatcher) pick(conn networkdomain.RouterConn) networkdomai
 		return d.arista
 	}
 	return d.mikrotik
+}
+
+// seedGeneralChannel ensures the #general channel exists.
+func seedGeneralChannel(ctx context.Context, store *chat.Store) error {
+	exists, err := store.ThreadExists(ctx, "general")
+	if err != nil || exists {
+		return err
+	}
+	return store.CreateThread(ctx, chat.Thread{
+		ID:        "general",
+		Type:      "channel",
+		Name:      "#general",
+		IsPrivate: false,
+		CreatedBy: "system",
+		CreatedAt: time.Now().UTC(),
+	})
 }
 
 // seedAdmin creates or updates the admin user on startup.
