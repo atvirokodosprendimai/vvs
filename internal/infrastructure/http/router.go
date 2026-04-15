@@ -40,9 +40,18 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 		r.Get("/sse/notifications", notif.notificationsSSE)
 		r.Post("/api/notifications/read", notif.markRead)
 
-		// Chat
+		// Chat widget (global #general)
 		r.Get("/sse/chat", chatHandler.chatSSE)
 		r.Post("/api/chat/send", chatHandler.chatSend)
+
+		// Chat full page
+		r.Get("/chat", chatHandler.chatPage)
+		r.Get("/sse/chat/threads", chatHandler.threadsSSE)
+		r.Get("/sse/chat/messages/{threadID}", chatHandler.threadMessagesSSE)
+		r.Post("/api/chat/threads/direct", chatHandler.createDirect)
+		r.Post("/api/chat/threads/channel", chatHandler.createChannel)
+		r.Post("/api/chat/threads/{threadID}/members", chatHandler.addMember)
+		r.Post("/api/chat/threads/{threadID}/read", chatHandler.markRead)
 
 		// Register all module routes
 		for _, m := range modules {

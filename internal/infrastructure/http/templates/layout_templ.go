@@ -153,6 +153,10 @@ func Sidebar() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = NavItem("/chat", "Chat", chatNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><!-- Notification panel — shown when $notifOpen is true --><div data-show=\"$notifOpen\" class=\"absolute left-0 top-0 w-56 h-full bg-slate-900 border-r border-slate-800 flex flex-col z-10\" style=\"display:none\"><div class=\"flex items-center justify-between px-4 py-3 border-b border-slate-800\"><span class=\"text-sm font-medium text-slate-200\">Notifications</span> <button data-on:click=\"$notifOpen = false\" class=\"text-slate-500 hover:text-slate-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex-1 overflow-y-auto\"><ul id=\"notifications\" class=\"flex flex-col divide-y divide-slate-800\"><li class=\"px-4 py-6 text-center text-xs text-slate-600\">Loading...</li></ul></div></div><div class=\"flex flex-col gap-1 border-t border-slate-800 pt-3\"><div id=\"server-clock\" data-init=\"@get('/sse/clock')\" class=\"px-2 py-1.5 text-xs text-slate-600 font-mono\">--:--:--</div><button data-on:click=\"@post('/api/logout')\" class=\"flex items-center gap-2.5 px-2 py-1.5 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors text-sm w-full\"><span class=\"w-4 h-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -197,7 +201,7 @@ func NavItem(href string, label string, icon string) templ.Component {
 		var templ_7745c5c3_Var6 templ.SafeURL
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 163, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 164, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -218,7 +222,7 @@ func NavItem(href string, label string, icon string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 169, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 170, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -283,6 +287,10 @@ func productsIcon() string {
 
 func routersIcon() string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>`
+}
+
+func chatNavIcon() string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"/></svg>`
 }
 
 var _ = templruntime.GeneratedTemplate

@@ -162,8 +162,16 @@ templ userRow(row queries.UserRow, currentUserID string) {
 			@roleBadge(row.Role)
 		</td>
 		<td class="px-4 py-3 text-slate-500">{ formatDate(row.CreatedAt) }</td>
-		<td class="px-4 py-3 text-right">
+		<td class="px-4 py-3 text-right flex items-center justify-end gap-3">
 			if row.ID != currentUserID {
+				<button
+					data-signals={ fmt.Sprintf("{targetuserid:'%s'}", row.ID) }
+					data-on:click="@post('/api/chat/threads/direct')"
+					class="text-cyan-500 hover:text-cyan-400 text-xs transition-colors"
+					title="Message"
+				>
+					Message
+				</button>
 				<button
 					data-on:click={ fmt.Sprintf("@delete('/api/users/%s')", row.ID) }
 					class="text-red-400 hover:text-red-300 text-xs transition-colors"
