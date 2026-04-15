@@ -21,5 +21,9 @@ type EventHandler func(event DomainEvent) error
 
 type EventSubscriber interface {
 	Subscribe(subject string, handler EventHandler) error
+	// ChanSubscription subscribes to subject and returns a channel of events plus
+	// a cancel func. Caller MUST call cancel (e.g. defer cancel()) to unsubscribe.
+	// Supports wildcard subjects (e.g. "isp.invoice.*").
+	ChanSubscription(subject string) (<-chan DomainEvent, func())
 	Close() error
 }

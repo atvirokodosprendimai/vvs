@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -110,6 +111,10 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		signals.PageSize = 25
 	}
 
+	// Subscribe before initial render so no event is missed between query and subscribe
+	ch, cancel := h.subscriber.ChanSubscription("isp.invoice.*")
+	defer cancel()
+
 	result, err := h.listQuery.Handle(r.Context(), queries.ListInvoicesQuery{
 		Search:   signals.Search,
 		Status:   signals.Status,
@@ -120,8 +125,24 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		sse.ConsoleError(err)
 		return
 	}
-
 	sse.PatchElementTempl(InvoiceTable(result))
+
+	// Live updates: patch individual row on each NATS event — no re-query
+	for {
+		select {
+		case event, ok := <-ch:
+			if !ok {
+				return
+			}
+			var item queries.InvoiceReadModel
+			if err := json.Unmarshal(event.Data, &item); err != nil {
+				continue
+			}
+			sse.PatchElementTempl(InvoiceRow(item))
+		case <-r.Context().Done():
+			return
+		}
+	}
 }
 
 func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
