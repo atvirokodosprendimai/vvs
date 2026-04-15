@@ -29,8 +29,12 @@ ISP/hosting: customers need L2 access cut when suspended. MikroTik manages ARP e
 
 ### Phase 3 — MikroTik infrastructure adapter — status: open
 
-5. [ ] Add `github.com/go-routeros/routeros` to go.mod
-6. [ ] Implement `internal/infrastructure/mikrotik/client.go`
+5. [ ] Define `RouterProvisioner` interface in `internal/modules/network/domain/provisioner.go`
+   - `SetARPStatic`, `DisableARP`, `GetARPEntry` — vendor-agnostic port
+   - MikroTik impl wired in `app.go`; future: swap for Arista by changing one line
+
+6. [ ] Add `github.com/go-routeros/routeros` to go.mod
+7. [ ] Implement `internal/infrastructure/mikrotik/client.go` — implements `RouterProvisioner`
    - `NewClient(host, port, user, pass) (*Client, error)` — dial and authenticate
    - `SetARPStatic(ctx, ip, mac, customerID string) error`
    - `DisableARP(ctx, ip string) error`

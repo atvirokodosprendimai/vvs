@@ -59,9 +59,27 @@ Customer domain and DB table gain three fields:
 
 These may be auto-populated from NetBox or entered manually.
 
+### Router Provisioner Port
+
+Commands depend on a `RouterProvisioner` port (interface), not a concrete client.
+Swap MikroTik → Arista (or any vendor) by changing one line in `app.go`.
+
+```go
+// internal/modules/network/domain/provisioner.go
+type RouterProvisioner interface {
+    SetARPStatic(ctx context.Context, host string, ip, mac, customerID string) error
+    DisableARP(ctx context.Context, host string, ip string) error
+    GetARPEntry(ctx context.Context, host string, ip string) (*ARPEntry, error)
+}
+```
+
+Concrete impls:
+- `internal/infrastructure/mikrotik/` — current
+- `internal/infrastructure/arista/` — future (EOS eAPI or NAPALM)
+
 ### MikroTik Infrastructure
 
-`internal/infrastructure/mikrotik/client.go`
+`internal/infrastructure/mikrotik/client.go` — implements `RouterProvisioner`
 - Uses `github.com/go-routeros/routeros` (RouterOS binary API, port 8728/8729)
 - One TCP connection per router, pooled by router ID
 - Operations: `SetARPStatic(ip, mac)`, `DisableARP(ip)`, `GetARPEntry(ip)`
