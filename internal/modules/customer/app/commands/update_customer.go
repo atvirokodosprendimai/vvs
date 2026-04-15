@@ -50,10 +50,7 @@ func (h *UpdateCustomerHandler) Handle(ctx context.Context, cmd UpdateCustomerCo
 		return err
 	}
 
-	data, _ := json.Marshal(map[string]string{
-		"id":   customer.ID,
-		"name": customer.CompanyName,
-	})
+	data, _ := json.Marshal(domainToReadModel(customer))
 
 	h.publisher.Publish(ctx, "isp.customer.updated", events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),

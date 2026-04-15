@@ -73,16 +73,16 @@ func (h *ListProductsHandler) Handle(_ context.Context, q ListProductsQuery) (Li
 }
 
 type ProductReadModel struct {
-	ID            string `gorm:"primaryKey"`
-	Name          string
-	Description   string
-	Type          string
-	PriceAmount   int64
-	PriceCurrency string
-	BillingPeriod string
-	IsActive      bool
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID            string    `gorm:"primaryKey" json:"id"`
+	Name          string    `json:"name"`
+	Description   string    `json:"description"`
+	Type          string    `json:"type"`
+	PriceAmount   int64     `json:"price_amount"`
+	PriceCurrency string    `json:"price_currency"`
+	BillingPeriod string    `json:"billing_period"`
+	IsActive      bool      `json:"is_active"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 func (ProductReadModel) TableName() string { return "products" }

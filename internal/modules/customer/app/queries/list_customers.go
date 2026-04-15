@@ -75,21 +75,21 @@ func (h *ListCustomersHandler) Handle(_ context.Context, q ListCustomersQuery) (
 }
 
 type CustomerReadModel struct {
-	ID          string `gorm:"primaryKey"`
-	Code        string
-	CompanyName string
-	ContactName string
-	Email       string
-	Phone       string
-	Street      string
-	City        string
-	PostalCode  string
-	Country     string
-	TaxID       string
-	Status      string
-	Notes       string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID          string    `gorm:"primaryKey" json:"id"`
+	Code        string    `json:"code"`
+	CompanyName string    `json:"company_name"`
+	ContactName string    `json:"contact_name"`
+	Email       string    `json:"email"`
+	Phone       string    `json:"phone"`
+	Street      string    `json:"street"`
+	City        string    `json:"city"`
+	PostalCode  string    `json:"postal_code"`
+	Country     string    `json:"country"`
+	TaxID       string    `json:"tax_id"`
+	Status      string    `json:"status"`
+	Notes       string    `json:"notes"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 func (CustomerReadModel) TableName() string { return "customers" }

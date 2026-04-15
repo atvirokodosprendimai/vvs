@@ -41,11 +41,7 @@ func (h *CreateCustomerHandler) Handle(ctx context.Context, cmd CreateCustomerCo
 		return nil, err
 	}
 
-	data, _ := json.Marshal(map[string]string{
-		"id":   customer.ID,
-		"code": customer.Code.String(),
-		"name": customer.CompanyName,
-	})
+	data, _ := json.Marshal(domainToReadModel(customer))
 
 	h.publisher.Publish(ctx, "isp.customer.created", events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),

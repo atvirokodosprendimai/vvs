@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -96,6 +97,10 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		signals.PageSize = 25
 	}
 
+	// Subscribe before initial render so no event is missed
+	ch, cancel := h.subscriber.ChanSubscription("isp.recurring.*")
+	defer cancel()
+
 	result, err := h.listQuery.Handle(r.Context(), queries.ListRecurringQuery{
 		Search:   signals.Search,
 		Status:   signals.Status,
@@ -106,8 +111,28 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		sse.ConsoleError(err)
 		return
 	}
-
 	sse.PatchElementTempl(RecurringTable(result))
+
+	// Live updates: patch individual row per NATS event — no re-query
+	for {
+		select {
+		case event, ok := <-ch:
+			if !ok {
+				return
+			}
+			var rm queries.RecurringFullReadModel
+			if err := json.Unmarshal(event.Data, &rm); err != nil {
+				continue
+			}
+			inv := rm.RecurringReadModel.ToDomain()
+			for _, lm := range rm.Lines {
+				inv.Lines = append(inv.Lines, lm.ToDomain())
+			}
+			sse.PatchElementTempl(RecurringRow(inv))
+		case <-r.Context().Done():
+			return
+		}
+	}
 }
 
 func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {

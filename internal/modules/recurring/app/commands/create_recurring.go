@@ -63,11 +63,7 @@ func (h *CreateRecurringHandler) Handle(ctx context.Context, cmd CreateRecurring
 		return nil, err
 	}
 
-	data, _ := json.Marshal(map[string]string{
-		"id":          invoice.ID,
-		"customer_id": invoice.CustomerID,
-		"frequency":   string(invoice.Schedule.Frequency),
-	})
+	data, _ := json.Marshal(domainToReadModel(invoice))
 
 	h.publisher.Publish(ctx, "isp.recurring.created", events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),

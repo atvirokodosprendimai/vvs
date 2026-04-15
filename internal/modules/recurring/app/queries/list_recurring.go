@@ -85,16 +85,23 @@ func (h *ListRecurringHandler) Handle(_ context.Context, q ListRecurringQuery) (
 }
 
 type RecurringReadModel struct {
-	ID           string `gorm:"primaryKey"`
-	CustomerID   string
-	CustomerName string
-	Frequency    string
-	DayOfMonth   int
-	NextRunDate  time.Time
-	LastRunDate  *time.Time
-	Status       string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID           string     `gorm:"primaryKey" json:"id"`
+	CustomerID   string     `json:"customer_id"`
+	CustomerName string     `json:"customer_name"`
+	Frequency    string     `json:"frequency"`
+	DayOfMonth   int        `json:"day_of_month"`
+	NextRunDate  time.Time  `json:"next_run_date"`
+	LastRunDate  *time.Time `json:"last_run_date"`
+	Status       string     `json:"status"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+}
+
+// RecurringFullReadModel is used as the NATS event payload — includes lines
+// so Total() can be computed without a DB re-query.
+type RecurringFullReadModel struct {
+	RecurringReadModel
+	Lines []RecurringLineReadModel `json:"lines"`
 }
 
 func (RecurringReadModel) TableName() string { return "recurring_invoices" }
@@ -117,15 +124,15 @@ func (m *RecurringReadModel) ToDomain() *domain.RecurringInvoice {
 }
 
 type RecurringLineReadModel struct {
-	ID              string `gorm:"primaryKey"`
-	RecurringID     string
-	ProductID       string
-	ProductName     string
-	Description     string
-	Quantity        int
-	UnitPriceAmount int64
-	UnitPriceCurrency string
-	SortOrder       int
+	ID                string `gorm:"primaryKey" json:"id"`
+	RecurringID       string `json:"recurring_id"`
+	ProductID         string `json:"product_id"`
+	ProductName       string `json:"product_name"`
+	Description       string `json:"description"`
+	Quantity          int    `json:"quantity"`
+	UnitPriceAmount   int64  `json:"unit_price_amount"`
+	UnitPriceCurrency string `json:"unit_price_currency"`
+	SortOrder         int    `json:"sort_order"`
 }
 
 func (RecurringLineReadModel) TableName() string { return "recurring_lines" }

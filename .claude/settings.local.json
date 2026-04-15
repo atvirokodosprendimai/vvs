@@ -40,7 +40,12 @@
       "Bash(cp /Users/mind/.claude/plugins/marketplaces/eidos/copy/seed.md /Users/mind/code/ai/vvs/eidos/seed.md)",
       "Bash(cp /Users/mind/.claude/plugins/marketplaces/eidos/copy/human.md /Users/mind/code/ai/vvs/memory/human.md)",
       "Bash(git checkout:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(git commit -m 'Use sse.Redirect for login success \\(Datastar backend-driven pattern\\):*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(git commit -m 'Fix invoice amount 0: store lineItem.UnitPrice as int64 cents:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

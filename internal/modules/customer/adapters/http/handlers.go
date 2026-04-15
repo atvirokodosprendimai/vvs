@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -93,6 +94,10 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		signals.PageSize = 25
 	}
 
+	// Subscribe before initial render so no event is missed
+	ch, cancel := h.subscriber.ChanSubscription("isp.customer.*")
+	defer cancel()
+
 	result, err := h.listQuery.Handle(r.Context(), queries.ListCustomersQuery{
 		Search:   signals.Search,
 		Page:     signals.Page,
@@ -102,8 +107,24 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		sse.ConsoleError(err)
 		return
 	}
-
 	sse.PatchElementTempl(CustomerTable(result))
+
+	// Live updates: patch individual row per NATS event — no re-query
+	for {
+		select {
+		case event, ok := <-ch:
+			if !ok {
+				return
+			}
+			var rm queries.CustomerReadModel
+			if err := json.Unmarshal(event.Data, &rm); err != nil {
+				continue
+			}
+			sse.PatchElementTempl(CustomerRow(rm.ToDomain()))
+		case <-r.Context().Done():
+			return
+		}
+	}
 }
 
 func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {

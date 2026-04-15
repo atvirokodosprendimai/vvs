@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -95,6 +96,10 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		signals.PageSize = 25
 	}
 
+	// Subscribe before initial render so no event is missed
+	ch, cancel := h.subscriber.ChanSubscription("isp.product.*")
+	defer cancel()
+
 	result, err := h.listQuery.Handle(r.Context(), queries.ListProductsQuery{
 		Search:   signals.Search,
 		Type:     signals.Type,
@@ -105,8 +110,24 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		sse.ConsoleError(err)
 		return
 	}
-
 	sse.PatchElementTempl(ProductTable(result))
+
+	// Live updates: patch individual row per NATS event — no re-query
+	for {
+		select {
+		case event, ok := <-ch:
+			if !ok {
+				return
+			}
+			var rm queries.ProductReadModel
+			if err := json.Unmarshal(event.Data, &rm); err != nil {
+				continue
+			}
+			sse.PatchElementTempl(ProductRow(rm.ToDomain()))
+		case <-r.Context().Done():
+			return
+		}
+	}
 }
 
 func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {

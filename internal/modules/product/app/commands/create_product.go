@@ -38,11 +38,7 @@ func (h *CreateProductHandler) Handle(ctx context.Context, cmd CreateProductComm
 		return nil, err
 	}
 
-	data, _ := json.Marshal(map[string]string{
-		"id":   product.ID,
-		"name": product.Name,
-		"type": string(product.Type),
-	})
+	data, _ := json.Marshal(domainToReadModel(product))
 
 	h.publisher.Publish(ctx, "isp.product.created", events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),

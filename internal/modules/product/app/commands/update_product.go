@@ -46,10 +46,7 @@ func (h *UpdateProductHandler) Handle(ctx context.Context, cmd UpdateProductComm
 		return err
 	}
 
-	data, _ := json.Marshal(map[string]string{
-		"id":   product.ID,
-		"name": product.Name,
-	})
+	data, _ := json.Marshal(domainToReadModel(product))
 
 	h.publisher.Publish(ctx, "isp.product.updated", events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),

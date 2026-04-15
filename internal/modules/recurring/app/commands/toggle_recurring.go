@@ -50,10 +50,7 @@ func (h *ToggleRecurringHandler) Handle(ctx context.Context, cmd ToggleRecurring
 		return err
 	}
 
-	data, _ := json.Marshal(map[string]string{
-		"id":     invoice.ID,
-		"status": string(invoice.Status),
-	})
+	data, _ := json.Marshal(domainToReadModel(invoice))
 
 	h.publisher.Publish(ctx, subject, events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
