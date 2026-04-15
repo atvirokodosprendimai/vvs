@@ -124,7 +124,6 @@ func (h *ChatHandler) streamMessages(w http.ResponseWriter, r *http.Request, thr
 				datastar.WithMode(datastar.ElementPatchModeAppend),
 			)
 			scrollToBottom(sse)
-			_ = h.store.MarkRead(r.Context(), threadID, userID)
 		case <-r.Context().Done():
 			return
 		}
@@ -152,12 +151,15 @@ func (h *ChatHandler) threadsSSE(w http.ResponseWriter, r *http.Request) {
 
 	for {
 		select {
-		case _, ok := <-ch:
+		case event, ok := <-ch:
 			if !ok {
 				return
 			}
-			// Re-ensure membership so newly created public channels appear immediately.
-			_ = h.store.EnsurePublicMembership(r.Context(), user.ID)
+			// Only re-ensure membership when a new thread is created (avoids write
+			// contention on the single SQLite writer for every chat message).
+			if event.Type == "chat.thread.created" {
+				_ = h.store.EnsurePublicMembership(r.Context(), user.ID)
+			}
 			next, err := h.store.ListThreadsForUser(r.Context(), user.ID)
 			if err != nil {
 				continue
