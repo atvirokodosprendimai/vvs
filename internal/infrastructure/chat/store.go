@@ -173,23 +173,25 @@ func (s *Store) ListThreadsForUser(ctx context.Context, userID string) ([]Thread
 		return tx.Raw(`
 			SELECT
 				t.id, t.type, t.name, t.is_private, t.created_by, t.created_at,
-				COALESCE(last_msg.body, '') AS last_message,
-				COALESCE(last_msg.created_at, t.created_at) AS last_at,
-				COALESCE(unread.cnt, 0) AS unread_count
+				COALESCE((
+					SELECT body FROM chat_messages
+					WHERE thread_id = t.id
+					ORDER BY created_at DESC LIMIT 1
+				), '') AS last_message,
+				COALESCE((
+					SELECT created_at FROM chat_messages
+					WHERE thread_id = t.id
+					ORDER BY created_at DESC LIMIT 1
+				), t.created_at) AS last_at,
+				(
+					SELECT COUNT(*) FROM chat_messages cm
+					LEFT JOIN chat_thread_reads r
+						ON r.thread_id = cm.thread_id AND r.user_id = ?
+					WHERE cm.thread_id = t.id
+					  AND (r.last_read_at IS NULL OR cm.created_at > r.last_read_at)
+				) AS unread_count
 			FROM chat_threads t
 			JOIN chat_thread_members m ON m.thread_id = t.id AND m.user_id = ?
-			LEFT JOIN (
-				SELECT thread_id, body, created_at,
-					ROW_NUMBER() OVER (PARTITION BY thread_id ORDER BY created_at DESC) AS rn
-				FROM chat_messages
-			) last_msg ON last_msg.thread_id = t.id AND last_msg.rn = 1
-			LEFT JOIN (
-				SELECT cm.thread_id, COUNT(*) AS cnt
-				FROM chat_messages cm
-				LEFT JOIN chat_thread_reads r ON r.thread_id = cm.thread_id AND r.user_id = ?
-				WHERE r.last_read_at IS NULL OR cm.created_at > r.last_read_at
-				GROUP BY cm.thread_id
-			) unread ON unread.thread_id = t.id
 			ORDER BY last_at DESC
 		`, userID, userID).Scan(&rows).Error
 	})
