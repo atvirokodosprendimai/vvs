@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -38,6 +39,10 @@ import (
 	networkcommands "github.com/vvs/isp/internal/modules/network/app/commands"
 	networkqueries "github.com/vvs/isp/internal/modules/network/app/queries"
 	networkmigrations "github.com/vvs/isp/internal/modules/network/migrations"
+
+	"github.com/vvs/isp/internal/infrastructure/mikrotik"
+	"github.com/vvs/isp/internal/infrastructure/netbox"
+	networkdomain "github.com/vvs/isp/internal/modules/network/domain"
 )
 
 type App struct {
@@ -144,6 +149,24 @@ func New(cfg Config) (*App, error) {
 		listRoutersQuery, getRouterQuery, subscriber,
 	)
 
+	// MikroTik provisioner (shared connection pool)
+	mikrotikClient := mikrotik.New()
+
+	// NetBox IPAM (optional — only if configured)
+	var ipamProvider networkdomain.IPAMProvider
+	if cfg.NetBoxURL != "" && cfg.NetBoxToken != "" {
+		ipamProvider = netbox.New(cfg.NetBoxURL, cfg.NetBoxToken)
+		log.Printf("NetBox IPAM configured: %s", cfg.NetBoxURL)
+	}
+
+	// SyncCustomerARP command
+	syncARPCmd := networkcommands.NewSyncCustomerARPHandler(
+		customerRepo, routerRepo, mikrotikClient, ipamProvider, publisher,
+	)
+
+	// Auto-trigger: subscribe to isp.customer.* — on status change, sync ARP
+	go runCustomerARPSubscriber(context.Background(), subscriber, syncARPCmd)
+
 	// 9. Router (with auth middleware)
 	router := infrahttp.NewRouter(reader, getCurrentUserQuery,
 		authRoutes, customerRoutes, productRoutes, networkRoutes,
@@ -178,6 +201,47 @@ func (a *App) Shutdown(ctx context.Context) error {
 	a.NATSConn.Close()
 	a.NATSServer.WaitForShutdown()
 	return err
+}
+
+// runCustomerARPSubscriber listens to isp.customer.* events and triggers
+// SyncCustomerARP for customers that have a router assigned.
+func runCustomerARPSubscriber(ctx context.Context, sub events.EventSubscriber, cmd *networkcommands.SyncCustomerARPHandler) {
+	ch, cancel := sub.ChanSubscription("isp.customer.*")
+	defer cancel()
+
+	type minCustomer struct {
+		ID       string  `json:"id"`
+		Status   string  `json:"status"`
+		RouterID *string `json:"router_id"`
+	}
+
+	for {
+		select {
+		case event, ok := <-ch:
+			if !ok {
+				return
+			}
+			var c minCustomer
+			if err := json.Unmarshal(event.Data, &c); err != nil {
+				continue
+			}
+			if c.RouterID == nil || *c.RouterID == "" {
+				continue
+			}
+			action := networkcommands.ARPActionEnable
+			if c.Status == "suspended" || c.Status == "churned" {
+				action = networkcommands.ARPActionDisable
+			}
+			if err := cmd.Handle(ctx, networkcommands.SyncCustomerARPCommand{
+				CustomerID: c.ID,
+				Action:     action,
+			}); err != nil {
+				log.Printf("warn: sync arp for customer %s: %v", c.ID, err)
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 // seedAdmin creates or updates the admin user on startup.

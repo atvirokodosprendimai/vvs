@@ -38,6 +38,16 @@ func main() {
 				Usage:   "Initial admin password",
 				Sources: cli.EnvVars("VVS_ADMIN_PASSWORD"),
 			},
+			&cli.StringFlag{
+				Name:    "netbox-url",
+				Usage:   "NetBox base URL (optional)",
+				Sources: cli.EnvVars("NETBOX_URL"),
+			},
+			&cli.StringFlag{
+				Name:    "netbox-token",
+				Usage:   "NetBox API token (optional)",
+				Sources: cli.EnvVars("NETBOX_TOKEN"),
+			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
 			cfg := app.Config{
@@ -45,6 +55,8 @@ func main() {
 				ListenAddr:    cmd.String("addr"),
 				AdminUser:     cmd.String("admin-user"),
 				AdminPassword: cmd.String("admin-password"),
+				NetBoxURL:     cmd.String("netbox-url"),
+				NetBoxToken:   cmd.String("netbox-token"),
 			}
 
 			application, err := app.New(cfg)
