@@ -177,6 +177,19 @@ templ ChatPanelEmpty() {
 	</div>
 }
 
+// ChatWidgetMessages is the messages container for the floating widget — patched by global /sse.
+templ ChatWidgetMessages(msgs []chat.Message, currentUserID string) {
+	<div id="widget-messages" class="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
+		if len(msgs) == 0 {
+			<div class="text-xs text-slate-600 text-center py-4">No messages yet.</div>
+		} else {
+			for _, m := range msgs {
+				@ChatMessageItem(m, currentUserID)
+			}
+		}
+	</div>
+}
+
 // ChatMessages is the full messages container — patched on initial SSE connect.
 templ ChatMessages(msgs []chat.Message, currentUserID string) {
 	<div id="chat-panel" class="flex-1 flex flex-col min-h-0">

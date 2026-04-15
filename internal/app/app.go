@@ -213,9 +213,10 @@ func New(cfg Config) (*App, error) {
 		log.Printf("warn: seed #general channel: %v", err)
 	}
 	chatHandler := infrahttp.NewChatHandler(chatStore, subscriber, publisher)
+	globalHandler := infrahttp.NewGlobalHandler(notifStore, chatStore, subscriber)
 
 	// 10. HTTP router — pass gdb.R to dashboard handler
-	router := infrahttp.NewRouter(gdb.R, getCurrentUserQuery, notifHandler, chatHandler, moduleRoutes...)
+	router := infrahttp.NewRouter(gdb.R, getCurrentUserQuery, notifHandler, chatHandler, globalHandler, moduleRoutes...)
 	httpServer := infrahttp.NewServer(cfg.ListenAddr, router)
 
 	enabled := cfg.EnabledModules

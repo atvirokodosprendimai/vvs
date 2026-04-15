@@ -14,7 +14,7 @@ templ Layout(title string) {
 		</style>
 	</head>
 	<body class="bg-slate-950 text-slate-100 h-screen overflow-hidden">
-		<div class="flex h-full">
+		<div class="flex h-full" data-init="@get('/sse')">
 			@Sidebar()
 			<main class="flex-1 p-6 overflow-auto">
 				{ children... }
@@ -29,12 +29,12 @@ templ Layout(title string) {
 // chatWidget is the floating chat button + panel, always present in the layout.
 templ chatWidget() {
 	<div
-		data-signals="{chatOpen:false,chatmsg:''}"
+		data-signals="{_chatOpen:false,chatmsg:''}"
 		class="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3"
 	>
-		<!-- Panel (hidden until $chatOpen) -->
+		<!-- Panel (hidden until $_chatOpen) -->
 		<div
-			data-show="$chatOpen"
+			data-show="$_chatOpen"
 			class="w-80 h-96 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl flex flex-col overflow-hidden"
 			style="display:none"
 		>
@@ -43,15 +43,12 @@ templ chatWidget() {
 					<span class="w-2 h-2 rounded-full bg-green-400"></span>
 					<span class="text-sm font-medium text-slate-200">Team Chat</span>
 				</div>
-				<button data-on:click="$chatOpen=false" class="text-slate-500 hover:text-slate-300 transition-colors">
+				<button data-on:click="$_chatOpen=false" class="text-slate-500 hover:text-slate-300 transition-colors">
 					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
 				</button>
 			</div>
-			<div
-				id="chat-messages"
-				data-init="@get('/sse/chat')"
-				class="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2"
-			>
+			<!-- #widget-messages is patched by global /sse -->
+			<div id="widget-messages" class="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
 				<div class="text-xs text-slate-600 text-center py-4">Loading…</div>
 			</div>
 			<div class="border-t border-slate-800 px-3 py-2 flex gap-2 items-end">
@@ -73,7 +70,7 @@ templ chatWidget() {
 		</div>
 		<!-- Floating button -->
 		<button
-			data-on:click="$chatOpen=!$chatOpen"
+			data-on:click="$_chatOpen=!$_chatOpen"
 			class="w-12 h-12 bg-cyan-600 hover:bg-cyan-700 text-white rounded-full shadow-lg flex items-center justify-center transition-colors"
 			title="Team Chat"
 		>
@@ -85,7 +82,7 @@ templ chatWidget() {
 templ Sidebar() {
 	<nav
 		class="w-56 bg-slate-900 border-r border-slate-800 p-3 flex flex-col justify-between"
-		data-signals="{notifOpen:false}"
+		data-signals="{_notifOpen:false}"
 	>
 		<div class="flex flex-col gap-0.5">
 			<div class="flex items-center justify-between mb-5 px-2 pt-1">
@@ -93,11 +90,10 @@ templ Sidebar() {
 				<!-- Notification bell -->
 				<div
 					id="notif-container"
-					data-init="@get('/sse/notifications')"
 					class="relative"
 				>
 					<button
-						data-on:click="($notifOpen = !$notifOpen) && @post('/api/notifications/read')"
+						data-on:click="($_notifOpen = !$_notifOpen) && @post('/api/notifications/read')"
 						class="relative p-1 text-slate-500 hover:text-slate-300 transition-colors"
 						title="Notifications"
 					>
@@ -116,16 +112,16 @@ templ Sidebar() {
 			@NavItem("/chat", "Chat", chatNavIcon())
 		</div>
 
-		<!-- Notification panel — shown when $notifOpen is true -->
+		<!-- Notification panel — shown when $_notifOpen is true -->
 		<div
-			data-show="$notifOpen"
+			data-show="$_notifOpen"
 			class="absolute left-0 top-0 w-56 h-full bg-slate-900 border-r border-slate-800 flex flex-col z-10"
 			style="display:none"
 		>
 			<div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
 				<span class="text-sm font-medium text-slate-200">Notifications</span>
 				<button
-					data-on:click="$notifOpen = false"
+					data-on:click="$_notifOpen = false"
 					class="text-slate-500 hover:text-slate-300 transition-colors"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -143,7 +139,7 @@ templ Sidebar() {
 		<div class="flex flex-col gap-1 border-t border-slate-800 pt-3">
 			<div
 				id="server-clock"
-				data-init="@get('/sse/clock')"
+				
 				class="px-2 py-1.5 text-xs text-slate-600 font-mono"
 			>
 				--:--:--

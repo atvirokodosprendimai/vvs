@@ -13,7 +13,7 @@ type ModuleRoutes interface {
 	RegisterRoutes(r chi.Router)
 }
 
-func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, notif *NotifHandler, chatHandler *ChatHandler, modules ...ModuleRoutes) http.Handler {
+func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, notif *NotifHandler, chatHandler *ChatHandler, global *GlobalHandler, modules ...ModuleRoutes) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Recoverer)
@@ -32,16 +32,14 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 			DashboardPage().Render(r.Context(), w)
 		})
 
-		// SSE endpoints
-		r.Get("/sse/clock", clockSSE)
+		// Global SSE (clock + notifications + chat widget)
+		r.Get("/sse", global.globalSSE)
 		r.Get("/api/dashboard/stats", newDashboardStatsHandler(reader))
 
 		// Notifications
-		r.Get("/sse/notifications", notif.notificationsSSE)
 		r.Post("/api/notifications/read", notif.markRead)
 
-		// Chat widget (global #general)
-		r.Get("/sse/chat", chatHandler.chatSSE)
+		// Chat
 		r.Post("/api/chat/send", chatHandler.chatSend)
 
 		// Chat full page
