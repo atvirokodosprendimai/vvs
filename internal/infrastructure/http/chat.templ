@@ -103,7 +103,7 @@ templ ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThread
 
 // ChatThreadList is the left sidebar thread list — patched by SSE.
 templ ChatThreadList(threads []chat.ThreadSummary, currentUserID string) {
-	<div id="chat-thread-list" class="flex flex-col h-full">
+	<div id="chat-thread-list" class="flex flex-col">
 		<div class="px-3 py-3 border-b border-slate-800 flex flex-col gap-2">
 			<div class="flex items-center justify-between">
 				<span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Channels</span>

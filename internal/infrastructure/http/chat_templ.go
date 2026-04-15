@@ -151,7 +151,7 @@ func ChatThreadList(threads []chat.ThreadSummary, currentUserID string) templ.Co
 			templ_7745c5c3_Var5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div id=\"chat-thread-list\" class=\"flex flex-col h-full\"><div class=\"px-3 py-3 border-b border-slate-800 flex flex-col gap-2\"><div class=\"flex items-center justify-between\"><span class=\"text-xs font-semibold text-slate-500 uppercase tracking-wider\">Channels</span> <button data-on:click=\"$newchannel=true\" class=\"text-slate-500 hover:text-cyan-400 transition-colors\" title=\"New channel\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-3.5 h-3.5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"2\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 4.5v15m7.5-7.5h-15\"></path></svg></button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div id=\"chat-thread-list\" class=\"flex flex-col\"><div class=\"px-3 py-3 border-b border-slate-800 flex flex-col gap-2\"><div class=\"flex items-center justify-between\"><span class=\"text-xs font-semibold text-slate-500 uppercase tracking-wider\">Channels</span> <button data-on:click=\"$newchannel=true\" class=\"text-slate-500 hover:text-cyan-400 transition-colors\" title=\"New channel\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-3.5 h-3.5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"2\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 4.5v15m7.5-7.5h-15\"></path></svg></button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

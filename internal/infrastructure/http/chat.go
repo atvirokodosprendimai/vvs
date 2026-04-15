@@ -259,6 +259,12 @@ func (h *ChatHandler) createDirect(w http.ResponseWriter, r *http.Request) {
 		}
 		_ = h.store.AddMember(r.Context(), thread.ID, user.ID)
 		_ = h.store.AddMember(r.Context(), thread.ID, signals.TargetUserID)
+		h.publisher.Publish(r.Context(), "isp.chat.thread.created", events.DomainEvent{
+			ID:          uuid.Must(uuid.NewV7()).String(),
+			Type:        "chat.thread.created",
+			AggregateID: thread.ID,
+			OccurredAt:  thread.CreatedAt,
+		})
 	} else if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -303,6 +309,13 @@ func (h *ChatHandler) createChannel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = h.store.AddMember(r.Context(), thread.ID, user.ID)
+
+	h.publisher.Publish(r.Context(), "isp.chat.thread.created", events.DomainEvent{
+		ID:          uuid.Must(uuid.NewV7()).String(),
+		Type:        "chat.thread.created",
+		AggregateID: thread.ID,
+		OccurredAt:  thread.CreatedAt,
+	})
 
 	sse := datastar.NewSSE(w, r)
 	sse.Redirect("/chat?thread=" + thread.ID)
