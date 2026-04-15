@@ -86,10 +86,23 @@ func New(cfg Config) (*App, error) {
 	// 3. Write serializer
 	writer := database.NewWriteSerializer(db)
 
-	// 4. Embedded NATS
-	ns, nc, err := infranats.StartEmbedded()
-	if err != nil {
-		return nil, fmt.Errorf("start nats: %w", err)
+	// 4. NATS — embedded or external
+	var ns *natsserver.Server
+	var nc *nats.Conn
+	if cfg.NATSUrl != "" {
+		nc, err = infranats.ConnectExternal(cfg.NATSUrl)
+		if err != nil {
+			return nil, fmt.Errorf("connect nats: %w", err)
+		}
+		log.Printf("NATS connected to external server: %s", cfg.NATSUrl)
+	} else {
+		ns, nc, err = infranats.StartEmbedded(cfg.NATSListenAddr)
+		if err != nil {
+			return nil, fmt.Errorf("start nats: %w", err)
+		}
+		if cfg.NATSListenAddr != "" {
+			log.Printf("NATS embedded, listening on %s", cfg.NATSListenAddr)
+		}
 	}
 
 	publisher := infranats.NewPublisher(nc)
@@ -203,7 +216,9 @@ func (a *App) Shutdown(ctx context.Context) error {
 		a.Subscriber.Close()
 	}
 	a.NATSConn.Close()
-	a.NATSServer.WaitForShutdown()
+	if a.NATSServer != nil {
+		a.NATSServer.WaitForShutdown()
+	}
 	return err
 }
 

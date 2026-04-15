@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/urfave/cli/v3"
@@ -48,15 +49,42 @@ func main() {
 				Usage:   "NetBox API token (optional)",
 				Sources: cli.EnvVars("NETBOX_TOKEN"),
 			},
+			&cli.StringFlag{
+				Name:    "nats-url",
+				Usage:   "External NATS server URL (optional; skips embedded NATS)",
+				Sources: cli.EnvVars("NATS_URL"),
+			},
+			&cli.StringFlag{
+				Name:    "nats-listen",
+				Usage:   "Expose embedded NATS on this TCP addr (optional, e.g. :4222)",
+				Sources: cli.EnvVars("NATS_LISTEN_ADDR"),
+			},
+			&cli.StringFlag{
+				Name:    "modules",
+				Usage:   "Comma-separated list of modules to enable (default: all)",
+				Sources: cli.EnvVars("VVS_MODULES"),
+			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
+			var enabledModules []string
+			if m := cmd.String("modules"); m != "" {
+				for _, s := range strings.Split(m, ",") {
+					if s = strings.TrimSpace(s); s != "" {
+						enabledModules = append(enabledModules, s)
+					}
+				}
+			}
+
 			cfg := app.Config{
-				DatabasePath:  cmd.String("db"),
-				ListenAddr:    cmd.String("addr"),
-				AdminUser:     cmd.String("admin-user"),
-				AdminPassword: cmd.String("admin-password"),
-				NetBoxURL:     cmd.String("netbox-url"),
-				NetBoxToken:   cmd.String("netbox-token"),
+				DatabasePath:   cmd.String("db"),
+				ListenAddr:     cmd.String("addr"),
+				AdminUser:      cmd.String("admin-user"),
+				AdminPassword:  cmd.String("admin-password"),
+				NetBoxURL:      cmd.String("netbox-url"),
+				NetBoxToken:    cmd.String("netbox-token"),
+				NATSUrl:        cmd.String("nats-url"),
+				NATSListenAddr: cmd.String("nats-listen"),
+				EnabledModules: enabledModules,
 			}
 
 			application, err := app.New(cfg)

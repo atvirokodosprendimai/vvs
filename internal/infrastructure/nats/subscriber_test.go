@@ -11,7 +11,7 @@ import (
 )
 
 func TestChanSubscriptionOf_ReceivesTypedPayload(t *testing.T) {
-	ns, nc, err := StartEmbedded()
+	ns, nc, err := StartEmbedded("")
 	if err != nil {
 		t.Fatalf("start embedded nats: %v", err)
 	}
@@ -52,7 +52,7 @@ func TestChanSubscriptionOf_ReceivesTypedPayload(t *testing.T) {
 }
 
 func TestChanSubscriptionOf_WildcardSubject(t *testing.T) {
-	ns, nc, err := StartEmbedded()
+	ns, nc, err := StartEmbedded("")
 	if err != nil {
 		t.Fatalf("start embedded nats: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestChanSubscriptionOf_WildcardSubject(t *testing.T) {
 }
 
 func TestChanSubscriptionOf_CancelUnsubscribes(t *testing.T) {
-	ns, nc, err := StartEmbedded()
+	ns, nc, err := StartEmbedded("")
 	if err != nil {
 		t.Fatalf("start embedded nats: %v", err)
 	}
