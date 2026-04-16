@@ -54,7 +54,9 @@
       "Bash(go vet:*)",
       "Bash(git:*)",
       "Bash(cp:*)",
-      "Bash(./bin/vvs cron:*)"
+      "Bash(./bin/vvs cron:*)",
+      "WebFetch(domain:netboxlabs.com)",
+      "Bash(lsof -ti:8080)"
     ]
   }
 }
