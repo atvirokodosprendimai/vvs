@@ -15,7 +15,6 @@ import (
 	imaplib "github.com/emersion/go-imap/v2"
 	"github.com/emersion/go-imap/v2/imapclient"
 	"github.com/emersion/go-message/charset"
-	"github.com/google/uuid"
 	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
 	"github.com/vvs/isp/internal/modules/email/adapters/persistence"
 	"github.com/vvs/isp/internal/modules/email/domain"
@@ -56,24 +55,31 @@ func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID
 	}
 	slog.Debug("imap: logged in", "account", account.Name, "user", account.Username)
 
-	// Load configured folders. If none exist yet, seed from account.Folder.
+	// Load configured folders. If none exist yet, auto-discover from server.
 	folders, err := repos.Folders.ListForAccount(ctx, account.ID)
 	if err != nil {
 		return fmt.Errorf("imap: list folders: %w", err)
 	}
 	if len(folders) == 0 {
-		seed := &domain.EmailFolder{
-			ID:        uuid.Must(uuid.NewV7()).String(),
-			AccountID: account.ID,
-			Name:      account.Folder,
-			LastUID:   account.LastUID,
-			Enabled:   true,
-			CreatedAt: time.Now().UTC(),
+		slog.Info("imap: no folders configured, auto-discovering", "account", account.Name)
+		discovered, discErr := DiscoverFolders(ctx, account, repos, newID)
+		if discErr != nil {
+			slog.Error("imap: auto-discover failed, falling back to configured folder", "account", account.Name, "err", discErr)
+			seed := &domain.EmailFolder{
+				ID:        newID(),
+				AccountID: account.ID,
+				Name:      account.Folder,
+				LastUID:   account.LastUID,
+				Enabled:   true,
+				CreatedAt: time.Now().UTC(),
+			}
+			if err := repos.Folders.Save(ctx, seed); err != nil {
+				slog.Error("imap: seed folder", "account", account.Name, "err", err)
+			}
+			folders = []*domain.EmailFolder{seed}
+		} else {
+			folders = discovered
 		}
-		if err := repos.Folders.Save(ctx, seed); err != nil {
-			slog.Error("imap: seed folder", "account", account.Name, "err", err)
-		}
-		folders = []*domain.EmailFolder{seed}
 	}
 
 	totalFetched := 0
