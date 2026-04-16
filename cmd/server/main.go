@@ -36,11 +36,17 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			serveCommand(),
-			customerCommands(),
-			productCommands(),
-			routerCommands(),
-			serviceCommands(),
-			userCommands(),
+			{
+				Name:  "cli",
+				Usage: "Manage ISP resources via API",
+				Commands: []*cli.Command{
+					customerCommands(),
+					productCommands(),
+					routerCommands(),
+					serviceCommands(),
+					userCommands(),
+				},
+			},
 		},
 	}
 
