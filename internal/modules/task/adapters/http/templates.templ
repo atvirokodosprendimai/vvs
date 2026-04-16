@@ -107,7 +107,7 @@ templ TaskSection(customerID string, tasks []queries.TaskReadModel) {
 				<div class="flex items-center gap-2 pt-1">
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$_taskId ? @put('/api/tasks/' + $_taskId) : @post('/api/customers/%s/tasks')", customerID) }
+						data-on:click={ fmt.Sprintf("$_taskId ? @put('/api/tasks/' + $_taskId) : @post('/api/customers/%s/tasks', {openWhenHidden: false})", customerID) }
 						class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
 					>
 						Save
@@ -170,7 +170,7 @@ templ taskRow(t queries.TaskReadModel) {
 				if t.Status == domain.StatusTodo {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("($taskAction='start') && @put('/api/tasks/%s/status')", t.ID) }
+						data-on:click={ fmt.Sprintf("($taskAction='start') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID) }
 						data-signals="{taskAction: 'start'}"
 						class="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-blue-500/20"
 					>
@@ -180,7 +180,7 @@ templ taskRow(t queries.TaskReadModel) {
 				if t.Status == domain.StatusInProgress {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("($taskAction='complete') && @put('/api/tasks/%s/status')", t.ID) }
+						data-on:click={ fmt.Sprintf("($taskAction='complete') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID) }
 						data-signals="{taskAction: 'complete'}"
 						class="bg-green-500/10 hover:bg-green-500/20 text-green-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-green-500/20"
 					>
@@ -190,7 +190,7 @@ templ taskRow(t queries.TaskReadModel) {
 				if t.Status == domain.StatusDone || t.Status == domain.StatusCancelled {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("($taskAction='reopen') && @put('/api/tasks/%s/status')", t.ID) }
+						data-on:click={ fmt.Sprintf("($taskAction='reopen') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID) }
 						data-signals="{taskAction: 'reopen'}"
 						class="bg-slate-700/50 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-slate-700"
 					>
@@ -200,7 +200,7 @@ templ taskRow(t queries.TaskReadModel) {
 				if t.Status == domain.StatusTodo || t.Status == domain.StatusInProgress {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("($taskAction='cancel') && @put('/api/tasks/%s/status')", t.ID) }
+						data-on:click={ fmt.Sprintf("($taskAction='cancel') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID) }
 						data-signals="{taskAction: 'cancel'}"
 						class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-red-500/20"
 					>
@@ -216,7 +216,7 @@ templ taskRow(t queries.TaskReadModel) {
 				</button>
 				<button
 					type="button"
-					data-on:click={ fmt.Sprintf("@delete('/api/tasks/%s')", t.ID) }
+					data-on:click={ fmt.Sprintf("@delete('/api/tasks/%s', {openWhenHidden: false})", t.ID) }
 					class="text-slate-600 hover:text-red-400 text-xs transition-colors px-2 py-1"
 				>
 					Del
@@ -233,7 +233,7 @@ templ TasksPage(tasks []queries.TaskReadModel) {
 		<div
 			id="tasks-content"
 			data-signals="{_taskModalOpen: false, taskTitle: '', taskDescription: '', taskPriority: 'normal', taskDueDate: ''}"
-			data-init="@get('/api/tasks')"
+			data-init="@get('/api/tasks', {openWhenHidden: false})"
 		>
 			<div class="flex items-center justify-between mb-4">
 				<div></div>
@@ -317,7 +317,7 @@ templ TasksPage(tasks []queries.TaskReadModel) {
 				<div class="flex items-center gap-2 pt-1">
 					<button
 						type="button"
-						data-on:click="@post('/api/tasks')"
+						data-on:click="@post('/api/tasks', {openWhenHidden: false})"
 						class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
 					>
 						Create
@@ -390,7 +390,7 @@ templ globalTaskRow(t queries.TaskReadModel) {
 				if t.Status == domain.StatusTodo {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("($taskAction='start') && @put('/api/tasks/%s/status')", t.ID) }
+						data-on:click={ fmt.Sprintf("($taskAction='start') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID) }
 						data-signals="{taskAction: 'start'}"
 						class="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-blue-500/20"
 					>
@@ -400,7 +400,7 @@ templ globalTaskRow(t queries.TaskReadModel) {
 				if t.Status == domain.StatusInProgress {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("($taskAction='complete') && @put('/api/tasks/%s/status')", t.ID) }
+						data-on:click={ fmt.Sprintf("($taskAction='complete') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID) }
 						data-signals="{taskAction: 'complete'}"
 						class="bg-green-500/10 hover:bg-green-500/20 text-green-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-green-500/20"
 					>
@@ -410,7 +410,7 @@ templ globalTaskRow(t queries.TaskReadModel) {
 				if t.Status == domain.StatusDone || t.Status == domain.StatusCancelled {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("($taskAction='reopen') && @put('/api/tasks/%s/status')", t.ID) }
+						data-on:click={ fmt.Sprintf("($taskAction='reopen') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID) }
 						data-signals="{taskAction: 'reopen'}"
 						class="bg-slate-700/50 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-slate-700"
 					>
@@ -420,7 +420,7 @@ templ globalTaskRow(t queries.TaskReadModel) {
 				if t.Status == domain.StatusTodo || t.Status == domain.StatusInProgress {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("($taskAction='cancel') && @put('/api/tasks/%s/status')", t.ID) }
+						data-on:click={ fmt.Sprintf("($taskAction='cancel') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID) }
 						data-signals="{taskAction: 'cancel'}"
 						class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-red-500/20"
 					>
@@ -429,7 +429,7 @@ templ globalTaskRow(t queries.TaskReadModel) {
 				}
 				<button
 					type="button"
-					data-on:click={ fmt.Sprintf("@delete('/api/tasks/%s')", t.ID) }
+					data-on:click={ fmt.Sprintf("@delete('/api/tasks/%s', {openWhenHidden: false})", t.ID) }
 					class="text-slate-600 hover:text-red-400 text-xs transition-colors px-2 py-1"
 				>
 					Del

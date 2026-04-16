@@ -56,11 +56,11 @@ templ chatWidget() {
 					data-bind:chatmsg
 					placeholder="Message…"
 					rows="1"
-					data-on:keydown="evt.key==='Enter' && !evt.shiftKey && !evt.preventDefault() && @post('/api/chat/send') && ($chatmsg='')"
+					data-on:keydown="evt.key==='Enter' && !evt.shiftKey && !evt.preventDefault() && @post('/api/chat/send', {openWhenHidden: false}) && ($chatmsg='')"
 					class="flex-1 bg-slate-800 text-slate-100 border border-slate-700 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
 				></textarea>
 				<button
-					data-on:click="@post('/api/chat/send') && ($chatmsg='')"
+					data-on:click="@post('/api/chat/send', {openWhenHidden: false}) && ($chatmsg='')"
 					class="bg-cyan-600 hover:bg-cyan-700 text-white p-2 rounded-lg transition-colors flex-shrink-0"
 					title="Send"
 				>
@@ -93,7 +93,7 @@ templ Sidebar() {
 					class="relative"
 				>
 					<button
-						data-on:click="($_notifOpen = !$_notifOpen) && @post('/api/notifications/read')"
+						data-on:click="($_notifOpen = !$_notifOpen) && @post('/api/notifications/read', {openWhenHidden: false})"
 						class="relative p-1 text-slate-500 hover:text-slate-300 transition-colors"
 						title="Notifications"
 					>
@@ -151,7 +151,7 @@ templ Sidebar() {
 				--:--:--
 			</div>
 			<button
-				data-on:click="@post('/api/logout')"
+				data-on:click="@post('/api/logout', {openWhenHidden: false})"
 				class="flex items-center gap-2.5 px-2 py-1.5 rounded text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors text-sm w-full"
 			>
 				<span class="w-4 h-4">@templ.Raw(logoutIcon())</span>

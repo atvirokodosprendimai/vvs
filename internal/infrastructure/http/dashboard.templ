@@ -9,7 +9,7 @@ templ DashboardPage() {
 		@templates.PageHeader("Dashboard", "VVS ISP Manager")
 		<div
 			id="dashboard-stats"
-			data-init="@get('/api/dashboard/stats')"
+			data-init="@get('/api/dashboard/stats', {openWhenHidden: false})"
 			class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6"
 		>
 			@templates.StatCard("Total Customers", "...", customerStatsIcon())

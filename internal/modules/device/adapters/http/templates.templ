@@ -93,7 +93,7 @@ templ DeviceListPage(devices []queries.DeviceReadModel, statusFilter string) {
 						<div id="device-form-errors"></div>
 					</div>
 					<div class="flex gap-2 pt-1">
-						<button type="button" data-on:click="@post('/api/devices')" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors">
+						<button type="button" data-on:click="@post('/api/devices', {openWhenHidden: false})" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors">
 							Register
 						</button>
 						<button type="button" data-on:click="$_registerOpen = false" class="text-slate-400 hover:text-slate-200 px-4 py-2 rounded text-sm transition-colors">
@@ -230,7 +230,7 @@ templ DeviceDetailPage(d *queries.DeviceReadModel) {
 					if d.Status == "deployed" {
 						<button
 							type="button"
-							data-on:click={ fmt.Sprintf("@post('/api/devices/%s/return')", d.ID) }
+							data-on:click={ fmt.Sprintf("@post('/api/devices/%s/return', {openWhenHidden: false})", d.ID) }
 							class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded text-xs font-medium transition-colors"
 						>
 							Return to Stock
@@ -239,7 +239,7 @@ templ DeviceDetailPage(d *queries.DeviceReadModel) {
 					if d.Status != "decommissioned" {
 						<button
 							type="button"
-							data-on:click={ fmt.Sprintf("@post('/api/devices/%s/decommission')", d.ID) }
+							data-on:click={ fmt.Sprintf("@post('/api/devices/%s/decommission', {openWhenHidden: false})", d.ID) }
 							class="bg-red-900/50 hover:bg-red-900 text-red-300 px-3 py-1.5 rounded text-xs font-medium transition-colors"
 						>
 							Decommission
@@ -267,7 +267,7 @@ templ DeviceDetailPage(d *queries.DeviceReadModel) {
 							<div class="flex gap-2">
 								<button
 									type="button"
-									data-on:click={ fmt.Sprintf("@post('/api/devices/%s/deploy')", d.ID) }
+									data-on:click={ fmt.Sprintf("@post('/api/devices/%s/deploy', {openWhenHidden: false})", d.ID) }
 									class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
 								>
 									Deploy

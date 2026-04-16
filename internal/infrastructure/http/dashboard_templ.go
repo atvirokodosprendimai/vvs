@@ -49,7 +49,7 @@ func DashboardPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"dashboard-stats\" data-init=\"@get('/api/dashboard/stats')\" class=\"grid grid-cols-1 md:grid-cols-2 gap-3 mb-6\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"dashboard-stats\" data-init=\"@get('/api/dashboard/stats', {openWhenHidden: false})\" class=\"grid grid-cols-1 md:grid-cols-2 gap-3 mb-6\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

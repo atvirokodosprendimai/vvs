@@ -15,20 +15,20 @@ templ ProductListPage() {
 		<div
 			id="product-content"
 			data-signals="{search: '', filterType: '', page: 1, pageSize: 25}"
-			data-init="@get('/api/products')"
+			data-init="@get('/api/products', {openWhenHidden: false})"
 		>
 			<div class="flex items-center justify-between mb-4">
 				<div class="flex items-center gap-2">
 					<input
 						type="text"
 						data-bind:search
-						data-on:input__debounce.500ms="($page = 1) && @get('/api/products')"
+						data-on:input__debounce.500ms="($page = 1) && @get('/api/products', {openWhenHidden: false})"
 						placeholder="Search products..."
 						class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm w-60 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
 					/>
 					<select
 						data-bind:filter-type
-						data-on:change="($page = 1) && @get('/api/products')"
+						data-on:change="($page = 1) && @get('/api/products', {openWhenHidden: false})"
 						class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 					>
 						<option value="">All Types</option>
@@ -239,7 +239,7 @@ templ ProductDetailPage(p *domain.Product) {
 					Edit
 				</a>
 				<button
-					data-on:click={ fmt.Sprintf("@delete('/api/products/%s')", p.ID) }
+					data-on:click={ fmt.Sprintf("@delete('/api/products/%s', {openWhenHidden: false})", p.ID) }
 					class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
 				>
 					Delete
@@ -314,9 +314,9 @@ func prodFormSignals(p *domain.Product) string {
 
 func prodFormAction(p *domain.Product) string {
 	if p == nil {
-		return "@post('/api/products')"
+		return "@post('/api/products', {openWhenHidden: false})"
 	}
-	return fmt.Sprintf("@put('/api/products/%s')", p.ID)
+	return fmt.Sprintf("@put('/api/products/%s', {openWhenHidden: false})", p.ID)
 }
 
 func prodFormButtonText(p *domain.Product) string {

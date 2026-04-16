@@ -52,9 +52,9 @@ func ServiceSection(customerID string, services []queries.ServiceReadModel) temp
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/customers/%s/services')", customerID))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/customers/%s/services', {openWhenHidden: false})", customerID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/service/adapters/http/templates.templ`, Line: 111, Col: 84}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/service/adapters/http/templates.templ`, Line: 111, Col: 109}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -214,9 +214,9 @@ func serviceRow(svc queries.ServiceReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/services/%s/suspend')", svc.ID))
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/services/%s/suspend', {openWhenHidden: false})", svc.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/service/adapters/http/templates.templ`, Line: 170, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/service/adapters/http/templates.templ`, Line: 170, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -233,9 +233,9 @@ func serviceRow(svc queries.ServiceReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/services/%s/reactivate')", svc.ID))
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/services/%s/reactivate', {openWhenHidden: false})", svc.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/service/adapters/http/templates.templ`, Line: 179, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/service/adapters/http/templates.templ`, Line: 179, Col: 105}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -252,9 +252,9 @@ func serviceRow(svc queries.ServiceReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/services/%s')", svc.ID))
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/services/%s', {openWhenHidden: false})", svc.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/service/adapters/http/templates.templ`, Line: 188, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/service/adapters/http/templates.templ`, Line: 188, Col: 97}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {

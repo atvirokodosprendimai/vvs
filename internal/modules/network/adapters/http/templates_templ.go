@@ -53,7 +53,7 @@ func RouterListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"router-content\" data-init=\"@get('/api/routers')\"><div class=\"flex items-center justify-between mb-4\"><div></div><a href=\"/routers/new\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ New Router</a></div><div id=\"router-table\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"router-content\" data-init=\"@get('/api/routers', {openWhenHidden: false})\"><div class=\"flex items-center justify-between mb-4\"><div></div><a href=\"/routers/new\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ New Router</a></div><div id=\"router-table\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -246,9 +246,9 @@ func RouterRow(r queries.RouterReadModel) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/routers/%s')", r.ID))
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/routers/%s', {openWhenHidden: false})", r.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/templates.templ`, Line: 82, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/templates.templ`, Line: 82, Col: 93}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -467,9 +467,9 @@ func RouterDetailPage(r queries.RouterReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var22 string
-			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/routers/%s')", r.ID))
+			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/routers/%s', {openWhenHidden: false})", r.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/templates.templ`, Line: 171, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/templates.templ`, Line: 171, Col: 93}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -671,9 +671,9 @@ func routerTypeLabel(t string) string {
 
 func routerFormAction(r *queries.RouterReadModel) string {
 	if r == nil {
-		return "@post('/api/routers')"
+		return "@post('/api/routers', {openWhenHidden: false})"
 	}
-	return fmt.Sprintf("@put('/api/routers/%s')", r.ID)
+	return fmt.Sprintf("@put('/api/routers/%s', {openWhenHidden: false})", r.ID)
 }
 
 func routerFormButtonText(r *queries.RouterReadModel) string {

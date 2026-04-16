@@ -206,7 +206,7 @@ templ replyForm(threadID string) {
 		<div class="flex items-center gap-3">
 			<button
 				type="button"
-				data-on:click={ fmt.Sprintf("!$emailSending && @post('/api/email-threads/%s/reply')", threadID) }
+				data-on:click={ fmt.Sprintf("!$emailSending && @post('/api/email-threads/%s/reply', {openWhenHidden: false})", threadID) }
 				data-indicator:emailSending
 				data-class:opacity-50="$emailSending"
 				class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
@@ -227,7 +227,7 @@ templ ThreadDetail(thread emailqueries.ThreadDetailReadModel) {
 			</div>
 			<button
 				type="button"
-				data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/read')", thread.ID) }
+				data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/read', {openWhenHidden: false})", thread.ID) }
 				class="text-xs text-slate-500 hover:text-slate-300 flex-shrink-0"
 			>Mark read</button>
 		</div>
@@ -312,7 +312,7 @@ templ AccountForm() {
 				@emailField("emailFolder", "Folder", "INBOX", "text")
 				<button
 					type="button"
-					data-on:click="@post('/api/email-accounts')"
+					data-on:click="@post('/api/email-accounts', {openWhenHidden: false})"
 					class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
 				>Save Account</button>
 			</div>
@@ -408,7 +408,7 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 					</div>
 					<button
 						type="button"
-						data-on:click="@post('/api/email-accounts') && ($_showAdd=false)"
+						data-on:click="@post('/api/email-accounts', {openWhenHidden: false}) && ($_showAdd=false)"
 						class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
 					>Save Account</button>
 				</div>
@@ -512,25 +512,25 @@ templ emailAccountCard(a emailqueries.AccountReadModel) {
 				if a.Status == "paused" {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("@post('/api/email-accounts/%s/resume')", a.ID) }
+						data-on:click={ fmt.Sprintf("@post('/api/email-accounts/%s/resume', {openWhenHidden: false})", a.ID) }
 						class="text-xs text-slate-400 hover:text-green-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
 					>Resume</button>
 				} else {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("@post('/api/email-accounts/%s/pause')", a.ID) }
+						data-on:click={ fmt.Sprintf("@post('/api/email-accounts/%s/pause', {openWhenHidden: false})", a.ID) }
 						class="text-xs text-slate-400 hover:text-yellow-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
 					>Pause</button>
 				}
 				<button
 					type="button"
-					data-on:click={ fmt.Sprintf("@post('/api/email-sync/%s')", a.ID) }
+					data-on:click={ fmt.Sprintf("@post('/api/email-sync/%s', {openWhenHidden: false})", a.ID) }
 					class="text-xs text-slate-400 hover:text-cyan-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
 					title="Trigger manual sync"
 				>Sync Now</button>
 				<button
 					type="button"
-					data-on:click={ fmt.Sprintf("confirm('Delete account %s and all its emails?') && @delete('/api/email-accounts/%s')", a.Name, a.ID) }
+					data-on:click={ fmt.Sprintf("confirm('Delete account %s and all its emails?') && @delete('/api/email-accounts/%s', {openWhenHidden: false})", a.Name, a.ID) }
 					class="text-xs text-slate-400 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
 				>Delete</button>
 			</div>
@@ -585,7 +585,7 @@ templ EmailFolderList(accountID string, folders []emailqueries.FolderReadModel) 
 			<span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Folders</span>
 			<button
 				type="button"
-				data-on:click={ fmt.Sprintf("@post('/api/email-accounts/%s/discover-folders')", accountID) }
+				data-on:click={ fmt.Sprintf("@post('/api/email-accounts/%s/discover-folders', {openWhenHidden: false})", accountID) }
 				class="text-xs text-cyan-500 hover:text-cyan-400 transition-colors"
 			>Discover</button>
 		</div>
@@ -597,7 +597,7 @@ templ EmailFolderList(accountID string, folders []emailqueries.FolderReadModel) 
 					<span class={ templ.KV("text-slate-300", f.Enabled), templ.KV("text-slate-600 line-through", !f.Enabled) }>{ f.Name }</span>
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("@put('/api/email-folders/%s/toggle')", f.ID) }
+						data-on:click={ fmt.Sprintf("@put('/api/email-folders/%s/toggle', {openWhenHidden: false})", f.ID) }
 						class="ml-2 text-slate-500 hover:text-cyan-400 transition-colors"
 					>
 						if f.Enabled {

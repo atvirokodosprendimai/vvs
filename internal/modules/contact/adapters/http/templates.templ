@@ -118,7 +118,7 @@ templ ContactSection(customerID string, contacts []queries.ContactReadModel) {
 				<div class="flex items-center gap-2 pt-1">
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$_contactId == '' ? @post('/api/customers/%s/contacts') : @put('/api/contacts/' + $_contactId)", customerID) }
+						data-on:click={ fmt.Sprintf("$_contactId == '' ? @post('/api/customers/%s/contacts', {openWhenHidden: false}) : @put('/api/contacts/' + $_contactId)", customerID) }
 						class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
 					>
 						Save
@@ -181,7 +181,7 @@ templ contactRow(c queries.ContactReadModel) {
 				</button>
 				<button
 					type="button"
-					data-on:click={ fmt.Sprintf("@delete('/api/contacts/%s')", c.ID) }
+					data-on:click={ fmt.Sprintf("@delete('/api/contacts/%s', {openWhenHidden: false})", c.ID) }
 					class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-red-500/20"
 				>
 					Delete

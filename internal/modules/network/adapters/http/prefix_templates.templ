@@ -38,7 +38,7 @@ templ PrefixListPage(prefixes []*domain.NetBoxPrefix) {
 						<div id="prefix-form-errors"></div>
 						<div class="flex gap-2 pt-1">
 							<button
-								data-on:click="@post('/api/prefixes')"
+								data-on:click="@post('/api/prefixes', {openWhenHidden: false})"
 								class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium flex-1"
 							>Save</button>
 							<button
@@ -82,7 +82,7 @@ templ PrefixTable(prefixes []*domain.NetBoxPrefix) {
 							<td class="py-2 px-3 text-slate-400">{ fmt.Sprintf("%d", p.Priority) }</td>
 							<td class="py-2 px-3 text-right">
 								<button
-									data-on:click={ fmt.Sprintf("@delete('/api/prefixes/%s')", p.ID) }
+									data-on:click={ fmt.Sprintf("@delete('/api/prefixes/%s', {openWhenHidden: false})", p.ID) }
 									class="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded hover:bg-red-900/30 transition-colors"
 								>Delete</button>
 							</td>

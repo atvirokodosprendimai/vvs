@@ -49,7 +49,7 @@ func CRMDashboardPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"crm-stats\" data-init=\"@get('/api/crm/stats')\" class=\"grid grid-cols-2 md:grid-cols-4 gap-3 mb-6\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"crm-stats\" data-init=\"@get('/api/crm/stats', {openWhenHidden: false})\" class=\"grid grid-cols-2 md:grid-cols-4 gap-3 mb-6\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -57,7 +57,7 @@ func CRMDashboardPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"grid grid-cols-1 lg:grid-cols-2 gap-4\"><!-- Pipeline by stage --><div id=\"crm-pipeline\" data-init=\"@get('/api/crm/pipeline')\" class=\"bg-slate-900 border border-slate-800 rounded-lg p-4\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider mb-3\">Pipeline</p><div class=\"text-slate-500 text-sm\">Loading...</div></div><!-- Open Tickets --><div id=\"crm-tickets\" data-init=\"@get('/api/crm/tickets')\" class=\"bg-slate-900 border border-slate-800 rounded-lg p-4\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider mb-3\">Open Tickets</p><div class=\"text-slate-500 text-sm\">Loading...</div></div><!-- Tasks --><div id=\"crm-tasks\" data-init=\"@get('/api/crm/tasks')\" class=\"bg-slate-900 border border-slate-800 rounded-lg p-4 lg:col-span-2\"><div class=\"flex items-center justify-between mb-3\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider\">Tasks</p><a href=\"/tasks\" class=\"text-xs text-cyan-500 hover:text-cyan-400 transition-colors\">View all →</a></div><div class=\"text-slate-500 text-sm\">Loading...</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"grid grid-cols-1 lg:grid-cols-2 gap-4\"><!-- Pipeline by stage --><div id=\"crm-pipeline\" data-init=\"@get('/api/crm/pipeline', {openWhenHidden: false})\" class=\"bg-slate-900 border border-slate-800 rounded-lg p-4\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider mb-3\">Pipeline</p><div class=\"text-slate-500 text-sm\">Loading...</div></div><!-- Open Tickets --><div id=\"crm-tickets\" data-init=\"@get('/api/crm/tickets', {openWhenHidden: false})\" class=\"bg-slate-900 border border-slate-800 rounded-lg p-4\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider mb-3\">Open Tickets</p><div class=\"text-slate-500 text-sm\">Loading...</div></div><!-- Tasks --><div id=\"crm-tasks\" data-init=\"@get('/api/crm/tasks', {openWhenHidden: false})\" class=\"bg-slate-900 border border-slate-800 rounded-lg p-4 lg:col-span-2\"><div class=\"flex items-center justify-between mb-3\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider\">Tasks</p><a href=\"/tasks\" class=\"text-xs text-cyan-500 hover:text-cyan-400 transition-colors\">View all →</a></div><div class=\"text-slate-500 text-sm\">Loading...</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

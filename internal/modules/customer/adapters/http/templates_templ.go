@@ -66,7 +66,7 @@ func CustomerListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"customer-content\" data-signals=\"{search: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/customers')\"><div class=\"flex items-center justify-between mb-4\"><input type=\"text\" data-bind:search data-on:input__debounce.500ms=\"($page = 1) && @get('/api/customers')\" placeholder=\"Search customers...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm w-72 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"> <a href=\"/customers/new\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ New Customer</a></div><div id=\"customer-table\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"customer-content\" data-signals=\"{search: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/customers', {openWhenHidden: false})\"><div class=\"flex items-center justify-between mb-4\"><input type=\"text\" data-bind:search data-on:input__debounce.500ms=\"($page = 1) && @get('/api/customers', {openWhenHidden: false})\" placeholder=\"Search customers...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm w-72 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"> <a href=\"/customers/new\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ New Customer</a></div><div id=\"customer-table\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -728,9 +728,9 @@ func CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRea
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var29 string
-				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($statusAction='qualify') && @post('/api/customers/%s/status')", c.ID))
+				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($statusAction='qualify') && @post('/api/customers/%s/status', {openWhenHidden: false})", c.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 241, Col: 105}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 241, Col: 130}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 				if templ_7745c5c3_Err != nil {
@@ -747,9 +747,9 @@ func CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRea
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var30 string
-				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($statusAction='convert') && @post('/api/customers/%s/status')", c.ID))
+				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($statusAction='convert') && @post('/api/customers/%s/status', {openWhenHidden: false})", c.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 247, Col: 105}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 247, Col: 130}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 				if templ_7745c5c3_Err != nil {
@@ -766,9 +766,9 @@ func CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRea
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var31 string
-				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($statusAction='suspend') && @post('/api/customers/%s/status')", c.ID))
+				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($statusAction='suspend') && @post('/api/customers/%s/status', {openWhenHidden: false})", c.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 253, Col: 105}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 253, Col: 130}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 				if templ_7745c5c3_Err != nil {
@@ -785,9 +785,9 @@ func CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRea
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var32 string
-				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($statusAction='activate') && @post('/api/customers/%s/status')", c.ID))
+				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($statusAction='activate') && @post('/api/customers/%s/status', {openWhenHidden: false})", c.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 259, Col: 106}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 259, Col: 131}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 				if templ_7745c5c3_Err != nil {
@@ -804,9 +804,9 @@ func CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRea
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var33 string
-				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($statusAction='churn') && @post('/api/customers/%s/status')", c.ID))
+				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($statusAction='churn') && @post('/api/customers/%s/status', {openWhenHidden: false})", c.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 265, Col: 103}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 265, Col: 128}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 				if templ_7745c5c3_Err != nil {
@@ -822,9 +822,9 @@ func CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRea
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var34 string
-			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/customers/%s')", c.ID))
+			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/customers/%s', {openWhenHidden: false})", c.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 270, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 270, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
@@ -938,9 +938,9 @@ func CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRea
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var36 string
-					templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($arpAction='enable') && @post('/api/customers/%s/arp')", c.ID))
+					templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($arpAction='enable') && @post('/api/customers/%s/arp', {openWhenHidden: false})", c.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 312, Col: 100}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 312, Col: 125}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 					if templ_7745c5c3_Err != nil {
@@ -951,9 +951,9 @@ func CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRea
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var37 string
-					templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($arpAction='disable') && @post('/api/customers/%s/arp')", c.ID))
+					templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($arpAction='disable') && @post('/api/customers/%s/arp', {openWhenHidden: false})", c.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 318, Col: 101}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 318, Col: 126}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 					if templ_7745c5c3_Err != nil {
@@ -1016,9 +1016,9 @@ func CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRea
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var39 string
-			templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/customers/%s/notes')", c.ID))
+			templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/customers/%s/notes', {openWhenHidden: false})", c.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 353, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 353, Col: 100}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 			if templ_7745c5c3_Err != nil {
@@ -1260,9 +1260,9 @@ func formSignals(c *domain.Customer) string {
 
 func formAction(c *domain.Customer) string {
 	if c == nil {
-		return "@post('/api/customers')"
+		return "@post('/api/customers', {openWhenHidden: false})"
 	}
-	return fmt.Sprintf("@put('/api/customers/%s')", c.ID)
+	return fmt.Sprintf("@put('/api/customers/%s', {openWhenHidden: false})", c.ID)
 }
 
 func formButtonText(c *domain.Customer) string {

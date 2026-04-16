@@ -52,9 +52,9 @@ func TicketSection(customerID string, tickets []queries.TicketReadModel) templ.C
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/customers/%s/tickets')", customerID))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/customers/%s/tickets', {openWhenHidden: false})", customerID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 99, Col: 83}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 99, Col: 108}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -209,9 +209,9 @@ func ticketRow(tk queries.TicketReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$ticketAction = 'start'; @put('/api/tickets/%s/status')", tk.ID))
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$ticketAction = 'start'; @put('/api/tickets/%s/status', {openWhenHidden: false})", tk.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 160, Col: 99}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 160, Col: 124}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -228,9 +228,9 @@ func ticketRow(tk queries.TicketReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$ticketAction = 'resolve'; @put('/api/tickets/%s/status')", tk.ID))
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$ticketAction = 'resolve'; @put('/api/tickets/%s/status', {openWhenHidden: false})", tk.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 169, Col: 101}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 169, Col: 126}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -247,9 +247,9 @@ func ticketRow(tk queries.TicketReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$ticketAction = 'close'; @put('/api/tickets/%s/status')", tk.ID))
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$ticketAction = 'close'; @put('/api/tickets/%s/status', {openWhenHidden: false})", tk.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 178, Col: 99}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 178, Col: 124}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -266,9 +266,9 @@ func ticketRow(tk queries.TicketReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$ticketAction = 'reopen'; @put('/api/tickets/%s/status')", tk.ID))
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$ticketAction = 'reopen'; @put('/api/tickets/%s/status', {openWhenHidden: false})", tk.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 187, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 187, Col: 125}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -284,9 +284,9 @@ func ticketRow(tk queries.TicketReadModel) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/tickets/%s')", tk.ID))
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/tickets/%s', {openWhenHidden: false})", tk.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 195, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 195, Col: 94}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -313,9 +313,9 @@ func ticketRow(tk queries.TicketReadModel) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/tickets/%s/comments')", tk.ID))
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/tickets/%s/comments', {openWhenHidden: false})", tk.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 208, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 208, Col: 102}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {

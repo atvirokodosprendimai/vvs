@@ -66,7 +66,7 @@ func LoginPage(errMsg string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<button type=\"button\" data-on:click=\"@post('/api/login')\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium py-2 rounded transition-colors mt-1\">Sign in</button></div></div></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<button type=\"button\" data-on:click=\"@post('/api/login', {openWhenHidden: false})\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium py-2 rounded transition-colors mt-1\">Sign in</button></div></div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -153,7 +153,7 @@ func UserListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " <div class=\"flex justify-end mb-4\"><button data-on:click=\"$showCreate=true\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ Add User</button></div><div data-signals=\"{showCreate:false,newUsername:'',newPassword:'',newRole:'operator'}\" data-init=\"@get('/api/users')\"><div id=\"user-table\"></div><div data-show=\"$showCreate\" class=\"fixed inset-0 bg-black/70 flex items-center justify-center z-50\"><div class=\"bg-slate-900 border border-slate-800 rounded-lg p-6 w-full max-w-sm\"><h2 class=\"text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4\">New User</h2><div class=\"flex flex-col gap-3\"><input type=\"text\" placeholder=\"Username\" data-bind:new-username class=\"bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"> <input type=\"password\" placeholder=\"Password\" data-bind:new-password class=\"bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"> <select data-bind:new-role class=\"bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"operator\">Operator</option> <option value=\"admin\">Admin</option></select><div id=\"create-user-error\"></div><div class=\"flex gap-2 mt-1\"><button type=\"button\" data-on:click=\"$showCreate=false\" class=\"flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded text-sm transition-colors border border-slate-700\">Cancel</button> <button type=\"button\" data-on:click=\"@post('/api/users')\" class=\"flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-2 rounded text-sm font-medium transition-colors\">Create</button></div></div></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " <div class=\"flex justify-end mb-4\"><button data-on:click=\"$showCreate=true\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ Add User</button></div><div data-signals=\"{showCreate:false,newUsername:'',newPassword:'',newRole:'operator'}\" data-init=\"@get('/api/users', {openWhenHidden: false})\"><div id=\"user-table\"></div><div data-show=\"$showCreate\" class=\"fixed inset-0 bg-black/70 flex items-center justify-center z-50\"><div class=\"bg-slate-900 border border-slate-800 rounded-lg p-6 w-full max-w-sm\"><h2 class=\"text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4\">New User</h2><div class=\"flex flex-col gap-3\"><input type=\"text\" placeholder=\"Username\" data-bind:new-username class=\"bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"> <input type=\"password\" placeholder=\"Password\" data-bind:new-password class=\"bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"> <select data-bind:new-role class=\"bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"operator\">Operator</option> <option value=\"admin\">Admin</option></select><div id=\"create-user-error\"></div><div class=\"flex gap-2 mt-1\"><button type=\"button\" data-on:click=\"$showCreate=false\" class=\"flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded text-sm transition-colors border border-slate-700\">Cancel</button> <button type=\"button\" data-on:click=\"@post('/api/users', {openWhenHidden: false})\" class=\"flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-2 rounded text-sm font-medium transition-colors\">Create</button></div></div></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -294,14 +294,14 @@ func userRow(row queries.UserRow, currentUserID string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" data-on:click=\"@post('/api/chat/threads/direct')\" class=\"text-cyan-500 hover:text-cyan-400 text-xs transition-colors\" title=\"Message\">Message</button> <button data-on:click=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" data-on:click=\"@post('/api/chat/threads/direct', {openWhenHidden: false})\" class=\"text-cyan-500 hover:text-cyan-400 text-xs transition-colors\" title=\"Message\">Message</button> <button data-on:click=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var12 string
-			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/users/%s')", row.ID))
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/users/%s', {openWhenHidden: false})", row.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 176, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 176, Col: 93}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {

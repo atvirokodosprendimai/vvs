@@ -54,9 +54,9 @@ func TaskSection(customerID string, tasks []queries.TaskReadModel) templ.Compone
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$_taskId ? @put('/api/tasks/' + $_taskId) : @post('/api/customers/%s/tasks')", customerID))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$_taskId ? @put('/api/tasks/' + $_taskId) : @post('/api/customers/%s/tasks', {openWhenHidden: false})", customerID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 110, Col: 125}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 110, Col: 150}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -211,9 +211,9 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='start') && @put('/api/tasks/%s/status')", t.ID))
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='start') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 173, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 173, Col: 121}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -230,9 +230,9 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='complete') && @put('/api/tasks/%s/status')", t.ID))
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='complete') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 183, Col: 99}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 183, Col: 124}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -249,9 +249,9 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='reopen') && @put('/api/tasks/%s/status')", t.ID))
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='reopen') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 193, Col: 97}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 193, Col: 122}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -268,9 +268,9 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='cancel') && @put('/api/tasks/%s/status')", t.ID))
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='cancel') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 203, Col: 97}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 203, Col: 122}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -299,9 +299,9 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/tasks/%s')", t.ID))
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/tasks/%s', {openWhenHidden: false})", t.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 219, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 219, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -353,7 +353,7 @@ func TasksPage(tasks []queries.TaskReadModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, " <div id=\"tasks-content\" data-signals=\"{_taskModalOpen: false, taskTitle: '', taskDescription: '', taskPriority: 'normal', taskDueDate: ''}\" data-init=\"@get('/api/tasks')\"><div class=\"flex items-center justify-between mb-4\"><div></div><button type=\"button\" data-on:click=\"$_taskModalOpen = true; $taskTitle = ''; $taskDescription = ''; $taskPriority = 'normal'; $taskDueDate = ''\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ New Task</button></div><div id=\"tasks-table\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div><!-- Create modal for standalone tasks --> <div data-show=\"$_taskModalOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-slate-200\">New Task</h3><button type=\"button\" data-on:click=\"$_taskModalOpen = false\" class=\"text-slate-500 hover:text-slate-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Title *</label> <input type=\"text\" data-bind:task-title placeholder=\"Task title\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Description</label> <textarea data-bind:task-description rows=\"2\" placeholder=\"Optional description...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600 resize-none\"></textarea></div><div class=\"grid grid-cols-2 gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Priority</label> <select data-bind:task-priority class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"low\">Low</option> <option value=\"normal\">Normal</option> <option value=\"high\">High</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Due Date</label> <input type=\"date\" data-bind:task-due-date class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"></div></div><div id=\"tasks-error\"></div></div><div class=\"flex items-center gap-2 pt-1\"><button type=\"button\" data-on:click=\"@post('/api/tasks')\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Create</button> <button type=\"button\" data-on:click=\"$_taskModalOpen = false\" class=\"bg-slate-800 hover:bg-slate-700 text-slate-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-slate-700\">Cancel</button></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, " <div id=\"tasks-content\" data-signals=\"{_taskModalOpen: false, taskTitle: '', taskDescription: '', taskPriority: 'normal', taskDueDate: ''}\" data-init=\"@get('/api/tasks', {openWhenHidden: false})\"><div class=\"flex items-center justify-between mb-4\"><div></div><button type=\"button\" data-on:click=\"$_taskModalOpen = true; $taskTitle = ''; $taskDescription = ''; $taskPriority = 'normal'; $taskDueDate = ''\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ New Task</button></div><div id=\"tasks-table\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div><!-- Create modal for standalone tasks --> <div data-show=\"$_taskModalOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-slate-200\">New Task</h3><button type=\"button\" data-on:click=\"$_taskModalOpen = false\" class=\"text-slate-500 hover:text-slate-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Title *</label> <input type=\"text\" data-bind:task-title placeholder=\"Task title\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Description</label> <textarea data-bind:task-description rows=\"2\" placeholder=\"Optional description...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600 resize-none\"></textarea></div><div class=\"grid grid-cols-2 gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Priority</label> <select data-bind:task-priority class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"low\">Low</option> <option value=\"normal\">Normal</option> <option value=\"high\">High</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Due Date</label> <input type=\"date\" data-bind:task-due-date class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"></div></div><div id=\"tasks-error\"></div></div><div class=\"flex items-center gap-2 pt-1\"><button type=\"button\" data-on:click=\"@post('/api/tasks', {openWhenHidden: false})\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Create</button> <button type=\"button\" data-on:click=\"$_taskModalOpen = false\" class=\"bg-slate-800 hover:bg-slate-700 text-slate-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-slate-700\">Cancel</button></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -549,9 +549,9 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var23 string
-			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='start') && @put('/api/tasks/%s/status')", t.ID))
+			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='start') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 393, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 393, Col: 121}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -568,9 +568,9 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var24 string
-			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='complete') && @put('/api/tasks/%s/status')", t.ID))
+			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='complete') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 403, Col: 99}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 403, Col: 124}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
@@ -587,9 +587,9 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var25 string
-			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='reopen') && @put('/api/tasks/%s/status')", t.ID))
+			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='reopen') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 413, Col: 97}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 413, Col: 122}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 			if templ_7745c5c3_Err != nil {
@@ -606,9 +606,9 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var26 string
-			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='cancel') && @put('/api/tasks/%s/status')", t.ID))
+			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='cancel') && @put('/api/tasks/%s/status', {openWhenHidden: false})", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 423, Col: 97}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 423, Col: 122}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -624,9 +624,9 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var27 string
-		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/tasks/%s')", t.ID))
+		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/tasks/%s', {openWhenHidden: false})", t.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 432, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 432, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {

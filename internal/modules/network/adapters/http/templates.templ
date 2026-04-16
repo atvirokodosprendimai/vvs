@@ -13,7 +13,7 @@ templ RouterListPage() {
 		@templates.PageHeader("Routers", "Manage network routers")
 		<div
 			id="router-content"
-			data-init="@get('/api/routers')"
+			data-init="@get('/api/routers', {openWhenHidden: false})"
 		>
 			<div class="flex items-center justify-between mb-4">
 				<div></div>
@@ -79,7 +79,7 @@ templ RouterRow(r queries.RouterReadModel) {
 					class="text-slate-500 hover:text-cyan-400 text-xs transition-colors"
 				>Edit</a>
 				<button
-					data-on:click={ fmt.Sprintf("@delete('/api/routers/%s')", r.ID) }
+					data-on:click={ fmt.Sprintf("@delete('/api/routers/%s', {openWhenHidden: false})", r.ID) }
 					class="text-red-400 hover:text-red-300 text-xs transition-colors"
 				>Delete</button>
 			</div>
@@ -168,7 +168,7 @@ templ RouterDetailPage(r queries.RouterReadModel) {
 					class="bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
 				>Edit</a>
 				<button
-					data-on:click={ fmt.Sprintf("@delete('/api/routers/%s')", r.ID) }
+					data-on:click={ fmt.Sprintf("@delete('/api/routers/%s', {openWhenHidden: false})", r.ID) }
 					class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
 				>Delete</button>
 			</div>
@@ -249,9 +249,9 @@ func routerTypeLabel(t string) string {
 
 func routerFormAction(r *queries.RouterReadModel) string {
 	if r == nil {
-		return "@post('/api/routers')"
+		return "@post('/api/routers', {openWhenHidden: false})"
 	}
-	return fmt.Sprintf("@put('/api/routers/%s')", r.ID)
+	return fmt.Sprintf("@put('/api/routers/%s', {openWhenHidden: false})", r.ID)
 }
 
 func routerFormButtonText(r *queries.RouterReadModel) string {

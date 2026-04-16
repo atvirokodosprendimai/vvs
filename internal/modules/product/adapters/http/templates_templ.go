@@ -54,7 +54,7 @@ func ProductListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"product-content\" data-signals=\"{search: '', filterType: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/products')\"><div class=\"flex items-center justify-between mb-4\"><div class=\"flex items-center gap-2\"><input type=\"text\" data-bind:search data-on:input__debounce.500ms=\"($page = 1) && @get('/api/products')\" placeholder=\"Search products...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm w-60 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"> <select data-bind:filter-type data-on:change=\"($page = 1) && @get('/api/products')\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"\">All Types</option> <option value=\"internet\">Internet</option> <option value=\"voip\">VoIP</option> <option value=\"hosting\">Hosting</option> <option value=\"custom\">Custom</option></select></div><a href=\"/products/new\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ New Product</a></div><div id=\"product-table\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"product-content\" data-signals=\"{search: '', filterType: '', page: 1, pageSize: 25}\" data-init=\"@get('/api/products', {openWhenHidden: false})\"><div class=\"flex items-center justify-between mb-4\"><div class=\"flex items-center gap-2\"><input type=\"text\" data-bind:search data-on:input__debounce.500ms=\"($page = 1) && @get('/api/products', {openWhenHidden: false})\" placeholder=\"Search products...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm w-60 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"> <select data-bind:filter-type data-on:change=\"($page = 1) && @get('/api/products', {openWhenHidden: false})\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"\">All Types</option> <option value=\"internet\">Internet</option> <option value=\"voip\">VoIP</option> <option value=\"hosting\">Hosting</option> <option value=\"custom\">Custom</option></select></div><a href=\"/products/new\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ New Product</a></div><div id=\"product-table\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -556,9 +556,9 @@ func ProductDetailPage(p *domain.Product) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var23 string
-			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/products/%s')", p.ID))
+			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/products/%s', {openWhenHidden: false})", p.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 242, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 242, Col: 94}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -752,9 +752,9 @@ func prodFormSignals(p *domain.Product) string {
 
 func prodFormAction(p *domain.Product) string {
 	if p == nil {
-		return "@post('/api/products')"
+		return "@post('/api/products', {openWhenHidden: false})"
 	}
-	return fmt.Sprintf("@put('/api/products/%s')", p.ID)
+	return fmt.Sprintf("@put('/api/products/%s', {openWhenHidden: false})", p.ID)
 }
 
 func prodFormButtonText(p *domain.Product) string {

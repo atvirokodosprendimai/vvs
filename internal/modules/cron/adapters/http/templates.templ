@@ -119,7 +119,7 @@ templ CronListPage(jobs []queries.JobReadModel) {
 					</div>
 
 					<div class="flex gap-2 pt-1">
-						<button type="button" data-on:click="@post('/api/cron')" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors">
+						<button type="button" data-on:click="@post('/api/cron', {openWhenHidden: false})" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors">
 							Add Job
 						</button>
 						<button type="button" data-on:click="$_addOpen = false" class="text-slate-400 hover:text-slate-200 px-4 py-2 rounded text-sm transition-colors">
@@ -259,25 +259,25 @@ templ CronTable(jobs []queries.JobReadModel) {
 											if j.Status == domain.StatusActive {
 												<button
 													type="button"
-													data-on:click={ fmt.Sprintf("@post('/api/cron/%s/pause')", j.ID) }
+													data-on:click={ fmt.Sprintf("@post('/api/cron/%s/pause', {openWhenHidden: false})", j.ID) }
 													class="text-xs text-slate-400 hover:text-yellow-400 transition-colors"
 												>Pause</button>
 											}
 											if j.Status == domain.StatusPaused {
 												<button
 													type="button"
-													data-on:click={ fmt.Sprintf("@post('/api/cron/%s/resume')", j.ID) }
+													data-on:click={ fmt.Sprintf("@post('/api/cron/%s/resume', {openWhenHidden: false})", j.ID) }
 													class="text-xs text-slate-400 hover:text-green-400 transition-colors"
 												>Resume</button>
 											}
 											<button
 												type="button"
-												data-on:click={ fmt.Sprintf("@get('/api/cron/%s/edit')", j.ID) }
+												data-on:click={ fmt.Sprintf("@get('/api/cron/%s/edit', {openWhenHidden: false})", j.ID) }
 												class="text-xs text-slate-400 hover:text-orange-400 transition-colors"
 											>Edit</button>
 											<button
 												type="button"
-												data-on:click={ fmt.Sprintf("@delete('/api/cron/%s')", j.ID) }
+												data-on:click={ fmt.Sprintf("@delete('/api/cron/%s', {openWhenHidden: false})", j.ID) }
 												class="text-xs text-slate-400 hover:text-red-400 transition-colors"
 											>Delete</button>
 										</div>

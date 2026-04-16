@@ -96,7 +96,7 @@ templ TicketSection(customerID string, tickets []queries.TicketReadModel) {
 				<div class="flex items-center gap-2 pt-1">
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("@post('/api/customers/%s/tickets')", customerID) }
+						data-on:click={ fmt.Sprintf("@post('/api/customers/%s/tickets', {openWhenHidden: false})", customerID) }
 						class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
 					>
 						Open Ticket
@@ -157,7 +157,7 @@ templ ticketRow(tk queries.TicketReadModel) {
 				if tk.Status == domain.StatusOpen {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$ticketAction = 'start'; @put('/api/tickets/%s/status')", tk.ID) }
+						data-on:click={ fmt.Sprintf("$ticketAction = 'start'; @put('/api/tickets/%s/status', {openWhenHidden: false})", tk.ID) }
 						class="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-blue-500/20"
 					>
 						Start
@@ -166,7 +166,7 @@ templ ticketRow(tk queries.TicketReadModel) {
 				if tk.Status == domain.StatusInProgress {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$ticketAction = 'resolve'; @put('/api/tickets/%s/status')", tk.ID) }
+						data-on:click={ fmt.Sprintf("$ticketAction = 'resolve'; @put('/api/tickets/%s/status', {openWhenHidden: false})", tk.ID) }
 						class="bg-green-500/10 hover:bg-green-500/20 text-green-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-green-500/20"
 					>
 						Resolve
@@ -175,7 +175,7 @@ templ ticketRow(tk queries.TicketReadModel) {
 				if tk.Status != domain.StatusClosed {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$ticketAction = 'close'; @put('/api/tickets/%s/status')", tk.ID) }
+						data-on:click={ fmt.Sprintf("$ticketAction = 'close'; @put('/api/tickets/%s/status', {openWhenHidden: false})", tk.ID) }
 						class="bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-slate-500/20"
 					>
 						Close
@@ -184,7 +184,7 @@ templ ticketRow(tk queries.TicketReadModel) {
 				if tk.Status == domain.StatusResolved || tk.Status == domain.StatusClosed {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$ticketAction = 'reopen'; @put('/api/tickets/%s/status')", tk.ID) }
+						data-on:click={ fmt.Sprintf("$ticketAction = 'reopen'; @put('/api/tickets/%s/status', {openWhenHidden: false})", tk.ID) }
 						class="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-cyan-500/20"
 					>
 						Reopen
@@ -192,7 +192,7 @@ templ ticketRow(tk queries.TicketReadModel) {
 				}
 				<button
 					type="button"
-					data-on:click={ fmt.Sprintf("@delete('/api/tickets/%s')", tk.ID) }
+					data-on:click={ fmt.Sprintf("@delete('/api/tickets/%s', {openWhenHidden: false})", tk.ID) }
 					class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-red-500/20"
 				>
 					Delete
@@ -205,7 +205,7 @@ templ ticketRow(tk queries.TicketReadModel) {
 					@commentInput(tk.ID)
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("@post('/api/tickets/%s/comments')", tk.ID) }
+						data-on:click={ fmt.Sprintf("@post('/api/tickets/%s/comments', {openWhenHidden: false})", tk.ID) }
 						class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-slate-600 whitespace-nowrap"
 					>
 						Comment
