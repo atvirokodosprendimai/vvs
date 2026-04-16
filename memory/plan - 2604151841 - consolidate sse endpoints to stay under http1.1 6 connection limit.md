@@ -1,6 +1,6 @@
 ---
 tldr: Consolidate all SSE endpoints into global /sse + 1 page-level SSE (max 2 open at once)
-status: active
+status: completed
 ---
 
 # Plan: Consolidate SSE Endpoints
@@ -52,39 +52,18 @@ In the template:
 
 ## Phases
 
-### Phase 1 — Global `/sse` endpoint — status: open
+### Phase 1 — Global `/sse` endpoint — status: completed
 
-1. [ ] Create `GlobalSSE` handler in `internal/infrastructure/http/global_sse.go`
-   - Fan-in: clock ticker (1s), `isp.notifications.*`, `isp.chat.>`
-   - Patches: `#clock` (time), `#notif-badge` (count), `#chat-unread` (total unread)
-   - Requires `chat.Store.TotalUnread` (already exists)
+1. [x] GlobalSSE handler in `internal/infrastructure/http/global_sse.go`
+2. [x] `GET /sse` registered in router.go
+3. [x] Layout uses single `data-init="@get('/sse')"`
 
-2. [ ] Register `GET /sse` route in router.go
+### Phase 2 — Consolidated chat SSE — status: completed
 
-3. [ ] Update layout.templ
-   - Replace 3 separate `data-init="@get('/sse/clock')"` etc. with single `data-init="@get('/sse')"`
-   - Remove `/sse/clock`, `/sse/notifications`, `/sse/chat` `data-init` elements
-
-4. [ ] Remove old handlers: `clockSSE`, `notificationsSSE` (or keep as dead code temporarily)
-
-5. [ ] Remove old routes from router.go
-
-### Phase 2 — Consolidated chat SSE — status: open
-
-1. [ ] Create `chatPageSSE` handler: reads `threadid` from query signal, runs both thread-list loop and message loop in one goroutine (or two goroutines sharing the SSE writer)
-   - Thread list: subscribes `isp.chat.>`, patches `#chat-thread-list`
-   - Messages: subscribes `isp.chat.message.{threadID}`, patches `#chat-messages`
-   - On `threadid` change: handled by client reconnect
-
-2. [ ] Update chat.templ to use single `@get('/sse/chat-page')` instead of two separate inits
-
-3. [ ] Wire thread row click to reconnect SSE:
-   ```
-   data-on:click="($threadid='X') && @get('/sse/chat-page')"
-   ```
-   (replacing current separate `@get('/sse/chat/messages/X')`)
-
-4. [ ] Remove `/sse/chat/threads` and `/sse/chat/messages/{threadID}` routes
+1. [x] `chatPageSSE` handler — multiplexes `isp.chat.>` (thread list) + `isp.chat.message.{threadID}` (messages)
+2. [x] `chat.templ` — single `data-init="@get('/sse/chat-page')"` on outer wrapper
+3. [x] Thread row click: `($threadid='X') && @get('/sse/chat-page')` — reconnects with new thread
+4. [x] Removed `/sse/chat/threads` and `/sse/chat/messages/{threadID}` routes + dead handler code
 
 ## Verification
 
@@ -98,3 +77,4 @@ In the template:
 ## Progress Log
 
 - 2604151841 — Plan created after observing 5 SSE connections on chat page
+- 2604162100 — Phase 1 was already done; Phase 2 implemented: chatPageSSE consolidates 2→1 connection
