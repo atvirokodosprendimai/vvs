@@ -1,6 +1,6 @@
 ---
 tldr: Upgrade chat from single global room to threaded DMs + named channels with full /chat page
-status: active
+status: completed
 ---
 
 # Plan: Chat Threads — DMs and Channels
