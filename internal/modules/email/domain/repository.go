@@ -19,6 +19,7 @@ type EmailThreadRepository interface {
 	FindByMessageID(ctx context.Context, accountID, messageID string) (*EmailThread, error)
 	// FindBySubject returns a thread with matching normalized subject, or ErrThreadNotFound.
 	FindBySubject(ctx context.Context, accountID, normalizedSubject string) (*EmailThread, error)
+	ListAll(ctx context.Context) ([]*EmailThread, error)
 	ListForAccount(ctx context.Context, accountID string) ([]*EmailThread, error)
 	ListForCustomer(ctx context.Context, customerID string) ([]*EmailThread, error)
 }

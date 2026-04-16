@@ -293,6 +293,21 @@ func (r *GormEmailThreadRepository) FindBySubject(ctx context.Context, accountID
 	return m.toDomain(), nil
 }
 
+func (r *GormEmailThreadRepository) ListAll(ctx context.Context) ([]*domain.EmailThread, error) {
+	var models []threadModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Order("last_message_at DESC").Find(&models).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*domain.EmailThread, len(models))
+	for i := range models {
+		out[i] = models[i].toDomain()
+	}
+	return out, nil
+}
+
 func (r *GormEmailThreadRepository) ListForAccount(ctx context.Context, accountID string) ([]*domain.EmailThread, error) {
 	var models []threadModel
 	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {

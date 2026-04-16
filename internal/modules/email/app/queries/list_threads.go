@@ -28,8 +28,7 @@ func (h *ListThreadsHandler) Handle(ctx context.Context, q ListThreadsQuery) ([]
 	if q.AccountID != "" {
 		threadList, err = h.threads.ListForAccount(ctx, q.AccountID)
 	} else {
-		// No cross-account list method yet — return empty for now.
-		return nil, nil
+		threadList, err = h.threads.ListAll(ctx)
 	}
 	if err != nil {
 		return nil, err
