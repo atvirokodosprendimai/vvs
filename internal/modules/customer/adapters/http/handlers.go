@@ -26,6 +26,7 @@ import (
 	dealhttp "github.com/vvs/isp/internal/modules/deal/adapters/http"
 	tickethttp "github.com/vvs/isp/internal/modules/ticket/adapters/http"
 	taskhttp "github.com/vvs/isp/internal/modules/task/adapters/http"
+	emailQueries "github.com/vvs/isp/internal/modules/email/app/queries"
 	"github.com/vvs/isp/internal/shared/events"
 )
 
@@ -54,6 +55,7 @@ type Handlers struct {
 	listDealsQuery       *dealQueries.ListDealsForCustomerHandler
 	listTicketsQuery     *ticketQueries.ListTicketsForCustomerHandler
 	listTasksQuery       *taskQueries.ListTasksForCustomerHandler
+	listEmailQuery       *emailQueries.ListThreadsForCustomerHandler
 }
 
 func NewHandlers(
@@ -113,6 +115,12 @@ func (h *Handlers) WithTicketsQuery(q *ticketQueries.ListTicketsForCustomerHandl
 // WithTasksQuery injects the task list query for the detail page.
 func (h *Handlers) WithTasksQuery(q *taskQueries.ListTasksForCustomerHandler) *Handlers {
 	h.listTasksQuery = q
+	return h
+}
+
+// WithEmailThreadsQuery injects the email threads query for the customer detail page.
+func (h *Handlers) WithEmailThreadsQuery(q *emailQueries.ListThreadsForCustomerHandler) *Handlers {
+	h.listEmailQuery = q
 	return h
 }
 
@@ -190,12 +198,20 @@ func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
 			tasks = nil
 		}
 	}
+	var emailThreads []emailQueries.ThreadReadModel
+	if h.listEmailQuery != nil {
+		emailThreads, err = h.listEmailQuery.Handle(r.Context(), id)
+		if err != nil {
+			log.Printf("detailPage: list email threads: %v", err)
+			emailThreads = nil
+		}
+	}
 	routerName := h.loadRouterName(r.Context(), customer)
 	var notes []queries.NoteReadModel
 	if h.listNotesQuery != nil {
 		notes, _ = h.listNotesQuery.Handle(r.Context(), id)
 	}
-	CustomerDetailPage(customer, services, routerName, notes, contacts, deals, tickets, tasks).Render(r.Context(), w)
+	CustomerDetailPage(customer, services, routerName, notes, contacts, deals, tickets, tasks, emailThreads).Render(r.Context(), w)
 }
 
 func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {

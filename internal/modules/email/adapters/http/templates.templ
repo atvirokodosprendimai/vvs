@@ -1,0 +1,372 @@
+package http
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/vvs/isp/internal/infrastructure/http/templates"
+	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
+)
+
+// EmailPage is the full inbox page.
+templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
+	@templates.Layout("Email") {
+		@templates.PageHeader("Email", "IMAP inbox")
+		<div
+			id="email-inbox"
+			class="flex gap-4"
+			data-signals={ fmt.Sprintf("{_emailAccountID: %q, _emailTagFilter: '', _emailThreadID: ''}", selected) }
+		>
+			<!-- Sidebar: accounts + tags -->
+			<div class="w-56 flex-shrink-0 flex flex-col gap-3">
+				<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+					<div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+						<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Accounts</h3>
+						<button
+							type="button"
+							data-on:click="$_emailAccountID = ''"
+							class="text-xs text-cyan-500 hover:text-cyan-400"
+						>+ Add</button>
+					</div>
+					<div class="divide-y divide-slate-800">
+						for _, a := range accounts {
+							<button
+								type="button"
+								data-on:click={ fmt.Sprintf("$_emailAccountID = %q; @get('/sse/emails')", a.ID) }
+								class="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-2"
+							>
+								<span class="truncate">{ a.Name }</span>
+								@accountStatusDot(a.Status)
+							</button>
+						}
+					</div>
+				</div>
+
+				<!-- System tags -->
+				<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+					<div class="px-4 py-3 border-b border-slate-800">
+						<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tags</h3>
+					</div>
+					<div class="divide-y divide-slate-800">
+						@tagFilterButton("unread", "#3b82f6", "Unread")
+						@tagFilterButton("starred", "#f59e0b", "Starred")
+						@tagFilterButton("archived", "#6b7280", "Archived")
+					</div>
+				</div>
+			</div>
+
+			<!-- Thread list -->
+			<div class="flex-1 min-w-0">
+				<div
+					id="email-thread-list"
+					data-init="@get('/sse/emails')"
+				>
+					<div class="text-slate-600 py-8 text-center text-sm">Loading...</div>
+				</div>
+			</div>
+
+			<!-- Thread detail (shown when a thread is selected) -->
+			<div
+				id="email-thread-detail"
+				class="w-96 flex-shrink-0"
+				data-show="$_emailThreadID != ''"
+				style="display:none"
+			>
+			</div>
+		</div>
+	}
+}
+
+templ tagFilterButton(name, color, label string) {
+	<button
+		type="button"
+		data-on:click={ fmt.Sprintf("$_emailTagFilter = $_emailTagFilter == %q ? '' : %q; @get('/sse/emails')", name, name) }
+		class="w-full text-left px-4 py-2 text-sm text-slate-400 hover:bg-slate-800/60 transition-colors flex items-center gap-2"
+	>
+		<span class="w-2 h-2 rounded-full flex-shrink-0" style={ fmt.Sprintf("background-color:%s", color) }></span>
+		{ label }
+	</button>
+}
+
+templ accountStatusDot(status string) {
+	switch status {
+		case "active":
+			<span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
+		case "error":
+			<span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
+		default:
+			<span class="w-1.5 h-1.5 rounded-full bg-slate-600 flex-shrink-0"></span>
+	}
+}
+
+// ThreadList is the patchable thread list panel.
+templ ThreadList(threads []emailqueries.ThreadReadModel) {
+	<div id="email-thread-list">
+		if len(threads) == 0 {
+			<div class="bg-slate-900 border border-slate-800 rounded-lg flex flex-col items-center justify-center py-14 text-slate-600">
+				<p class="text-sm">No emails.</p>
+			</div>
+		} else {
+			<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden divide-y divide-slate-800">
+				for _, t := range threads {
+					@threadRow(t)
+				}
+			</div>
+		}
+	</div>
+}
+
+templ threadRow(t emailqueries.ThreadReadModel) {
+	<button
+		type="button"
+		data-on:click={ fmt.Sprintf("$_emailThreadID = %q; @get('/sse/emails/%s')", t.ID, t.ID) }
+		class="w-full text-left px-4 py-3 hover:bg-slate-800/60 transition-colors flex flex-col gap-0.5"
+	>
+		<div class="flex items-center justify-between gap-2">
+			<span class={ "text-sm font-medium truncate", templ.KV("text-white", t.Unread), templ.KV("text-slate-400", !t.Unread) }>
+				{ t.Subject }
+			</span>
+			<span class="text-xs text-slate-500 flex-shrink-0">{ formatRelTime(t.LastMessageAt) }</span>
+		</div>
+		<div class="flex items-center gap-2 justify-between">
+			<span class="text-xs text-slate-500 truncate">{ firstParticipant(t.ParticipantAddresses) }</span>
+			<div class="flex items-center gap-1">
+				if t.Unread {
+					<span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+				}
+				for _, tag := range nonSystemTags(t.Tags) {
+					<span
+						class="px-1.5 py-0.5 text-xs rounded font-medium"
+						style={ fmt.Sprintf("background-color:%s22;color:%s", tag.Color, tag.Color) }
+					>{ tag.Name }</span>
+				}
+			</div>
+		</div>
+	</button>
+}
+
+// ThreadDetail renders the full thread (messages + attachments).
+templ ThreadDetail(thread emailqueries.ThreadDetailReadModel) {
+	<div id="email-thread-detail" class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex flex-col">
+		<!-- Header -->
+		<div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+			<h3 class="text-sm font-semibold text-slate-200 truncate">{ thread.Subject }</h3>
+			<div class="flex items-center gap-2">
+				<button
+					type="button"
+					data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/read')", thread.ID) }
+					class="text-xs text-slate-500 hover:text-slate-300"
+				>Mark read</button>
+				<button
+					type="button"
+					data-on:click="$_emailThreadID = ''"
+					class="text-slate-500 hover:text-slate-300"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+					</svg>
+				</button>
+			</div>
+		</div>
+		<!-- Messages -->
+		<div class="flex-1 overflow-y-auto divide-y divide-slate-800 max-h-[70vh]">
+			for _, m := range thread.Messages {
+				@messageItem(m)
+			}
+		</div>
+	</div>
+}
+
+templ messageItem(m emailqueries.MessageReadModel) {
+	<div class="px-4 py-3 flex flex-col gap-2">
+		<div class="flex items-center justify-between">
+			<div class="flex flex-col">
+				<span class="text-xs font-medium text-slate-300">
+					if m.FromName != "" {
+						{ m.FromName } &lt;{ m.FromAddr }&gt;
+					} else {
+						{ m.FromAddr }
+					}
+				</span>
+				<span class="text-xs text-slate-500">To: { m.ToAddrs }</span>
+			</div>
+			<span class="text-xs text-slate-500 flex-shrink-0">{ m.ReceivedAt.Format("Jan 2, 15:04") }</span>
+		</div>
+		<div class="text-sm text-slate-300 whitespace-pre-wrap break-words">{ m.TextBody }</div>
+		if len(m.Attachments) > 0 {
+			<div class="flex flex-wrap gap-2 mt-1">
+				for _, a := range m.Attachments {
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/api/email-attachments/%s", a.ID)) }
+						download={ a.Filename }
+						class="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/>
+						</svg>
+						{ a.Filename } ({ formatSize(a.Size) })
+					</a>
+				}
+			</div>
+		}
+	</div>
+}
+
+// AccountForm is the modal for adding/editing IMAP accounts.
+templ AccountForm() {
+	<div
+		data-show="$_emailAccountID == ''"
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+		style="display:none"
+	>
+		<div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
+			<div class="flex items-center justify-between">
+				<h3 class="text-sm font-semibold text-slate-200">Add IMAP Account</h3>
+				<button
+					type="button"
+					data-on:click="$_emailAccountID = 'none'"
+					class="text-slate-500 hover:text-slate-300"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+					</svg>
+				</button>
+			</div>
+			<div class="flex flex-col gap-3" data-signals="{emailName:'',emailHost:'',emailPort:'993',emailUser:'',emailPass:'',emailTLS:'tls',emailFolder:'INBOX'}">
+				@emailField("emailName", "Name", "Work", "text")
+				@emailField("emailHost", "IMAP Host", "mail.example.com", "text")
+				@emailField("emailPort", "Port", "993", "number")
+				@emailField("emailUser", "Username", "user@example.com", "email")
+				@emailField("emailPass", "Password", "", "password")
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">TLS</label>
+					<select data-bind:email-t-l-s class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
+						<option value="tls">TLS (implicit, port 993)</option>
+						<option value="starttls">STARTTLS (port 587)</option>
+						<option value="none">None (insecure)</option>
+					</select>
+				</div>
+				@emailField("emailFolder", "Folder", "INBOX", "text")
+				<button
+					type="button"
+					data-on:click="@post('/api/email-accounts')"
+					class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
+				>Save Account</button>
+			</div>
+		</div>
+	</div>
+}
+
+templ emailField(signal, label, placeholder, inputType string) {
+	<div class="flex flex-col gap-1">
+		<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">{ label }</label>
+		<input
+			type={ inputType }
+			data-bind={ signal }
+			placeholder={ placeholder }
+			class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
+		/>
+	</div>
+}
+
+// EmailThreadsSection is the email section on the customer detail page.
+templ EmailThreadsSection(customerID string, threads []emailqueries.ThreadReadModel) {
+	<div class="mt-4 bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+		<div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+			<h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Email Threads</h2>
+			<a href="/emails" class="text-xs text-cyan-500 hover:text-cyan-400">Open inbox</a>
+		</div>
+		<div id={ fmt.Sprintf("customer-email-threads-%s", customerID) }>
+			if len(threads) == 0 {
+				<div class="flex flex-col items-center justify-center py-6 text-slate-600">
+					<p class="text-sm">No linked emails.</p>
+				</div>
+			} else {
+				<div class="divide-y divide-slate-800">
+					for _, t := range threads {
+						<div class="px-4 py-2.5 flex items-center justify-between gap-2">
+							<div class="flex flex-col gap-0.5 min-w-0">
+								<span class="text-sm text-slate-300 truncate">{ t.Subject }</span>
+								<span class="text-xs text-slate-500">{ firstParticipant(t.ParticipantAddresses) }</span>
+							</div>
+							<div class="flex items-center gap-2 flex-shrink-0">
+								if t.Unread {
+									<span class="w-2 h-2 rounded-full bg-blue-500"></span>
+								}
+								<span class="text-xs text-slate-500">{ formatRelTime(t.LastMessageAt) }</span>
+							</div>
+						</div>
+					}
+				</div>
+			}
+		</div>
+	</div>
+}
+
+// --- helpers ---
+
+func firstParticipant(s string) string {
+	if s == "" {
+		return ""
+	}
+	parts := splitComma(s)
+	if len(parts) == 0 {
+		return s
+	}
+	return parts[0]
+}
+
+func splitComma(s string) []string {
+	if s == "" {
+		return nil
+	}
+	var out []string
+	start := 0
+	for i, c := range s {
+		if c == ',' {
+			out = append(out, s[start:i])
+			start = i + 1
+		}
+	}
+	out = append(out, s[start:])
+	return out
+}
+
+func nonSystemTags(tags []emailqueries.TagReadModel) []emailqueries.TagReadModel {
+	var out []emailqueries.TagReadModel
+	for _, t := range tags {
+		if !t.System {
+			out = append(out, t)
+		}
+	}
+	return out
+}
+
+func formatRelTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	now := time.Now()
+	diff := now.Sub(t)
+	switch {
+	case diff < time.Minute:
+		return "now"
+	case diff < time.Hour:
+		return fmt.Sprintf("%dm ago", int(diff.Minutes()))
+	case diff < 24*time.Hour:
+		return fmt.Sprintf("%dh ago", int(diff.Hours()))
+	default:
+		return t.Format("Jan 2")
+	}
+}
+
+func formatSize(bytes int64) string {
+	switch {
+	case bytes < 1024:
+		return fmt.Sprintf("%dB", bytes)
+	case bytes < 1024*1024:
+		return fmt.Sprintf("%dKB", bytes/1024)
+	default:
+		return fmt.Sprintf("%dMB", bytes/(1024*1024))
+	}
+}

@@ -14,6 +14,10 @@ type Config struct {
 	NATSUrl        string // if set, connect to external NATS instead of starting embedded
 	NATSListenAddr string // if set (and NATSUrl empty), embedded NATS exposes TCP on this addr
 
+	// EmailEncKey is 32 bytes (hex or raw) used to AES-256-GCM encrypt IMAP passwords.
+	// Empty = dev mode (passwords stored in plaintext — not for production).
+	EmailEncKey string // VVS_EMAIL_ENC_KEY env var
+
 	// APIToken is the bearer token required for /api/v1/* requests.
 	// Empty string disables the REST API.
 	APIToken string // VVS_API_TOKEN env var

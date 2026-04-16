@@ -112,6 +112,11 @@ func serveCommand() *cli.Command {
 				Sources: cli.EnvVars("NATS_LISTEN_ADDR"),
 			},
 			&cli.StringFlag{
+				Name:    "email-enc-key",
+				Usage:   "32-byte AES key (hex or raw) for encrypting IMAP passwords (optional)",
+				Sources: cli.EnvVars("VVS_EMAIL_ENC_KEY"),
+			},
+			&cli.StringFlag{
 				Name:    "modules",
 				Usage:   "Comma-separated list of modules to enable (default: all)",
 				Sources: cli.EnvVars("VVS_MODULES"),
@@ -137,6 +142,7 @@ func serveCommand() *cli.Command {
 				NATSUrl:        cmd.Root().String("nats-url"),
 				NATSListenAddr: cmd.String("nats-listen"),
 				APIToken:       cmd.Root().String("api-token"),
+				EmailEncKey:    cmd.String("email-enc-key"),
 				EnabledModules: enabledModules,
 			}
 

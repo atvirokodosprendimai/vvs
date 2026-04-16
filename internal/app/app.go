@@ -84,6 +84,14 @@ import (
 
 	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
 
+	emailhttp "github.com/vvs/isp/internal/modules/email/adapters/http"
+	emailpersistence "github.com/vvs/isp/internal/modules/email/adapters/persistence"
+	emailcommands "github.com/vvs/isp/internal/modules/email/app/commands"
+	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
+	emailmigrations "github.com/vvs/isp/internal/modules/email/migrations"
+	"github.com/vvs/isp/internal/modules/email/worker"
+	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
+
 	devicehttp "github.com/vvs/isp/internal/modules/device/adapters/http"
 	devicepersistence "github.com/vvs/isp/internal/modules/device/adapters/persistence"
 	devicecommands "github.com/vvs/isp/internal/modules/device/app/commands"
@@ -98,13 +106,14 @@ import (
 )
 
 type App struct {
-	DB         *gormsqlite.DB
-	NATSServer *natsserver.Server
-	NATSConn   *nats.Conn
-	Publisher  events.EventPublisher
-	Subscriber events.EventSubscriber
-	HTTPServer *infrahttp.Server
-	RPCServer  *natsrpc.Server
+	DB          *gormsqlite.DB
+	NATSServer  *natsserver.Server
+	NATSConn    *nats.Conn
+	Publisher   events.EventPublisher
+	Subscriber  events.EventSubscriber
+	HTTPServer  *infrahttp.Server
+	RPCServer   *natsrpc.Server
+	emailWorker *worker.SyncWorker
 }
 
 func New(cfg Config) (*App, error) {
@@ -133,6 +142,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "deal", FS: dealmigrations.FS, TableName: "goose_deal"},
 		{Name: "ticket", FS: ticketmigrations.FS, TableName: "goose_ticket"},
 		{Name: "task", FS: taskmigrations.FS, TableName: "goose_task"},
+		{Name: "email", FS: emailmigrations.FS, TableName: "goose_email"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -359,6 +369,46 @@ func New(cfg Config) (*App, error) {
 	}
 	log.Printf("module wired: task")
 
+	// Email module
+	emailAccountRepo := emailpersistence.NewGormEmailAccountRepository(gdb)
+	emailThreadRepo := emailpersistence.NewGormEmailThreadRepository(gdb)
+	emailMessageRepo := emailpersistence.NewGormEmailMessageRepository(gdb)
+	emailAttachmentRepo := emailpersistence.NewGormEmailAttachmentRepository(gdb)
+	emailTagRepo := emailpersistence.NewGormEmailTagRepository(gdb)
+
+	emailEncKey := []byte(cfg.EmailEncKey) // 32-byte AES key from config; empty = dev mode (no encryption)
+
+	configureAccountCmd := emailcommands.NewConfigureAccountHandler(emailAccountRepo, publisher, emailEncKey)
+	applyTagCmd := emailcommands.NewApplyTagHandler(emailThreadRepo, emailTagRepo)
+	removeTagCmd := emailcommands.NewRemoveTagHandler(emailTagRepo)
+	markReadCmd := emailcommands.NewMarkReadHandler(emailTagRepo, publisher)
+	linkCustomerCmd := emailcommands.NewLinkCustomerHandler(emailThreadRepo)
+	listEmailThreadsQuery := emailqueries.NewListThreadsHandler(emailThreadRepo, emailTagRepo)
+	getEmailThreadQuery := emailqueries.NewGetThreadHandler(emailThreadRepo, emailMessageRepo, emailAttachmentRepo, emailTagRepo)
+	listEmailForCustomerQuery := emailqueries.NewListThreadsForCustomerHandler(emailThreadRepo, emailTagRepo)
+
+	emailRoutes := emailhttp.NewHandlers(
+		configureAccountCmd, applyTagCmd, removeTagCmd, markReadCmd, linkCustomerCmd,
+		listEmailThreadsQuery, getEmailThreadQuery, listEmailForCustomerQuery,
+		subscriber, publisher,
+	)
+	moduleRoutes = append(moduleRoutes, emailRoutes)
+	if customerRoutes != nil {
+		customerRoutes.WithEmailThreadsQuery(listEmailForCustomerQuery)
+	}
+
+	emailRepos := imapAdapter.Repos{
+		DB:          gdb,
+		Accounts:    emailAccountRepo,
+		Threads:     emailThreadRepo,
+		Messages:    emailMessageRepo,
+		Attachments: emailAttachmentRepo,
+		Tags:        emailTagRepo,
+	}
+	emailWorker := worker.NewSyncWorker(emailRepos, publisher, subscriber, 0)
+	emailWorker.Start()
+	log.Printf("module wired: email")
+
 	// 10. Service module — commands + route registration
 	assignServiceCmd := servicecommands.NewAssignServiceHandler(serviceRepo, publisher)
 	suspendServiceCmd := servicecommands.NewSuspendServiceHandler(serviceRepo, publisher)
@@ -461,13 +511,14 @@ func New(cfg Config) (*App, error) {
 	log.Printf("VVS ISP Manager initialized (db: %s, modules: %v)", cfg.DatabasePath, enabled)
 
 	return &App{
-		DB:         gdb,
-		NATSServer: ns,
-		NATSConn:   nc,
-		Publisher:  publisher,
-		Subscriber: subscriber,
-		HTTPServer: httpServer,
-		RPCServer:  rpcServer,
+		DB:          gdb,
+		NATSServer:  ns,
+		NATSConn:    nc,
+		Publisher:   publisher,
+		Subscriber:  subscriber,
+		HTTPServer:  httpServer,
+		RPCServer:   rpcServer,
+		emailWorker: emailWorker,
 	}, nil
 }
 
@@ -476,6 +527,9 @@ func (a *App) Start() error {
 }
 
 func (a *App) Shutdown(ctx context.Context) error {
+	if a.emailWorker != nil {
+		a.emailWorker.Stop()
+	}
 	err := a.HTTPServer.Shutdown(ctx)
 	if a.RPCServer != nil {
 		a.RPCServer.Close()
