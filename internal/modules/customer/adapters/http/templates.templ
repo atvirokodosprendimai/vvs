@@ -9,6 +9,8 @@ import (
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
 	serviceQueries "github.com/vvs/isp/internal/modules/service/app/queries"
 	servicehttp "github.com/vvs/isp/internal/modules/service/adapters/http"
+	contactQueries "github.com/vvs/isp/internal/modules/contact/app/queries"
+	contacthttp "github.com/vvs/isp/internal/modules/contact/adapters/http"
 )
 
 templ CustomerListPage() {
@@ -214,7 +216,7 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 	}
 }
 
-templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel, routerName string, notes []queries.NoteReadModel) {
+templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel, routerName string, notes []queries.NoteReadModel, contacts []contactQueries.ContactReadModel) {
 	@templates.Layout(c.CompanyName) {
 		@templates.PageHeader(c.CompanyName, fmt.Sprintf("Customer %s", c.Code.String()))
 		<div class="max-w-2xl">
@@ -317,6 +319,7 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 			}
 		</div>
 		@servicehttp.ServiceSection(c.ID, services)
+		@contacthttp.ContactSection(c.ID, contacts)
 		<!-- Notes timeline -->
 		<div class="max-w-2xl mt-6">
 			<div class="flex items-center justify-between mb-3">

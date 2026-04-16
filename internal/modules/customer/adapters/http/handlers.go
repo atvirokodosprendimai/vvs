@@ -16,6 +16,7 @@ import (
 	"github.com/vvs/isp/internal/modules/customer/app/commands"
 	"github.com/vvs/isp/internal/modules/customer/app/queries"
 	"github.com/vvs/isp/internal/modules/customer/domain"
+	contactQueries "github.com/vvs/isp/internal/modules/contact/app/queries"
 	serviceQueries "github.com/vvs/isp/internal/modules/service/app/queries"
 	"github.com/vvs/isp/internal/shared/events"
 )
@@ -37,10 +38,11 @@ type Handlers struct {
 	listQuery         *queries.ListCustomersHandler
 	getQuery          *queries.GetCustomerHandler
 	listNotesQuery    *queries.ListNotesHandler
-	subscriber        events.EventSubscriber
-	publisher         events.EventPublisher
-	reader            *gorm.DB // optional — for router dropdown; nil = no network section shown
-	listServicesQuery *serviceQueries.ListServicesForCustomerHandler
+	subscriber           events.EventSubscriber
+	publisher            events.EventPublisher
+	reader               *gorm.DB // optional — for router dropdown; nil = no network section shown
+	listServicesQuery    *serviceQueries.ListServicesForCustomerHandler
+	listContactsQuery    *contactQueries.ListContactsForCustomerHandler
 }
 
 func NewHandlers(
@@ -76,6 +78,12 @@ func NewHandlers(
 // network module is enabled.
 func (h *Handlers) WithReader(reader *gorm.DB) *Handlers {
 	h.reader = reader
+	return h
+}
+
+// WithContactsQuery injects the contact list query for the detail page.
+func (h *Handlers) WithContactsQuery(q *contactQueries.ListContactsForCustomerHandler) *Handlers {
+	h.listContactsQuery = q
 	return h
 }
 
@@ -120,12 +128,20 @@ func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
 			services = nil
 		}
 	}
+	var contacts []contactQueries.ContactReadModel
+	if h.listContactsQuery != nil {
+		contacts, err = h.listContactsQuery.Handle(r.Context(), contactQueries.ListContactsForCustomerQuery{CustomerID: id})
+		if err != nil {
+			log.Printf("detailPage: list contacts: %v", err)
+			contacts = nil
+		}
+	}
 	routerName := h.loadRouterName(r.Context(), customer)
 	var notes []queries.NoteReadModel
 	if h.listNotesQuery != nil {
 		notes, _ = h.listNotesQuery.Handle(r.Context(), id)
 	}
-	CustomerDetailPage(customer, services, routerName, notes).Render(r.Context(), w)
+	CustomerDetailPage(customer, services, routerName, notes, contacts).Render(r.Context(), w)
 }
 
 func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {

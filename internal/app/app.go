@@ -58,6 +58,12 @@ import (
 	servicequeries "github.com/vvs/isp/internal/modules/service/app/queries"
 	servicemigrations "github.com/vvs/isp/internal/modules/service/migrations"
 
+	contacthttp "github.com/vvs/isp/internal/modules/contact/adapters/http"
+	contactpersistence "github.com/vvs/isp/internal/modules/contact/adapters/persistence"
+	contactcommands "github.com/vvs/isp/internal/modules/contact/app/commands"
+	contactqueries "github.com/vvs/isp/internal/modules/contact/app/queries"
+	contactmigrations "github.com/vvs/isp/internal/modules/contact/migrations"
+
 	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
 
 	devicehttp "github.com/vvs/isp/internal/modules/device/adapters/http"
@@ -105,6 +111,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "service", FS: servicemigrations.FS, TableName: "goose_service"},
 		{Name: "device", FS: devicemigrations.FS, TableName: "goose_device"},
 		{Name: "cron", FS: cronmigrations.FS, TableName: "goose_cron"},
+		{Name: "contact", FS: contactmigrations.FS, TableName: "goose_contact"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -260,7 +267,21 @@ func New(cfg Config) (*App, error) {
 		log.Printf("module enabled: device")
 	}
 
-	// 9. Service module — commands + route registration
+	// 9. Contact module
+	contactRepo := contactpersistence.NewGormContactRepository(gdb)
+	addContactCmd := contactcommands.NewAddContactHandler(contactRepo, publisher)
+	updateContactCmd := contactcommands.NewUpdateContactHandler(contactRepo, publisher)
+	deleteContactCmd := contactcommands.NewDeleteContactHandler(contactRepo, publisher)
+	listContactsQuery := contactqueries.NewListContactsForCustomerHandler(gdb)
+
+	contactRoutes := contacthttp.NewHandlers(addContactCmd, updateContactCmd, deleteContactCmd, listContactsQuery, subscriber)
+	moduleRoutes = append(moduleRoutes, contactRoutes)
+	if customerRoutes != nil {
+		customerRoutes.WithContactsQuery(listContactsQuery)
+	}
+	log.Printf("module wired: contact")
+
+	// 10. Service module — commands + route registration
 	assignServiceCmd := servicecommands.NewAssignServiceHandler(serviceRepo, publisher)
 	suspendServiceCmd := servicecommands.NewSuspendServiceHandler(serviceRepo, publisher)
 	reactivateServiceCmd := servicecommands.NewReactivateServiceHandler(serviceRepo, publisher)
