@@ -36,7 +36,7 @@ CREATE TABLE email_messages (
     uid         INTEGER NOT NULL DEFAULT 0,
     folder      TEXT NOT NULL DEFAULT 'INBOX',
     message_id  TEXT NOT NULL DEFAULT '',
-    references  TEXT NOT NULL DEFAULT '',
+    ref_ids     TEXT NOT NULL DEFAULT '',
     in_reply_to TEXT NOT NULL DEFAULT '',
     subject     TEXT NOT NULL DEFAULT '',
     from_addr   TEXT NOT NULL DEFAULT '',

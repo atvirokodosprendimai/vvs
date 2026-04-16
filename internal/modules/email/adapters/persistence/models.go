@@ -43,7 +43,7 @@ type messageModel struct {
 	UID        uint32    `gorm:"column:uid"`
 	Folder     string    `gorm:"column:folder"`
 	MessageID  string    `gorm:"column:message_id"`
-	References string    `gorm:"column:references"`
+	References string    `gorm:"column:ref_ids"`
 	InReplyTo  string    `gorm:"column:in_reply_to"`
 	Subject    string    `gorm:"column:subject"`
 	FromAddr   string    `gorm:"column:from_addr"`
