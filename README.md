@@ -133,6 +133,83 @@ internal/
 
 ---
 
+## Cron Jobs
+
+Scheduled tasks persisted in SQLite. Two ways to run them:
+
+| Mode | Command | Use when |
+|---|---|---|
+| System cron | `vvs cron run` | Call via `crontab` every minute |
+| Daemon | `vvs cron daemon` | Run as a long-lived service |
+
+The daemon reloads job changes (add/pause/delete) from the DB every minute — no restart needed.
+
+### Manage jobs
+
+```bash
+# List all jobs
+vvs cron list
+
+# Add jobs
+vvs cron add --name <name> --schedule "<cron>" --type <type> [type-specific flags]
+
+# Lifecycle
+vvs cron pause  <id>
+vvs cron resume <id>
+vvs cron delete <id>
+```
+
+Schedule is a standard 5-field cron expression: `minute hour dom month dow`.
+
+### Job types
+
+#### `action` — built-in Go function
+
+```bash
+vvs cron add --name noop-test --schedule "* * * * *" --type action --action noop
+```
+
+Built-in actions: `noop`. Register more in `cmd/server/cron_actions.go`.
+
+#### `shell` — shell command
+
+```bash
+vvs cron add --name daily-backup --schedule "0 3 * * *" --type shell \
+  --command "pg_dump mydb > /backups/$(date +%F).sql"
+```
+
+#### `url` — HTTP ping / webhook
+
+```bash
+# Simple GET health-check
+vvs cron add --name healthcheck --schedule "*/5 * * * *" --type url \
+  --url "https://example.com/health"
+
+# POST webhook with Bearer auth and custom headers
+vvs cron add --name nightly-webhook --schedule "0 2 * * *" --type url \
+  --url "https://api.example.com/hook" \
+  --method POST \
+  --header "Authorization: Bearer mytoken" \
+  --header "X-Source: vvs-cron"
+```
+
+Non-2xx responses are logged as job failures. `--method` defaults to `GET`.
+
+#### `rpc` — internal NATS RPC subject
+
+```bash
+vvs cron add --name expire-services --schedule "0 3 * * *" --type rpc \
+  --subject isp.rpc.service.cancel
+```
+
+### System cron setup (alternative to daemon)
+
+```crontab
+* * * * * /usr/local/bin/vvs --db /data/vvs.db cron run >> /var/log/vvs-cron.log 2>&1
+```
+
+---
+
 ## Database
 
 SQLite file at `--db` path. Migrations run automatically on startup using [goose](https://github.com/pressly/goose). Each module has its own migration table (`goose_auth`, `goose_customer`, etc.).
