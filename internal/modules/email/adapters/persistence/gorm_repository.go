@@ -27,6 +27,9 @@ func toAccountModel(a *domain.EmailAccount) accountModel {
 		LastError:   a.LastError,
 		LastSyncAt:  a.LastSyncAt,
 		LastUID:     a.LastUID,
+		SMTPHost:    a.SMTPHost,
+		SMTPPort:    a.SMTPPort,
+		SMTPTLS:     a.SMTPTLS,
 		CreatedAt:   a.CreatedAt,
 		UpdatedAt:   a.UpdatedAt,
 	}
@@ -46,6 +49,9 @@ func (m *accountModel) toDomain() *domain.EmailAccount {
 		LastError:   m.LastError,
 		LastSyncAt:  m.LastSyncAt,
 		LastUID:     m.LastUID,
+		SMTPHost:    m.SMTPHost,
+		SMTPPort:    m.SMTPPort,
+		SMTPTLS:     m.SMTPTLS,
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 	}
@@ -78,12 +84,17 @@ func (m *threadModel) toDomain() *domain.EmailThread {
 }
 
 func toMessageModel(m *domain.EmailMessage) messageModel {
+	dir := m.Direction
+	if dir == "" {
+		dir = "in"
+	}
 	return messageModel{
 		ID:         m.ID,
 		AccountID:  m.AccountID,
 		ThreadID:   m.ThreadID,
 		UID:        m.UID,
 		Folder:     m.Folder,
+		Direction:  dir,
 		MessageID:  m.MessageID,
 		References: m.References,
 		InReplyTo:  m.InReplyTo,
@@ -105,6 +116,7 @@ func (m *messageModel) toDomain() *domain.EmailMessage {
 		ThreadID:   m.ThreadID,
 		UID:        m.UID,
 		Folder:     m.Folder,
+		Direction:  m.Direction,
 		MessageID:  m.MessageID,
 		References: m.References,
 		InReplyTo:  m.InReplyTo,
@@ -385,7 +397,7 @@ func (r *GormEmailMessageRepository) FindByMessageID(ctx context.Context, accoun
 func (r *GormEmailMessageRepository) ListForThread(ctx context.Context, threadID string) ([]*domain.EmailMessage, error) {
 	var models []messageModel
 	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
-		return tx.Where("thread_id = ?", threadID).Order("received_at ASC").Find(&models).Error
+		return tx.Where("thread_id = ?", threadID).Order("received_at DESC").Find(&models).Error
 	})
 	if err != nil {
 		return nil, err
