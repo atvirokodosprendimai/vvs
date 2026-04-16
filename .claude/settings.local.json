@@ -61,7 +61,8 @@
       "Bash(chmod +x:*)",
       "Bash(bash /Users/mind/.claude/hooks/post-compact.sh)",
       "Bash(find:*)",
-      "Bash(xargs cat:*)"
+      "Bash(xargs cat:*)",
+      "Bash(node:*)"
     ]
   }
 }
