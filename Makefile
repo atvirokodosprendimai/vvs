@@ -4,9 +4,11 @@
 build: generate
 	go build -o bin/vvs ./cmd/server
 
-# Run in development
+# Build binary then run it
 run: generate
-	go run ./cmd/server --db ./data/vvs.db --addr :8080
+	@mkdir -p bin
+	go build -o bin/vvs ./cmd/server
+	./bin/vvs --db ./data/vvs.db --addr :8080
 
 # Run all tests
 test:
