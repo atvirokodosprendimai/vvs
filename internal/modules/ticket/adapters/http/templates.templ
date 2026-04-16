@@ -203,12 +203,7 @@ templ ticketRow(tk queries.TicketReadModel) {
 			</div>
 			<!-- Inline comment section for this ticket -->
 			<div class="mt-2 flex gap-2 items-start">
-				<textarea
-					rows="1"
-					data-bind:comment-body
-					placeholder="Add comment..."
-					class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600 resize-none flex-1"
-				></textarea>
+				@commentInput(tk.ID)
 				<button
 					type="button"
 					data-on:click={ fmt.Sprintf("@post('/api/tickets/%s/comments')", tk.ID) }
@@ -267,6 +262,20 @@ templ ticketStatusBadge(status string) {
 		default:
 			<span class="px-2 py-0.5 text-xs font-medium rounded bg-slate-700/50 text-slate-400 border border-slate-700">{ status }</span>
 	}
+}
+
+// commentInput is a standalone textarea keyed by ticketID.
+// Uses data-on:input (write-only) instead of data-bind so multiple comment
+// inputs on the same page don't share a two-way signal.
+// The backend patches this element by ID to clear it after a successful submit.
+templ commentInput(ticketID string) {
+	<textarea
+		id={ fmt.Sprintf("comment-input-%s", ticketID) }
+		rows="1"
+		data-on:input="$commentBody = el.value"
+		placeholder="Add comment..."
+		class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-2 py-1 text-xs focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600 resize-none flex-1"
+	></textarea>
 }
 
 templ ticketFormError(message string) {
