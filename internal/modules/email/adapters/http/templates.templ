@@ -800,7 +800,7 @@ templ AttachmentsPage(accounts []emailqueries.AccountReadModel, selectedAccount,
 					/>
 					<div
 						id="attachment-results"
-						data-init={ fmt.Sprintf("$q=%q; @get('/sse/attachments?account=%s&q=' + encodeURIComponent($q), {openWhenHidden: false})", query, selectedAccount) }
+						data-init={ fmt.Sprintf("$q=%q; @get('/sse/attachments?account=%s', {openWhenHidden: false})", query, selectedAccount) }
 					>
 						@AttachmentResults(nil, selectedAccount)
 					</div>

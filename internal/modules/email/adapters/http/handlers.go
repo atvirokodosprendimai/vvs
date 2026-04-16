@@ -642,13 +642,15 @@ func (h *Handlers) attachmentSearchSSE(w http.ResponseWriter, r *http.Request) {
 	if h.searchAttachments == nil {
 		return
 	}
-	q := r.URL.Query()
-	accountID := q.Get("account")
-	query := q.Get("q")
-	results, err := h.searchAttachments.Handle(r.Context(), emailqueries.SearchAttachmentsQuery{
-		AccountID: accountID, Query: query,
-	})
+	accountID := r.URL.Query().Get("account") // baked into the @get URL
+	var signals struct {
+		Q string `json:"q"`
+	}
+	_ = datastar.ReadSignals(r, &signals) // $q signal sent by Datastar
 	sse := datastar.NewSSE(w, r)
+	results, err := h.searchAttachments.Handle(r.Context(), emailqueries.SearchAttachmentsQuery{
+		AccountID: accountID, Query: signals.Q,
+	})
 	if err != nil {
 		slog.Error("email: attachmentSearchSSE", "err", err)
 		sse.PatchElementTempl(AttachmentResults(nil, accountID))

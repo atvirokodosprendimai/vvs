@@ -2167,9 +2167,9 @@ func AttachmentsPage(accounts []emailqueries.AccountReadModel, selectedAccount, 
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var98 string
-				templ_7745c5c3_Var98, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$q=%q; @get('/sse/attachments?account=%s&q=' + encodeURIComponent($q), {openWhenHidden: false})", query, selectedAccount))
+				templ_7745c5c3_Var98, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$q=%q; @get('/sse/attachments?account=%s', {openWhenHidden: false})", query, selectedAccount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 803, Col: 152}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 803, Col: 124}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var98))
 				if templ_7745c5c3_Err != nil {
