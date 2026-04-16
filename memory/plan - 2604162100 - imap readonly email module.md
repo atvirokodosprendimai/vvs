@@ -1,6 +1,6 @@
 ---
 name: IMAP readonly email module
-status: open
+status: completed
 spec: "[[spec - email - imap readonly fetch threading and tagging]]"
 ---
 
@@ -38,110 +38,57 @@ Architecture constraints:
 ---
 
 ## Phase 2 — Persistence + Migration
-*status: open*
+*status: completed*
 
-4. [ ] Write migration: `migrations/001_create_email_tables.sql`
-   - Tables: `email_accounts`, `email_threads`, `email_messages`, `email_attachments`, `email_tags`, `email_thread_tags`
-   - Indexes: `(account_id, uid)` on messages, `(customer_id)` on threads, `(thread_id)` on messages
-   - `embed.go` with `//go:embed *.sql`
-
-5. [ ] GORM persistence: `adapters/persistence/models.go` + `gorm_repository.go`
-   - Map all domain structs to GORM models
-   - Implement all repository interfaces
-   - Thread finder: query by Message-ID in References, fallback subject match
+4. [x] Write migration: `migrations/001_create_email_tables.sql`
+   - => 6 tables + indexes; system tags (unread/starred/archived) seeded
+5. [x] GORM persistence: `adapters/persistence/models.go` + `gorm_repository.go`
+   - => All 5 repository interfaces implemented; UpdateThreadStats + AddParticipant helpers
 
 ---
 
 ## Phase 3 — IMAP Adapter + Decoder
-*status: open*
+*status: completed*
 
-6. [ ] Charset decoder: `adapters/imap/decoder.go`
-   - `DecodeToUTF8(charset, body string) string`
-   - Use `golang.org/x/text/encoding/htmlindex` to resolve charset name → decoder
-   - Fallback chain: windows-1252 → replace invalid bytes with U+FFFD
-   - Handle quoted-printable and base64 via stdlib
-
-7. [ ] Thread assignment: `adapters/imap/threader.go`
-   - `Assign(msg EmailMessage, repo ThreadRepository) (threadID string, err error)`
-   - Check References/In-Reply-To against existing Message-IDs
-   - Fallback: normalized subject match (strip Re:/Fwd: prefixes)
-   - Create new thread if no match
-
-8. [ ] IMAP fetcher: `adapters/imap/fetcher.go`
-   - `Fetch(ctx, account EmailAccount, repo ...) error`
-   - Connect via `go-imap/v2`, SELECT folder readonly
-   - SEARCH UID > lastSeen, fetch in batches of 50
-   - Parse envelope + bodystructure + text/html parts
-   - Call decoder, call threader, persist message + attachments
-   - Update account.LastSyncAt + last seen UID
-   - Publish `isp.email.synced` via NATS
+6. [x] Charset decoder: `adapters/imap/decoder.go`
+   - => htmlindex → windows-1252 fallback → U+FFFD sanitize
+7. [x] Thread assignment: `adapters/imap/threader.go`
+   - => References/In-Reply-To → subject fallback → new thread
+8. [x] IMAP fetcher: `adapters/imap/fetcher.go` + `body_parser.go`
+   - => go-imap/v2, EXAMINE (readonly), UID-based incremental, go-message RFC2822 parse
 
 ---
 
 ## Phase 4 — Commands + Queries
-*status: open*
+*status: completed*
 
-9. [ ] Commands:
-   - `commands/configure_account.go` — create/update account (encrypt password with AES-256-GCM)
-   - `commands/apply_tag.go` — add tag to thread
-   - `commands/remove_tag.go` — remove tag from thread
-   - `commands/mark_read.go` — clear `unread` tag, publish `isp.email.read`
-   - `commands/link_customer.go` — set thread.CustomerID
-
-10. [ ] Queries:
-    - `queries/list_threads.go` — ListThreadsForAccount(accountID, tagFilter) → []ThreadReadModel
-    - `queries/get_thread.go` — GetThread(threadID) → thread + messages + attachments
+9. [x] Commands: configure_account (AES-256-GCM), apply_tag, remove_tag, mark_read, link_customer
+10. [x] Queries: list_threads (account + tag filter), list_threads_for_customer, get_thread (messages+attachments)
 
 ---
 
 ## Phase 5 — Sync Worker
-*status: open*
+*status: completed*
 
-11. [ ] Background worker: `worker/sync_worker.go`
-    - One goroutine per active account
-    - Polls on configurable interval (default 5 min)
-    - Restarts on transient IMAP errors (backoff); sets account.Status=error on persistent failure
-    - Manual trigger via `isp.email.sync_requested` NATS subject
-    - Started by `app.go` after account repository is ready
+11. [x] Background worker: polls active accounts, error state tracking, manual trigger via NATS
 
 ---
 
 ## Phase 6 — HTTP Layer + UI
-*status: open*
+*status: completed*
 
-12. [ ] Templates: `adapters/http/templates.templ`
-    - `EmailPage` — full inbox page: account selector, tag sidebar, thread list
-    - `ThreadList` — patchable by `#email-thread-list`
-    - `ThreadDetail` — patchable by `#email-thread-{id}`, shows messages + attachments
-    - `AccountForm` — modal for add/edit account
-    - `TagBadge`, `TagSidebar`
-
-13. [ ] Handlers: `adapters/http/handlers.go`
-    - `listSSE` — subscribe `isp.email.*`, patch ThreadList on change
-    - `threadSSE` — subscribe `isp.email.*`, patch ThreadDetail on change
-    - `configureAccountSSE` — create/update account
-    - `applyTagSSE`, `removeTagSSE`
-    - `markReadSSE` — mark read on thread open
-    - `linkCustomerSSE`
-    - `syncSSE` — trigger manual sync
-    - `downloadAttachment` — stream attachment bytes
-
-14. [ ] Routes: register in `internal/infrastructure/http/router.go`
+12. [x] Templates: EmailPage, ThreadList, ThreadDetail, AccountForm, EmailThreadsSection
+13. [x] Handlers: listSSE, threadSSE, configureAccountSSE, tag/read/link handlers
+14. [x] Routes registered via Handlers.RegisterRoutes (chi)
 
 ---
 
 ## Phase 7 — Integration + Wiring
-*status: open*
+*status: completed*
 
-15. [ ] Wire in `internal/app/app.go`:
-    - Run migration
-    - Create repositories, command/query handlers
-    - Start sync worker
-    - Register HTTP handlers
-
-16. [ ] Customer detail: add linked email threads section
-    - `internal/modules/customer/adapters/http/templates.templ` — `EmailThreadsSection`
-    - `internal/modules/customer/adapters/http/handlers.go` — inject `ListEmailThreadsForCustomer` query
+15. [x] app.go: email migration, all repos/cmds/queries, sync worker start/stop
+16. [x] Customer detail: EmailThreadsSection added; CustomerDetailPage updated with emailThreads param
+    - => VVS_EMAIL_ENC_KEY config for IMAP password encryption
 
 ---
 
@@ -165,6 +112,7 @@ Architecture constraints:
 | Date | Note |
 |------|------|
 | 2026-04-16 | Plan created from user request; spec created at [[spec - email - imap readonly fetch threading and tagging]] |
+| 2026-04-16 | All 7 phases completed; fixed remaining gaps: ListAccountsHandler query, attachmentFinder local interface, downloadAttachment serving real bytes |
 
 ---
 
