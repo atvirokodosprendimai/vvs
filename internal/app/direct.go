@@ -37,6 +37,11 @@ import (
 	servicecommands "github.com/vvs/isp/internal/modules/service/app/commands"
 	servicequeries "github.com/vvs/isp/internal/modules/service/app/queries"
 	servicemigrations "github.com/vvs/isp/internal/modules/service/migrations"
+
+	devicepersistence "github.com/vvs/isp/internal/modules/device/adapters/persistence"
+	devicecommands "github.com/vvs/isp/internal/modules/device/app/commands"
+	devicequeries "github.com/vvs/isp/internal/modules/device/app/queries"
+	devicemigrations "github.com/vvs/isp/internal/modules/device/migrations"
 )
 
 // noopPublisher discards all events. Used by direct CLI mode where no NATS is running.
@@ -64,6 +69,7 @@ func NewDirect(dbPath string) (*natsrpc.Server, func(), error) {
 		{Name: "product", FS: productmigrations.FS, TableName: "goose_product"},
 		{Name: "network", FS: networkmigrations.FS, TableName: "goose_network"},
 		{Name: "service", FS: servicemigrations.FS, TableName: "goose_service"},
+		{Name: "device", FS: devicemigrations.FS, TableName: "goose_device"},
 	}); err != nil {
 		cleanup()
 		return nil, nil, fmt.Errorf("run migrations: %w", err)
@@ -117,6 +123,16 @@ func NewDirect(dbPath string) (*natsrpc.Server, func(), error) {
 	cancelServiceCmd := servicecommands.NewCancelServiceHandler(serviceRepo, pub)
 	listServicesQuery := servicequeries.NewListServicesForCustomerHandler(serviceRepo)
 
+	// device
+	deviceRepo := devicepersistence.NewGormDeviceRepository(gdb)
+	registerDeviceCmd := devicecommands.NewRegisterDeviceHandler(deviceRepo, pub)
+	deployDeviceCmd := devicecommands.NewDeployDeviceHandler(deviceRepo, pub)
+	returnDeviceCmd := devicecommands.NewReturnDeviceHandler(deviceRepo, pub)
+	decommissionDeviceCmd := devicecommands.NewDecommissionDeviceHandler(deviceRepo, pub)
+	updateDeviceCmd := devicecommands.NewUpdateDeviceHandler(deviceRepo, pub)
+	listDevicesQuery := devicequeries.NewListDevicesHandler(gdb)
+	getDeviceQuery := devicequeries.NewGetDeviceHandler(gdb)
+
 	rpcServer := natsrpc.New(nil, natsrpc.Config{
 		ListUsers:  listUsersQuery,
 		CreateUser: createUserCmd,
@@ -146,6 +162,14 @@ func NewDirect(dbPath string) (*natsrpc.Server, func(), error) {
 		SuspendService:    suspendServiceCmd,
 		ReactivateService: reactivateServiceCmd,
 		CancelService:     cancelServiceCmd,
+
+		ListDevices:        listDevicesQuery,
+		GetDevice:          getDeviceQuery,
+		RegisterDevice:     registerDeviceCmd,
+		DeployDevice:       deployDeviceCmd,
+		ReturnDevice:       returnDeviceCmd,
+		DecommissionDevice: decommissionDeviceCmd,
+		UpdateDevice:       updateDeviceCmd,
 	})
 
 	// Note: Register() (NATS subscriptions) is intentionally not called —

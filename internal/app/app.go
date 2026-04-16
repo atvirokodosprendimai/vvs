@@ -58,6 +58,12 @@ import (
 	servicemigrations "github.com/vvs/isp/internal/modules/service/migrations"
 
 	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
+
+	devicehttp "github.com/vvs/isp/internal/modules/device/adapters/http"
+	devicepersistence "github.com/vvs/isp/internal/modules/device/adapters/persistence"
+	devicecommands "github.com/vvs/isp/internal/modules/device/app/commands"
+	devicequeries "github.com/vvs/isp/internal/modules/device/app/queries"
+	devicemigrations "github.com/vvs/isp/internal/modules/device/migrations"
 )
 
 type App struct {
@@ -90,6 +96,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "notifications", FS: notifmigrations.FS, TableName: "goose_notifications"},
 		{Name: "chat", FS: chatmigrations.FS, TableName: "goose_chat"},
 		{Name: "service", FS: servicemigrations.FS, TableName: "goose_service"},
+		{Name: "device", FS: devicemigrations.FS, TableName: "goose_device"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -214,7 +221,28 @@ func New(cfg Config) (*App, error) {
 		log.Printf("module enabled: network")
 	}
 
-	// 8. Service module — commands + route registration
+	// 8. Device module
+	deviceRepo := devicepersistence.NewGormDeviceRepository(gdb)
+	registerDeviceCmd := devicecommands.NewRegisterDeviceHandler(deviceRepo, publisher)
+	deployDeviceCmd := devicecommands.NewDeployDeviceHandler(deviceRepo, publisher)
+	returnDeviceCmd := devicecommands.NewReturnDeviceHandler(deviceRepo, publisher)
+	decommissionDeviceCmd := devicecommands.NewDecommissionDeviceHandler(deviceRepo, publisher)
+	updateDeviceCmd := devicecommands.NewUpdateDeviceHandler(deviceRepo, publisher)
+	listDevicesQuery := devicequeries.NewListDevicesHandler(gdb)
+	getDeviceQuery := devicequeries.NewGetDeviceHandler(gdb)
+
+	if cfg.IsEnabled("device") {
+		deviceRoutes := devicehttp.NewDeviceHandlers(
+			registerDeviceCmd, deployDeviceCmd, returnDeviceCmd,
+			decommissionDeviceCmd, updateDeviceCmd,
+			listDevicesQuery, getDeviceQuery,
+			subscriber, publisher,
+		)
+		moduleRoutes = append(moduleRoutes, deviceRoutes)
+		log.Printf("module enabled: device")
+	}
+
+	// 9. Service module — commands + route registration
 	assignServiceCmd := servicecommands.NewAssignServiceHandler(serviceRepo, publisher)
 	suspendServiceCmd := servicecommands.NewSuspendServiceHandler(serviceRepo, publisher)
 	reactivateServiceCmd := servicecommands.NewReactivateServiceHandler(serviceRepo, publisher)
@@ -273,6 +301,14 @@ func New(cfg Config) (*App, error) {
 		SuspendService:    suspendServiceCmd,
 		ReactivateService: reactivateServiceCmd,
 		CancelService:     cancelServiceCmd,
+
+		ListDevices:        listDevicesQuery,
+		GetDevice:          getDeviceQuery,
+		RegisterDevice:     registerDeviceCmd,
+		DeployDevice:       deployDeviceCmd,
+		ReturnDevice:       returnDeviceCmd,
+		DecommissionDevice: decommissionDeviceCmd,
+		UpdateDevice:       updateDeviceCmd,
 	})
 	if err := rpcServer.Register(); err != nil {
 		return nil, fmt.Errorf("nats rpc: %w", err)

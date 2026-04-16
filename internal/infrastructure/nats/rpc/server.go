@@ -40,6 +40,10 @@ import (
 	servicecommands "github.com/vvs/isp/internal/modules/service/app/commands"
 	servicequeries "github.com/vvs/isp/internal/modules/service/app/queries"
 	servicedomain "github.com/vvs/isp/internal/modules/service/domain"
+
+	devicecommands "github.com/vvs/isp/internal/modules/device/app/commands"
+	devicequeries "github.com/vvs/isp/internal/modules/device/app/queries"
+	devicedomain "github.com/vvs/isp/internal/modules/device/domain"
 )
 
 type envelope struct {
@@ -86,6 +90,15 @@ type Server struct {
 	suspendService *servicecommands.SuspendServiceHandler
 	reactivateService *servicecommands.ReactivateServiceHandler
 	cancelService *servicecommands.CancelServiceHandler
+
+	// device
+	listDevices      *devicequeries.ListDevicesHandler
+	getDevice        *devicequeries.GetDeviceHandler
+	registerDevice   *devicecommands.RegisterDeviceHandler
+	deployDevice     *devicecommands.DeployDeviceHandler
+	returnDevice     *devicecommands.ReturnDeviceHandler
+	decommissionDevice *devicecommands.DecommissionDeviceHandler
+	updateDevice     *devicecommands.UpdateDeviceHandler
 }
 
 type Config struct {
@@ -117,6 +130,14 @@ type Config struct {
 	SuspendService    *servicecommands.SuspendServiceHandler
 	ReactivateService *servicecommands.ReactivateServiceHandler
 	CancelService     *servicecommands.CancelServiceHandler
+
+	ListDevices        *devicequeries.ListDevicesHandler
+	GetDevice          *devicequeries.GetDeviceHandler
+	RegisterDevice     *devicecommands.RegisterDeviceHandler
+	DeployDevice       *devicecommands.DeployDeviceHandler
+	ReturnDevice       *devicecommands.ReturnDeviceHandler
+	DecommissionDevice *devicecommands.DecommissionDeviceHandler
+	UpdateDevice       *devicecommands.UpdateDeviceHandler
 }
 
 func New(nc *nats.Conn, cfg Config) *Server {
@@ -146,6 +167,14 @@ func New(nc *nats.Conn, cfg Config) *Server {
 		suspendService:    cfg.SuspendService,
 		reactivateService: cfg.ReactivateService,
 		cancelService:     cfg.CancelService,
+
+		listDevices:        cfg.ListDevices,
+		getDevice:          cfg.GetDevice,
+		registerDevice:     cfg.RegisterDevice,
+		deployDevice:       cfg.DeployDevice,
+		returnDevice:       cfg.ReturnDevice,
+		decommissionDevice: cfg.DecommissionDevice,
+		updateDevice:       cfg.UpdateDevice,
 	}
 }
 
@@ -181,6 +210,14 @@ func (s *Server) handlers() map[string]func(context.Context, []byte) (any, error
 		"isp.rpc.service.suspend":    s.handleServiceSuspend,
 		"isp.rpc.service.reactivate": s.handleServiceReactivate,
 		"isp.rpc.service.cancel":     s.handleServiceCancel,
+		// device
+		"isp.rpc.device.list":         s.handleDeviceList,
+		"isp.rpc.device.get":          s.handleDeviceGet,
+		"isp.rpc.device.register":     s.handleDeviceRegister,
+		"isp.rpc.device.deploy":       s.handleDeviceDeploy,
+		"isp.rpc.device.return":       s.handleDeviceReturn,
+		"isp.rpc.device.decommission": s.handleDeviceDecommission,
+		"isp.rpc.device.update":       s.handleDeviceUpdate,
 	}
 }
 
@@ -488,4 +525,94 @@ func (s *Server) handleServiceCancel(ctx context.Context, payload []byte) (any, 
 		return nil, errors.New("not found")
 	}
 	return nil, err
+}
+
+// ── device ───────────────────────────────────────────────────────────────────
+
+func (s *Server) handleDeviceList(ctx context.Context, payload []byte) (any, error) {
+	var req devicequeries.ListDevicesQuery
+	if len(payload) > 0 {
+		_ = json.Unmarshal(payload, &req)
+	}
+	if req.PageSize == 0 {
+		req.PageSize = 25
+	}
+	return s.listDevices.Handle(ctx, req)
+}
+
+func (s *Server) handleDeviceGet(ctx context.Context, payload []byte) (any, error) {
+	var req struct{ ID string `json:"id"` }
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	d, err := s.getDevice.Handle(ctx, devicequeries.GetDeviceQuery{ID: req.ID})
+	if errors.Is(err, devicedomain.ErrNotFound) {
+		return nil, errors.New("not found")
+	}
+	return d, err
+}
+
+func (s *Server) handleDeviceRegister(ctx context.Context, payload []byte) (any, error) {
+	var req devicecommands.RegisterDeviceCommand
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	return s.registerDevice.Handle(ctx, req)
+}
+
+func (s *Server) handleDeviceDeploy(ctx context.Context, payload []byte) (any, error) {
+	var req devicecommands.DeployDeviceCommand
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	d, err := s.deployDevice.Handle(ctx, req)
+	if errors.Is(err, devicedomain.ErrNotFound) {
+		return nil, errors.New("not found")
+	}
+	if errors.Is(err, devicedomain.ErrInvalidTransition) {
+		return nil, errors.New("invalid status transition")
+	}
+	return d, err
+}
+
+func (s *Server) handleDeviceReturn(ctx context.Context, payload []byte) (any, error) {
+	var req struct{ ID string `json:"id"` }
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	err := s.returnDevice.Handle(ctx, devicecommands.ReturnDeviceCommand{ID: req.ID})
+	if errors.Is(err, devicedomain.ErrNotFound) {
+		return nil, errors.New("not found")
+	}
+	if errors.Is(err, devicedomain.ErrInvalidTransition) {
+		return nil, errors.New("invalid status transition")
+	}
+	return nil, err
+}
+
+func (s *Server) handleDeviceDecommission(ctx context.Context, payload []byte) (any, error) {
+	var req struct{ ID string `json:"id"` }
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	err := s.decommissionDevice.Handle(ctx, devicecommands.DecommissionDeviceCommand{ID: req.ID})
+	if errors.Is(err, devicedomain.ErrNotFound) {
+		return nil, errors.New("not found")
+	}
+	if errors.Is(err, devicedomain.ErrInvalidTransition) {
+		return nil, errors.New("invalid status transition")
+	}
+	return nil, err
+}
+
+func (s *Server) handleDeviceUpdate(ctx context.Context, payload []byte) (any, error) {
+	var req devicecommands.UpdateDeviceCommand
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	d, err := s.updateDevice.Handle(ctx, req)
+	if errors.Is(err, devicedomain.ErrNotFound) {
+		return nil, errors.New("not found")
+	}
+	return d, err
 }

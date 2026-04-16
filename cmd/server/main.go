@@ -51,6 +51,7 @@ func main() {
 					routerCommands(),
 					serviceCommands(),
 					userCommands(),
+					deviceCommands(),
 				},
 			},
 		},
