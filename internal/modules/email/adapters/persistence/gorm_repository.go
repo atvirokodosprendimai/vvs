@@ -30,6 +30,7 @@ func toAccountModel(a *domain.EmailAccount) accountModel {
 		SMTPHost:    a.SMTPHost,
 		SMTPPort:    a.SMTPPort,
 		SMTPTLS:     a.SMTPTLS,
+		SentFolder:  a.SentFolder,
 		CreatedAt:   a.CreatedAt,
 		UpdatedAt:   a.UpdatedAt,
 	}
@@ -52,6 +53,7 @@ func (m *accountModel) toDomain() *domain.EmailAccount {
 		SMTPHost:    m.SMTPHost,
 		SMTPPort:    m.SMTPPort,
 		SMTPTLS:     m.SMTPTLS,
+		SentFolder:  m.SentFolder,
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 	}

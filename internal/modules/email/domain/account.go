@@ -41,9 +41,10 @@ type EmailAccount struct {
 	LastSyncAt  time.Time
 	LastUID     uint32 // last fetched IMAP UID for incremental sync
 	// SMTP outbound settings
-	SMTPHost string // empty = use IMAP Host
-	SMTPPort int    // 0 = use 587
-	SMTPTLS  string // none | starttls | tls (default "starttls")
+	SMTPHost   string // empty = use IMAP Host
+	SMTPPort   int    // 0 = use 587
+	SMTPTLS    string // none | starttls | tls (default "starttls")
+	SentFolder string // IMAP folder for sent messages, default "Sent"
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -79,6 +80,14 @@ func NewEmailAccount(id, name, host string, port int, username string, passwordE
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}, nil
+}
+
+// EffectiveSentFolder returns SentFolder or "Sent" if unset.
+func (a *EmailAccount) EffectiveSentFolder() string {
+	if a.SentFolder != "" {
+		return a.SentFolder
+	}
+	return "Sent"
 }
 
 // SetError marks the account as errored with the given message.

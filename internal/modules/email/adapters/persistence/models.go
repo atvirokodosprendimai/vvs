@@ -20,6 +20,7 @@ type accountModel struct {
 	SMTPHost    string    `gorm:"column:smtp_host"`
 	SMTPPort    int       `gorm:"column:smtp_port"`
 	SMTPTLS     string    `gorm:"column:smtp_tls"`
+	SentFolder  string    `gorm:"column:sent_folder"`
 	CreatedAt   time.Time `gorm:"column:created_at"`
 	UpdatedAt   time.Time `gorm:"column:updated_at"`
 }
