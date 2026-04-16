@@ -8,7 +8,7 @@ build: generate
 run: generate
 	@mkdir -p bin
 	go build -o bin/vvs ./cmd/server
-	./bin/vvs 
+	./bin/vvs serve
 
 # Run all tests
 test:
