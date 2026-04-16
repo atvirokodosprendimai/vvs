@@ -398,6 +398,7 @@ func New(cfg Config) (*App, error) {
 	listEmailForCustomerQuery := emailqueries.NewListThreadsForCustomerHandler(emailThreadRepo, emailTagRepo)
 	listEmailAccountsQuery := emailqueries.NewListAccountsHandler(emailAccountRepo)
 	listFoldersQuery := emailqueries.NewListFoldersHandler(emailFolderRepo)
+	searchAttachmentsQuery := emailqueries.NewSearchAttachmentsHandler(emailAttachmentRepo)
 
 	emailRepos := imapAdapter.Repos{
 		DB:          gdb,
@@ -429,7 +430,7 @@ func New(cfg Config) (*App, error) {
 		listEmailAccountsQuery, listFoldersQuery, emailFolderRepo, discoverFn,
 		emailAttachmentRepo,
 		subscriber, publisher,
-	).WithPageSize(cfg.EmailPageSize)
+	).WithPageSize(cfg.EmailPageSize).WithSearchAttachments(searchAttachmentsQuery)
 	moduleRoutes = append(moduleRoutes, emailRoutes)
 	if customerRoutes != nil {
 		customerRoutes.WithEmailThreadsQuery(listEmailForCustomerQuery)

@@ -457,6 +457,50 @@ func (r *GormEmailAttachmentRepository) ListForMessage(ctx context.Context, mess
 	return out, nil
 }
 
+func (r *GormEmailAttachmentRepository) SearchByFilename(ctx context.Context, accountID, query string) ([]*domain.AttachmentSearchRow, error) {
+	type row struct {
+		ID            string    `gorm:"column:id"`
+		Filename      string    `gorm:"column:filename"`
+		MIMEType      string    `gorm:"column:mime_type"`
+		Size          int64     `gorm:"column:size"`
+		ThreadID      string    `gorm:"column:thread_id"`
+		ThreadSubject string    `gorm:"column:thread_subject"`
+		FromAddr      string    `gorm:"column:from_addr"`
+		ReceivedAt    time.Time `gorm:"column:received_at"`
+	}
+	var rows []row
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Raw(`
+			SELECT ea.id, ea.filename, ea.mime_type, ea.size,
+			       et.id AS thread_id, et.subject AS thread_subject,
+			       em.from_addr, em.received_at
+			FROM email_attachments ea
+			JOIN email_messages em ON em.id = ea.message_id
+			JOIN email_threads  et ON et.id = em.thread_id
+			WHERE et.account_id = ? AND ea.filename LIKE ?
+			ORDER BY em.received_at DESC
+			LIMIT 100
+		`, accountID, "%"+query+"%").Scan(&rows).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*domain.AttachmentSearchRow, len(rows))
+	for i, r := range rows {
+		out[i] = &domain.AttachmentSearchRow{
+			ID:            r.ID,
+			Filename:      r.Filename,
+			MIMEType:      r.MIMEType,
+			Size:          r.Size,
+			ThreadID:      r.ThreadID,
+			ThreadSubject: r.ThreadSubject,
+			FromAddr:      r.FromAddr,
+			ReceivedAt:    r.ReceivedAt,
+		}
+	}
+	return out, nil
+}
+
 // --- GormEmailTagRepository ---
 
 type GormEmailTagRepository struct{ db *gormsqlite.DB }

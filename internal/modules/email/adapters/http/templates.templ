@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
@@ -761,3 +762,124 @@ func pageEnd(r emailqueries.ThreadListResult) int {
 	}
 	return end
 }
+
+// AttachmentsPage is the attachment search page.
+templ AttachmentsPage(accounts []emailqueries.AccountReadModel, selectedAccount, query string) {
+	@templates.Layout("Attachments") {
+		@templates.PageHeader("Attachments", "Search by filename or extension")
+		<div class="flex gap-4">
+			<!-- Account sidebar -->
+			<div class="w-56 flex-shrink-0">
+				<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+					<div class="px-4 py-3 border-b border-slate-800">
+						<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Accounts</h3>
+					</div>
+					<div class="divide-y divide-slate-800">
+						for _, a := range accounts {
+							<a
+								href={ templ.SafeURL(fmt.Sprintf("/attachments?account=%s", a.ID)) }
+								class={ "block px-4 py-2.5 text-sm hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-2 no-underline " + accountActiveClass(a.ID, selectedAccount) }
+							>
+								<span class="truncate">{ a.Name }</span>
+								@accountStatusDot(a.Status)
+							</a>
+						}
+					</div>
+				</div>
+			</div>
+			<!-- Search + results -->
+			<div class="flex-1 min-w-0 flex flex-col gap-3">
+				if selectedAccount != "" {
+					<input
+						type="search"
+						placeholder="Search by filename or extension (e.g. .pdf, invoice)"
+						value={ query }
+						data-bind:q
+						data-on:input__debounce.300ms={ fmt.Sprintf("@get('/sse/attachments?account=%s', {openWhenHidden: false})", selectedAccount) }
+						class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 w-full placeholder-slate-600"
+					/>
+					<div
+						id="attachment-results"
+						data-init={ fmt.Sprintf("$q=%q; @get('/sse/attachments?account=%s&q=' + encodeURIComponent($q), {openWhenHidden: false})", query, selectedAccount) }
+					>
+						@AttachmentResults(nil, selectedAccount)
+					</div>
+				} else {
+					<div class="text-sm text-slate-500 text-center py-16">Select an account to search attachments.</div>
+				}
+			</div>
+		</div>
+	}
+}
+
+// AttachmentResults renders the attachment search result list.
+templ AttachmentResults(rows []emailqueries.AttachmentSearchRow, accountID string) {
+	{{ selectedAccount := accountID }}
+	<div id="attachment-results" class="flex flex-col gap-1">
+		if rows == nil {
+			<div class="text-sm text-slate-600 text-center py-12">Enter a filename or extension to search.</div>
+		} else if len(rows) == 0 {
+			<div class="text-sm text-slate-600 text-center py-12">No attachments found.</div>
+		} else {
+			<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+				<table class="w-full text-sm">
+					<thead class="border-b border-slate-800">
+						<tr>
+							<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">File</th>
+							<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider hidden sm:table-cell">Type</th>
+							<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider hidden sm:table-cell">Size</th>
+							<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Thread</th>
+							<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider hidden md:table-cell">Date</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, row := range rows {
+							<tr class="border-b border-slate-800 last:border-0 hover:bg-slate-800/40 transition-colors">
+								<td class="px-4 py-3">
+									<span class="text-slate-100 font-medium">{ row.Filename }</span>
+								</td>
+								<td class="px-4 py-3 hidden sm:table-cell">
+									<span class="text-xs text-slate-500 font-mono">{ mimeShort(row.MIMEType) }</span>
+								</td>
+								<td class="px-4 py-3 hidden sm:table-cell">
+									<span class="text-xs text-slate-500">{ formatSize(row.Size) }</span>
+								</td>
+								<td class="px-4 py-3">
+									<a
+										href={ templ.SafeURL(fmt.Sprintf("/emails?account=%s&thread=%s", selectedAccount, row.ThreadID)) }
+										target="_blank"
+										rel="noopener noreferrer"
+										class="text-cyan-400 hover:text-cyan-300 text-xs truncate max-w-xs block"
+									>{ row.ThreadSubject }</a>
+									<span class="text-xs text-slate-600">{ row.FromAddr }</span>
+								</td>
+								<td class="px-4 py-3 hidden md:table-cell text-xs text-slate-500">{ row.ReceivedAt.Format("2006-01-02") }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+func mimeShort(mime string) string {
+	switch {
+	case mime == "application/pdf":
+		return "PDF"
+	case mime == "application/zip" || mime == "application/x-zip-compressed":
+		return "ZIP"
+	case strings.HasPrefix(mime, "image/"):
+		return strings.ToUpper(strings.TrimPrefix(mime, "image/"))
+	case strings.HasPrefix(mime, "text/"):
+		return strings.ToUpper(strings.TrimPrefix(mime, "text/"))
+	case strings.HasPrefix(mime, "application/vnd.openxmlformats"):
+		return "Office"
+	default:
+		if i := strings.Index(mime, "/"); i >= 0 {
+			return mime[i+1:]
+		}
+		return mime
+	}
+}
+

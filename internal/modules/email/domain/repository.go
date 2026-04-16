@@ -1,6 +1,9 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // EmailAccountRepository is the port for account persistence.
 type EmailAccountRepository interface {
@@ -32,11 +35,25 @@ type EmailMessageRepository interface {
 	ListForThread(ctx context.Context, threadID string) ([]*EmailMessage, error)
 }
 
+// AttachmentSearchRow is a single result from an attachment search.
+type AttachmentSearchRow struct {
+	ID            string
+	Filename      string
+	MIMEType      string
+	Size          int64
+	ThreadID      string
+	ThreadSubject string
+	FromAddr      string
+	ReceivedAt    time.Time
+}
+
 // EmailAttachmentRepository is the port for attachment persistence.
 type EmailAttachmentRepository interface {
 	Save(ctx context.Context, a *EmailAttachment) error
 	FindByID(ctx context.Context, id string) (*EmailAttachment, error)
 	ListForMessage(ctx context.Context, messageID string) ([]*EmailAttachment, error)
+	// SearchByFilename returns attachments whose filename contains query, scoped to accountID.
+	SearchByFilename(ctx context.Context, accountID, query string) ([]*AttachmentSearchRow, error)
 }
 
 // EmailFolderRepository is the port for per-account folder sync state.

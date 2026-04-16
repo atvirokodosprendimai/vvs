@@ -51,10 +51,11 @@ type Handlers struct {
 	listFolders   *emailqueries.ListFoldersHandler
 	folderRepo    folderToggler
 	discoverFn    func(ctx context.Context, accountID string) ([]emailqueries.FolderReadModel, error)
-	attachments   attachmentFinder
-	subscriber    events.EventSubscriber
-	publisher     events.EventPublisher
-	pageSize      int // threads per inbox page; 0 → DefaultPageSize
+	attachments        attachmentFinder
+	searchAttachments  *emailqueries.SearchAttachmentsHandler
+	subscriber         events.EventSubscriber
+	publisher          events.EventPublisher
+	pageSize           int // threads per inbox page; 0 → DefaultPageSize
 }
 
 func NewHandlers(
@@ -107,6 +108,12 @@ func (h *Handlers) WithPageSize(n int) *Handlers {
 	return h
 }
 
+// WithSearchAttachments injects the attachment search query handler.
+func (h *Handlers) WithSearchAttachments(q *emailqueries.SearchAttachmentsHandler) *Handlers {
+	h.searchAttachments = q
+	return h
+}
+
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/emails", h.emailPage)
 	r.Get("/emails/threads/{threadID}", h.threadPage)
@@ -125,6 +132,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/email-threads/{threadID}/read", h.markReadSSE)
 	r.Post("/api/email-threads/{threadID}/reply", h.replySSE)
 	r.Post("/api/email-threads/{threadID}/link", h.linkCustomerSSE)
+	r.Get("/attachments", h.attachmentsPage)
+	r.Get("/sse/attachments", h.attachmentSearchSSE)
 	r.Get("/api/email-attachments/{id}", h.downloadAttachment)
 	r.Post("/api/email-accounts/{id}/discover-folders", h.discoverFoldersSSE)
 	r.Put("/api/email-folders/{folderID}/toggle", h.toggleFolderSSE)
@@ -617,6 +626,35 @@ func smtpErrMsg(err error) string {
 	default:
 		return "Send failed — check server logs for details"
 	}
+}
+
+// attachmentsPage renders the attachment search page.
+func (h *Handlers) attachmentsPage(w http.ResponseWriter, r *http.Request) {
+	accounts, _ := h.listAccounts.Handle(r.Context())
+	q := r.URL.Query()
+	accountID := q.Get("account")
+	query := q.Get("q")
+	AttachmentsPage(accounts, accountID, query).Render(r.Context(), w)
+}
+
+// attachmentSearchSSE runs an attachment filename search and patches results.
+func (h *Handlers) attachmentSearchSSE(w http.ResponseWriter, r *http.Request) {
+	if h.searchAttachments == nil {
+		return
+	}
+	q := r.URL.Query()
+	accountID := q.Get("account")
+	query := q.Get("q")
+	results, err := h.searchAttachments.Handle(r.Context(), emailqueries.SearchAttachmentsQuery{
+		AccountID: accountID, Query: query,
+	})
+	sse := datastar.NewSSE(w, r)
+	if err != nil {
+		slog.Error("email: attachmentSearchSSE", "err", err)
+		sse.PatchElementTempl(AttachmentResults(nil, accountID))
+		return
+	}
+	sse.PatchElementTempl(AttachmentResults(results, accountID))
 }
 
 // downloadAttachment streams an attachment file.

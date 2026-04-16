@@ -80,6 +80,18 @@ type TagReadModel struct {
 	System bool
 }
 
+// AttachmentSearchRow is a single result from an attachment filename search.
+type AttachmentSearchRow struct {
+	ID            string
+	Filename      string
+	MIMEType      string
+	Size          int64
+	ThreadID      string
+	ThreadSubject string
+	FromAddr      string
+	ReceivedAt    time.Time
+}
+
 // DefaultPageSize is the number of threads per page.
 const DefaultPageSize = 50
 
