@@ -2,7 +2,10 @@ package imap
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"log"
 	"mime"
@@ -26,6 +29,7 @@ type Repos struct {
 	Messages    *persistence.GormEmailMessageRepository
 	Attachments *persistence.GormEmailAttachmentRepository
 	Tags        *persistence.GormEmailTagRepository
+	EncKey      []byte // AES-256 key for decrypting stored passwords (nil = plaintext)
 }
 
 // NewIDFunc generates a new unique string ID.
@@ -40,7 +44,11 @@ func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID
 	}
 	defer c.Close()
 
-	if err := c.Login(account.Username, string(account.PasswordEnc)).Wait(); err != nil {
+	password, err := decryptPassword(repos.EncKey, account.PasswordEnc)
+	if err != nil {
+		return fmt.Errorf("imap decrypt password: %w", err)
+	}
+	if err := c.Login(account.Username, string(password)).Wait(); err != nil {
 		return fmt.Errorf("imap login: %w", err)
 	}
 
@@ -148,6 +156,15 @@ func processMessage(
 	}
 	env := buf.Envelope
 
+	// Parse body: text, html, references header, attachments.
+	var parsed ParsedMessage
+	for _, section := range buf.BodySection {
+		if len(section.Bytes) > 0 {
+			parsed = ParseMessage(section.Bytes)
+			break
+		}
+	}
+
 	// Build domain message.
 	msg := &domain.EmailMessage{
 		ID:         newID(),
@@ -155,30 +172,19 @@ func processMessage(
 		UID:        uint32(buf.UID),
 		Folder:     account.Folder,
 		MessageID:  env.MessageID,
+		References: parsed.References,
 		InReplyTo:  strings.Join(env.InReplyTo, " "),
 		Subject:    env.Subject,
 		FromAddr:   addrString(env.From),
 		FromName:   addrName(env.From),
 		ToAddrs:    addrListString(env.To),
+		TextBody:   parsed.Text,
+		HTMLBody:   parsed.HTML,
 		ReceivedAt: buf.InternalDate,
 		FetchedAt:  time.Now().UTC(),
 	}
 	if msg.ReceivedAt.IsZero() {
 		msg.ReceivedAt = env.Date
-	}
-
-	// Extract text/html from fetched body bytes.
-	for _, section := range buf.BodySection {
-		if len(section.Bytes) == 0 {
-			continue
-		}
-		text, html := extractTextHTML(section.Bytes)
-		if text != "" {
-			msg.TextBody = text
-		}
-		if html != "" {
-			msg.HTMLBody = html
-		}
 	}
 
 	// Thread assignment.
@@ -190,6 +196,21 @@ func processMessage(
 
 	if err := repos.Messages.Save(ctx, msg); err != nil {
 		return fmt.Errorf("save message: %w", err)
+	}
+
+	// Persist attachment records.
+	for _, a := range parsed.Attachments {
+		att := &domain.EmailAttachment{
+			ID:        newID(),
+			MessageID: msg.ID,
+			Filename:  a.Filename,
+			MIMEType:  a.MIMEType,
+			Size:      int64(len(a.Data)),
+			Data:      a.Data,
+		}
+		if err := repos.Attachments.Save(ctx, att); err != nil {
+			log.Printf("imap save attachment %q: %v", a.Filename, err)
+		}
 	}
 
 	// Update thread stats and participants.
@@ -230,6 +251,27 @@ func addrListString(addrs []imaplib.Address) string {
 		}
 	}
 	return strings.Join(parts, ",")
+}
+
+// decryptPassword decrypts an AES-256-GCM ciphertext (nonce prepended).
+// If key is empty, ciphertext is returned as-is (dev/plaintext mode).
+func decryptPassword(key, ciphertext []byte) ([]byte, error) {
+	if len(key) == 0 {
+		return ciphertext, nil
+	}
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	nonceSize := gcm.NonceSize()
+	if len(ciphertext) < nonceSize {
+		return nil, errors.New("email: ciphertext too short")
+	}
+	return gcm.Open(nil, ciphertext[:nonceSize], ciphertext[nonceSize:], nil)
 }
 
 func dial(account *domain.EmailAccount) (*imapclient.Client, error) {

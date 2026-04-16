@@ -9,18 +9,35 @@ import (
 	"github.com/emersion/go-message/mail"
 )
 
-// ExtractTextHTMLForTest is exported for testing.
-var ExtractTextHTMLForTest = extractTextHTML
+const maxAttachmentSize = 20 * 1024 * 1024 // 20 MB
 
-// extractTextHTML parses raw RFC 2822 message bytes and returns text/plain and text/html parts
-// decoded to UTF-8. Both may be empty if the message has no text parts.
-func extractTextHTML(raw []byte) (text, html string) {
+// ParsedMessage holds all parts extracted from a raw RFC 2822 message.
+type ParsedMessage struct {
+	Text        string
+	HTML        string
+	References  string
+	Attachments []ParsedAttachment
+}
+
+// ParsedAttachment is a single MIME attachment part.
+type ParsedAttachment struct {
+	Filename string
+	MIMEType string
+	Data     []byte // nil if size > maxAttachmentSize
+}
+
+// ParseMessage parses raw RFC 2822 bytes into text/html bodies, References
+// header, and attachment parts (up to maxAttachmentSize each).
+func ParseMessage(raw []byte) ParsedMessage {
 	r, err := mail.CreateReader(bytes.NewReader(raw))
 	if err != nil {
-		// Not a full RFC 2822 message — treat raw as plain text body.
-		return DecodeToUTF8("utf-8", string(raw)), ""
+		return ParsedMessage{Text: DecodeToUTF8("utf-8", string(raw))}
 	}
 	defer r.Close()
+
+	result := ParsedMessage{
+		References: r.Header.Get("References"),
+	}
 
 	for {
 		part, err := r.NextPart()
@@ -32,29 +49,49 @@ func extractTextHTML(raw []byte) (text, html string) {
 			break
 		}
 
-		// ContentType is on *mail.InlineHeader (embedded message.Header).
-		var ct, partCharset string
-		if ih, ok := part.Header.(*mail.InlineHeader); ok {
-			var params map[string]string
-			ct, params, _ = ih.ContentType()
-			partCharset = params["charset"]
-		}
-
-		body, err := DecodeReaderToUTF8(partCharset, part.Body)
-		if err != nil {
-			continue
-		}
-
-		switch {
-		case strings.HasPrefix(ct, "text/plain"):
-			if text == "" {
-				text = body
+		switch h := part.Header.(type) {
+		case *mail.InlineHeader:
+			ct, params, _ := h.ContentType()
+			body, err := DecodeReaderToUTF8(params["charset"], part.Body)
+			if err != nil {
+				continue
 			}
-		case strings.HasPrefix(ct, "text/html"):
-			if html == "" {
-				html = body
+			switch {
+			case strings.HasPrefix(ct, "text/plain"):
+				if result.Text == "" {
+					result.Text = body
+				}
+			case strings.HasPrefix(ct, "text/html"):
+				if result.HTML == "" {
+					result.HTML = body
+				}
 			}
+
+		case *mail.AttachmentHeader:
+			filename, _ := h.Filename()
+			ct, _, _ := h.ContentType()
+			data, err := io.ReadAll(io.LimitReader(part.Body, maxAttachmentSize+1))
+			if err != nil || len(data) == 0 {
+				continue
+			}
+			if int64(len(data)) > maxAttachmentSize {
+				data = nil // too large — store metadata only
+			}
+			result.Attachments = append(result.Attachments, ParsedAttachment{
+				Filename: filename,
+				MIMEType: ct,
+				Data:     data,
+			})
 		}
 	}
-	return
+	return result
+}
+
+// ExtractTextHTMLForTest is exported for testing.
+var ExtractTextHTMLForTest = extractTextHTML
+
+// extractTextHTML is kept for tests; delegates to ParseMessage.
+func extractTextHTML(raw []byte) (text, html string) {
+	p := ParseMessage(raw)
+	return p.Text, p.HTML
 }

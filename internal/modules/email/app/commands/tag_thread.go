@@ -2,8 +2,11 @@ package commands
 
 import (
 	"context"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/vvs/isp/internal/modules/email/domain"
+	"github.com/vvs/isp/internal/shared/events"
 )
 
 type ApplyTagCommand struct {
@@ -17,12 +20,13 @@ type RemoveTagCommand struct {
 }
 
 type ApplyTagHandler struct {
-	threads domain.EmailThreadRepository
-	tags    domain.EmailTagRepository
+	threads   domain.EmailThreadRepository
+	tags      domain.EmailTagRepository
+	publisher events.EventPublisher
 }
 
-func NewApplyTagHandler(threads domain.EmailThreadRepository, tags domain.EmailTagRepository) *ApplyTagHandler {
-	return &ApplyTagHandler{threads: threads, tags: tags}
+func NewApplyTagHandler(threads domain.EmailThreadRepository, tags domain.EmailTagRepository, pub events.EventPublisher) *ApplyTagHandler {
+	return &ApplyTagHandler{threads: threads, tags: tags, publisher: pub}
 }
 
 func (h *ApplyTagHandler) Handle(ctx context.Context, cmd ApplyTagCommand) error {
@@ -32,17 +36,32 @@ func (h *ApplyTagHandler) Handle(ctx context.Context, cmd ApplyTagCommand) error
 	if _, err := h.tags.FindByID(ctx, cmd.TagID); err != nil {
 		return err
 	}
-	return h.tags.ApplyToThread(ctx, domain.EmailThreadTag{ThreadID: cmd.ThreadID, TagID: cmd.TagID})
+	if err := h.tags.ApplyToThread(ctx, domain.EmailThreadTag{ThreadID: cmd.ThreadID, TagID: cmd.TagID}); err != nil {
+		return err
+	}
+	h.publisher.Publish(ctx, "isp.email.thread_tagged", events.DomainEvent{
+		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.thread_tagged",
+		AggregateID: cmd.ThreadID, OccurredAt: time.Now().UTC(),
+	})
+	return nil
 }
 
 type RemoveTagHandler struct {
-	tags domain.EmailTagRepository
+	tags      domain.EmailTagRepository
+	publisher events.EventPublisher
 }
 
-func NewRemoveTagHandler(tags domain.EmailTagRepository) *RemoveTagHandler {
-	return &RemoveTagHandler{tags: tags}
+func NewRemoveTagHandler(tags domain.EmailTagRepository, pub events.EventPublisher) *RemoveTagHandler {
+	return &RemoveTagHandler{tags: tags, publisher: pub}
 }
 
 func (h *RemoveTagHandler) Handle(ctx context.Context, cmd RemoveTagCommand) error {
-	return h.tags.RemoveFromThread(ctx, cmd.ThreadID, cmd.TagID)
+	if err := h.tags.RemoveFromThread(ctx, cmd.ThreadID, cmd.TagID); err != nil {
+		return err
+	}
+	h.publisher.Publish(ctx, "isp.email.thread_untagged", events.DomainEvent{
+		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.thread_untagged",
+		AggregateID: cmd.ThreadID, OccurredAt: time.Now().UTC(),
+	})
+	return nil
 }

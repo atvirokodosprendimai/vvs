@@ -2,8 +2,11 @@ package commands
 
 import (
 	"context"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/vvs/isp/internal/modules/email/domain"
+	"github.com/vvs/isp/internal/shared/events"
 )
 
 type LinkCustomerCommand struct {
@@ -12,11 +15,12 @@ type LinkCustomerCommand struct {
 }
 
 type LinkCustomerHandler struct {
-	threads domain.EmailThreadRepository
+	threads   domain.EmailThreadRepository
+	publisher events.EventPublisher
 }
 
-func NewLinkCustomerHandler(threads domain.EmailThreadRepository) *LinkCustomerHandler {
-	return &LinkCustomerHandler{threads: threads}
+func NewLinkCustomerHandler(threads domain.EmailThreadRepository, pub events.EventPublisher) *LinkCustomerHandler {
+	return &LinkCustomerHandler{threads: threads, publisher: pub}
 }
 
 func (h *LinkCustomerHandler) Handle(ctx context.Context, cmd LinkCustomerCommand) error {
@@ -25,5 +29,12 @@ func (h *LinkCustomerHandler) Handle(ctx context.Context, cmd LinkCustomerComman
 		return err
 	}
 	t.CustomerID = cmd.CustomerID
-	return h.threads.Save(ctx, t)
+	if err := h.threads.Save(ctx, t); err != nil {
+		return err
+	}
+	h.publisher.Publish(ctx, "isp.email.customer_linked", events.DomainEvent{
+		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.customer_linked",
+		AggregateID: cmd.ThreadID, OccurredAt: time.Now().UTC(),
+	})
+	return nil
 }

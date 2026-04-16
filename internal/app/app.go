@@ -379,10 +379,10 @@ func New(cfg Config) (*App, error) {
 	emailEncKey := []byte(cfg.EmailEncKey) // 32-byte AES key from config; empty = dev mode (no encryption)
 
 	configureAccountCmd := emailcommands.NewConfigureAccountHandler(emailAccountRepo, publisher, emailEncKey)
-	applyTagCmd := emailcommands.NewApplyTagHandler(emailThreadRepo, emailTagRepo)
-	removeTagCmd := emailcommands.NewRemoveTagHandler(emailTagRepo)
+	applyTagCmd := emailcommands.NewApplyTagHandler(emailThreadRepo, emailTagRepo, publisher)
+	removeTagCmd := emailcommands.NewRemoveTagHandler(emailTagRepo, publisher)
 	markReadCmd := emailcommands.NewMarkReadHandler(emailTagRepo, publisher)
-	linkCustomerCmd := emailcommands.NewLinkCustomerHandler(emailThreadRepo)
+	linkCustomerCmd := emailcommands.NewLinkCustomerHandler(emailThreadRepo, publisher)
 	listEmailThreadsQuery := emailqueries.NewListThreadsHandler(emailThreadRepo, emailTagRepo)
 	getEmailThreadQuery := emailqueries.NewGetThreadHandler(emailThreadRepo, emailMessageRepo, emailAttachmentRepo, emailTagRepo)
 	listEmailForCustomerQuery := emailqueries.NewListThreadsForCustomerHandler(emailThreadRepo, emailTagRepo)
@@ -406,6 +406,7 @@ func New(cfg Config) (*App, error) {
 		Messages:    emailMessageRepo,
 		Attachments: emailAttachmentRepo,
 		Tags:        emailTagRepo,
+		EncKey:      emailEncKey,
 	}
 	emailWorker := worker.NewSyncWorker(emailRepos, publisher, subscriber, 0)
 	emailWorker.Start()
