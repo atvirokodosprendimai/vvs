@@ -379,6 +379,9 @@ func New(cfg Config) (*App, error) {
 	emailEncKey := []byte(cfg.EmailEncKey) // 32-byte AES key from config; empty = dev mode (no encryption)
 
 	configureAccountCmd := emailcommands.NewConfigureAccountHandler(emailAccountRepo, publisher, emailEncKey)
+	deleteAccountCmd := emailcommands.NewDeleteAccountHandler(emailAccountRepo, publisher)
+	pauseAccountCmd := emailcommands.NewPauseAccountHandler(emailAccountRepo, publisher)
+	resumeAccountCmd := emailcommands.NewResumeAccountHandler(emailAccountRepo, publisher)
 	applyTagCmd := emailcommands.NewApplyTagHandler(emailThreadRepo, emailTagRepo, publisher)
 	removeTagCmd := emailcommands.NewRemoveTagHandler(emailTagRepo, publisher)
 	markReadCmd := emailcommands.NewMarkReadHandler(emailTagRepo, publisher)
@@ -389,7 +392,8 @@ func New(cfg Config) (*App, error) {
 	listEmailAccountsQuery := emailqueries.NewListAccountsHandler(emailAccountRepo)
 
 	emailRoutes := emailhttp.NewHandlers(
-		configureAccountCmd, applyTagCmd, removeTagCmd, markReadCmd, linkCustomerCmd,
+		configureAccountCmd, deleteAccountCmd, pauseAccountCmd, resumeAccountCmd,
+		applyTagCmd, removeTagCmd, markReadCmd, linkCustomerCmd,
 		listEmailThreadsQuery, getEmailThreadQuery, listEmailForCustomerQuery,
 		listEmailAccountsQuery, emailAttachmentRepo,
 		subscriber, publisher,
