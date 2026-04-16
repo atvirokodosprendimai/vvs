@@ -8,3 +8,4 @@
 - [Unread count excludes own messages](feedback_unread_count_exclude_self.md) — Add `cm.user_id != ?` to all unread count SQL queries
 - [Go error handling](feedback_go_error_handling.md) — Never discard with `_`; HTTP handlers return error responses, SSE loops log and continue
 - [HTTP handler local interfaces](feedback_http_handler_local_interfaces.md) — Define minimal local interfaces in adapters/http instead of importing concrete persistence types
+- [SQLite reserved keywords](feedback_sqlite_reserved_keywords.md) — `references`, `order`, `group`, `index`, `key` etc. are reserved; never use as bare column names
