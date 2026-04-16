@@ -22,11 +22,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 				<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
 					<div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
 						<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Accounts</h3>
-						<button
-							type="button"
-							data-on:click="$_emailAccountID = ''"
-							class="text-xs text-cyan-500 hover:text-cyan-400"
-						>+ Add</button>
+						<a href="/emails/settings" class="text-xs text-cyan-500 hover:text-cyan-400">Settings</a>
 					</div>
 					<div class="divide-y divide-slate-800">
 						for _, a := range accounts {
@@ -267,6 +263,217 @@ templ emailField(signal, label, placeholder, inputType string) {
 			class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
 		/>
 	</div>
+}
+
+// EmailSettingsPage is the /emails/settings full page.
+templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
+	@templates.Layout("Email Settings") {
+		@templates.PageHeader("Email Settings", "IMAP account configuration")
+		<div
+			id="email-settings"
+			data-signals={ fmt.Sprintf("{emailSettingsEdit:'',emailName:'',emailHost:'',emailPort:'993',emailUser:'',emailPass:'',emailTLS:'tls',emailFolder:'INBOX',emailError:'',_showAdd:false}") }
+			data-init="@get('/sse/email-accounts')"
+		>
+			<!-- Header row -->
+			<div class="flex items-center justify-between mb-4">
+				<div></div>
+				<button
+					type="button"
+					data-on:click="$_showAdd=true"
+					class="bg-cyan-600 hover:bg-cyan-700 text-white text-sm px-4 py-2 rounded-lg transition-colors"
+				>+ Add Account</button>
+			</div>
+
+			<!-- Live account list -->
+			<div id="email-account-list">
+				@EmailAccountList(accounts)
+			</div>
+
+			<!-- Error message -->
+			<div
+				data-show="$emailError != ''"
+				class="mt-3 text-sm text-red-400"
+				style="display:none"
+				data-text="$emailError"
+			></div>
+		</div>
+
+		<!-- Add account modal -->
+		<div
+			data-show="$_showAdd"
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+			style="display:none"
+		>
+			<div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
+				<div class="flex items-center justify-between">
+					<h3 class="text-sm font-semibold text-slate-200">Add IMAP Account</h3>
+					<button type="button" data-on:click="$_showAdd=false" class="text-slate-500 hover:text-slate-300">
+						<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+					</button>
+				</div>
+				<div class="flex flex-col gap-3">
+					@emailField("emailName", "Name", "Work", "text")
+					@emailField("emailHost", "IMAP Host", "mail.example.com", "text")
+					@emailField("emailPort", "Port", "993", "number")
+					@emailField("emailUser", "Username", "user@example.com", "email")
+					@emailField("emailPass", "Password", "", "password")
+					<div class="flex flex-col gap-1">
+						<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">TLS</label>
+						<select data-bind:emailTLS class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
+							<option value="tls">TLS (port 993)</option>
+							<option value="starttls">STARTTLS (port 587)</option>
+							<option value="none">None (insecure)</option>
+						</select>
+					</div>
+					@emailField("emailFolder", "Folder", "INBOX", "text")
+					<button
+						type="button"
+						data-on:click="@post('/api/email-accounts') && ($_showAdd=false)"
+						class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
+					>Save Account</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Edit account modal -->
+		<div
+			data-show="$emailSettingsEdit != ''"
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+			style="display:none"
+		>
+			<div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
+				<div class="flex items-center justify-between">
+					<h3 class="text-sm font-semibold text-slate-200">Edit Account</h3>
+					<button type="button" data-on:click="$emailSettingsEdit=''" class="text-slate-500 hover:text-slate-300">
+						<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+					</button>
+				</div>
+				<div class="flex flex-col gap-3">
+					@emailField("emailName", "Name", "", "text")
+					@emailField("emailHost", "IMAP Host", "", "text")
+					@emailField("emailPort", "Port", "", "number")
+					@emailField("emailUser", "Username", "", "email")
+					<div class="flex flex-col gap-1">
+						<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Password</label>
+						<input
+							type="password"
+							data-bind:emailPass
+							placeholder="Leave blank to keep current"
+							class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
+						/>
+					</div>
+					<div class="flex flex-col gap-1">
+						<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">TLS</label>
+						<select data-bind:emailTLS class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
+							<option value="tls">TLS (port 993)</option>
+							<option value="starttls">STARTTLS (port 587)</option>
+							<option value="none">None (insecure)</option>
+						</select>
+					</div>
+					@emailField("emailFolder", "Folder", "INBOX", "text")
+					<button
+						type="button"
+						data-on:click="@put('/api/email-accounts/'+$emailSettingsEdit)"
+						class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
+					>Save Changes</button>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// EmailAccountList is the SSE-patchable account list on the settings page.
+templ EmailAccountList(accounts []emailqueries.AccountReadModel) {
+	<div id="email-account-list">
+		if len(accounts) == 0 {
+			<div class="bg-slate-900 border border-slate-800 rounded-lg py-14 flex flex-col items-center justify-center text-slate-600">
+				<p class="text-sm">No accounts configured.</p>
+				<p class="text-xs mt-1">Click "Add Account" to get started.</p>
+			</div>
+		} else {
+			<div class="flex flex-col gap-3">
+				for _, a := range accounts {
+					@emailAccountCard(a)
+				}
+			</div>
+		}
+	</div>
+}
+
+templ emailAccountCard(a emailqueries.AccountReadModel) {
+	<div class="bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col gap-3">
+		<!-- Top row: name + status -->
+		<div class="flex items-center justify-between gap-2">
+			<div class="flex items-center gap-2">
+				<span class="text-sm font-semibold text-slate-200">{ a.Name }</span>
+				@emailAccountStatusBadge(a.Status)
+			</div>
+			<!-- Actions -->
+			<div class="flex items-center gap-2">
+				<button
+					type="button"
+					data-on:click={ fmt.Sprintf("$emailSettingsEdit=%q; $emailName=%q; $emailHost=%q; $emailPort='%d'; $emailUser=%q; $emailTLS=%q; $emailFolder=%q; $emailPass=''",
+						a.ID, a.Name, a.Host, a.Port, a.Username, a.TLS, a.Folder) }
+					class="text-xs text-slate-400 hover:text-cyan-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
+				>Edit</button>
+				if a.Status == "paused" {
+					<button
+						type="button"
+						data-on:click={ fmt.Sprintf("@post('/api/email-accounts/%s/resume')", a.ID) }
+						class="text-xs text-slate-400 hover:text-green-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
+					>Resume</button>
+				} else {
+					<button
+						type="button"
+						data-on:click={ fmt.Sprintf("@post('/api/email-accounts/%s/pause')", a.ID) }
+						class="text-xs text-slate-400 hover:text-yellow-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
+					>Pause</button>
+				}
+				<button
+					type="button"
+					data-on:click={ fmt.Sprintf("@post('/api/email-sync/%s')", a.ID) }
+					class="text-xs text-slate-400 hover:text-cyan-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
+					title="Trigger manual sync"
+				>Sync Now</button>
+				<button
+					type="button"
+					data-on:click={ fmt.Sprintf("confirm('Delete account %s and all its emails?') && @delete('/api/email-accounts/%s')", a.Name, a.ID) }
+					class="text-xs text-slate-400 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
+				>Delete</button>
+			</div>
+		</div>
+		<!-- Details row -->
+		<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+			<span>{ fmt.Sprintf("%s:%d", a.Host, a.Port) }</span>
+			<span>{ a.Username }</span>
+			<span class="uppercase">{ a.TLS }</span>
+			<span>{ a.Folder }</span>
+		</div>
+		<!-- Sync info -->
+		<div class="flex items-center gap-3 text-xs text-slate-600">
+			if a.LastSyncAt.IsZero() {
+				<span>Never synced</span>
+			} else {
+				<span>Last sync: { formatRelTime(a.LastSyncAt) }</span>
+			}
+			if a.Status == "error" && a.LastError != "" {
+				<span class="text-red-400 truncate">{ a.LastError }</span>
+			}
+		</div>
+	</div>
+}
+
+templ emailAccountStatusBadge(status string) {
+	switch status {
+		case "active":
+			<span class="text-xs px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-medium">active</span>
+		case "error":
+			<span class="text-xs px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-medium">error</span>
+		case "paused":
+			<span class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-400 font-medium">paused</span>
+		default:
+			<span class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-500 font-medium">{ status }</span>
+	}
 }
 
 // EmailThreadsSection is the email section on the customer detail page.
