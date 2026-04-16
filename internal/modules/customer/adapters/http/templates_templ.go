@@ -427,20 +427,20 @@ func CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones 
 					return templ_7745c5c3_Err
 				}
 				if len(routers) > 0 {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"border-t border-slate-800 pt-3 mt-1\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider mb-3\">Network Provisioning</p><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label for=\"routerId\" class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Router</label> <select id=\"routerId\" data-signals:routerId=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"border-t border-slate-800 pt-3 mt-1\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider mb-3\">Network Provisioning</p><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label for=\"routerId\" class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Router</label> <select id=\"routerId\" data-signals:router-id=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var17 string
 					templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(customerRouterID(customer))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 156, Col: 60}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 156, Col: 61}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" data-bind:routerId class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"\">— None —</option> ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" data-bind:router-id class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"\">— None —</option> ")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -504,20 +504,20 @@ func CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones 
 						return templ_7745c5c3_Err
 					}
 					if len(zones) > 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div class=\"flex flex-col gap-1\"><label for=\"networkZone\" class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">IP Zone</label> <select id=\"networkZone\" data-signals:networkZone=\"")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div class=\"flex flex-col gap-1\"><label for=\"networkZone\" class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">IP Zone</label> <select id=\"networkZone\" data-signals:network-zone=\"")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
 						var templ_7745c5c3_Var21 string
 						templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(customerNetworkZone(customer))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 171, Col: 67}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 171, Col: 68}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" data-bind:networkZone class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"\">— Any zone —</option> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" data-bind:network-zone class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"\">— Any zone —</option> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -1006,7 +1006,7 @@ func formButtonText(c *domain.Customer) string {
 	return "Save Changes"
 }
 
-// customerRouterID returns the router ID as a JS string literal for data-signals:routerId.
+// customerRouterID returns the router ID as a JS string literal for data-signals:router-id.
 // data-signals:key evaluates the value as a JS expression, so the UUID must be quoted.
 func customerRouterID(c *domain.Customer) string {
 	id := ""
@@ -1017,7 +1017,7 @@ func customerRouterID(c *domain.Customer) string {
 	return string(b) // returns "\"uuid\"" — valid JS string literal
 }
 
-// customerNetworkZone returns the zone as a JS string literal for data-signals:networkZone.
+// customerNetworkZone returns the zone as a JS string literal for data-signals:network-zone.
 func customerNetworkZone(c *domain.Customer) string {
 	zone := ""
 	if c != nil {

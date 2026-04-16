@@ -27,7 +27,7 @@ templ ProductListPage() {
 						class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm w-60 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
 					/>
 					<select
-						data-bind:filterType
+						data-bind:filter-type
 						data-on:change="($page = 1) && @get('/api/products')"
 						class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 					>
@@ -167,7 +167,7 @@ templ ProductFormPage(product *domain.Product) {
 						<label for="productType" class="text-xs font-medium text-slate-400 uppercase tracking-wider">Type *</label>
 						<select
 							id="productType"
-							data-bind:productType
+							data-bind:product-type
 							class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 						>
 							<option value="internet">Internet</option>
@@ -182,7 +182,7 @@ templ ProductFormPage(product *domain.Product) {
 							<label for="priceCurrency" class="text-xs font-medium text-slate-400 uppercase tracking-wider">Currency</label>
 							<select
 								id="priceCurrency"
-								data-bind:priceCurrency
+								data-bind:price-currency
 								class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 							>
 								<option value="EUR">EUR</option>
@@ -195,7 +195,7 @@ templ ProductFormPage(product *domain.Product) {
 						<label for="billingPeriod" class="text-xs font-medium text-slate-400 uppercase tracking-wider">Billing Period *</label>
 						<select
 							id="billingPeriod"
-							data-bind:billingPeriod
+							data-bind:billing-period
 							class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 						>
 							<option value="monthly">Monthly</option>

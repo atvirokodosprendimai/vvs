@@ -153,8 +153,8 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 									<label for="routerId" class="text-xs font-medium text-slate-400 uppercase tracking-wider">Router</label>
 									<select
 										id="routerId"
-										data-signals:routerId={ customerRouterID(customer) }
-										data-bind:routerId
+										data-signals:router-id={ customerRouterID(customer) }
+										data-bind:router-id
 										class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 									>
 										<option value="">— None —</option>
@@ -168,8 +168,8 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 										<label for="networkZone" class="text-xs font-medium text-slate-400 uppercase tracking-wider">IP Zone</label>
 										<select
 											id="networkZone"
-											data-signals:networkZone={ customerNetworkZone(customer) }
-											data-bind:networkZone
+											data-signals:network-zone={ customerNetworkZone(customer) }
+											data-bind:network-zone
 											class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 										>
 											<option value="">— Any zone —</option>
@@ -366,7 +366,7 @@ func formButtonText(c *domain.Customer) string {
 	return "Save Changes"
 }
 
-// customerRouterID returns the router ID as a JS string literal for data-signals:routerId.
+// customerRouterID returns the router ID as a JS string literal for data-signals:router-id.
 // data-signals:key evaluates the value as a JS expression, so the UUID must be quoted.
 func customerRouterID(c *domain.Customer) string {
 	id := ""
@@ -377,7 +377,7 @@ func customerRouterID(c *domain.Customer) string {
 	return string(b) // returns "\"uuid\"" — valid JS string literal
 }
 
-// customerNetworkZone returns the zone as a JS string literal for data-signals:networkZone.
+// customerNetworkZone returns the zone as a JS string literal for data-signals:network-zone.
 func customerNetworkZone(c *domain.Customer) string {
 	zone := ""
 	if c != nil {

@@ -73,7 +73,7 @@ templ DeviceListPage(devices []queries.DeviceReadModel, statusFilter string) {
 						</div>
 						<div class="flex flex-col gap-1">
 							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Type</label>
-							<select data-bind:deviceType class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500">
+							<select data-bind:device-type class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500">
 								<option value="modem">Modem</option>
 								<option value="router">Router</option>
 								<option value="ont">ONT</option>
@@ -84,7 +84,7 @@ templ DeviceListPage(devices []queries.DeviceReadModel, statusFilter string) {
 						</div>
 						<div class="flex flex-col gap-1">
 							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Serial Number</label>
-							<input type="text" data-bind:serialNumber placeholder="optional" class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
+							<input type="text" data-bind:serial-number placeholder="optional" class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
 						</div>
 						<div class="flex flex-col gap-1">
 							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Notes</label>
@@ -257,7 +257,7 @@ templ DeviceDetailPage(d *queries.DeviceReadModel) {
 							<div class="flex flex-col gap-3">
 								<div class="flex flex-col gap-1">
 									<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Customer ID</label>
-									<input type="text" data-bind:customerId class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
+									<input type="text" data-bind:customer-id class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
 								</div>
 								<div class="flex flex-col gap-1">
 									<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Location</label>

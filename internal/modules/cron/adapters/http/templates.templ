@@ -69,7 +69,7 @@ templ CronListPage(jobs []queries.JobReadModel) {
 						<!-- Type -->
 						<div class="flex flex-col gap-1">
 							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Type *</label>
-							<select data-bind:jobType class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500">
+							<select data-bind:job-type class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500">
 								<option value="action">Action (built-in)</option>
 								<option value="shell">Shell command</option>
 								<option value="url">URL ping / webhook</option>
