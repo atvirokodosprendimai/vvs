@@ -56,7 +56,12 @@
       "Bash(cp:*)",
       "Bash(./bin/vvs cron:*)",
       "WebFetch(domain:netboxlabs.com)",
-      "Bash(lsof -ti:8080)"
+      "Bash(lsof -ti:8080)",
+      "Bash(cat /Users/mind/.claude/plugins/marketplaces/caveman/hooks/*.sh)",
+      "Bash(chmod +x:*)",
+      "Bash(bash /Users/mind/.claude/hooks/post-compact.sh)",
+      "Bash(find:*)",
+      "Bash(xargs cat:*)"
     ]
   }
 }

@@ -21,23 +21,18 @@ Architecture constraints:
 ---
 
 ## Phase 1 — Domain + Contracts
-*status: open*
+*status: completed*
 
-1. [ ] Create domain models: `domain/account.go`, `domain/message.go`, `domain/tag.go`
-   - EmailAccount aggregate (ID, credentials enc, status, folder, sync state)
-   - EmailThread, EmailMessage, EmailAttachment, EmailTag, EmailThreadTag
-   - Status consts: account (`active|paused|error`), system tag names (`unread|starred|archived`)
+1. [x] Create domain models: `domain/account.go`, `domain/message.go`, `domain/tag.go`
+   - => EmailAccount aggregate with status machine (active/paused/error), MarkSynced, SetError, Pause, Resume
+   - => EmailThread/Message/Attachment, EmailTag with system consts, NormalizeSubject helper, ReferenceIDs()
 
-2. [ ] Create repository port: `domain/repository.go`
-   - `EmailAccountRepository` — CRUD + ListActive
-   - `EmailMessageRepository` — Save, FindByUID, FindByMessageID
-   - `EmailThreadRepository` — Save, FindByMessageID, FindBySubject, ListForAccount, ListForCustomer
-   - `EmailAttachmentRepository` — Save, Get
-   - `EmailTagRepository` — CRUD + ListForThread
+2. [x] Create repository port: `domain/repository.go`
+   - => 5 interfaces: EmailAccountRepository, EmailThreadRepository, EmailMessageRepository, EmailAttachmentRepository, EmailTagRepository
 
-3. [ ] Create read models: `app/queries/read_model.go`
-   - `ThreadReadModel` (thread + last message preview + tags + unread count)
-   - `MessageReadModel` (full message + attachments)
+3. [x] Create read models: `app/queries/read_model.go`
+   - => ThreadReadModel, ThreadDetailReadModel, MessageReadModel, AttachmentReadModel, AccountReadModel, TagReadModel
+   - => 5 domain tests pass
    - `AccountReadModel`
 
 ---
