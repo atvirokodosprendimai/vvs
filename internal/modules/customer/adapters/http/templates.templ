@@ -153,6 +153,7 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 									<label for="routerId" class="text-xs font-medium text-slate-400 uppercase tracking-wider">Router</label>
 									<select
 										id="routerId"
+										data-signals:routerId={ customerRouterID(customer) }
 										data-bind:routerId
 										class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 									>
@@ -167,6 +168,7 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 										<label for="networkZone" class="text-xs font-medium text-slate-400 uppercase tracking-wider">IP Zone</label>
 										<select
 											id="networkZone"
+											data-signals:networkZone={ customerNetworkZone(customer) }
 											data-bind:networkZone
 											class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
 										>
@@ -356,4 +358,18 @@ func formButtonText(c *domain.Customer) string {
 		return "Create Customer"
 	}
 	return "Save Changes"
+}
+
+func customerRouterID(c *domain.Customer) string {
+	if c != nil && c.RouterID != nil {
+		return *c.RouterID
+	}
+	return ""
+}
+
+func customerNetworkZone(c *domain.Customer) string {
+	if c != nil {
+		return c.NetworkZone
+	}
+	return ""
 }
