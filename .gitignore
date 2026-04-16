@@ -23,4 +23,4 @@ tmp/
 .vscode/
 *.swp
 *.swo
-server
+/server
