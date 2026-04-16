@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strings"
@@ -121,8 +122,20 @@ func serveCommand() *cli.Command {
 				Usage:   "Comma-separated list of modules to enable (default: all)",
 				Sources: cli.EnvVars("VVS_MODULES"),
 			},
+			&cli.BoolFlag{
+				Name:    "debug",
+				Usage:   "Enable verbose debug logging",
+				Sources: cli.EnvVars("VVS_DEBUG"),
+			},
 		},
 		Action: func(ctx context.Context, cmd *cli.Command) error {
+			// Configure structured logging.
+			logLevel := slog.LevelInfo
+			if cmd.Bool("debug") {
+				logLevel = slog.LevelDebug
+			}
+			slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel})))
+
 			var enabledModules []string
 			if m := cmd.String("modules"); m != "" {
 				for _, s := range strings.Split(m, ",") {
@@ -144,6 +157,7 @@ func serveCommand() *cli.Command {
 				APIToken:       cmd.Root().String("api-token"),
 				EmailEncKey:    cmd.String("email-enc-key"),
 				EnabledModules: enabledModules,
+				Debug:          cmd.Bool("debug"),
 			}
 
 			application, err := app.New(cfg)
@@ -156,14 +170,14 @@ func serveCommand() *cli.Command {
 
 			go func() {
 				if err := application.Start(); err != nil {
-					log.Printf("server error: %v", err)
+					slog.Error("server error", "err", err)
 				}
 			}()
 
-			log.Printf("VVS ISP Manager running on %s", cfg.ListenAddr)
+			slog.Info("VVS ISP Manager started", "addr", cfg.ListenAddr, "debug", cfg.Debug)
 			<-ctx.Done()
 
-			log.Println("Shutting down...")
+			slog.Info("shutting down")
 			shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*1e9)
 			defer cancel()
 

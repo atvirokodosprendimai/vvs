@@ -24,6 +24,9 @@ type Config struct {
 
 	// EnabledModules lists which modules to start. Empty = all enabled.
 	EnabledModules []string // e.g. ["auth","customer"]
+
+	// Debug enables verbose debug logging (slog DEBUG level).
+	Debug bool
 }
 
 // IsEnabled reports whether module name is enabled.

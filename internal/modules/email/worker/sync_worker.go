@@ -2,7 +2,7 @@ package worker
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -43,6 +43,7 @@ func NewSyncWorker(
 
 // Start launches the background sync loop. Call Stop to shut down.
 func (w *SyncWorker) Start() {
+	slog.Info("email sync worker started", "interval", w.interval)
 	go w.run()
 }
 
@@ -69,13 +70,16 @@ func (w *SyncWorker) run() {
 	for {
 		select {
 		case <-ticker.C:
+			slog.Debug("email sync: scheduled tick")
 			w.syncAll()
 		case evt, ok := <-manualTrigger:
 			if !ok {
 				return
 			}
+			slog.Info("email sync: manual trigger", "account_id", evt.AggregateID)
 			w.syncOne(evt.AggregateID)
 		case <-w.stop:
+			slog.Info("email sync worker stopped")
 			return
 		}
 	}
@@ -87,10 +91,11 @@ func (w *SyncWorker) syncOne(accountID string) {
 
 	account, err := w.repos.Accounts.FindByID(ctx, accountID)
 	if err != nil {
-		log.Printf("email sync: find account %s: %v", accountID, err)
+		slog.Error("email sync: find account", "account_id", accountID, "err", err)
 		return
 	}
 	if account.Status == domain.AccountStatusPaused {
+		slog.Debug("email sync: account paused, skipping", "account", account.Name)
 		return
 	}
 	w.syncAccount(ctx, account)
@@ -102,27 +107,29 @@ func (w *SyncWorker) syncAll() {
 
 	accounts, err := w.repos.Accounts.ListActive(ctx)
 	if err != nil {
-		log.Printf("email sync: list active accounts: %v", err)
+		slog.Error("email sync: list active accounts", "err", err)
 		return
 	}
 
+	slog.Info("email sync: starting", "accounts", len(accounts))
 	for _, account := range accounts {
 		w.syncAccount(ctx, account)
 	}
+	slog.Info("email sync: done")
 }
 
 func (w *SyncWorker) syncAccount(ctx context.Context, account *domain.EmailAccount) {
-	// Decrypt password before passing to fetcher.
-	// (password stored encrypted; pass as-is here since fetcher uses it as []byte)
+	slog.Info("email sync: syncing account", "account", account.Name, "host", account.Host, "last_uid", account.LastUID)
 	err := imapAdapter.Fetch(ctx, account, w.repos, newID, w.pub)
 	if err != nil {
-		log.Printf("email sync: account %s (%s): %v", account.Name, account.ID, err)
+		slog.Error("email sync: account failed", "account", account.Name, "err", err)
 		account.SetError(err.Error())
 		if saveErr := w.repos.Accounts.Save(ctx, account); saveErr != nil {
-			log.Printf("email sync: save account error state: %v", saveErr)
+			slog.Error("email sync: save error state", "account", account.Name, "err", saveErr)
 		}
 		return
 	}
+	slog.Info("email sync: account done", "account", account.Name, "last_uid", account.LastUID)
 }
 
 func newID() string {

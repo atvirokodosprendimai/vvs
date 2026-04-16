@@ -7,7 +7,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"mime"
 	"strings"
 	"time"
@@ -38,6 +38,7 @@ type NewIDFunc func() string
 // Fetch connects to the IMAP server for the given account, fetches new messages
 // (UID > account.LastUID), stores them, and updates the account sync state.
 func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID NewIDFunc, pub events.EventPublisher) error {
+	slog.Debug("imap: connecting", "account", account.Name, "host", account.Host, "port", account.Port)
 	c, err := dial(account)
 	if err != nil {
 		return fmt.Errorf("imap dial: %w", err)
@@ -51,6 +52,7 @@ func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID
 	if err := c.Login(account.Username, string(password)).Wait(); err != nil {
 		return fmt.Errorf("imap login: %w", err)
 	}
+	slog.Debug("imap: logged in", "account", account.Name, "user", account.Username)
 
 	// EXAMINE = readonly select.
 	if _, err := c.Select(account.Folder, &imaplib.SelectOptions{ReadOnly: true}).Wait(); err != nil {
@@ -72,12 +74,16 @@ func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID
 
 	uidSet, ok := searchData.All.(imaplib.UIDSet)
 	if !ok {
+		slog.Debug("imap: no new messages", "account", account.Name)
 		return nil
 	}
 	allUIDs, valid := uidSet.Nums()
 	if !valid || len(allUIDs) == 0 {
+		slog.Debug("imap: no new messages", "account", account.Name)
 		return nil
 	}
+
+	slog.Info("imap: fetching new messages", "account", account.Name, "count", len(allUIDs), "last_uid", account.LastUID)
 
 	// Fetch in batches of 50.
 	const batchSize = 50
@@ -90,6 +96,8 @@ func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID
 			end = len(allUIDs)
 		}
 		batch := allUIDs[i:end]
+
+		slog.Debug("imap: fetching batch", "account", account.Name, "batch_start", i+1, "batch_end", end, "total", len(allUIDs))
 
 		var fetchSet imaplib.UIDSet
 		for _, uid := range batch {
@@ -113,11 +121,12 @@ func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID
 			}
 			buf, err := msg.Collect()
 			if err != nil {
-				log.Printf("imap fetch collect seq=%v: %v", msg.SeqNum, err)
+				slog.Error("imap: fetch collect", "account", account.Name, "seq", msg.SeqNum, "err", err)
 				continue
 			}
+			slog.Debug("imap: processing message", "account", account.Name, "uid", buf.UID)
 			if err := processMessage(ctx, account, buf, repos, newID); err != nil {
-				log.Printf("imap process message uid=%v: %v", buf.UID, err)
+				slog.Error("imap: process message", "account", account.Name, "uid", buf.UID, "err", err)
 			}
 			fetched++
 		}
@@ -133,13 +142,18 @@ func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID
 		}
 	}
 
-	if fetched > 0 && pub != nil {
-		_ = pub.Publish(ctx, "isp.email.synced", events.DomainEvent{
-			Type:        "email.synced",
-			AggregateID: account.ID,
-			OccurredAt:  time.Now().UTC(),
-			Data:        []byte(fmt.Sprintf(`{"count":%d}`, fetched)),
-		})
+	if fetched > 0 {
+		slog.Info("imap: sync complete", "account", account.Name, "fetched", fetched, "max_uid", maxUID)
+		if pub != nil {
+			_ = pub.Publish(ctx, "isp.email.synced", events.DomainEvent{
+				Type:        "email.synced",
+				AggregateID: account.ID,
+				OccurredAt:  time.Now().UTC(),
+				Data:        []byte(fmt.Sprintf(`{"count":%d}`, fetched)),
+			})
+		}
+	} else {
+		slog.Debug("imap: no new messages fetched", "account", account.Name)
 	}
 	return nil
 }
@@ -215,13 +229,13 @@ func processMessage(
 			Data:      a.Data,
 		}
 		if err := repos.Attachments.Save(ctx, att); err != nil {
-			log.Printf("imap save attachment %q: %v", a.Filename, err)
+			slog.Error("imap: save attachment", "filename", a.Filename, "err", err)
 		}
 	}
 
 	// Update thread stats and participants.
 	if err := persistence.UpdateThreadStats(ctx, repos.DB, threadID); err != nil {
-		log.Printf("update thread stats %s: %v", threadID, err)
+		slog.Error("imap: update thread stats", "thread_id", threadID, "err", err)
 	}
 	if msg.FromAddr != "" {
 		_ = persistence.AddParticipant(ctx, repos.DB, threadID, msg.FromAddr)
