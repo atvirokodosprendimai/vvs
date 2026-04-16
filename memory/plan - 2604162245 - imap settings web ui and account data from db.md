@@ -1,6 +1,6 @@
 ---
 tldr: IMAP account settings page — list accounts with live status, edit/delete/pause/resume/sync controls
-status: active
+status: completed
 ---
 
 # Plan: IMAP Settings Web UI
@@ -25,75 +25,37 @@ status: active
 
 ## Phases
 
-### Phase 1 — Backend commands — status: open
+### Phase 1 — Backend commands — status: completed
 
-1. [ ] `app/commands/delete_account.go` — `DeleteAccountHandler`
-   - calls `repo.Delete(ctx, id)`, publishes `isp.email.account_deleted`
-   - inject: `EmailAccountRepository`, `EventPublisher`
+1. [x] `app/commands/delete_account.go` — `DeleteAccountHandler`
+   - => calls `repo.Delete(ctx, id)`, publishes `isp.email.account_deleted`
 
-2. [ ] `app/commands/manage_account.go` — `PauseAccountHandler` + `ResumeAccountHandler`
-   - Pause: load → `account.Pause()` → `repo.Save()`, publish `isp.email.account_paused`
-   - Resume: load → `account.Resume()` → `repo.Save()`, publish `isp.email.account_resumed`
+2. [x] `app/commands/manage_account.go` — `PauseAccountHandler` + `ResumeAccountHandler`
+   - => Pause/Resume load account, call domain method, save, publish event
 
-### Phase 2 — HTTP routes and handlers — status: open
+### Phase 2 — HTTP routes and handlers — status: completed
 
-1. [ ] Add fields to `Handlers` struct: `deleteCmd`, `pauseCmd`, `resumeCmd`; update `NewHandlers`
-   - inject: `DeleteAccountHandler`, `PauseAccountHandler`, `ResumeAccountHandler`
+1. [x] Add fields to `Handlers` struct: `deleteCmd`, `pauseCmd`, `resumeCmd`; update `NewHandlers`
 
-2. [ ] Implement handlers:
-   - `settingsPage` — GET `/emails/settings` renders `EmailSettingsPage(accounts)`
-   - `accountListSSE` — GET `/sse/email-accounts` subscribes `isp.email.*`, patches `#email-account-list`
-   - `updateAccountSSE` — PUT `/api/email-accounts/{id}` reuses `ConfigureAccountCommand` with ID from URL
-   - `deleteAccountSSE` — DELETE `/api/email-accounts/{id}` → `DeleteAccountHandler`
-   - `pauseAccountSSE` — POST `/api/email-accounts/{id}/pause`
-   - `resumeAccountSSE` — POST `/api/email-accounts/{id}/resume`
-   - `triggerSyncSSE` — POST `/api/email-sync/{accountID}` publishes `isp.email.sync_requested`
+2. [x] Implement handlers:
+   - => `settingsPage`, `accountListSSE`, `updateAccountSSE`, `deleteAccountSSE`
+   - => `pauseAccountSSE`, `resumeAccountSSE`, `triggerSyncSSE`
 
-3. [ ] Register new routes in `RegisterRoutes`:
-   ```
-   GET  /emails/settings
-   GET  /sse/email-accounts
-   PUT  /api/email-accounts/{id}
-   DELETE /api/email-accounts/{id}
-   POST /api/email-accounts/{id}/pause
-   POST /api/email-accounts/{id}/resume
-   POST /api/email-sync/{accountID}
-   ```
+3. [x] Register new routes in `RegisterRoutes`
+   - => 7 new routes registered
 
-### Phase 3 — Templates — status: open
+### Phase 3 — Templates — status: completed
 
-1. [ ] `EmailSettingsPage(accounts []AccountReadModel)` in `templates.templ`
-   - two-section layout: account list + "Add Account" CTA
-   - `data-init="@get('/sse/email-accounts')"` on outer wrapper for live updates
-   - signals: `{emailSettingsEdit:'', emailName:'', emailHost:'', emailPort:'993', emailUser:'', emailPass:'', emailTLS:'tls', emailFolder:'INBOX'}`
+1. [x] `EmailSettingsPage` — full settings page with `data-init="@get('/sse/email-accounts')"` for live updates
+2. [x] `EmailAccountList` — SSE-patchable (`id="email-account-list"`)
+3. [x] `emailAccountCard` — per-account card with name, host:port, TLS, folder, status badge, last sync, error
+4. [x] Edit account modal shown when `$emailSettingsEdit != ''`; password "leave blank to keep"
+5. [x] `EmailPage` sidebar "Settings" link replaced "Add" button → `/emails/settings`
 
-2. [ ] `EmailAccountList(accounts []AccountReadModel)` — SSE-patchable (`id="email-account-list"`)
-   - per account card: name, `host:port`, TLS badge, folder, status badge (green/red/gray)
-   - last sync time (`formatRelTime`) or "Never"
-   - last error shown in red if status == "error"
-   - action buttons per row:
-     - Edit → sets `$emailSettingsEdit = account.ID`, prefills signals
-     - Pause (if active/error) / Resume (if paused)
-     - Sync Now button → `@post('/api/email-sync/{id}')`
-     - Delete → confirm via JS `confirm()` → `@delete('/api/email-accounts/{id}')`
+### Phase 4 — Wiring — status: completed
 
-3. [ ] Edit account modal — shown when `$emailSettingsEdit != ''`
-   - same fields as create form, prefilled from signals
-   - Save: `@put('/api/email-accounts/$emailSettingsEdit')` → close on success
-   - Cancel: `$emailSettingsEdit = ''`
-   - Note: password field placeholder "leave blank to keep current"
-
-4. [ ] Add nav link for Settings in `EmailPage` sidebar (or link from `/emails` to `/emails/settings`)
-
-### Phase 4 — Wiring — status: open
-
-1. [ ] `internal/app/app.go`:
-   - `deleteEmailAccountCmd := emailcommands.NewDeleteAccountHandler(emailAccountRepo, publisher)`
-   - `pauseEmailAccountCmd := emailcommands.NewPauseAccountHandler(emailAccountRepo, publisher)`
-   - `resumeEmailAccountCmd := emailcommands.NewResumeAccountHandler(emailAccountRepo, publisher)`
-   - pass to `emailhttp.NewHandlers(...)`
-
-2. [ ] `templ generate && go build ./...` — clean build
+1. [x] `internal/app/app.go`: `deleteAccountCmd`, `pauseAccountCmd`, `resumeAccountCmd` wired
+2. [x] `templ generate && go build ./...` — clean build
 
 ---
 
@@ -115,4 +77,5 @@ status: active
 ## Progress Log
 
 - 2604162245 — Plan created
+- 2604162300 — All 4 phases completed: commands, HTTP handlers, templates, wiring; clean build
 
