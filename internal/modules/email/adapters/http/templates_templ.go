@@ -417,7 +417,7 @@ func threadRow(t emailqueries.ThreadReadModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" class=\"block w-full text-left px-4 py-3 hover:bg-slate-800/60 transition-colors flex flex-col gap-0.5 no-underline\"><div class=\"flex items-center justify-between gap-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"block w-full text-left px-4 py-3 hover:bg-slate-800/60 transition-colors flex flex-col gap-0.5 no-underline\"><div class=\"flex items-center justify-between gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -446,7 +446,7 @@ func threadRow(t emailqueries.ThreadReadModel) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(t.Subject)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 150, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 152, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -459,7 +459,7 @@ func threadRow(t emailqueries.ThreadReadModel) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(formatRelTime(t.LastMessageAt))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 152, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 154, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -472,7 +472,7 @@ func threadRow(t emailqueries.ThreadReadModel) templ.Component {
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(firstParticipant(t.ParticipantAddresses))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 155, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 157, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
@@ -496,7 +496,7 @@ func threadRow(t emailqueries.ThreadReadModel) templ.Component {
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(fmt.Sprintf("background-color:%s22;color:%s", tag.Color, tag.Color))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 163, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 165, Col: 81}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -509,7 +509,7 @@ func threadRow(t emailqueries.ThreadReadModel) templ.Component {
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(tag.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 164, Col: 16}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 166, Col: 16}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -620,7 +620,7 @@ func replyForm(threadID string) templ.Component {
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("!$emailSending && @post('/api/email-threads/%s/reply', {openWhenHidden: false})", threadID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 210, Col: 124}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 212, Col: 124}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 		if templ_7745c5c3_Err != nil {
@@ -663,7 +663,7 @@ func ThreadDetail(thread emailqueries.ThreadDetailReadModel) templ.Component {
 		var templ_7745c5c3_Var29 string
 		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(thread.Subject)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 226, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 228, Col: 78}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 		if templ_7745c5c3_Err != nil {
@@ -676,7 +676,7 @@ func ThreadDetail(thread emailqueries.ThreadDetailReadModel) templ.Component {
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d msg", len(thread.Messages)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 227, Col: 100}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 229, Col: 100}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {
@@ -689,7 +689,7 @@ func ThreadDetail(thread emailqueries.ThreadDetailReadModel) templ.Component {
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/email-threads/%s/read', {openWhenHidden: false})", thread.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 231, Col: 106}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 233, Col: 106}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -742,7 +742,7 @@ func messageItem(m emailqueries.MessageReadModel) templ.Component {
 			var templ_7745c5c3_Var33 string
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(m.FromName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 250, Col: 18}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 252, Col: 18}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 			if templ_7745c5c3_Err != nil {
@@ -755,7 +755,7 @@ func messageItem(m emailqueries.MessageReadModel) templ.Component {
 			var templ_7745c5c3_Var34 string
 			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(m.FromAddr)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 250, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 252, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
@@ -769,7 +769,7 @@ func messageItem(m emailqueries.MessageReadModel) templ.Component {
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(m.FromAddr)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 252, Col: 18}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 254, Col: 18}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -783,7 +783,7 @@ func messageItem(m emailqueries.MessageReadModel) templ.Component {
 		var templ_7745c5c3_Var36 string
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(m.ToAddrs)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 255, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 257, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 		if templ_7745c5c3_Err != nil {
@@ -796,7 +796,7 @@ func messageItem(m emailqueries.MessageReadModel) templ.Component {
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(m.ReceivedAt.Format("Jan 2, 15:04"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 257, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 259, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
@@ -809,7 +809,7 @@ func messageItem(m emailqueries.MessageReadModel) templ.Component {
 		var templ_7745c5c3_Var38 string
 		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(m.TextBody)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 259, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 261, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {
@@ -832,7 +832,7 @@ func messageItem(m emailqueries.MessageReadModel) templ.Component {
 				var templ_7745c5c3_Var39 templ.SafeURL
 				templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/api/email-attachments/%s", a.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 264, Col: 74}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 266, Col: 74}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 				if templ_7745c5c3_Err != nil {
@@ -845,7 +845,7 @@ func messageItem(m emailqueries.MessageReadModel) templ.Component {
 				var templ_7745c5c3_Var40 string
 				templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(a.Filename)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 265, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 267, Col: 27}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 				if templ_7745c5c3_Err != nil {
@@ -858,7 +858,7 @@ func messageItem(m emailqueries.MessageReadModel) templ.Component {
 				var templ_7745c5c3_Var41 string
 				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(a.Filename)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 271, Col: 18}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 273, Col: 18}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 				if templ_7745c5c3_Err != nil {
@@ -871,7 +871,7 @@ func messageItem(m emailqueries.MessageReadModel) templ.Component {
 				var templ_7745c5c3_Var42 string
 				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(formatSize(a.Size))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 271, Col: 42}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 273, Col: 42}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 				if templ_7745c5c3_Err != nil {
@@ -985,7 +985,7 @@ func emailField(signal, label, placeholder, inputType string) templ.Component {
 		var templ_7745c5c3_Var45 string
 		templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 326, Col: 84}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 328, Col: 84}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 		if templ_7745c5c3_Err != nil {
@@ -998,7 +998,7 @@ func emailField(signal, label, placeholder, inputType string) templ.Component {
 		var templ_7745c5c3_Var46 string
 		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(inputType)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 328, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 330, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 		if templ_7745c5c3_Err != nil {
@@ -1011,7 +1011,7 @@ func emailField(signal, label, placeholder, inputType string) templ.Component {
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(signal)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 329, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 331, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {
@@ -1024,7 +1024,7 @@ func emailField(signal, label, placeholder, inputType string) templ.Component {
 		var templ_7745c5c3_Var48 string
 		templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(placeholder)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 330, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 332, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 		if templ_7745c5c3_Err != nil {
@@ -1083,7 +1083,7 @@ func EmailSettingsPage(accounts []emailqueries.AccountReadModel) templ.Component
 			var templ_7745c5c3_Var51 string
 			templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("{emailSettingsEdit:'',emailName:'',emailHost:'',emailPort:'993',emailUser:'',emailPass:'',emailTLS:'tls',emailFolder:'INBOX',emailSMTPHost:'',emailSMTPPort:'587',emailSMTPTLS:'starttls',emailError:'',_showAdd:false}"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 342, Col: 248}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 344, Col: 248}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 			if templ_7745c5c3_Err != nil {
@@ -1278,7 +1278,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 		var templ_7745c5c3_Var54 string
 		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(a.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 502, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 504, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 		if templ_7745c5c3_Err != nil {
@@ -1300,7 +1300,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 		templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$emailSettingsEdit=%q; $emailName=%q; $emailHost=%q; $emailPort='%d'; $emailUser=%q; $emailTLS=%q; $emailFolder=%q; $emailPass=''; $emailSMTPHost=%q; $emailSMTPPort='%d'; $emailSMTPTLS=%q",
 			a.ID, a.Name, a.Host, a.Port, a.Username, a.TLS, a.Folder, a.SMTPHost, a.SMTPPort, a.SMTPTLS))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 510, Col: 99}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 512, Col: 99}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 		if templ_7745c5c3_Err != nil {
@@ -1318,7 +1318,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 			var templ_7745c5c3_Var56 string
 			templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/email-accounts/%s/resume', {openWhenHidden: false})", a.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 516, Col: 106}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 518, Col: 106}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 			if templ_7745c5c3_Err != nil {
@@ -1336,7 +1336,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 			var templ_7745c5c3_Var57 string
 			templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/email-accounts/%s/pause', {openWhenHidden: false})", a.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 522, Col: 105}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 524, Col: 105}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 			if templ_7745c5c3_Err != nil {
@@ -1354,7 +1354,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 		var templ_7745c5c3_Var58 string
 		templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/email-sync/%s', {openWhenHidden: false})", a.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 528, Col: 94}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 530, Col: 94}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 		if templ_7745c5c3_Err != nil {
@@ -1367,7 +1367,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 		var templ_7745c5c3_Var59 string
 		templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("confirm('Delete account %s and all its emails?') && @delete('/api/email-accounts/%s', {openWhenHidden: false})", a.Name, a.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 534, Col: 160}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 536, Col: 160}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 		if templ_7745c5c3_Err != nil {
@@ -1380,7 +1380,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 		var templ_7745c5c3_Var60 string
 		templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%s:%d", a.Host, a.Port))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 541, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 543, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 		if templ_7745c5c3_Err != nil {
@@ -1393,7 +1393,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 		var templ_7745c5c3_Var61 string
 		templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(a.Username)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 542, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 544, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 		if templ_7745c5c3_Err != nil {
@@ -1406,7 +1406,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 		var templ_7745c5c3_Var62 string
 		templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(a.TLS)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 543, Col: 34}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 545, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 		if templ_7745c5c3_Err != nil {
@@ -1419,7 +1419,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 		var templ_7745c5c3_Var63 string
 		templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(a.Folder)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 544, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 546, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
 		if templ_7745c5c3_Err != nil {
@@ -1442,7 +1442,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 			var templ_7745c5c3_Var64 string
 			templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(formatRelTime(a.LastSyncAt))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 551, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 553, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
 			if templ_7745c5c3_Err != nil {
@@ -1461,7 +1461,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 			var templ_7745c5c3_Var65 string
 			templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(a.LastError)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 554, Col: 53}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 556, Col: 53}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
 			if templ_7745c5c3_Err != nil {
@@ -1479,7 +1479,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 		var templ_7745c5c3_Var66 string
 		templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("email-folders-%s", a.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 559, Col: 45}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 561, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
 		if templ_7745c5c3_Err != nil {
@@ -1492,7 +1492,7 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 		var templ_7745c5c3_Var67 string
 		templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@get('/sse/email-folders/%s', {openWhenHidden: false})", a.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 560, Col: 90}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 562, Col: 90}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
 		if templ_7745c5c3_Err != nil {
@@ -1551,7 +1551,7 @@ func emailAccountStatusBadge(status string) templ.Component {
 			var templ_7745c5c3_Var69 string
 			templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 578, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 580, Col: 98}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var69))
 			if templ_7745c5c3_Err != nil {
@@ -1595,7 +1595,7 @@ func EmailFolderList(accountID string, folders []emailqueries.FolderReadModel) t
 		var templ_7745c5c3_Var71 string
 		templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("email-folders-%s", accountID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 584, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 586, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var71))
 		if templ_7745c5c3_Err != nil {
@@ -1608,7 +1608,7 @@ func EmailFolderList(accountID string, folders []emailqueries.FolderReadModel) t
 		var templ_7745c5c3_Var72 string
 		templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/email-accounts/%s/discover-folders', {openWhenHidden: false})", accountID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 589, Col: 119}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 591, Col: 119}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var72))
 		if templ_7745c5c3_Err != nil {
@@ -1654,7 +1654,7 @@ func EmailFolderList(accountID string, folders []emailqueries.FolderReadModel) t
 				var templ_7745c5c3_Var75 string
 				templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.JoinStringErrs(f.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 598, Col: 120}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 600, Col: 120}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var75))
 				if templ_7745c5c3_Err != nil {
@@ -1667,7 +1667,7 @@ func EmailFolderList(accountID string, folders []emailqueries.FolderReadModel) t
 				var templ_7745c5c3_Var76 string
 				templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/email-folders/%s/toggle', {openWhenHidden: false})", f.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 601, Col: 104}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 603, Col: 104}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var76))
 				if templ_7745c5c3_Err != nil {
@@ -1740,7 +1740,7 @@ func EmailFolderSidebar(accountID, activeFolder string, folders []emailqueries.F
 		var templ_7745c5c3_Var79 templ.SafeURL
 		templ_7745c5c3_Var79, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/emails?account=%s", accountID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 624, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 626, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var79))
 		if templ_7745c5c3_Err != nil {
@@ -1777,7 +1777,7 @@ func EmailFolderSidebar(accountID, activeFolder string, folders []emailqueries.F
 				var templ_7745c5c3_Var82 templ.SafeURL
 				templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/emails?account=%s&folder=%s", accountID, f.Name)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 630, Col: 90}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 632, Col: 90}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var82))
 				if templ_7745c5c3_Err != nil {
@@ -1803,7 +1803,7 @@ func EmailFolderSidebar(accountID, activeFolder string, folders []emailqueries.F
 				var templ_7745c5c3_Var84 string
 				templ_7745c5c3_Var84, templ_7745c5c3_Err = templ.JoinStringErrs(f.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 632, Col: 14}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 634, Col: 14}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var84))
 				if templ_7745c5c3_Err != nil {
@@ -1852,7 +1852,7 @@ func EmailThreadsSection(customerID string, threads []emailqueries.ThreadReadMod
 		var templ_7745c5c3_Var86 string
 		templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("customer-email-threads-%s", customerID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 646, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 648, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var86))
 		if templ_7745c5c3_Err != nil {
@@ -1880,7 +1880,7 @@ func EmailThreadsSection(customerID string, threads []emailqueries.ThreadReadMod
 				var templ_7745c5c3_Var87 string
 				templ_7745c5c3_Var87, templ_7745c5c3_Err = templ.JoinStringErrs(t.Subject)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 656, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 658, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var87))
 				if templ_7745c5c3_Err != nil {
@@ -1893,7 +1893,7 @@ func EmailThreadsSection(customerID string, threads []emailqueries.ThreadReadMod
 				var templ_7745c5c3_Var88 string
 				templ_7745c5c3_Var88, templ_7745c5c3_Err = templ.JoinStringErrs(firstParticipant(t.ParticipantAddresses))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 657, Col: 87}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 659, Col: 87}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var88))
 				if templ_7745c5c3_Err != nil {
@@ -1916,7 +1916,7 @@ func EmailThreadsSection(customerID string, threads []emailqueries.ThreadReadMod
 				var templ_7745c5c3_Var89 string
 				templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.JoinStringErrs(formatRelTime(t.LastMessageAt))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 663, Col: 77}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 665, Col: 77}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var89))
 				if templ_7745c5c3_Err != nil {

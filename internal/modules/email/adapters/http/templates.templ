@@ -143,6 +143,8 @@ templ ThreadList(result emailqueries.ThreadListResult) {
 templ threadRow(t emailqueries.ThreadReadModel) {
 	<a
 		href={ templ.SafeURL(fmt.Sprintf("/emails/threads/%s", t.ID)) }
+		target="_blank"
+		rel="noopener noreferrer"
 		class="block w-full text-left px-4 py-3 hover:bg-slate-800/60 transition-colors flex flex-col gap-0.5 no-underline"
 	>
 		<div class="flex items-center justify-between gap-2">
