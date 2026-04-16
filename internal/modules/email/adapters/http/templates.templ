@@ -16,7 +16,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, folders []emailqueries
 		<div
 			id="email-inbox"
 			class="flex gap-4"
-			data-signals={ fmt.Sprintf("{emailAccountID: %q, emailTagFilter: '', emailSearch: '', emailFolder: %q, emailPage: 0}", selected, folder) }
+			data-signals={ fmt.Sprintf("{emailAccountID: %q, emailTagFilter: '', emailSearch: '', emailFolder: %q, emailPage: 0, composeOpen: false, composeTo: '', composeSubject: '', composeBody: '', composeError: ''}", selected, folder) }
 		>
 			<!-- Sidebar: accounts + tags + folders -->
 			<div class="w-56 flex-shrink-0 flex flex-col gap-3">
@@ -58,19 +58,93 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, folders []emailqueries
 
 			<!-- Thread list -->
 			<div class="flex-1 min-w-0 flex flex-col gap-2">
-				<!-- Search -->
-				<input
-					type="text"
-					data-bind:emailSearch
-					data-on:input__debounce.300ms="$emailPage = 0; @get('/sse/emails', {openWhenHidden: false})"
-					placeholder="Search subject or address…"
-					class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-cyan-500"
-				/>
+				<!-- Search + Compose row -->
+				<div class="flex items-center gap-2">
+					<input
+						type="text"
+						data-bind:emailSearch
+						data-on:input__debounce.300ms="$emailPage = 0; @get('/sse/emails', {openWhenHidden: false})"
+						placeholder="Search subject or address…"
+						class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-cyan-500"
+					/>
+					if selected != "" {
+						<button
+							type="button"
+							data-on:click="$composeOpen=true"
+							class="flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>
+							Compose
+						</button>
+					}
+				</div>
 				<div
 					id="email-thread-list"
 					data-init="@get('/sse/emails', {openWhenHidden: false})"
 				>
 					<div class="text-slate-600 py-8 text-center text-sm">Loading...</div>
+				</div>
+			</div>
+
+			<!-- Compose modal -->
+			<div
+				data-show="$composeOpen"
+				class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+				style="display:none"
+			>
+				<div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-lg p-6 flex flex-col gap-4">
+					<div class="flex items-center justify-between">
+						<h3 class="text-sm font-semibold text-slate-200">New Email</h3>
+						<button type="button" data-on:click="$composeOpen=false; $composeError=''" class="text-slate-500 hover:text-slate-300">
+							<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+						</button>
+					</div>
+					<div class="flex flex-col gap-3">
+						<div class="flex flex-col gap-1">
+							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">To</label>
+							<input
+								type="email"
+								data-bind:composeTo
+								placeholder="recipient@example.com"
+								class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
+							/>
+						</div>
+						<div class="flex flex-col gap-1">
+							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Subject</label>
+							<input
+								type="text"
+								data-bind:composeSubject
+								placeholder="Subject"
+								class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
+							/>
+						</div>
+						<div class="flex flex-col gap-1">
+							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Message</label>
+							<textarea
+								data-bind:composeBody
+								rows="8"
+								placeholder="Write your message…"
+								class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600 resize-none"
+							></textarea>
+						</div>
+						<div
+							data-show="$composeError != ''"
+							class="text-red-400 text-xs"
+							style="display:none"
+						>
+							<span data-text="$composeError"></span>
+						</div>
+						<button
+							type="button"
+							data-indicator:composeSending
+							data-attr:disabled="$composeSending"
+							data-on:click={ fmt.Sprintf("@post('/api/emails/compose?account=%s')", selected) }
+							class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
+						>
+							<span data-show="!$composeSending">Send</span>
+							<span data-show="$composeSending" style="display:none">Sending…</span>
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>

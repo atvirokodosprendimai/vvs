@@ -25,6 +25,11 @@ type attachmentFinder interface {
 	FindByID(ctx context.Context, id string) (*domain.EmailAttachment, error)
 }
 
+// emailComposer is the port for composing and sending new emails.
+type emailComposer interface {
+	Handle(ctx context.Context, cmd emailcommands.ComposeEmailCommand) error
+}
+
 // folderToggler is the minimal interface for folder enable/disable.
 type folderToggler interface {
 	FindByID(ctx context.Context, id string) (*domain.EmailFolder, error)
@@ -53,6 +58,7 @@ type Handlers struct {
 	discoverFn    func(ctx context.Context, accountID string) ([]emailqueries.FolderReadModel, error)
 	attachments        attachmentFinder
 	searchAttachments  *emailqueries.SearchAttachmentsHandler
+	composeCmd         emailComposer
 	subscriber         events.EventSubscriber
 	publisher          events.EventPublisher
 	pageSize           int // threads per inbox page; 0 → DefaultPageSize
@@ -114,6 +120,12 @@ func (h *Handlers) WithSearchAttachments(q *emailqueries.SearchAttachmentsHandle
 	return h
 }
 
+// WithComposeCmd injects the compose email command handler.
+func (h *Handlers) WithComposeCmd(c emailComposer) *Handlers {
+	h.composeCmd = c
+	return h
+}
+
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/emails", h.emailPage)
 	r.Get("/emails/threads/{threadID}", h.threadPage)
@@ -135,6 +147,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/attachments", h.attachmentsPage)
 	r.Get("/sse/attachments", h.attachmentSearchSSE)
 	r.Get("/api/email-attachments/{id}", h.downloadAttachment)
+	r.Post("/api/emails/compose", h.composeSSE)
 	r.Post("/api/email-accounts/{id}/discover-folders", h.discoverFoldersSSE)
 	r.Put("/api/email-folders/{folderID}/toggle", h.toggleFolderSSE)
 	r.Get("/sse/email-folders/{accountID}", h.folderListSSE)
@@ -296,6 +309,35 @@ func (h *Handlers) replySSE(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(ThreadDetail(*thread))
 	}
 	sse.PatchSignals([]byte(`{"emailReplyBody":"","emailReplyError":""}`))
+}
+
+// composeSSE sends a new email (compose) from form signals.
+func (h *Handlers) composeSSE(w http.ResponseWriter, r *http.Request) {
+	accountID := r.URL.Query().Get("account")
+	var signals struct {
+		To      string `json:"composeTo"`
+		Subject string `json:"composeSubject"`
+		Body    string `json:"composeBody"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("email: composeSSE ReadSignals: %v", err)
+	}
+	sse := datastar.NewSSE(w, r)
+	if h.composeCmd == nil {
+		sse.PatchSignals([]byte(`{"composeError":"compose not configured"}`))
+		return
+	}
+	if err := h.composeCmd.Handle(r.Context(), emailcommands.ComposeEmailCommand{
+		AccountID: accountID,
+		To:        signals.To,
+		Subject:   signals.Subject,
+		Body:      signals.Body,
+	}); err != nil {
+		slog.Error("email: composeSSE", "err", err)
+		sse.PatchSignals([]byte(`{"composeError":"` + smtpErrMsg(err) + `"}`))
+		return
+	}
+	sse.PatchSignals([]byte(`{"composeTo":"","composeSubject":"","composeBody":"","composeError":"","composeOpen":false}`))
 }
 
 // configureAccountSSE creates a new IMAP account from form signals.

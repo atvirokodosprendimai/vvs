@@ -391,7 +391,9 @@ func New(cfg Config) (*App, error) {
 	markReadCmd := emailcommands.NewMarkReadHandler(emailTagRepo, publisher)
 	linkCustomerCmd := emailcommands.NewLinkCustomerHandler(emailThreadRepo, publisher)
 	smtpSender := smtpAdapter.NewSender(emailEncKey)
+	imapAppender := imapAdapter.NewAppender(emailEncKey)
 	sendReplyCmd := emailcommands.NewSendReplyHandler(emailThreadRepo, emailMessageRepo, emailAccountRepo, smtpSender, publisher)
+	composeEmailCmd := emailcommands.NewComposeEmailHandler(emailAccountRepo, emailThreadRepo, emailMessageRepo, smtpSender, imapAppender, publisher)
 	listEmailThreadsQuery := emailqueries.NewListThreadsHandler(emailThreadRepo, emailTagRepo).
 		WithFolderRepo(emailFolderRepo)
 	getEmailThreadQuery := emailqueries.NewGetThreadHandler(emailThreadRepo, emailMessageRepo, emailAttachmentRepo, emailTagRepo)
@@ -430,7 +432,7 @@ func New(cfg Config) (*App, error) {
 		listEmailAccountsQuery, listFoldersQuery, emailFolderRepo, discoverFn,
 		emailAttachmentRepo,
 		subscriber, publisher,
-	).WithPageSize(cfg.EmailPageSize).WithSearchAttachments(searchAttachmentsQuery)
+	).WithPageSize(cfg.EmailPageSize).WithSearchAttachments(searchAttachmentsQuery).WithComposeCmd(composeEmailCmd)
 	moduleRoutes = append(moduleRoutes, emailRoutes)
 	if customerRoutes != nil {
 		customerRoutes.WithEmailThreadsQuery(listEmailForCustomerQuery)

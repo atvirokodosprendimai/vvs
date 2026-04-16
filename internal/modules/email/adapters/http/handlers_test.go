@@ -2,6 +2,7 @@ package http_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -11,9 +12,19 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	emailhttp "github.com/vvs/isp/internal/modules/email/adapters/http"
+	emailcommands "github.com/vvs/isp/internal/modules/email/app/commands"
 	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
 	"github.com/vvs/isp/internal/modules/email/domain"
 )
+
+// ── stub compose handler ──────────────────────────────────────────────────────
+
+type stubCompose struct{ lastCmd emailcommands.ComposeEmailCommand; err error }
+
+func (s *stubCompose) Handle(_ context.Context, cmd emailcommands.ComposeEmailCommand) error {
+	s.lastCmd = cmd
+	return s.err
+}
 
 // ── stub attachment repository ────────────────────────────────────────────────
 
@@ -53,6 +64,14 @@ func routerWith(h *emailhttp.Handlers) http.Handler {
 	r := chi.NewRouter()
 	h.RegisterRoutes(r)
 	return r
+}
+
+// datastarPost builds a POST request that sends Datastar signals as a JSON body.
+func datastarPost(t *testing.T, target, signalsJSON string) *http.Request {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, target, strings.NewReader(signalsJSON))
+	req.Header.Set("Content-Type", "application/json")
+	return req
 }
 
 // datastarGet builds a GET request that sends Datastar signals via ?datastar=<json>.
@@ -145,5 +164,66 @@ func TestAttachmentSearchSSE_SignalsInURL_NotQueryParam(t *testing.T) {
 	// Should NOT find report.pdf because q was not in the datastar signal param
 	if strings.Contains(body, "report.pdf") {
 		t.Fatalf("plain URL ?q= should NOT be read as a signal — use ?datastar= instead")
+	}
+}
+
+// ── compose SSE tests ─────────────────────────────────────────────────────────
+
+func newComposeHandlers(compose *stubCompose) *emailhttp.Handlers {
+	return emailhttp.NewHandlers(
+		nil, nil, nil, nil, nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil,
+		nil, nil, nil, nil, nil,
+	).WithComposeCmd(compose)
+}
+
+func TestComposeSSE_ContentType(t *testing.T) {
+	rr := httptest.NewRecorder()
+	req := datastarPost(t, "/api/emails/compose?account=acc1",
+		`{"composeTo":"bob@example.com","composeSubject":"Hi","composeBody":"Hello"}`)
+	routerWith(newComposeHandlers(&stubCompose{})).ServeHTTP(rr, req)
+
+	ct := rr.Header().Get("Content-Type")
+	if !strings.HasPrefix(ct, "text/event-stream") {
+		t.Fatalf("want text/event-stream, got %q", ct)
+	}
+}
+
+func TestComposeSSE_Success_ClearsSignals(t *testing.T) {
+	rr := httptest.NewRecorder()
+	req := datastarPost(t, "/api/emails/compose?account=acc1",
+		`{"composeTo":"bob@example.com","composeSubject":"Hi","composeBody":"Hello"}`)
+	routerWith(newComposeHandlers(&stubCompose{})).ServeHTTP(rr, req)
+
+	body := rr.Body.String()
+	if !strings.Contains(body, "composeTo") {
+		t.Fatalf("want signal reset in response, got:\n%s", body)
+	}
+}
+
+func TestComposeSSE_Error_PatchesErrorSignal(t *testing.T) {
+	compose := &stubCompose{err: fmt.Errorf("smtp connection refused")}
+	rr := httptest.NewRecorder()
+	req := datastarPost(t, "/api/emails/compose?account=acc1",
+		`{"composeTo":"bob@example.com","composeSubject":"Hi","composeBody":"Hello"}`)
+	routerWith(newComposeHandlers(compose)).ServeHTTP(rr, req)
+
+	body := rr.Body.String()
+	if !strings.Contains(body, "composeError") {
+		t.Fatalf("want composeError signal on failure, got:\n%s", body)
+	}
+}
+
+func TestComposeSSE_ReadsSignalsFromBody_NotURLParam(t *testing.T) {
+	// Regression: POST signals come from body, not URL query params.
+	stub := &stubCompose{}
+	rr := httptest.NewRecorder()
+	// Correct: signals in JSON body
+	req := datastarPost(t, "/api/emails/compose?account=acc1",
+		`{"composeTo":"carol@example.com","composeSubject":"Test","composeBody":"body text"}`)
+	routerWith(newComposeHandlers(stub)).ServeHTTP(rr, req)
+
+	if stub.lastCmd.To != "carol@example.com" {
+		t.Fatalf("want To=carol@example.com from body, got %q", stub.lastCmd.To)
 	}
 }
