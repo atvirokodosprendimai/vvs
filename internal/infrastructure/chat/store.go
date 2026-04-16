@@ -266,17 +266,29 @@ func (s *Store) ListPublicChannels(ctx context.Context) ([]Thread, error) {
 	return threads, nil
 }
 
-// Save inserts a new chat message.
+// Save inserts a new chat message and trims the thread to the last 50 messages.
 func (s *Store) Save(ctx context.Context, msg Message) error {
 	return s.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
-		return tx.Create(&msgModel{
+		if err := tx.Create(&msgModel{
 			ID:        msg.ID,
 			ThreadID:  msg.ThreadID,
 			UserID:    msg.UserID,
 			Username:  msg.Username,
 			Body:      msg.Body,
 			CreatedAt: msg.CreatedAt,
-		}).Error
+		}).Error; err != nil {
+			return err
+		}
+		return tx.Exec(`
+			DELETE FROM chat_messages
+			WHERE thread_id = ?
+			  AND id NOT IN (
+			    SELECT id FROM chat_messages
+			    WHERE thread_id = ?
+			    ORDER BY created_at DESC
+			    LIMIT 50
+			  )
+		`, msg.ThreadID, msg.ThreadID).Error
 	})
 }
 
