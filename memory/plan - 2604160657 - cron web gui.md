@@ -1,6 +1,6 @@
 ---
 tldr: Web UI for cron job management — list, add, pause/resume/delete — matching CLI functionality
-status: active
+status: completed
 ---
 
 # Plan: Cron Web GUI
@@ -69,9 +69,9 @@ DELETE /api/cron/{id}       — soft-delete
 
 ## Phases
 
-### Phase 1 — HTTP adapter + templates - status: open
+### Phase 1 — HTTP adapter + templates - status: completed
 
-1. [ ] `internal/modules/cron/adapters/http/handlers.go`
+1. [x] `internal/modules/cron/adapters/http/handlers.go`
    - `CronHandlers` struct with ListJobs, AddJob, PauseJob, ResumeJob, DeleteJob handlers
    - `listPage` — renders CronListPage with all jobs
    - `listSSE` — SSE: ListJobs → CronTable fragment → MergeFragments
@@ -79,19 +79,20 @@ DELETE /api/cron/{id}       — soft-delete
    - `pauseJob`, `resumeJob`, `deleteJob` — mutate + re-render table via SSE
    - `RegisterRoutes(r chi.Router)`
 
-2. [ ] `internal/modules/cron/adapters/http/templates.templ`
+2. [x] `internal/modules/cron/adapters/http/templates.templ`
    - `CronListPage` — uses `@templates.Layout("Cron Jobs")`
    - `CronTable` — the SSE-patchable `#cron-table` fragment
    - Status badge (active=green/orange, paused=yellow, deleted=grey)
    - Add modal — `data-show` signals per type to show/hide relevant fields
 
-### Phase 2 — Wiring + nav - status: open
+### Phase 2 — Wiring + nav - status: completed
 
-3. [ ] `layout.templ` — add Cron nav item (clock icon) between Devices and Users
+3. [x] `layout.templ` — clock icon nav item between Devices and Users
+   - => `cronIcon()` — Heroicons clock SVG
 
-4. [ ] `app.go` — create `CronHandlers`, append to `moduleRoutes`
+4. [x] `app.go` — CronHandlers wired, always-enabled (no module flag)
 
-5. [ ] `templ generate && go build ./...` — verify clean
+5. [x] `templ generate && go build ./...` — clean
 
 ---
 
@@ -111,3 +112,4 @@ DELETE /api/cron/{id}       — soft-delete
 | Timestamp | Entry |
 |-----------|-------|
 | 2604160657 | Plan created |
+| 2604160657 | Implemented and committed f70039d |
