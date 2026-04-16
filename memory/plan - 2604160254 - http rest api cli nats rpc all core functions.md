@@ -1,6 +1,6 @@
 ---
 title: HTTP REST API + CLI + NATS RPC for all core functions
-status: active
+status: completed
 created: 2604160254
 ---
 
@@ -179,66 +179,55 @@ cmd/server/main.go             — wrap existing action into `serve` subcommand;
 ## Phases
 
 ### Phase 1 — Foundation (config + JSON helpers + auth middleware)
-**Status:** open
+**Status:** completed
 
 #### Actions
-- [ ] 1a. Add `APIToken` field to `Config` + `--api-token` / `VVS_API_TOKEN` flag
-  - File: `internal/app/config.go`, `cmd/server/main.go`
-- [ ] 1b. Create `internal/infrastructure/http/jsonapi/response.go`
-  - `WriteJSON(w, status, v)`, `WriteError(w, status, msg)`, envelope type
-- [ ] 1c. Create `internal/infrastructure/http/apimw/token.go`
-  - Reads `Authorization: Bearer <token>`, compares with config token, 401 on mismatch
-- [ ] 1d. Register `/api/v1` route group in router with token middleware
-  - File: `internal/infrastructure/http/router.go`
-  - Pass token string into `NewRouter`
+- [x] 1a. Add `APIToken` field to `Config` + `--api-token` / `VVS_API_TOKEN` flag
+  - => `internal/app/config.go`, `cmd/server/main.go`
+- [x] 1b. Create `internal/infrastructure/http/jsonapi/response.go`
+  - => `WriteJSON`, `WriteError`, `WriteNotFound`, `WriteBadRequest` helpers
+- [x] 1c. Create `internal/infrastructure/http/apimw/token.go`
+  - => Returns 503 if token empty (API disabled); 401 on mismatch
+- [x] 1d. Register `/api/v1` route group in router with token middleware
+  - => Added `APIRoutes` + `RPCDispatcher` interfaces to `router.go`
 
 ### Phase 2 — REST API handlers (per module)
-**Status:** open
+**Status:** completed
 
 #### Actions
-- [ ] 2a. `internal/modules/customer/adapters/http/api.go` — 5 endpoints
-  - Handlers struct reuse: inject same command/query handlers already on `Handlers`
-  - Or: new `APIHandlers` struct (preferred — clean separation)
-- [ ] 2b. `internal/modules/product/adapters/http/api.go` — 5 endpoints
-- [ ] 2c. `internal/modules/network/adapters/http/api.go` — 6 endpoints (CRUD + sync-arp)
-- [ ] 2d. `internal/modules/service/adapters/http/api.go` — 5 endpoints
-- [ ] 2e. `internal/modules/auth/adapters/http/api.go` — 3 endpoints (list/create/delete user)
-- [ ] 2f. Wire API handlers into router's `/api/v1/` group
-  - File: `internal/infrastructure/http/router.go`, `internal/app/app.go`
+- [x] 2a. `internal/modules/customer/adapters/http/api.go` — 5 endpoints
+- [x] 2b. `internal/modules/product/adapters/http/api.go` — 5 endpoints
+- [x] 2c. `internal/modules/network/adapters/http/api.go` — 6 endpoints (CRUD + sync-arp)
+- [x] 2d. `internal/modules/service/adapters/http/api.go` — 5 endpoints
+  - => ErrInvalidTransition → 409 Conflict
+- [x] 2e. `internal/modules/auth/adapters/http/api.go` — 3 endpoints (list/create/delete user)
+- [x] 2f. Wire API handlers into router's `/api/v1/` group via `RegisterAPIRoutes`
 
 ### Phase 3 — NATS RPC server
-**Status:** open
+**Status:** completed
 
 #### Actions
-- [ ] 3a. Create `internal/infrastructure/nats/rpc/handler.go`
-  - `RPCRequest{Payload []byte}`, `RPCResponse{Data []byte, Error string}`
-  - `Handle(subject, fn func([]byte)([]byte, error))` helper — subscribes, decodes, encodes, replies
-- [ ] 3b. Create `internal/infrastructure/nats/rpc/server.go`
-  - `RPCServer` struct holding all command/query handlers
-  - `Register()` method subscribes all 24 subjects
-  - `Close()` unsubscribes all
-- [ ] 3c. Wire `RPCServer` into `app.go`
-  - Started in `Build()` alongside the HTTP server
-  - Closed on shutdown
-  - Only active when NATS is connected
+- [x] 3a. (merged into server.go — no separate handler.go needed)
+- [x] 3b. Create `internal/infrastructure/nats/rpc/server.go`
+  - => 24 subjects: `isp.rpc.{module}.{action}`
+  - => `Dispatch()` also used for HTTP `/api/v1/rpc/*` fallback — no duplication
+- [x] 3c. Wire `RPCServer` into `app.go`
+  - => `syncARPCmd` hoisted outside `if cfg.IsEnabled("network")` block
 
 ### Phase 4 — CLI subcommands
-**Status:** open
+**Status:** completed
 
 #### Actions
-- [ ] 4a. Create `cmd/server/cli_transport.go`
-  - `Transport` interface: `Do(ctx, subject string, req, resp any) error`
-  - `NATSTransport` (uses `nc.RequestWithContext`, encodes/decodes JSON)
-  - `HTTPTransport` (uses `http.Client`, hits `/api/v1/`, passes `Authorization: Bearer`)
-  - Factory: `NewTransport(cfg)` — NATS if `--nats-url` set, else HTTP
-- [ ] 4b. Refactor `cmd/server/main.go`
-  - Wrap existing server start into `vvs serve` subcommand
-  - Add global flags: `--nats-url`, `--api-url`, `--api-token` (for CLI mode)
-- [ ] 4c. `cmd/server/cli_customer.go` — `vvs customer {list,get,create,update,delete}`
-- [ ] 4d. `cmd/server/cli_product.go` — `vvs product {list,get,create,update,delete}`
-- [ ] 4e. `cmd/server/cli_router.go` — `vvs router {list,get,create,update,delete,sync-arp}`
-- [ ] 4f. `cmd/server/cli_service.go` — `vvs service {list,assign,suspend,reactivate,cancel}`
-- [ ] 4g. `cmd/server/cli_user.go` — `vvs user {list,create,delete}`
+- [x] 4a. Create `cmd/server/cli_transport.go`
+  - => `natsTransport` → `isp.rpc.{subject}` request/reply
+  - => `httpTransport` → `POST /api/v1/rpc/{subject}` with Bearer token
+- [x] 4b. Refactor `cmd/server/main.go`
+  - => `vvs serve` subcommand; global flags `--nats-url`, `--api-url`, `--api-token`
+- [x] 4c. `cmd/server/cli_customer.go` — list, get, create, update, delete
+- [x] 4d. `cmd/server/cli_product.go` — list, get, create, update, delete
+- [x] 4e. `cmd/server/cli_router.go` — list, get, create, update, delete, sync-arp
+- [x] 4f. `cmd/server/cli_service.go` — list, assign, suspend, reactivate, cancel
+- [x] 4g. `cmd/server/cli_user.go` — list, create, delete
 
 ---
 
@@ -275,3 +264,4 @@ cmd/server/main.go             — wrap existing action into `serve` subcommand;
 | Timestamp | Entry |
 |-----------|-------|
 | 2604160254 | Plan created |
+| 2604161030 | All 4 phases complete — `go build ./...` clean, 7 new files in cmd/server, 8 new api.go adapters, NATS RPC server with 24 subjects, REST /api/v1/ with bearer token |
