@@ -2,13 +2,9 @@ package commands
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
-	"errors"
-	"io"
 
 	"github.com/google/uuid"
+	"github.com/vvs/isp/internal/modules/email/emailcrypto"
 	"github.com/vvs/isp/internal/modules/email/domain"
 	"github.com/vvs/isp/internal/shared/events"
 )
@@ -40,7 +36,7 @@ func NewConfigureAccountHandler(repo domain.EmailAccountRepository, pub events.E
 }
 
 func (h *ConfigureAccountHandler) Handle(ctx context.Context, cmd ConfigureAccountCommand) (*domain.EmailAccount, error) {
-	enc, err := encryptAES(h.encKey, []byte(cmd.Password))
+	enc, err := emailcrypto.EncryptPassword(h.encKey, []byte(cmd.Password))
 	if err != nil {
 		return nil, err
 	}
@@ -99,48 +95,7 @@ func (h *ConfigureAccountHandler) Handle(ctx context.Context, cmd ConfigureAccou
 }
 
 // DecryptPassword decrypts an AES-256-GCM encrypted password.
+// Kept for backward compatibility; delegates to emailcrypto.DecryptPassword.
 func DecryptPassword(key, ciphertext []byte) ([]byte, error) {
-	return decryptAES(key, ciphertext)
-}
-
-func encryptAES(key, plaintext []byte) ([]byte, error) {
-	if len(key) == 0 {
-		return plaintext, nil // no key configured — store as-is (dev mode)
-	}
-	if len(key) != 32 {
-		return nil, errors.New("email: AES key must be 32 bytes")
-	}
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-	nonce := make([]byte, gcm.NonceSize())
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, err
-	}
-	return gcm.Seal(nonce, nonce, plaintext, nil), nil
-}
-
-func decryptAES(key, ciphertext []byte) ([]byte, error) {
-	if len(key) == 0 {
-		return ciphertext, nil
-	}
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-	nonceSize := gcm.NonceSize()
-	if len(ciphertext) < nonceSize {
-		return nil, errors.New("email: ciphertext too short")
-	}
-	nonce, ct := ciphertext[:nonceSize], ciphertext[nonceSize:]
-	return gcm.Open(nil, nonce, ct, nil)
+	return emailcrypto.DecryptPassword(key, ciphertext)
 }

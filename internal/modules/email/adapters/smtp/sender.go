@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	emailcommands "github.com/vvs/isp/internal/modules/email/app/commands"
+	"github.com/vvs/isp/internal/modules/email/emailcrypto"
 	"github.com/vvs/isp/internal/modules/email/domain"
 )
 
@@ -50,7 +50,7 @@ func BuildMessage(account *domain.EmailAccount, to, subject, body, inReplyTo, re
 }
 
 func (s *Sender) Send(_ context.Context, account *domain.EmailAccount, to, subject, body, inReplyTo, references string) error {
-	password, err := emailcommands.DecryptPassword(s.encKey, account.PasswordEnc)
+	password, err := emailcrypto.DecryptPassword(s.encKey, account.PasswordEnc)
 	if err != nil {
 		return fmt.Errorf("smtp: decrypt password: %w", err)
 	}
