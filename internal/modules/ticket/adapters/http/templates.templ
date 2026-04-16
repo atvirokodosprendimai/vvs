@@ -27,10 +27,9 @@ templ TicketSection(customerID string, tickets []queries.TicketReadModel) {
 			</button>
 		</div>
 
-		<!-- Live SSE container -->
+		<!-- Live SSE container (populated by combined /sse/customers/{id}/crm) -->
 		<div
 			id="customer-tickets"
-			data-init={ fmt.Sprintf("@get('/sse/customers/%s/tickets')", customerID) }
 		>
 			@TicketList(customerID, tickets)
 		</div>

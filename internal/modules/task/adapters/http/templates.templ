@@ -29,10 +29,9 @@ templ TaskSection(customerID string, tasks []queries.TaskReadModel) {
 			</button>
 		</div>
 
-		<!-- Live SSE container -->
+		<!-- Live SSE container (populated by combined /sse/customers/{id}/crm) -->
 		<div
 			id="customer-tasks"
-			data-init={ fmt.Sprintf("@get('/sse/customers/%s/tasks')", customerID) }
 		>
 			@TaskList(customerID, tasks)
 		</div>

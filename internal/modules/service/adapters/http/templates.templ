@@ -27,10 +27,9 @@ templ ServiceSection(customerID string, services []queries.ServiceReadModel) {
 			</button>
 		</div>
 
-		<!-- Live SSE container -->
+		<!-- Live SSE container (populated by combined /sse/customers/{id}/crm) -->
 		<div
 			id="customer-services"
-			data-init={ fmt.Sprintf("@get('/sse/customers/%s/services')", customerID) }
 		>
 			@ServiceTable(customerID, services)
 		</div>

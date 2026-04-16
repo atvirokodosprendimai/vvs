@@ -21,6 +21,11 @@ import (
 	ticketQueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
 	taskQueries "github.com/vvs/isp/internal/modules/task/app/queries"
 	serviceQueries "github.com/vvs/isp/internal/modules/service/app/queries"
+	servicehttp "github.com/vvs/isp/internal/modules/service/adapters/http"
+	contacthttp "github.com/vvs/isp/internal/modules/contact/adapters/http"
+	dealhttp "github.com/vvs/isp/internal/modules/deal/adapters/http"
+	tickethttp "github.com/vvs/isp/internal/modules/ticket/adapters/http"
+	taskhttp "github.com/vvs/isp/internal/modules/task/adapters/http"
 	"github.com/vvs/isp/internal/shared/events"
 )
 
@@ -123,6 +128,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Delete("/api/customers/{id}", h.deleteSSE)
 	r.Post("/api/customers/{id}/arp", h.arpSSE)
 	r.Post("/api/customers/{id}/status", h.changeStatusSSE)
+	r.Get("/sse/customers/{id}/crm", h.crmLiveSSE)
 	r.Get("/sse/customers/{id}/notes", h.listNotesSSE)
 	r.Post("/api/customers/{id}/notes", h.addNoteSSE)
 }
@@ -401,6 +407,81 @@ func (h *Handlers) changeStatusSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sse.Redirect("/customers/" + id)
+}
+
+// crmLiveSSE is a single combined SSE stream for all 5 CRM sections on the
+// customer detail page. Using one stream instead of 5 keeps us under the
+// browser HTTP/1.1 per-domain connection limit of 6.
+func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
+	customerID := chi.URLParam(r, "id")
+	sse := datastar.NewSSE(w, r)
+
+	// Broad wildcard — any ISP event triggers a diff-and-patch cycle.
+	ch, cancel := h.subscriber.ChanSubscription("isp.>")
+	defer cancel()
+
+	type state struct {
+		services []serviceQueries.ServiceReadModel
+		contacts []contactQueries.ContactReadModel
+		deals    []dealQueries.DealReadModel
+		tickets  []ticketQueries.TicketReadModel
+		tasks    []taskQueries.TaskReadModel
+	}
+
+	queryAll := func() state {
+		var s state
+		if h.listServicesQuery != nil {
+			s.services, _ = h.listServicesQuery.Handle(r.Context(), serviceQueries.ListServicesForCustomerQuery{CustomerID: customerID})
+		}
+		if h.listContactsQuery != nil {
+			s.contacts, _ = h.listContactsQuery.Handle(r.Context(), contactQueries.ListContactsForCustomerQuery{CustomerID: customerID})
+		}
+		if h.listDealsQuery != nil {
+			s.deals, _ = h.listDealsQuery.Handle(r.Context(), dealQueries.ListDealsForCustomerQuery{CustomerID: customerID})
+		}
+		if h.listTicketsQuery != nil {
+			s.tickets, _ = h.listTicketsQuery.Handle(r.Context(), ticketQueries.ListTicketsForCustomerQuery{CustomerID: customerID})
+		}
+		if h.listTasksQuery != nil {
+			s.tasks, _ = h.listTasksQuery.Handle(r.Context(), taskQueries.ListTasksForCustomerQuery{CustomerID: customerID})
+		}
+		return s
+	}
+
+	cur := queryAll()
+	sse.PatchElementTempl(servicehttp.ServiceTable(customerID, cur.services))
+	sse.PatchElementTempl(contacthttp.ContactList(customerID, cur.contacts))
+	sse.PatchElementTempl(dealhttp.DealList(customerID, cur.deals))
+	sse.PatchElementTempl(tickethttp.TicketList(customerID, cur.tickets))
+	sse.PatchElementTempl(taskhttp.TaskList(customerID, cur.tasks))
+
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				return
+			}
+			next := queryAll()
+			if !reflect.DeepEqual(cur.services, next.services) {
+				sse.PatchElementTempl(servicehttp.ServiceTable(customerID, next.services))
+			}
+			if !reflect.DeepEqual(cur.contacts, next.contacts) {
+				sse.PatchElementTempl(contacthttp.ContactList(customerID, next.contacts))
+			}
+			if !reflect.DeepEqual(cur.deals, next.deals) {
+				sse.PatchElementTempl(dealhttp.DealList(customerID, next.deals))
+			}
+			if !reflect.DeepEqual(cur.tickets, next.tickets) {
+				sse.PatchElementTempl(tickethttp.TicketList(customerID, next.tickets))
+			}
+			if !reflect.DeepEqual(cur.tasks, next.tasks) {
+				sse.PatchElementTempl(taskhttp.TaskList(customerID, next.tasks))
+			}
+			cur = next
+		case <-r.Context().Done():
+			return
+		}
+	}
 }
 
 func (h *Handlers) listNotesSSE(w http.ResponseWriter, r *http.Request) {

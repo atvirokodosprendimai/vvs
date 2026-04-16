@@ -27,10 +27,9 @@ templ DealSection(customerID string, deals []queries.DealReadModel) {
 			</button>
 		</div>
 
-		<!-- Live SSE container -->
+		<!-- Live SSE container (populated by combined /sse/customers/{id}/crm) -->
 		<div
 			id="customer-deals"
-			data-init={ fmt.Sprintf("@get('/sse/customers/%s/deals')", customerID) }
 		>
 			@DealList(customerID, deals)
 		</div>

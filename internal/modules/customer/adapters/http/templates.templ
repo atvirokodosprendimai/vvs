@@ -324,6 +324,7 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 				}
 			}
 		</div>
+		<div data-init={ fmt.Sprintf("@get('/sse/customers/%s/crm')", c.ID) }></div>
 		@servicehttp.ServiceSection(c.ID, services)
 		@contacthttp.ContactSection(c.ID, contacts)
 		@dealhttp.DealSection(c.ID, deals)

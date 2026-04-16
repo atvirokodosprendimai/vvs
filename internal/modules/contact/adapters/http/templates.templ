@@ -25,7 +25,6 @@ templ ContactSection(customerID string, contacts []queries.ContactReadModel) {
 
 		<div
 			id="customer-contacts"
-			data-init={ fmt.Sprintf("@get('/sse/customers/%s/contacts')", customerID) }
 		>
 			@ContactList(customerID, contacts)
 		</div>
