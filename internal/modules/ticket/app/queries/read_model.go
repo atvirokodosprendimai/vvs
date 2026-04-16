@@ -11,6 +11,7 @@ type TicketReadModel struct {
 	Status     string
 	Priority   string
 	AssigneeID string
+	Comments   []CommentReadModel
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }

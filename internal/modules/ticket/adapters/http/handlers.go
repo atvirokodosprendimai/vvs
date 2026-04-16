@@ -251,9 +251,12 @@ func (h *Handlers) addCommentSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Clear signal and patch the specific textarea element (keyed by ticket ID).
+	// Clear signal and textarea, then re-render the comment section with updated list.
 	sse.PatchSignals([]byte(`{"commentBody":""}`))
 	sse.PatchElementTempl(commentInput(ticketID))
+	if comments, err := h.listComments.Handle(r.Context(), queries.ListCommentsQuery{TicketID: ticketID}); err == nil {
+		sse.PatchElementTempl(ticketCommentSection(ticketID, comments))
+	}
 }
 
 // listCommentsSSE streams the comment list for a ticket, refreshing on comment events.

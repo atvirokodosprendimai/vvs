@@ -198,16 +198,19 @@ templ ticketRow(tk queries.TicketReadModel) {
 					Delete
 				</button>
 			</div>
-			<!-- Inline comment section for this ticket -->
-			<div class="mt-2 flex gap-2 items-start">
-				@commentInput(tk.ID)
-				<button
-					type="button"
-					data-on:click={ fmt.Sprintf("@post('/api/tickets/%s/comments')", tk.ID) }
-					class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-slate-600 whitespace-nowrap"
-				>
-					Comment
-				</button>
+			<!-- Comments for this ticket -->
+			<div class="mt-2">
+				@ticketCommentSection(tk.ID, tk.Comments)
+				<div class="flex gap-2 items-start mt-1">
+					@commentInput(tk.ID)
+					<button
+						type="button"
+						data-on:click={ fmt.Sprintf("@post('/api/tickets/%s/comments')", tk.ID) }
+						class="bg-slate-700 hover:bg-slate-600 text-slate-300 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-slate-600 whitespace-nowrap"
+					>
+						Comment
+					</button>
+				</div>
 			</div>
 		</td>
 	</tr>
@@ -259,6 +262,23 @@ templ ticketStatusBadge(status string) {
 		default:
 			<span class="px-2 py-0.5 text-xs font-medium rounded bg-slate-700/50 text-slate-400 border border-slate-700">{ status }</span>
 	}
+}
+
+// ticketCommentSection renders the comment list for one ticket, patchable by ID.
+// The addCommentSSE handler patches this element after a comment is submitted.
+templ ticketCommentSection(ticketID string, comments []queries.CommentReadModel) {
+	<div id={ fmt.Sprintf("ticket-comments-%s", ticketID) }>
+		if len(comments) > 0 {
+			<div class="flex flex-col gap-1 mb-1">
+				for _, c := range comments {
+					<div class="bg-slate-800/60 border border-slate-700/50 rounded px-2 py-1">
+						<p class="text-xs text-slate-300">{ c.Body }</p>
+						<p class="text-xs text-slate-600 mt-0.5">{ c.CreatedAt.Format("Jan 2, 15:04") }</p>
+					</div>
+				}
+			</div>
+		}
+	</div>
 }
 
 // commentInput is a standalone textarea keyed by ticketID.

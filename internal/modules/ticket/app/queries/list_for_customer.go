@@ -25,6 +25,17 @@ func (h *ListTicketsForCustomerHandler) Handle(ctx context.Context, q ListTicket
 	}
 	out := make([]TicketReadModel, len(tickets))
 	for i, t := range tickets {
+		comments, _ := h.repo.ListComments(ctx, t.ID)
+		cms := make([]CommentReadModel, len(comments))
+		for j, c := range comments {
+			cms[j] = CommentReadModel{
+				ID:        c.ID,
+				TicketID:  c.TicketID,
+				Body:      c.Body,
+				AuthorID:  c.AuthorID,
+				CreatedAt: c.CreatedAt,
+			}
+		}
 		out[i] = TicketReadModel{
 			ID:         t.ID,
 			CustomerID: t.CustomerID,
@@ -33,6 +44,7 @@ func (h *ListTicketsForCustomerHandler) Handle(ctx context.Context, q ListTicket
 			Status:     t.Status,
 			Priority:   t.Priority,
 			AssigneeID: t.AssigneeID,
+			Comments:   cms,
 			CreatedAt:  t.CreatedAt,
 			UpdatedAt:  t.UpdatedAt,
 		}
