@@ -324,14 +324,16 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 				}
 			}
 		</div>
-		<div data-init={ fmt.Sprintf("@get('/sse/customers/%s/crm')", c.ID) }></div>
-		@servicehttp.ServiceSection(c.ID, services)
-		@contacthttp.ContactSection(c.ID, contacts)
-		@dealhttp.DealSection(c.ID, deals)
-		@tickethttp.TicketSection(c.ID, tickets)
-		@taskhttp.TaskSection(c.ID, tasks)
+		<div class="max-w-4xl">
+			<div data-init={ fmt.Sprintf("@get('/sse/customers/%s/crm')", c.ID) }></div>
+			@servicehttp.ServiceSection(c.ID, services)
+			@contacthttp.ContactSection(c.ID, contacts)
+			@dealhttp.DealSection(c.ID, deals)
+			@tickethttp.TicketSection(c.ID, tickets)
+			@taskhttp.TaskSection(c.ID, tasks)
+		</div>
 		<!-- Notes timeline -->
-		<div class="max-w-2xl mt-6">
+		<div class="max-w-2xl mt-4">
 			<div class="flex items-center justify-between mb-3">
 				<h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Notes</h3>
 			</div>

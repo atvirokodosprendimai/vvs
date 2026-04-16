@@ -13,21 +13,20 @@ import (
 templ DealSection(customerID string, deals []queries.DealReadModel) {
 	<div
 		data-signals="{_dealModalOpen: false, _dealId: '', dealTitle: '', dealValue: '', dealCurrency: 'EUR', dealStage: 'new', dealNotes: '', dealAdvanceAction: ''}"
-		class="mt-8"
+		class="mt-4 bg-slate-900 border border-slate-800 rounded-lg overflow-hidden"
 	>
 		<!-- Section header -->
-		<div class="flex items-center justify-between mb-4">
-			<h2 class="text-base font-semibold text-slate-200">Deals</h2>
+		<div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+			<h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Deals</h2>
 			<button
 				type="button"
 				data-on:click="$_dealId = ''; $dealTitle = ''; $dealValue = ''; $dealCurrency = 'EUR'; $dealNotes = ''; $_dealModalOpen = true"
 				class="bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
 			>
-				+ Add Deal
+				+ Add
 			</button>
 		</div>
 
-		<!-- Live SSE container (populated by combined /sse/customers/{id}/crm) -->
 		<div
 			id="customer-deals"
 		>
@@ -131,27 +130,25 @@ templ DealSection(customerID string, deals []queries.DealReadModel) {
 templ DealList(customerID string, deals []queries.DealReadModel) {
 	<div id="customer-deals">
 		if len(deals) == 0 {
-			<div class="flex flex-col items-center justify-center py-12 text-slate-600 bg-slate-900 border border-slate-800 rounded-lg">
+			<div class="flex flex-col items-center justify-center py-10 text-slate-600">
 				<p class="text-sm">No deals yet.</p>
 			</div>
 		} else {
-			<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-				<table class="w-full">
-					<thead>
-						<tr class="border-b border-slate-800">
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Title</th>
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Value</th>
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Stage</th>
-							<th class="text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Actions</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-slate-800">
-						for _, deal := range deals {
-							@dealRow(customerID, deal)
-						}
-					</tbody>
-				</table>
-			</div>
+			<table class="w-full">
+				<thead>
+					<tr class="border-b border-slate-800">
+						<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Title</th>
+						<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Value</th>
+						<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Stage</th>
+						<th class="text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Actions</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-slate-800">
+					for _, deal := range deals {
+						@dealRow(customerID, deal)
+					}
+				</tbody>
+			</table>
 		}
 	</div>
 }
