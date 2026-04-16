@@ -8,11 +8,16 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v3"
 	"github.com/vvs/isp/internal/app"
 )
 
 func main() {
+	if err := godotenv.Load(); err == nil {
+		log.Println("Loaded config from .env")
+	}
+
 	cmd := &cli.Command{
 		Name:  "vvs",
 		Usage: "VVS ISP Business Management System",

@@ -1,6 +1,6 @@
 ---
 tldr: If a .env file exists in the working directory, load it into the environment before CLI flag parsing
-status: active
+status: completed
 ---
 
 # Plan: Load .env file if present
@@ -12,15 +12,15 @@ No `.env` support currently — dev must export vars manually or wrap in a shell
 
 ## Phases
 
-### Phase 1 - Implement - status: open
+### Phase 1 - Implement - status: completed
 
-1. [ ] Add `github.com/joho/godotenv` dependency
-   - `go get github.com/joho/godotenv`
+1. [x] Add `github.com/joho/godotenv` dependency
+   - => `github.com/joho/godotenv v1.5.1`
 
-2. [ ] Load `.env` in `main()` before CLI runs
-   - call `godotenv.Load()` (no-op if file absent — returns error only if file exists but is malformed)
-   - log a line when a `.env` file is successfully loaded
-   - add `.env` to `.gitignore` (keep secrets out of git)
+2. [x] Load `.env` in `main()` before CLI runs
+   - => `godotenv.Load()` called at top of `main()` — no-op if file absent
+   - => logs "Loaded config from .env" on success
+   - => `.gitignore` already had `.env` and `.env.*` entries
 
 ## Verification
 
@@ -32,3 +32,5 @@ No `.env` support currently — dev must export vars manually or wrap in a shell
 ## Adjustments
 
 ## Progress Log
+
+- 2604161815 Phase 1 complete — godotenv added, loaded at top of main()
