@@ -44,6 +44,10 @@ import (
 	devicecommands "github.com/vvs/isp/internal/modules/device/app/commands"
 	devicequeries "github.com/vvs/isp/internal/modules/device/app/queries"
 	devicedomain "github.com/vvs/isp/internal/modules/device/domain"
+
+	croncommands "github.com/vvs/isp/internal/modules/cron/app/commands"
+	cronqueries "github.com/vvs/isp/internal/modules/cron/app/queries"
+	crondomain "github.com/vvs/isp/internal/modules/cron/domain"
 )
 
 type envelope struct {
@@ -99,6 +103,14 @@ type Server struct {
 	returnDevice     *devicecommands.ReturnDeviceHandler
 	decommissionDevice *devicecommands.DecommissionDeviceHandler
 	updateDevice     *devicecommands.UpdateDeviceHandler
+
+	// cron
+	listJobs   *cronqueries.ListJobsHandler
+	getJob     *cronqueries.GetJobHandler
+	addJob     *croncommands.AddJobHandler
+	pauseJob   *croncommands.PauseJobHandler
+	resumeJob  *croncommands.ResumeJobHandler
+	deleteJob  *croncommands.DeleteJobHandler
 }
 
 type Config struct {
@@ -138,6 +150,13 @@ type Config struct {
 	ReturnDevice       *devicecommands.ReturnDeviceHandler
 	DecommissionDevice *devicecommands.DecommissionDeviceHandler
 	UpdateDevice       *devicecommands.UpdateDeviceHandler
+
+	ListJobs  *cronqueries.ListJobsHandler
+	GetJob    *cronqueries.GetJobHandler
+	AddJob    *croncommands.AddJobHandler
+	PauseJob  *croncommands.PauseJobHandler
+	ResumeJob *croncommands.ResumeJobHandler
+	DeleteJob *croncommands.DeleteJobHandler
 }
 
 func New(nc *nats.Conn, cfg Config) *Server {
@@ -175,6 +194,13 @@ func New(nc *nats.Conn, cfg Config) *Server {
 		returnDevice:       cfg.ReturnDevice,
 		decommissionDevice: cfg.DecommissionDevice,
 		updateDevice:       cfg.UpdateDevice,
+
+		listJobs:  cfg.ListJobs,
+		getJob:    cfg.GetJob,
+		addJob:    cfg.AddJob,
+		pauseJob:  cfg.PauseJob,
+		resumeJob: cfg.ResumeJob,
+		deleteJob: cfg.DeleteJob,
 	}
 }
 
@@ -218,6 +244,13 @@ func (s *Server) handlers() map[string]func(context.Context, []byte) (any, error
 		"isp.rpc.device.return":       s.handleDeviceReturn,
 		"isp.rpc.device.decommission": s.handleDeviceDecommission,
 		"isp.rpc.device.update":       s.handleDeviceUpdate,
+		// cron
+		"isp.rpc.cron.list":   s.handleCronList,
+		"isp.rpc.cron.get":    s.handleCronGet,
+		"isp.rpc.cron.add":    s.handleCronAdd,
+		"isp.rpc.cron.pause":  s.handleCronPause,
+		"isp.rpc.cron.resume": s.handleCronResume,
+		"isp.rpc.cron.delete": s.handleCronDelete,
 	}
 }
 
@@ -615,4 +648,72 @@ func (s *Server) handleDeviceUpdate(ctx context.Context, payload []byte) (any, e
 		return nil, errors.New("not found")
 	}
 	return d, err
+}
+
+// ── cron ─────────────────────────────────────────────────────────────────────
+
+func (s *Server) handleCronList(ctx context.Context, _ []byte) (any, error) {
+	return s.listJobs.Handle(ctx)
+}
+
+func (s *Server) handleCronGet(ctx context.Context, payload []byte) (any, error) {
+	var req struct{ ID string `json:"id"` }
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	j, err := s.getJob.Handle(ctx, req.ID)
+	if errors.Is(err, crondomain.ErrNotFound) {
+		return nil, errors.New("not found")
+	}
+	return j, err
+}
+
+func (s *Server) handleCronAdd(ctx context.Context, payload []byte) (any, error) {
+	var req croncommands.AddJobCommand
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	return s.addJob.Handle(ctx, req)
+}
+
+func (s *Server) handleCronPause(ctx context.Context, payload []byte) (any, error) {
+	var req struct{ ID string `json:"id"` }
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	err := s.pauseJob.Handle(ctx, croncommands.PauseJobCommand{ID: req.ID})
+	if errors.Is(err, crondomain.ErrNotFound) {
+		return nil, errors.New("not found")
+	}
+	if errors.Is(err, crondomain.ErrInvalidTransition) {
+		return nil, errors.New("invalid status transition")
+	}
+	return nil, err
+}
+
+func (s *Server) handleCronResume(ctx context.Context, payload []byte) (any, error) {
+	var req struct{ ID string `json:"id"` }
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	err := s.resumeJob.Handle(ctx, croncommands.ResumeJobCommand{ID: req.ID})
+	if errors.Is(err, crondomain.ErrNotFound) {
+		return nil, errors.New("not found")
+	}
+	if errors.Is(err, crondomain.ErrInvalidTransition) {
+		return nil, errors.New("invalid status transition")
+	}
+	return nil, err
+}
+
+func (s *Server) handleCronDelete(ctx context.Context, payload []byte) (any, error) {
+	var req struct{ ID string `json:"id"` }
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	err := s.deleteJob.Handle(ctx, croncommands.DeleteJobCommand{ID: req.ID})
+	if errors.Is(err, crondomain.ErrNotFound) {
+		return nil, errors.New("not found")
+	}
+	return nil, err
 }

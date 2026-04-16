@@ -64,6 +64,11 @@ import (
 	devicecommands "github.com/vvs/isp/internal/modules/device/app/commands"
 	devicequeries "github.com/vvs/isp/internal/modules/device/app/queries"
 	devicemigrations "github.com/vvs/isp/internal/modules/device/migrations"
+
+	cronpersistence "github.com/vvs/isp/internal/modules/cron/adapters/persistence"
+	croncommands "github.com/vvs/isp/internal/modules/cron/app/commands"
+	cronqueries "github.com/vvs/isp/internal/modules/cron/app/queries"
+	cronmigrations "github.com/vvs/isp/internal/modules/cron/migrations"
 )
 
 type App struct {
@@ -97,6 +102,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "chat", FS: chatmigrations.FS, TableName: "goose_chat"},
 		{Name: "service", FS: servicemigrations.FS, TableName: "goose_service"},
 		{Name: "device", FS: devicemigrations.FS, TableName: "goose_device"},
+		{Name: "cron", FS: cronmigrations.FS, TableName: "goose_cron"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -222,6 +228,7 @@ func New(cfg Config) (*App, error) {
 	}
 
 	// 8. Device module
+	cronRepo := cronpersistence.NewGormJobRepository(gdb)
 	deviceRepo := devicepersistence.NewGormDeviceRepository(gdb)
 	registerDeviceCmd := devicecommands.NewRegisterDeviceHandler(deviceRepo, publisher)
 	deployDeviceCmd := devicecommands.NewDeployDeviceHandler(deviceRepo, publisher)
@@ -309,6 +316,13 @@ func New(cfg Config) (*App, error) {
 		ReturnDevice:       returnDeviceCmd,
 		DecommissionDevice: decommissionDeviceCmd,
 		UpdateDevice:       updateDeviceCmd,
+
+		ListJobs:  cronqueries.NewListJobsHandler(cronRepo),
+		GetJob:    cronqueries.NewGetJobHandler(cronRepo),
+		AddJob:    croncommands.NewAddJobHandler(cronRepo),
+		PauseJob:  croncommands.NewPauseJobHandler(cronRepo),
+		ResumeJob: croncommands.NewResumeJobHandler(cronRepo),
+		DeleteJob: croncommands.NewDeleteJobHandler(cronRepo),
 	})
 	if err := rpcServer.Register(); err != nil {
 		return nil, fmt.Errorf("nats rpc: %w", err)

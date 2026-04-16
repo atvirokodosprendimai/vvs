@@ -42,6 +42,11 @@ import (
 	devicecommands "github.com/vvs/isp/internal/modules/device/app/commands"
 	devicequeries "github.com/vvs/isp/internal/modules/device/app/queries"
 	devicemigrations "github.com/vvs/isp/internal/modules/device/migrations"
+
+	cronpersistence "github.com/vvs/isp/internal/modules/cron/adapters/persistence"
+	croncommands "github.com/vvs/isp/internal/modules/cron/app/commands"
+	cronqueries "github.com/vvs/isp/internal/modules/cron/app/queries"
+	cronmigrations "github.com/vvs/isp/internal/modules/cron/migrations"
 )
 
 // noopPublisher discards all events. Used by direct CLI mode where no NATS is running.
@@ -70,6 +75,7 @@ func NewDirect(dbPath string) (*natsrpc.Server, func(), error) {
 		{Name: "network", FS: networkmigrations.FS, TableName: "goose_network"},
 		{Name: "service", FS: servicemigrations.FS, TableName: "goose_service"},
 		{Name: "device", FS: devicemigrations.FS, TableName: "goose_device"},
+		{Name: "cron", FS: cronmigrations.FS, TableName: "goose_cron"},
 	}); err != nil {
 		cleanup()
 		return nil, nil, fmt.Errorf("run migrations: %w", err)
@@ -133,6 +139,15 @@ func NewDirect(dbPath string) (*natsrpc.Server, func(), error) {
 	listDevicesQuery := devicequeries.NewListDevicesHandler(gdb)
 	getDeviceQuery := devicequeries.NewGetDeviceHandler(gdb)
 
+	// cron
+	cronRepo := cronpersistence.NewGormJobRepository(gdb)
+	addJobCmd := croncommands.NewAddJobHandler(cronRepo)
+	pauseJobCmd := croncommands.NewPauseJobHandler(cronRepo)
+	resumeJobCmd := croncommands.NewResumeJobHandler(cronRepo)
+	deleteJobCmd := croncommands.NewDeleteJobHandler(cronRepo)
+	listJobsQuery := cronqueries.NewListJobsHandler(cronRepo)
+	getJobQuery := cronqueries.NewGetJobHandler(cronRepo)
+
 	rpcServer := natsrpc.New(nil, natsrpc.Config{
 		ListUsers:  listUsersQuery,
 		CreateUser: createUserCmd,
@@ -170,6 +185,13 @@ func NewDirect(dbPath string) (*natsrpc.Server, func(), error) {
 		ReturnDevice:       returnDeviceCmd,
 		DecommissionDevice: decommissionDeviceCmd,
 		UpdateDevice:       updateDeviceCmd,
+
+		ListJobs:  listJobsQuery,
+		GetJob:    getJobQuery,
+		AddJob:    addJobCmd,
+		PauseJob:  pauseJobCmd,
+		ResumeJob: resumeJobCmd,
+		DeleteJob: deleteJobCmd,
 	})
 
 	// Note: Register() (NATS subscriptions) is intentionally not called —
