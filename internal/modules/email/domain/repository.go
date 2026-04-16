@@ -27,7 +27,7 @@ type EmailThreadRepository interface {
 // EmailMessageRepository is the port for message persistence.
 type EmailMessageRepository interface {
 	Save(ctx context.Context, m *EmailMessage) error
-	FindByUID(ctx context.Context, accountID string, uid uint32) (*EmailMessage, error)
+	FindByUID(ctx context.Context, accountID, folder string, uid uint32) (*EmailMessage, error)
 	FindByMessageID(ctx context.Context, accountID, messageID string) (*EmailMessage, error)
 	ListForThread(ctx context.Context, threadID string) ([]*EmailMessage, error)
 }

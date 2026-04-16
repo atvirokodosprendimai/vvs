@@ -282,8 +282,8 @@ func processMessage(
 
 	// Skip if already stored — guards against LastUID desync re-processing the
 	// same UIDs, which would re-apply the unread tag and undo MarkRead.
-	if _, err := repos.Messages.FindByUID(ctx, account.ID, uint32(buf.UID)); err == nil {
-		slog.Debug("imap: message already stored, skipping", "account", account.Name, "uid", buf.UID)
+	if _, err := repos.Messages.FindByUID(ctx, account.ID, folderName, uint32(buf.UID)); err == nil {
+		slog.Debug("imap: message already stored, skipping", "account", account.Name, "folder", folderName, "uid", buf.UID)
 		return nil
 	}
 
@@ -332,7 +332,7 @@ func processMessage(
 	}
 
 	// Re-resolve the message ID (covers any unlikely duplicate).
-	if existing, err := repos.Messages.FindByUID(ctx, account.ID, msg.UID); err == nil {
+	if existing, err := repos.Messages.FindByUID(ctx, account.ID, folderName, msg.UID); err == nil {
 		msg.ID = existing.ID
 	}
 

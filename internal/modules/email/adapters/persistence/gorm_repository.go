@@ -361,15 +361,15 @@ func NewGormEmailMessageRepository(db *gormsqlite.DB) *GormEmailMessageRepositor
 func (r *GormEmailMessageRepository) Save(ctx context.Context, m *domain.EmailMessage) error {
 	model := toMessageModel(m)
 	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
-		// INSERT OR IGNORE: silently skip if (account_id, uid) already exists.
+		// INSERT OR IGNORE: silently skip if (account_id, folder, uid) already exists.
 		return tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&model).Error
 	})
 }
 
-func (r *GormEmailMessageRepository) FindByUID(ctx context.Context, accountID string, uid uint32) (*domain.EmailMessage, error) {
+func (r *GormEmailMessageRepository) FindByUID(ctx context.Context, accountID, folder string, uid uint32) (*domain.EmailMessage, error) {
 	var m messageModel
 	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
-		return tx.Where("account_id = ? AND uid = ?", accountID, uid).First(&m).Error
+		return tx.Where("account_id = ? AND folder = ? AND uid = ?", accountID, folder, uid).First(&m).Error
 	})
 	if err == gorm.ErrRecordNotFound {
 		return nil, domain.ErrMessageNotFound
