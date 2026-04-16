@@ -28,7 +28,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 						for _, a := range accounts {
 							<button
 								type="button"
-								data-on:click={ fmt.Sprintf("$emailAccountID = %q; $emailFolder = ''; $emailPage = 0; @get('/sse/emails'); @get('/sse/email-folders/%s')", a.ID, a.ID) }
+								data-on:click={ fmt.Sprintf("$emailAccountID = %q; $emailFolder = ''; $emailPage = 0; @get('/sse/emails', {openWhenHidden: false}); @get('/sse/email-folders/%s', {openWhenHidden: false})", a.ID, a.ID) }
 								class="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-2"
 							>
 								<span class="truncate">{ a.Name }</span>
@@ -60,7 +60,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 				<input
 					type="text"
 					data-bind:emailSearch
-					data-on:input__debounce.300ms="$emailPage = 0; @get('/sse/emails')"
+					data-on:input__debounce.300ms="$emailPage = 0; @get('/sse/emails', {openWhenHidden: false})"
 					placeholder="Search subject or address…"
 					class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-cyan-500"
 				/>
@@ -78,7 +78,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 templ tagFilterButton(name, color, label string) {
 	<button
 		type="button"
-		data-on:click={ fmt.Sprintf("$emailTagFilter = $emailTagFilter == %q ? '' : %q; $emailPage = 0; @get('/sse/emails')", name, name) }
+		data-on:click={ fmt.Sprintf("$emailTagFilter = $emailTagFilter == %q ? '' : %q; $emailPage = 0; @get('/sse/emails', {openWhenHidden: false})", name, name) }
 		class="w-full text-left px-4 py-2 text-sm text-slate-400 hover:bg-slate-800/60 transition-colors flex items-center gap-2"
 	>
 		<span class="w-2 h-2 rounded-full flex-shrink-0" style={ fmt.Sprintf("background-color:%s", color) }></span>
@@ -115,7 +115,7 @@ templ ThreadList(result emailqueries.ThreadListResult) {
 					if result.Page > 0 {
 						<button
 							type="button"
-							data-on:click="$emailPage--; @get('/sse/emails')"
+							data-on:click="$emailPage--; @get('/sse/emails', {openWhenHidden: false})"
 							class="text-xs text-cyan-500 hover:text-cyan-400 px-3 py-1.5 rounded hover:bg-slate-800 transition-colors"
 						>← Previous</button>
 					} else {
@@ -127,7 +127,7 @@ templ ThreadList(result emailqueries.ThreadListResult) {
 					if (result.Page+1)*result.PageSize < result.Total {
 						<button
 							type="button"
-							data-on:click="$emailPage++; @get('/sse/emails')"
+							data-on:click="$emailPage++; @get('/sse/emails', {openWhenHidden: false})"
 							class="text-xs text-cyan-500 hover:text-cyan-400 px-3 py-1.5 rounded hover:bg-slate-800 transition-colors"
 						>Next →</button>
 					} else {
@@ -621,14 +621,14 @@ templ EmailFolderSidebar(folders []emailqueries.FolderReadModel) {
 		<div class="divide-y divide-slate-800">
 			<button
 				type="button"
-				data-on:click="$emailFolder = ''; $emailPage = 0; @get('/sse/emails')"
+				data-on:click="$emailFolder = ''; $emailPage = 0; @get('/sse/emails', {openWhenHidden: false})"
 				class="w-full text-left px-4 py-2 text-sm text-slate-400 hover:bg-slate-800/60 transition-colors"
 			>All folders</button>
 			for _, f := range folders {
 				if f.Enabled {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$emailFolder = %q; $emailPage = 0; @get('/sse/emails')", f.Name) }
+						data-on:click={ fmt.Sprintf("$emailFolder = %q; $emailPage = 0; @get('/sse/emails', {openWhenHidden: false})", f.Name) }
 						class="w-full text-left px-4 py-2 text-sm text-slate-400 hover:bg-slate-800/60 transition-colors truncate"
 					>{ f.Name }</button>
 				}
