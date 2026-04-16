@@ -208,7 +208,7 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 	}
 }
 
-templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel) {
+templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel, routerName string) {
 	@templates.Layout(c.CompanyName) {
 		@templates.PageHeader(c.CompanyName, fmt.Sprintf("Customer %s", c.Code.String()))
 		<div class="max-w-2xl">
@@ -250,6 +250,12 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 						<div class="grid grid-cols-2 gap-5 mb-4">
 							@detailField("IP Address", c.IPAddress)
 							@detailField("MAC Address", c.MACAddress)
+							if routerName != "" {
+								@detailField("Router", routerName)
+							}
+							if c.NetworkZone != "" {
+								@detailField("IP Zone", c.NetworkZone)
+							}
 						</div>
 						<div
 							data-signals="{arpAction: 'enable'}"

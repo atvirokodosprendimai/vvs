@@ -15,6 +15,7 @@ import (
 
 	"github.com/vvs/isp/internal/modules/customer/app/commands"
 	"github.com/vvs/isp/internal/modules/customer/app/queries"
+	"github.com/vvs/isp/internal/modules/customer/domain"
 	serviceQueries "github.com/vvs/isp/internal/modules/service/app/queries"
 	"github.com/vvs/isp/internal/shared/events"
 )
@@ -107,7 +108,8 @@ func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
 			services = nil
 		}
 	}
-	CustomerDetailPage(customer, services).Render(r.Context(), w)
+	routerName := h.loadRouterName(r.Context(), customer)
+	CustomerDetailPage(customer, services, routerName).Render(r.Context(), w)
 }
 
 func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
@@ -332,4 +334,17 @@ func (h *Handlers) loadZones(ctx context.Context) []string {
 		"SELECT DISTINCT location FROM netbox_prefixes ORDER BY location",
 	).Pluck("location", &zones)
 	return zones
+}
+
+// loadRouterName returns the router name for the customer's RouterID.
+// Returns empty string when reader is not set or customer has no router.
+func (h *Handlers) loadRouterName(ctx context.Context, c *domain.Customer) string {
+	if h.reader == nil || c.RouterID == nil || *c.RouterID == "" {
+		return ""
+	}
+	var row struct {
+		Name string `gorm:"column:name"`
+	}
+	h.reader.WithContext(ctx).Raw("SELECT name FROM routers WHERE id = ?", *c.RouterID).Scan(&row)
+	return row.Name
 }
