@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"strconv"
 
@@ -276,8 +278,8 @@ func (h *Handlers) replySSE(w http.ResponseWriter, r *http.Request) {
 	if err := h.sendReplyCmd.Handle(r.Context(), emailcommands.SendReplyCommand{
 		ThreadID: threadID, Body: signals.Body,
 	}); err != nil {
-		log.Printf("email: replySSE: %v", err)
-		sse.PatchSignals([]byte(`{"emailReplyError":"send failed"}`))
+		slog.Error("email: replySSE", "err", err)
+		sse.PatchSignals([]byte(`{"emailReplyError":"` + smtpErrMsg(err) + `"}`))
 		return
 	}
 	thread, err := h.getThread.Handle(r.Context(), threadID)
@@ -595,6 +597,25 @@ func (h *Handlers) folderListSSE(w http.ResponseWriter, r *http.Request) {
 		case <-r.Context().Done():
 			return
 		}
+	}
+}
+
+// smtpErrMsg maps a send error to a safe user-facing message.
+func smtpErrMsg(err error) string {
+	s := err.Error()
+	switch {
+	case strings.Contains(s, "auth"):
+		return "SMTP authentication failed — check password in settings"
+	case strings.Contains(s, "connect") || strings.Contains(s, "dial"):
+		return "Cannot connect to SMTP server — check host and port in settings"
+	case strings.Contains(s, "RCPT") || strings.Contains(s, "recipient"):
+		return "Invalid recipient address"
+	case strings.Contains(s, "empty"):
+		return "Reply body is empty"
+	case strings.Contains(s, "decrypt"):
+		return "Cannot decrypt SMTP password — re-enter password in settings"
+	default:
+		return "Send failed — check server logs for details"
 	}
 }
 
