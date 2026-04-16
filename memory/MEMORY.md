@@ -9,3 +9,4 @@
 - [Go error handling](feedback_go_error_handling.md) — Never discard with `_`; HTTP handlers return error responses, SSE loops log and continue
 - [HTTP handler local interfaces](feedback_http_handler_local_interfaces.md) — Define minimal local interfaces in adapters/http instead of importing concrete persistence types
 - [SQLite reserved keywords](feedback_sqlite_reserved_keywords.md) — `references`, `order`, `group`, `index`, `key` etc. are reserved; never use as bare column names
+- [Codex review after coding](feedback_codex_review_after_code.md) — Auto-spawn Codex review in background after every coding task
