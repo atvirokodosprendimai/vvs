@@ -48,7 +48,13 @@
       "Bash(git commit:*)",
       "Read(//Users/mind/go/pkg/mod/github.com/go-routeros/routeros@v0.0.0-20210123142807-2a44d57c6730/proto/**)",
       "Bash(wait)",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(git -C /Users/mind/code/ai/vvs/.claude/worktrees/agent-afc766f2 status --short)",
+      "Bash(go vet:*)",
+      "Bash(git:*)",
+      "Bash(cp:*)",
+      "Bash(./bin/vvs cron:*)"
     ]
   }
 }
