@@ -361,6 +361,10 @@ func NewGormEmailMessageRepository(db *gormsqlite.DB) *GormEmailMessageRepositor
 func (r *GormEmailMessageRepository) Save(ctx context.Context, m *domain.EmailMessage) error {
 	model := toMessageModel(m)
 	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
+		if m.Direction == "out" {
+			// Outgoing messages have uid=0 and no folder; plain insert is safe (fresh UUIDv7 PK).
+			return tx.Create(&model).Error
+		}
 		// INSERT OR IGNORE: silently skip if (account_id, folder, uid) already exists.
 		return tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&model).Error
 	})

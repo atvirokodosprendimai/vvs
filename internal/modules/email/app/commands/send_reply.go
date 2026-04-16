@@ -100,6 +100,12 @@ func (h *SendReplyHandler) Handle(ctx context.Context, cmd SendReplyCommand) err
 	}
 	if err := h.messages.Save(ctx, sentMsg); err != nil {
 		slog.Error("email: store sent message", "err", err)
+	} else {
+		thread.MessageCount++
+		thread.LastMessageAt = now
+		if err := h.threads.Save(ctx, thread); err != nil {
+			slog.Error("email: update thread after reply", "err", err)
+		}
 	}
 
 	h.pub.Publish(ctx, "isp.email.thread_updated", events.DomainEvent{
