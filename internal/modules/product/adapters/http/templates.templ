@@ -239,7 +239,7 @@ templ ProductDetailPage(p *domain.Product) {
 					Edit
 				</a>
 				<button
-					data-on:click={ fmt.Sprintf("@delete('/api/products/%s', {openWhenHidden: false})", p.ID) }
+					data-on:click={ fmt.Sprintf("@delete('/api/products/%s')", p.ID) }
 					class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
 				>
 					Delete
@@ -314,9 +314,9 @@ func prodFormSignals(p *domain.Product) string {
 
 func prodFormAction(p *domain.Product) string {
 	if p == nil {
-		return "@post('/api/products', {openWhenHidden: false})"
+		return "@post('/api/products')"
 	}
-	return fmt.Sprintf("@put('/api/products/%s', {openWhenHidden: false})", p.ID)
+	return fmt.Sprintf("@put('/api/products/%s')", p.ID)
 }
 
 func prodFormButtonText(p *domain.Product) string {

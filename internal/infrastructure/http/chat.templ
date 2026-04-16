@@ -50,7 +50,7 @@ templ ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThread
 					class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500"
 				/>
 				<button
-					data-on:click="@post('/api/chat/threads/direct', {openWhenHidden: false}) && ($_newdm=false)"
+					data-on:click="@post('/api/chat/threads/direct') && ($_newdm=false)"
 					class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm"
 				>
 					Start conversation
@@ -81,7 +81,7 @@ templ ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThread
 					Private channel
 				</label>
 				<button
-					data-on:click="@post('/api/chat/threads/channel', {openWhenHidden: false}) && ($_newchannel=false)"
+					data-on:click="@post('/api/chat/threads/channel') && ($_newchannel=false)"
 					class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm"
 				>
 					Create channel
@@ -191,11 +191,11 @@ templ ChatMessages(msgs []chat.Message, currentUserID string) {
 				data-bind:chatmsg
 				placeholder="Message…"
 				rows="1"
-				data-on:keydown="evt.key==='Enter' && !evt.shiftKey && !evt.preventDefault() && @post('/api/chat/send', {openWhenHidden: false}) && ($chatmsg='')"
+				data-on:keydown="evt.key==='Enter' && !evt.shiftKey && !evt.preventDefault() && @post('/api/chat/send') && ($chatmsg='')"
 				class="flex-1 bg-slate-800 text-slate-100 border border-slate-700 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
 			></textarea>
 			<button
-				data-on:click="@post('/api/chat/send', {openWhenHidden: false}) && ($chatmsg='')"
+				data-on:click="@post('/api/chat/send') && ($chatmsg='')"
 				class="bg-cyan-600 hover:bg-cyan-700 text-white p-2 rounded-lg transition-colors flex-shrink-0"
 				title="Send"
 			>

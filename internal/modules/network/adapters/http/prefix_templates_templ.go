@@ -71,7 +71,7 @@ func PrefixListPage(prefixes []*domain.NetBoxPrefix) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div id=\"prefix-form-errors\"></div><div class=\"flex gap-2 pt-1\"><button data-on:click=\"@post('/api/prefixes', {openWhenHidden: false})\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium flex-1\">Save</button> <button data-on:click=\"$_prefixAddOpen=false\" class=\"bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded text-sm font-medium\">Cancel</button></div></div></div></div><!-- Table --><div id=\"prefix-table\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div id=\"prefix-form-errors\"></div><div class=\"flex gap-2 pt-1\"><button data-on:click=\"@post('/api/prefixes')\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium flex-1\">Save</button> <button data-on:click=\"$_prefixAddOpen=false\" class=\"bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded text-sm font-medium\">Cancel</button></div></div></div></div><!-- Table --><div id=\"prefix-table\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -186,9 +186,9 @@ func PrefixTable(prefixes []*domain.NetBoxPrefix) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/prefixes/%s', {openWhenHidden: false})", p.ID))
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/prefixes/%s')", p.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/prefix_templates.templ`, Line: 85, Col: 98}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/prefix_templates.templ`, Line: 85, Col: 73}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {

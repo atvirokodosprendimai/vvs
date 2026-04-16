@@ -556,9 +556,9 @@ func ProductDetailPage(p *domain.Product) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var23 string
-			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/products/%s', {openWhenHidden: false})", p.ID))
+			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/products/%s')", p.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 242, Col: 94}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/product/adapters/http/templates.templ`, Line: 242, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -752,9 +752,9 @@ func prodFormSignals(p *domain.Product) string {
 
 func prodFormAction(p *domain.Product) string {
 	if p == nil {
-		return "@post('/api/products', {openWhenHidden: false})"
+		return "@post('/api/products')"
 	}
-	return fmt.Sprintf("@put('/api/products/%s', {openWhenHidden: false})", p.ID)
+	return fmt.Sprintf("@put('/api/products/%s')", p.ID)
 }
 
 func prodFormButtonText(p *domain.Product) string {

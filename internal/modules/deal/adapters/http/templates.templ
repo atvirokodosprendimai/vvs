@@ -108,7 +108,7 @@ templ DealSection(customerID string, deals []queries.DealReadModel) {
 				<div class="flex items-center gap-2 pt-1">
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$_dealId == '' ? @post('/api/customers/%s/deals', {openWhenHidden: false}) : @put('/api/deals/' + $_dealId)", customerID) }
+						data-on:click={ fmt.Sprintf("$_dealId == '' ? @post('/api/customers/%s/deals') : @put('/api/deals/' + $_dealId)", customerID) }
 						class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
 					>
 						Save
@@ -166,7 +166,7 @@ templ dealRow(customerID string, d queries.DealReadModel) {
 				if d.Stage == domain.StageNew {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$dealAdvanceAction = 'qualify'; @put('/api/deals/%s/advance', {openWhenHidden: false})", d.ID) }
+						data-on:click={ fmt.Sprintf("$dealAdvanceAction = 'qualify'; @put('/api/deals/%s/advance')", d.ID) }
 						class="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-blue-500/20"
 					>
 						Qualify
@@ -175,7 +175,7 @@ templ dealRow(customerID string, d queries.DealReadModel) {
 				if d.Stage == domain.StageQualified {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$dealAdvanceAction = 'propose'; @put('/api/deals/%s/advance', {openWhenHidden: false})", d.ID) }
+						data-on:click={ fmt.Sprintf("$dealAdvanceAction = 'propose'; @put('/api/deals/%s/advance')", d.ID) }
 						class="bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-cyan-500/20"
 					>
 						Propose
@@ -184,7 +184,7 @@ templ dealRow(customerID string, d queries.DealReadModel) {
 				if d.Stage == domain.StageProposal {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$dealAdvanceAction = 'negotiate'; @put('/api/deals/%s/advance', {openWhenHidden: false})", d.ID) }
+						data-on:click={ fmt.Sprintf("$dealAdvanceAction = 'negotiate'; @put('/api/deals/%s/advance')", d.ID) }
 						class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-amber-500/20"
 					>
 						Negotiate
@@ -193,14 +193,14 @@ templ dealRow(customerID string, d queries.DealReadModel) {
 				if d.Stage != domain.StageWon && d.Stage != domain.StageLost {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$dealAdvanceAction = 'win'; @put('/api/deals/%s/advance', {openWhenHidden: false})", d.ID) }
+						data-on:click={ fmt.Sprintf("$dealAdvanceAction = 'win'; @put('/api/deals/%s/advance')", d.ID) }
 						class="bg-green-500/10 hover:bg-green-500/20 text-green-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-green-500/20"
 					>
 						Win
 					</button>
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$dealAdvanceAction = 'lose'; @put('/api/deals/%s/advance', {openWhenHidden: false})", d.ID) }
+						data-on:click={ fmt.Sprintf("$dealAdvanceAction = 'lose'; @put('/api/deals/%s/advance')", d.ID) }
 						class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-red-500/20"
 					>
 						Lose
@@ -217,7 +217,7 @@ templ dealRow(customerID string, d queries.DealReadModel) {
 				<!-- Delete always available -->
 				<button
 					type="button"
-					data-on:click={ fmt.Sprintf("@delete('/api/deals/%s', {openWhenHidden: false})", d.ID) }
+					data-on:click={ fmt.Sprintf("@delete('/api/deals/%s')", d.ID) }
 					class="bg-slate-700/40 hover:bg-red-500/20 text-slate-400 hover:text-red-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-slate-700"
 				>
 					Delete

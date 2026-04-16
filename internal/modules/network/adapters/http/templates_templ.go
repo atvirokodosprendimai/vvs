@@ -246,9 +246,9 @@ func RouterRow(r queries.RouterReadModel) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/routers/%s', {openWhenHidden: false})", r.ID))
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/routers/%s')", r.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/templates.templ`, Line: 82, Col: 93}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/templates.templ`, Line: 82, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -467,9 +467,9 @@ func RouterDetailPage(r queries.RouterReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var22 string
-			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/routers/%s', {openWhenHidden: false})", r.ID))
+			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/routers/%s')", r.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/templates.templ`, Line: 171, Col: 93}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/templates.templ`, Line: 171, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -671,9 +671,9 @@ func routerTypeLabel(t string) string {
 
 func routerFormAction(r *queries.RouterReadModel) string {
 	if r == nil {
-		return "@post('/api/routers', {openWhenHidden: false})"
+		return "@post('/api/routers')"
 	}
-	return fmt.Sprintf("@put('/api/routers/%s', {openWhenHidden: false})", r.ID)
+	return fmt.Sprintf("@put('/api/routers/%s')", r.ID)
 }
 
 func routerFormButtonText(r *queries.RouterReadModel) string {

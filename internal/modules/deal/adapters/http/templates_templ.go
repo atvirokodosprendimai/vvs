@@ -52,9 +52,9 @@ func DealSection(customerID string, deals []queries.DealReadModel) templ.Compone
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$_dealId == '' ? @post('/api/customers/%s/deals', {openWhenHidden: false}) : @put('/api/deals/' + $_dealId)", customerID))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$_dealId == '' ? @post('/api/customers/%s/deals') : @put('/api/deals/' + $_dealId)", customerID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 111, Col: 156}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 111, Col: 131}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -201,9 +201,9 @@ func dealRow(customerID string, d queries.DealReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$dealAdvanceAction = 'qualify'; @put('/api/deals/%s/advance', {openWhenHidden: false})", d.ID))
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$dealAdvanceAction = 'qualify'; @put('/api/deals/%s/advance')", d.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 169, Col: 129}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 169, Col: 104}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -220,9 +220,9 @@ func dealRow(customerID string, d queries.DealReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$dealAdvanceAction = 'propose'; @put('/api/deals/%s/advance', {openWhenHidden: false})", d.ID))
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$dealAdvanceAction = 'propose'; @put('/api/deals/%s/advance')", d.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 178, Col: 129}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 178, Col: 104}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -239,9 +239,9 @@ func dealRow(customerID string, d queries.DealReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$dealAdvanceAction = 'negotiate'; @put('/api/deals/%s/advance', {openWhenHidden: false})", d.ID))
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$dealAdvanceAction = 'negotiate'; @put('/api/deals/%s/advance')", d.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 187, Col: 131}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 187, Col: 106}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -258,9 +258,9 @@ func dealRow(customerID string, d queries.DealReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$dealAdvanceAction = 'win'; @put('/api/deals/%s/advance', {openWhenHidden: false})", d.ID))
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$dealAdvanceAction = 'win'; @put('/api/deals/%s/advance')", d.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 196, Col: 125}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 196, Col: 100}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -271,9 +271,9 @@ func dealRow(customerID string, d queries.DealReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var12 string
-			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$dealAdvanceAction = 'lose'; @put('/api/deals/%s/advance', {openWhenHidden: false})", d.ID))
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$dealAdvanceAction = 'lose'; @put('/api/deals/%s/advance')", d.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 203, Col: 126}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 203, Col: 101}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -302,9 +302,9 @@ func dealRow(customerID string, d queries.DealReadModel) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/deals/%s', {openWhenHidden: false})", d.ID))
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/deals/%s')", d.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 220, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 220, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {

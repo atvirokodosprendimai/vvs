@@ -238,36 +238,36 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 				</a>
 				if c.Status == domain.StatusLead {
 					<button
-						data-on:click={ fmt.Sprintf("($statusAction='qualify') && @post('/api/customers/%s/status', {openWhenHidden: false})", c.ID) }
+						data-on:click={ fmt.Sprintf("($statusAction='qualify') && @post('/api/customers/%s/status')", c.ID) }
 						class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded text-xs font-medium transition-colors"
 					>Qualify</button>
 				}
 				if c.Status == domain.StatusProspect {
 					<button
-						data-on:click={ fmt.Sprintf("($statusAction='convert') && @post('/api/customers/%s/status', {openWhenHidden: false})", c.ID) }
+						data-on:click={ fmt.Sprintf("($statusAction='convert') && @post('/api/customers/%s/status')", c.ID) }
 						class="bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
 					>Convert to Active</button>
 				}
 				if c.Status == domain.StatusActive {
 					<button
-						data-on:click={ fmt.Sprintf("($statusAction='suspend') && @post('/api/customers/%s/status', {openWhenHidden: false})", c.ID) }
+						data-on:click={ fmt.Sprintf("($statusAction='suspend') && @post('/api/customers/%s/status')", c.ID) }
 						class="bg-yellow-900/30 hover:bg-yellow-900/50 text-yellow-300 px-3 py-1.5 rounded text-xs font-medium transition-colors"
 					>Suspend</button>
 				}
 				if c.Status == domain.StatusSuspended {
 					<button
-						data-on:click={ fmt.Sprintf("($statusAction='activate') && @post('/api/customers/%s/status', {openWhenHidden: false})", c.ID) }
+						data-on:click={ fmt.Sprintf("($statusAction='activate') && @post('/api/customers/%s/status')", c.ID) }
 						class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded text-xs font-medium transition-colors"
 					>Reactivate</button>
 				}
 				if c.Status != domain.StatusChurned {
 					<button
-						data-on:click={ fmt.Sprintf("($statusAction='churn') && @post('/api/customers/%s/status', {openWhenHidden: false})", c.ID) }
+						data-on:click={ fmt.Sprintf("($statusAction='churn') && @post('/api/customers/%s/status')", c.ID) }
 						class="bg-red-900/30 hover:bg-red-900/50 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors"
 					>Churn</button>
 				}
 				<button
-					data-on:click={ fmt.Sprintf("@delete('/api/customers/%s', {openWhenHidden: false})", c.ID) }
+					data-on:click={ fmt.Sprintf("@delete('/api/customers/%s')", c.ID) }
 					class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
 				>
 					Delete
@@ -309,13 +309,13 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 							class="flex items-center gap-2"
 						>
 							<button
-								data-on:click={ fmt.Sprintf("($arpAction='enable') && @post('/api/customers/%s/arp', {openWhenHidden: false})", c.ID) }
+								data-on:click={ fmt.Sprintf("($arpAction='enable') && @post('/api/customers/%s/arp')", c.ID) }
 								class="bg-lime-500/10 hover:bg-lime-500/20 text-lime-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-lime-500/20"
 							>
 								Enable Access
 							</button>
 							<button
-								data-on:click={ fmt.Sprintf("($arpAction='disable') && @post('/api/customers/%s/arp', {openWhenHidden: false})", c.ID) }
+								data-on:click={ fmt.Sprintf("($arpAction='disable') && @post('/api/customers/%s/arp')", c.ID) }
 								class="bg-slate-800 hover:bg-slate-700 text-slate-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-slate-700"
 							>
 								Disable Access
@@ -350,7 +350,7 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 					></textarea>
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("@post('/api/customers/%s/notes', {openWhenHidden: false})", c.ID) }
+						data-on:click={ fmt.Sprintf("@post('/api/customers/%s/notes')", c.ID) }
 						class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors self-end"
 					>Add</button>
 				</div>
@@ -451,9 +451,9 @@ func formSignals(c *domain.Customer) string {
 
 func formAction(c *domain.Customer) string {
 	if c == nil {
-		return "@post('/api/customers', {openWhenHidden: false})"
+		return "@post('/api/customers')"
 	}
-	return fmt.Sprintf("@put('/api/customers/%s', {openWhenHidden: false})", c.ID)
+	return fmt.Sprintf("@put('/api/customers/%s')", c.ID)
 }
 
 func formButtonText(c *domain.Customer) string {

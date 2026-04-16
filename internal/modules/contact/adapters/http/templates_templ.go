@@ -49,9 +49,9 @@ func ContactSection(customerID string, contacts []queries.ContactReadModel) temp
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$_contactId == '' ? @post('/api/customers/%s/contacts', {openWhenHidden: false}) : @put('/api/contacts/' + $_contactId)", customerID))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$_contactId == '' ? @post('/api/customers/%s/contacts') : @put('/api/contacts/' + $_contactId)", customerID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 121, Col: 168}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 121, Col: 143}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -224,9 +224,9 @@ func contactRow(c queries.ContactReadModel) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/contacts/%s', {openWhenHidden: false})", c.ID))
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/contacts/%s')", c.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 184, Col: 94}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 184, Col: 69}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
