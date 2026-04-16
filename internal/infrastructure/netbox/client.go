@@ -148,6 +148,6 @@ func (c *Client) get(ctx context.Context, url string) ([]byte, error) {
 }
 
 func (c *Client) addHeaders(req *http.Request) {
-	req.Header.Set("Authorization", "Token "+c.token)
+	req.Header.Set("Authorization", "Bearer "+c.token)
 	req.Header.Set("Accept", "application/json")
 }

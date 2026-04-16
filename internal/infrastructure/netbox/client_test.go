@@ -14,7 +14,7 @@ func TestGetIPByCustomerCode_Found(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/api/ipam/ip-addresses/", r.URL.Path)
 		assert.Equal(t, "CLI-00001", r.URL.Query().Get("description"))
-		assert.Equal(t, "Token test-token", r.Header.Get("Authorization"))
+		assert.Equal(t, "Bearer test-token", r.Header.Get("Authorization"))
 
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{
