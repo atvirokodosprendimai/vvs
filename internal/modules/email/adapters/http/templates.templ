@@ -176,8 +176,8 @@ templ EmailThreadPage(thread emailqueries.ThreadDetailReadModel) {
 				Back to Inbox
 			</a>
 		</div>
-		@ThreadDetail(thread)
 		@replyForm(thread.ID)
+		@ThreadDetail(thread)
 	}
 }
 
