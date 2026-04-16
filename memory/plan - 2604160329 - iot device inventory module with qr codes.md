@@ -1,6 +1,6 @@
 ---
 tldr: Generic IoT/hardware device inventory — QR code per device, customer assignment, warranty/lifecycle tracking, stock status
-status: active
+status: completed
 ---
 
 # Plan: IoT Device Inventory Module
@@ -110,85 +110,40 @@ cmd/server/cli_device.go         — NEW: vvs cli device {list,get,register,depl
 
 ## Phases
 
-### Phase 1 — Domain + persistence + migration - status: open
+### Phase 1 — Domain + persistence + migration - status: completed
 
-1. [ ] Write domain aggregate `device.go` + `repository.go` + `device_test.go`
-   - status transitions: register → in_stock → deployed ↔ in_stock → decommissioned
-   - ErrInvalidTransition for illegal moves
-   - ErrNotFound for missing devices
+1. [x] Write domain aggregate `device.go` + `repository.go` + `device_test.go`
+   - => 9 tests, all pass — status machine fully covered
+2. [x] Write migration `001_create_devices.sql`
+   - => unique serial index null-safe: `WHERE serial_number IS NOT NULL AND serial_number != ''`
+3. [x] Write GORM persistence (`models.go` + `gorm_repository.go`)
 
-2. [ ] Write migration `001_create_devices.sql`
-   ```sql
-   CREATE TABLE devices (
-     id             TEXT PRIMARY KEY,
-     name           TEXT NOT NULL,
-     serial_number  TEXT,
-     device_type    TEXT NOT NULL DEFAULT 'other',
-     status         TEXT NOT NULL DEFAULT 'in_stock'
-                    CHECK(status IN ('in_stock','deployed','decommissioned')),
-     customer_id    TEXT,
-     location       TEXT,
-     purchased_at   DATETIME,
-     warranty_expiry DATETIME,
-     notes          TEXT,
-     created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-     updated_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-   );
-   CREATE INDEX idx_devices_status      ON devices(status);
-   CREATE INDEX idx_devices_customer    ON devices(customer_id);
-   CREATE UNIQUE INDEX idx_devices_serial ON devices(serial_number)
-     WHERE serial_number IS NOT NULL AND serial_number != '';
-   ```
+### Phase 2 — Command + query handlers - status: completed
 
-3. [ ] Write GORM persistence (`models.go` + `gorm_repository.go`)
+4. [x] Write command handlers (register, deploy, return, decommission, update)
+   - => no unit tests beyond domain (command handlers are thin wrappers; tested via CLI smoke)
+5. [x] Write query handlers (`ListDevices`, `GetDevice`) + `DeviceReadModel`
+   - => ListDevices: status/customerID/type/search filters + pagination
 
-### Phase 2 — Command + query handlers - status: open
+### Phase 3 — HTTP UI - status: completed
 
-4. [ ] Write command handlers (register, deploy, return, decommission, update) + tests
+6. [x] Write SSE handlers (`handlers.go`) + routes
+   - => GET /devices, GET /devices/{id}, GET /devices/{id}/qr.png
+   - => SSE list auto-refreshes on isp.device.* events
+7. [x] Write templ templates
+   - => DeviceListPage: filter tabs (All/In Stock/Deployed/Decommissioned), register modal
+   - => DeviceDetailPage: detail card + QR code panel + deploy/return/decommission buttons
+8. [x] Add `github.com/skip2/go-qrcode` dependency
+   - => server-side PNG, 256px, cached 24h, encodes full URL
 
-5. [ ] Write query handlers (`ListDevices`, `GetDevice`) + `DeviceReadModel`
+### Phase 4 — Wire + RPC + CLI - status: completed
 
-### Phase 3 — HTTP UI - status: open
-
-6. [ ] Write SSE handlers (`handlers.go`) + routes
-   - `GET /devices` — list with status filter chips
-   - `GET /devices/{id}` — detail page
-   - `GET /devices/{id}/qr.png` — QR PNG (go-qrcode, encodes `{baseURL}/devices/{id}`)
-   - `POST /api/devices` etc. (via api.go)
-
-7. [ ] Write templ templates
-   - `DeviceListPage` — table with status badge, type, customer, warranty expiry
-   - `DeviceDetailPage` — all fields + QR code image + action buttons (deploy/return/decommission)
-
-8. [ ] Add `github.com/skip2/go-qrcode` dependency
-
-### Phase 4 — Wire + RPC + CLI - status: open
-
-9. [ ] Wire into `app.go` and `direct.go`
-   - run device migration
-   - wire repo + commands + queries
-   - register HTTP routes
-   - add device subjects to natsrpc.Server
-
-10. [ ] Add device subjects to `internal/infrastructure/nats/rpc/server.go`
-    ```
-    isp.rpc.device.list
-    isp.rpc.device.get
-    isp.rpc.device.register
-    isp.rpc.device.deploy
-    isp.rpc.device.return
-    isp.rpc.device.decommission
-    isp.rpc.device.update
-    ```
-
-11. [ ] Create `cmd/server/cli_device.go`
-    - `vvs cli device list [--status] [--customer] [--type]`
-    - `vvs cli device get <id>`
-    - `vvs cli device register --name --type --serial`
-    - `vvs cli device deploy <id> --customer <customerID> --location`
-    - `vvs cli device return <id>`
-    - `vvs cli device decommission <id>`
-    - `vvs cli device update <id> [--name] [--notes] ...`
+9. [x] Wire into `app.go` and `direct.go`
+   - => device module enabled via `cfg.IsEnabled("device")`
+10. [x] Add device subjects to `internal/infrastructure/nats/rpc/server.go`
+    - => 7 subjects: isp.rpc.device.{list,get,register,deploy,return,decommission,update}
+11. [x] Create `cmd/server/cli_device.go`
+    - => smoke tested: `vvs cli device register --name "Test ONT" --type ont --serial SN-TEST-001` ✓
 
 ---
 
@@ -210,3 +165,4 @@ cmd/server/cli_device.go         — NEW: vvs cli device {list,get,register,depl
 | Timestamp | Entry |
 |-----------|-------|
 | 2604160329 | Plan created |
+| 2604160350 | All 4 phases complete — domain tests pass, `go build ./...` clean, CLI smoke tested |
