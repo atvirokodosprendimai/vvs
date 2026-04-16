@@ -168,6 +168,14 @@ func processMessage(
 	if buf.Envelope == nil {
 		return nil
 	}
+
+	// Skip if already stored — guards against LastUID desync re-processing the
+	// same UIDs, which would re-apply the unread tag and undo MarkRead.
+	if _, err := repos.Messages.FindByUID(ctx, account.ID, uint32(buf.UID)); err == nil {
+		slog.Debug("imap: message already stored, skipping", "account", account.Name, "uid", buf.UID)
+		return nil
+	}
+
 	env := buf.Envelope
 
 	// Parse body: text, html, references header, attachments.
