@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
+	"github.com/vvs/isp/internal/app"
+	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
 )
 
 // transport sends an RPC request and decodes the JSON response into resp.
@@ -109,19 +111,54 @@ func decodeEnvelope(data []byte, resp any) error {
 	return nil
 }
 
-// newTransport creates the appropriate transport from CLI flags.
-// Prefers NATS when --nats-url is set; falls back to HTTP when --api-url is set.
-func newTransport(natsURL, apiURL, apiToken string) (transport, error) {
+// ── direct transport ───────────────────────────────────────────────────────
+
+type directTransport struct {
+	rpc *natsrpc.Server
+}
+
+func newDirectTransport(dbPath string) (*directTransport, error) {
+	rpc, _, err := app.NewDirect(dbPath)
+	if err != nil {
+		return nil, fmt.Errorf("open database: %w", err)
+	}
+	return &directTransport{rpc: rpc}, nil
+}
+
+func (t *directTransport) do(ctx context.Context, subject string, req, resp any) error {
+	payload, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
+	result, err := t.rpc.Dispatch(ctx, "isp.rpc."+subject, payload)
+	if err != nil {
+		return err
+	}
+	if resp == nil || result == nil {
+		return nil
+	}
+	b, err := json.Marshal(result)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(b, resp)
+}
+
+// ── shared ─────────────────────────────────────────────────────────────────
+
+// newTransport picks the best transport from CLI flags:
+//
+//	--nats-url set            → NATS request/reply
+//	--api-token set           → HTTP REST via --api-url
+//	(default)                 → direct DB access via --db
+func newTransport(natsURL, apiURL, apiToken, dbPath string) (transport, error) {
 	if natsURL != "" {
 		return newNATSTransport(natsURL)
 	}
-	if apiURL != "" {
-		if apiToken == "" {
-			return nil, fmt.Errorf("--api-token is required when using --api-url")
-		}
+	if apiToken != "" {
 		return newHTTPTransport(apiURL, apiToken), nil
 	}
-	return nil, fmt.Errorf("provide --nats-url or --api-url to connect to the server")
+	return newDirectTransport(dbPath)
 }
 
 // printJSON writes v as pretty-printed JSON to stdout.

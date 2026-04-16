@@ -18,13 +18,19 @@ func main() {
 		Usage: "VVS ISP Business Management System",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
+				Name:    "db",
+				Usage:   "SQLite database path (for direct CLI access)",
+				Value:   "./data/vvs.db",
+				Sources: cli.EnvVars("VVS_DB_PATH"),
+			},
+			&cli.StringFlag{
 				Name:    "nats-url",
 				Usage:   "NATS server URL (for CLI transport or server external NATS)",
 				Sources: cli.EnvVars("NATS_URL"),
 			},
 			&cli.StringFlag{
 				Name:    "api-url",
-				Usage:   "VVS API base URL (for CLI HTTP transport fallback)",
+				Usage:   "VVS API base URL (for CLI HTTP transport, requires --api-token)",
 				Value:   "http://localhost:8080",
 				Sources: cli.EnvVars("VVS_API_URL"),
 			},

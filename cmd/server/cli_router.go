@@ -15,7 +15,7 @@ func routerCommands() *cli.Command {
 				Name:  "list",
 				Usage: "List routers",
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"))
+					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"), cmd.Root().String("db"))
 					if err != nil {
 						return err
 					}
@@ -32,7 +32,7 @@ func routerCommands() *cli.Command {
 					if id == "" {
 						return cli.Exit("id required", 1)
 					}
-					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"))
+					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"), cmd.Root().String("db"))
 					if err != nil {
 						return err
 					}
@@ -53,7 +53,7 @@ func routerCommands() *cli.Command {
 					&cli.StringFlag{Name: "notes", Usage: "Notes"},
 				},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"))
+					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"), cmd.Root().String("db"))
 					if err != nil {
 						return err
 					}
@@ -87,7 +87,7 @@ func routerCommands() *cli.Command {
 					if id == "" {
 						return cli.Exit("id required", 1)
 					}
-					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"))
+					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"), cmd.Root().String("db"))
 					if err != nil {
 						return err
 					}
@@ -112,7 +112,7 @@ func routerCommands() *cli.Command {
 					if id == "" {
 						return cli.Exit("id required", 1)
 					}
-					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"))
+					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"), cmd.Root().String("db"))
 					if err != nil {
 						return err
 					}
@@ -131,7 +131,7 @@ func routerCommands() *cli.Command {
 					if customerID == "" {
 						return cli.Exit("customerID required", 1)
 					}
-					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"))
+					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"), cmd.Root().String("db"))
 					if err != nil {
 						return err
 					}

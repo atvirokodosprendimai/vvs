@@ -20,7 +20,7 @@ func serviceCommands() *cli.Command {
 					if customerID == "" {
 						return cli.Exit("customerID required", 1)
 					}
-					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"))
+					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"), cmd.Root().String("db"))
 					if err != nil {
 						return err
 					}
@@ -48,7 +48,7 @@ func serviceCommands() *cli.Command {
 					if startDate == "" {
 						startDate = "2006-01-02" // will be overridden by server default
 					}
-					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"))
+					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"), cmd.Root().String("db"))
 					if err != nil {
 						return err
 					}
@@ -72,7 +72,7 @@ func serviceCommands() *cli.Command {
 					if id == "" {
 						return cli.Exit("serviceID required", 1)
 					}
-					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"))
+					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"), cmd.Root().String("db"))
 					if err != nil {
 						return err
 					}
@@ -88,7 +88,7 @@ func serviceCommands() *cli.Command {
 					if id == "" {
 						return cli.Exit("serviceID required", 1)
 					}
-					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"))
+					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"), cmd.Root().String("db"))
 					if err != nil {
 						return err
 					}
@@ -104,7 +104,7 @@ func serviceCommands() *cli.Command {
 					if id == "" {
 						return cli.Exit("serviceID required", 1)
 					}
-					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"))
+					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"), cmd.Root().String("db"))
 					if err != nil {
 						return err
 					}
