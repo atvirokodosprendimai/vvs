@@ -126,8 +126,10 @@ func fetchFolder(
 	repos Repos,
 	newID NewIDFunc,
 ) (int, error) {
-	// EXAMINE = readonly select (never sets \Seen).
-	if _, err := c.Select(folder.Name, &imaplib.SelectOptions{ReadOnly: true}).Wait(); err != nil {
+	// SELECT in read-write mode so we can issue STORE to remove \Seen after fetch.
+	// EXAMINE (ReadOnly:true) + PEEK is unreliable on Exchange/Dovecot — some servers
+	// set \Seen regardless. We use SELECT + BODY.PEEK[] + explicit STORE -FLAGS (\Seen).
+	if _, err := c.Select(folder.Name, nil).Wait(); err != nil {
 		return 0, fmt.Errorf("imap select %q: %w", folder.Name, err)
 	}
 
@@ -200,6 +202,17 @@ func fetchFolder(
 		}
 		if err := fetchCmd.Close(); err != nil {
 			return fetched, fmt.Errorf("imap fetch close: %w", err)
+		}
+
+		// Explicitly unset \Seen on the fetched UIDs.
+		// BODY.PEEK[] should prevent \Seen, but some servers set it anyway.
+		storeCmd := c.Store(fetchSet, &imaplib.StoreFlags{
+			Op:     imaplib.StoreFlagsDel,
+			Silent: true,
+			Flags:  []imaplib.Flag{imaplib.FlagSeen},
+		}, nil)
+		if err := storeCmd.Close(); err != nil {
+			slog.Debug("imap: clear seen flags", "folder", folder.Name, "err", err)
 		}
 	}
 
