@@ -360,16 +360,23 @@ func formButtonText(c *domain.Customer) string {
 	return "Save Changes"
 }
 
+// customerRouterID returns the router ID as a JS string literal for data-signals:routerId.
+// data-signals:key evaluates the value as a JS expression, so the UUID must be quoted.
 func customerRouterID(c *domain.Customer) string {
+	id := ""
 	if c != nil && c.RouterID != nil {
-		return *c.RouterID
+		id = *c.RouterID
 	}
-	return ""
+	b, _ := json.Marshal(id)
+	return string(b) // returns "\"uuid\"" — valid JS string literal
 }
 
+// customerNetworkZone returns the zone as a JS string literal for data-signals:networkZone.
 func customerNetworkZone(c *domain.Customer) string {
+	zone := ""
 	if c != nil {
-		return c.NetworkZone
+		zone = c.NetworkZone
 	}
-	return ""
+	b, _ := json.Marshal(zone)
+	return string(b)
 }
