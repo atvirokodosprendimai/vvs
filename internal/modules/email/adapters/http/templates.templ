@@ -15,7 +15,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 		<div
 			id="email-inbox"
 			class="flex gap-4"
-			data-signals={ fmt.Sprintf("{_emailAccountID: %q, _emailTagFilter: '', _emailThreadID: ''}", selected) }
+			data-signals={ fmt.Sprintf("{_emailAccountID: %q, _emailTagFilter: '', _emailPage: 0}", selected) }
 		>
 			<!-- Sidebar: accounts + tags -->
 			<div class="w-56 flex-shrink-0 flex flex-col gap-3">
@@ -28,7 +28,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 						for _, a := range accounts {
 							<button
 								type="button"
-								data-on:click={ fmt.Sprintf("$_emailAccountID = %q; @get('/sse/emails')", a.ID) }
+								data-on:click={ fmt.Sprintf("$_emailAccountID = %q; $_emailPage = 0; @get('/sse/emails')", a.ID) }
 								class="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-2"
 							>
 								<span class="truncate">{ a.Name }</span>
@@ -60,15 +60,6 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 					<div class="text-slate-600 py-8 text-center text-sm">Loading...</div>
 				</div>
 			</div>
-
-			<!-- Thread detail (shown when a thread is selected) -->
-			<div
-				id="email-thread-detail"
-				class="w-96 flex-shrink-0"
-				data-show="$_emailThreadID != ''"
-				style="display:none"
-			>
-			</div>
 		</div>
 	}
 }
@@ -76,7 +67,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 templ tagFilterButton(name, color, label string) {
 	<button
 		type="button"
-		data-on:click={ fmt.Sprintf("$_emailTagFilter = $_emailTagFilter == %q ? '' : %q; @get('/sse/emails')", name, name) }
+		data-on:click={ fmt.Sprintf("$_emailTagFilter = $_emailTagFilter == %q ? '' : %q; $_emailPage = 0; @get('/sse/emails')", name, name) }
 		class="w-full text-left px-4 py-2 text-sm text-slate-400 hover:bg-slate-800/60 transition-colors flex items-center gap-2"
 	>
 		<span class="w-2 h-2 rounded-full flex-shrink-0" style={ fmt.Sprintf("background-color:%s", color) }></span>
@@ -96,27 +87,51 @@ templ accountStatusDot(status string) {
 }
 
 // ThreadList is the patchable thread list panel.
-templ ThreadList(threads []emailqueries.ThreadReadModel) {
+templ ThreadList(result emailqueries.ThreadListResult) {
 	<div id="email-thread-list">
-		if len(threads) == 0 {
+		if len(result.Threads) == 0 {
 			<div class="bg-slate-900 border border-slate-800 rounded-lg flex flex-col items-center justify-center py-14 text-slate-600">
 				<p class="text-sm">No emails.</p>
 			</div>
 		} else {
 			<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden divide-y divide-slate-800">
-				for _, t := range threads {
+				for _, t := range result.Threads {
 					@threadRow(t)
 				}
 			</div>
+			if result.Total > result.PageSize {
+				<div class="mt-2 flex items-center justify-between px-1">
+					if result.Page > 0 {
+						<button
+							type="button"
+							data-on:click="$_emailPage--; @get('/sse/emails')"
+							class="text-xs text-cyan-500 hover:text-cyan-400 px-3 py-1.5 rounded hover:bg-slate-800 transition-colors"
+						>← Previous</button>
+					} else {
+						<div></div>
+					}
+					<span class="text-xs text-slate-500">
+						{ fmt.Sprintf("%d–%d of %d", result.Page*result.PageSize+1, pageEnd(result), result.Total) }
+					</span>
+					if (result.Page+1)*result.PageSize < result.Total {
+						<button
+							type="button"
+							data-on:click="$_emailPage++; @get('/sse/emails')"
+							class="text-xs text-cyan-500 hover:text-cyan-400 px-3 py-1.5 rounded hover:bg-slate-800 transition-colors"
+						>Next →</button>
+					} else {
+						<div></div>
+					}
+				</div>
+			}
 		}
 	</div>
 }
 
 templ threadRow(t emailqueries.ThreadReadModel) {
-	<button
-		type="button"
-		data-on:click={ fmt.Sprintf("$_emailThreadID = %q; @get('/sse/emails/%s')", t.ID, t.ID) }
-		class="w-full text-left px-4 py-3 hover:bg-slate-800/60 transition-colors flex flex-col gap-0.5"
+	<a
+		href={ templ.SafeURL(fmt.Sprintf("/emails/threads/%s", t.ID)) }
+		class="block w-full text-left px-4 py-3 hover:bg-slate-800/60 transition-colors flex flex-col gap-0.5 no-underline"
 	>
 		<div class="flex items-center justify-between gap-2">
 			<span class={ "text-sm font-medium truncate", templ.KV("text-white", t.Unread), templ.KV("text-slate-400", !t.Unread) }>
@@ -138,34 +153,42 @@ templ threadRow(t emailqueries.ThreadReadModel) {
 				}
 			</div>
 		</div>
-	</button>
+	</a>
+}
+
+// EmailThreadPage is the full page for a single thread.
+templ EmailThreadPage(thread emailqueries.ThreadDetailReadModel) {
+	@templates.Layout(thread.Subject) {
+		@templates.PageHeader(thread.Subject, "")
+		<div class="mb-4">
+			<a href="/emails" class="inline-flex items-center gap-1.5 text-sm text-cyan-500 hover:text-cyan-400">
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+				</svg>
+				Back to Inbox
+			</a>
+		</div>
+		@ThreadDetail(thread)
+	}
 }
 
 // ThreadDetail renders the full thread (messages + attachments).
 templ ThreadDetail(thread emailqueries.ThreadDetailReadModel) {
-	<div id="email-thread-detail" class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex flex-col">
+	<div id="email-thread-detail" class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
 		<!-- Header -->
 		<div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
-			<h3 class="text-sm font-semibold text-slate-200 truncate">{ thread.Subject }</h3>
-			<div class="flex items-center gap-2">
-				<button
-					type="button"
-					data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/read')", thread.ID) }
-					class="text-xs text-slate-500 hover:text-slate-300"
-				>Mark read</button>
-				<button
-					type="button"
-					data-on:click="$_emailThreadID = ''"
-					class="text-slate-500 hover:text-slate-300"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-					</svg>
-				</button>
+			<div class="flex items-center gap-3 min-w-0">
+				<h3 class="text-sm font-semibold text-slate-200 truncate">{ thread.Subject }</h3>
+				<span class="text-xs text-slate-600 flex-shrink-0">{ fmt.Sprintf("%d msg", len(thread.Messages)) }</span>
 			</div>
+			<button
+				type="button"
+				data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/read')", thread.ID) }
+				class="text-xs text-slate-500 hover:text-slate-300 flex-shrink-0"
+			>Mark read</button>
 		</div>
 		<!-- Messages -->
-		<div class="flex-1 overflow-y-auto divide-y divide-slate-800 max-h-[70vh]">
+		<div class="divide-y divide-slate-800">
 			for _, m := range thread.Messages {
 				@messageItem(m)
 			}
@@ -576,4 +599,12 @@ func formatSize(bytes int64) string {
 	default:
 		return fmt.Sprintf("%dMB", bytes/(1024*1024))
 	}
+}
+
+func pageEnd(r emailqueries.ThreadListResult) int {
+	end := (r.Page+1)*r.PageSize
+	if end > r.Total {
+		end = r.Total
+	}
+	return end
 }

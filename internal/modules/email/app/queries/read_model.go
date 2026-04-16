@@ -67,3 +67,14 @@ type TagReadModel struct {
 	Color  string
 	System bool
 }
+
+// DefaultPageSize is the number of threads per page.
+const DefaultPageSize = 50
+
+// ThreadListResult is the paginated thread list response.
+type ThreadListResult struct {
+	Threads  []ThreadReadModel
+	Total    int
+	Page     int
+	PageSize int
+}

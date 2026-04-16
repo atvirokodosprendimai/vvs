@@ -80,6 +80,7 @@ func NewHandlers(
 
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/emails", h.emailPage)
+	r.Get("/emails/threads/{threadID}", h.threadPage)
 	r.Get("/emails/settings", h.settingsPage)
 	r.Get("/sse/emails", h.listSSE)
 	r.Get("/sse/emails/{threadID}", h.threadSSE)
@@ -115,6 +116,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
 		AccountID string `json:"_emailAccountID"`
 		TagFilter string `json:"_emailTagFilter"`
+		Page      int    `json:"_emailPage"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		log.Printf("email: listSSE ReadSignals: %v", err)
@@ -124,7 +126,11 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	ch, cancel := h.subscriber.ChanSubscription("isp.email.*")
 	defer cancel()
 
-	q := emailqueries.ListThreadsQuery{AccountID: signals.AccountID, TagFilter: signals.TagFilter}
+	q := emailqueries.ListThreadsQuery{
+		AccountID: signals.AccountID,
+		TagFilter: signals.TagFilter,
+		Page:      signals.Page,
+	}
 
 	current, err := h.listThreads.Handle(r.Context(), q)
 	if err != nil {
@@ -151,6 +157,21 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		case <-r.Context().Done():
 			return
 		}
+	}
+}
+
+// threadPage renders the full thread detail page.
+func (h *Handlers) threadPage(w http.ResponseWriter, r *http.Request) {
+	threadID := chi.URLParam(r, "threadID")
+	thread, err := h.getThread.Handle(r.Context(), threadID)
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	// Mark as read on open.
+	_ = h.markReadCmd.Handle(r.Context(), emailcommands.MarkReadCommand{ThreadID: threadID})
+	if err := EmailThreadPage(*thread).Render(r.Context(), w); err != nil {
+		log.Printf("email: threadPage render: %v", err)
 	}
 }
 

@@ -10,6 +10,8 @@ import (
 type ListThreadsQuery struct {
 	AccountID string // empty = all accounts
 	TagFilter string // tag name to filter by; empty = no filter
+	Page      int    // 0-based page number
+	PageSize  int    // 0 → DefaultPageSize
 }
 
 type ListThreadsHandler struct {
@@ -21,30 +23,48 @@ func NewListThreadsHandler(threads domain.EmailThreadRepository, tags domain.Ema
 	return &ListThreadsHandler{threads: threads, tags: tags}
 }
 
-func (h *ListThreadsHandler) Handle(ctx context.Context, q ListThreadsQuery) ([]ThreadReadModel, error) {
+func (h *ListThreadsHandler) Handle(ctx context.Context, q ListThreadsQuery) (ThreadListResult, error) {
+	pageSize := q.PageSize
+	if pageSize <= 0 {
+		pageSize = DefaultPageSize
+	}
+
 	var threadList []*domain.EmailThread
 	var err error
-
 	if q.AccountID != "" {
 		threadList, err = h.threads.ListForAccount(ctx, q.AccountID)
 	} else {
 		threadList, err = h.threads.ListAll(ctx)
 	}
 	if err != nil {
-		return nil, err
+		return ThreadListResult{}, err
 	}
 
-	out := make([]ThreadReadModel, 0, len(threadList))
+	all := make([]ThreadReadModel, 0, len(threadList))
 	for _, t := range threadList {
 		tags, _ := h.tags.ListForThread(ctx, t.ID)
 		trm := threadToReadModel(t, tags)
-
 		if q.TagFilter != "" && !hasTagByName(trm.Tags, q.TagFilter) {
 			continue
 		}
-		out = append(out, trm)
+		all = append(all, trm)
 	}
-	return out, nil
+
+	total := len(all)
+	page := q.Page
+	start := page * pageSize
+	if start >= total {
+		start = 0
+		page = 0
+	}
+	end := min(start+pageSize, total)
+
+	return ThreadListResult{
+		Threads:  all[start:end],
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
 }
 
 // ListThreadsForCustomerHandler returns threads linked to a customer.
