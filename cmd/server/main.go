@@ -122,6 +122,12 @@ func serveCommand() *cli.Command {
 				Usage:   "Comma-separated list of modules to enable (default: all)",
 				Sources: cli.EnvVars("VVS_MODULES"),
 			},
+			&cli.IntFlag{
+				Name:    "email-sync-interval",
+				Usage:   "Email IMAP sync interval in seconds",
+				Value:   300,
+				Sources: cli.EnvVars("VVS_EMAIL_SYNC_INTERVAL"),
+			},
 			&cli.BoolFlag{
 				Name:    "debug",
 				Usage:   "Enable verbose debug logging",
@@ -155,9 +161,10 @@ func serveCommand() *cli.Command {
 				NATSUrl:        cmd.Root().String("nats-url"),
 				NATSListenAddr: cmd.String("nats-listen"),
 				APIToken:       cmd.Root().String("api-token"),
-				EmailEncKey:    cmd.String("email-enc-key"),
-				EnabledModules: enabledModules,
-				Debug:          cmd.Bool("debug"),
+				EmailEncKey:          cmd.String("email-enc-key"),
+				EmailSyncIntervalSecs: int(cmd.Int("email-sync-interval")),
+				EnabledModules:       enabledModules,
+				Debug:                cmd.Bool("debug"),
 			}
 
 			application, err := app.New(cfg)

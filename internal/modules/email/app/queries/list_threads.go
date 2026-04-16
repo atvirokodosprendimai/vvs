@@ -10,6 +10,7 @@ import (
 type ListThreadsQuery struct {
 	AccountID string // empty = all accounts
 	TagFilter string // tag name to filter by; empty = no filter
+	Search    string // filter by subject or participant address (case-insensitive)
 	Page      int    // 0-based page number
 	PageSize  int    // 0 → DefaultPageSize
 }
@@ -40,11 +41,18 @@ func (h *ListThreadsHandler) Handle(ctx context.Context, q ListThreadsQuery) (Th
 		return ThreadListResult{}, err
 	}
 
+	search := strings.ToLower(strings.TrimSpace(q.Search))
+
 	all := make([]ThreadReadModel, 0, len(threadList))
 	for _, t := range threadList {
 		tags, _ := h.tags.ListForThread(ctx, t.ID)
 		trm := threadToReadModel(t, tags)
 		if q.TagFilter != "" && !hasTagByName(trm.Tags, q.TagFilter) {
+			continue
+		}
+		if search != "" &&
+			!strings.Contains(strings.ToLower(trm.Subject), search) &&
+			!strings.Contains(strings.ToLower(trm.ParticipantAddresses), search) {
 			continue
 		}
 		all = append(all, trm)

@@ -412,7 +412,8 @@ func New(cfg Config) (*App, error) {
 		Tags:        emailTagRepo,
 		EncKey:      emailEncKey,
 	}
-	emailWorker := worker.NewSyncWorker(emailRepos, publisher, subscriber, 0)
+	emailSyncInterval := time.Duration(cfg.EmailSyncIntervalSecs) * time.Second
+	emailWorker := worker.NewSyncWorker(emailRepos, publisher, subscriber, emailSyncInterval)
 	emailWorker.Start()
 	log.Printf("module wired: email")
 

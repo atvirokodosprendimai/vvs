@@ -25,6 +25,9 @@ type Config struct {
 	// EnabledModules lists which modules to start. Empty = all enabled.
 	EnabledModules []string // e.g. ["auth","customer"]
 
+	// EmailSyncIntervalSecs is the email sync polling interval in seconds (default 300).
+	EmailSyncIntervalSecs int // VVS_EMAIL_SYNC_INTERVAL env var
+
 	// Debug enables verbose debug logging (slog DEBUG level).
 	Debug bool
 }

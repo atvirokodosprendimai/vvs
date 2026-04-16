@@ -114,9 +114,10 @@ func (h *Handlers) emailPage(w http.ResponseWriter, r *http.Request) {
 // listSSE streams the thread list, refreshing on isp.email.* events.
 func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
-		AccountID string `json:"_emailAccountID"`
-		TagFilter string `json:"_emailTagFilter"`
-		Page      int    `json:"_emailPage"`
+		AccountID string `json:"emailAccountID"`
+		TagFilter string `json:"emailTagFilter"`
+		Search    string `json:"emailSearch"`
+		Page      int    `json:"emailPage"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		log.Printf("email: listSSE ReadSignals: %v", err)
@@ -129,6 +130,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	q := emailqueries.ListThreadsQuery{
 		AccountID: signals.AccountID,
 		TagFilter: signals.TagFilter,
+		Search:    signals.Search,
 		Page:      signals.Page,
 	}
 
