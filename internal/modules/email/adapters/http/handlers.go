@@ -33,6 +33,7 @@ type Handlers struct {
 	removeTagCmd  *emailcommands.RemoveTagHandler
 	markReadCmd   *emailcommands.MarkReadHandler
 	linkCmd       *emailcommands.LinkCustomerHandler
+	sendReplyCmd  *emailcommands.SendReplyHandler
 	listThreads   *emailqueries.ListThreadsHandler
 	getThread     *emailqueries.GetThreadHandler
 	listForCust   *emailqueries.ListThreadsForCustomerHandler
@@ -51,6 +52,7 @@ func NewHandlers(
 	removeTagCmd *emailcommands.RemoveTagHandler,
 	markReadCmd *emailcommands.MarkReadHandler,
 	linkCmd *emailcommands.LinkCustomerHandler,
+	sendReplyCmd *emailcommands.SendReplyHandler,
 	listThreads *emailqueries.ListThreadsHandler,
 	getThread *emailqueries.GetThreadHandler,
 	listForCust *emailqueries.ListThreadsForCustomerHandler,
@@ -68,6 +70,7 @@ func NewHandlers(
 		removeTagCmd: removeTagCmd,
 		markReadCmd:  markReadCmd,
 		linkCmd:      linkCmd,
+		sendReplyCmd: sendReplyCmd,
 		listThreads:  listThreads,
 		getThread:    getThread,
 		listForCust:  listForCust,
@@ -94,6 +97,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/email-threads/{threadID}/tags", h.applyTagSSE)
 	r.Delete("/api/email-threads/{threadID}/tags/{tagID}", h.removeTagSSE)
 	r.Post("/api/email-threads/{threadID}/read", h.markReadSSE)
+	r.Post("/api/email-threads/{threadID}/reply", h.replySSE)
 	r.Post("/api/email-threads/{threadID}/link", h.linkCustomerSSE)
 	r.Get("/api/email-attachments/{id}", h.downloadAttachment)
 }
@@ -220,6 +224,30 @@ func (h *Handlers) threadSSE(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// replySSE sends a plain-text reply and refreshes the thread detail.
+func (h *Handlers) replySSE(w http.ResponseWriter, r *http.Request) {
+	threadID := chi.URLParam(r, "threadID")
+	var signals struct {
+		Body string `json:"emailReplyBody"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("email: replySSE ReadSignals: %v", err)
+	}
+	sse := datastar.NewSSE(w, r)
+	if err := h.sendReplyCmd.Handle(r.Context(), emailcommands.SendReplyCommand{
+		ThreadID: threadID, Body: signals.Body,
+	}); err != nil {
+		log.Printf("email: replySSE: %v", err)
+		sse.PatchSignals([]byte(`{"emailReplyError":"send failed"}`))
+		return
+	}
+	thread, err := h.getThread.Handle(r.Context(), threadID)
+	if err == nil {
+		sse.PatchElementTempl(ThreadDetail(*thread))
+	}
+	sse.PatchSignals([]byte(`{"emailReplyBody":"","emailReplyError":""}`))
+}
+
 // configureAccountSSE creates a new IMAP account from form signals.
 func (h *Handlers) configureAccountSSE(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
@@ -230,6 +258,9 @@ func (h *Handlers) configureAccountSSE(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"emailPass"`
 		TLS      string `json:"emailTLS"`
 		Folder   string `json:"emailFolder"`
+		SMTPHost string `json:"emailSMTPHost"`
+		SMTPPort string `json:"emailSMTPPort"`
+		SMTPTLS  string `json:"emailSMTPTLS"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		log.Printf("email: configureAccountSSE ReadSignals: %v", err)
@@ -241,6 +272,7 @@ func (h *Handlers) configureAccountSSE(w http.ResponseWriter, r *http.Request) {
 	if port == 0 {
 		port = 993
 	}
+	smtpPort, _ := strconv.Atoi(signals.SMTPPort)
 
 	sse := datastar.NewSSE(w, r)
 	_, err := h.configureCmd.Handle(r.Context(), emailcommands.ConfigureAccountCommand{
@@ -251,14 +283,16 @@ func (h *Handlers) configureAccountSSE(w http.ResponseWriter, r *http.Request) {
 		Password: signals.Password,
 		TLS:      signals.TLS,
 		Folder:   signals.Folder,
+		SMTPHost: signals.SMTPHost,
+		SMTPPort: smtpPort,
+		SMTPTLS:  signals.SMTPTLS,
 	})
 	if err != nil {
 		log.Printf("email: configureAccountSSE: %v", err)
 		sse.PatchSignals([]byte(`{"emailError":"` + err.Error() + `"}`))
 		return
 	}
-	// Close form by setting account ID to a non-empty sentinel.
-	sse.PatchSignals([]byte(`{"_emailAccountID":"new"}`))
+	sse.PatchSignals([]byte(`{"_showAdd":false}`))
 }
 
 func (h *Handlers) applyTagSSE(w http.ResponseWriter, r *http.Request) {
@@ -375,6 +409,9 @@ func (h *Handlers) updateAccountSSE(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"emailPass"`
 		TLS      string `json:"emailTLS"`
 		Folder   string `json:"emailFolder"`
+		SMTPHost string `json:"emailSMTPHost"`
+		SMTPPort string `json:"emailSMTPPort"`
+		SMTPTLS  string `json:"emailSMTPTLS"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		log.Printf("email: updateAccountSSE ReadSignals: %v", err)
@@ -385,6 +422,7 @@ func (h *Handlers) updateAccountSSE(w http.ResponseWriter, r *http.Request) {
 	if port == 0 {
 		port = 993
 	}
+	smtpPort, _ := strconv.Atoi(signals.SMTPPort)
 	sse := datastar.NewSSE(w, r)
 	_, err := h.configureCmd.Handle(r.Context(), emailcommands.ConfigureAccountCommand{
 		ID:       id,
@@ -395,6 +433,9 @@ func (h *Handlers) updateAccountSSE(w http.ResponseWriter, r *http.Request) {
 		Password: signals.Password,
 		TLS:      signals.TLS,
 		Folder:   signals.Folder,
+		SMTPHost: signals.SMTPHost,
+		SMTPPort: smtpPort,
+		SMTPTLS:  signals.SMTPTLS,
 	})
 	if err != nil {
 		log.Printf("email: updateAccountSSE: %v", err)

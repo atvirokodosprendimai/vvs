@@ -177,7 +177,40 @@ templ EmailThreadPage(thread emailqueries.ThreadDetailReadModel) {
 			</a>
 		</div>
 		@ThreadDetail(thread)
+		@replyForm(thread.ID)
 	}
+}
+
+templ replyForm(threadID string) {
+	<div
+		id="email-reply-form"
+		class="mt-4 bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col gap-3"
+		data-signals="{emailReplyBody:'',emailReplyError:''}"
+	>
+		<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Reply</h3>
+		<textarea
+			data-bind:emailReplyBody
+			placeholder="Write your reply..."
+			rows="5"
+			class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 resize-y placeholder-slate-600"
+		></textarea>
+		<div
+			data-show="$emailReplyError != ''"
+			class="text-xs text-red-400"
+			style="display:none"
+			data-text="$emailReplyError"
+		></div>
+		<div class="flex items-center gap-3">
+			<button
+				type="button"
+				data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/reply')", threadID) }
+				data-indicator:emailSending
+				data-attr:disabled="$emailSending"
+				class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors disabled:opacity-50"
+			>Send Reply</button>
+			<span data-show="$emailSending" class="text-xs text-slate-500" style="display:none">Sending...</span>
+		</div>
+	</div>
 }
 
 // ThreadDetail renders the full thread (messages + attachments).
@@ -302,7 +335,7 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 		@templates.PageHeader("Email Settings", "IMAP account configuration")
 		<div
 			id="email-settings"
-			data-signals={ fmt.Sprintf("{emailSettingsEdit:'',emailName:'',emailHost:'',emailPort:'993',emailUser:'',emailPass:'',emailTLS:'tls',emailFolder:'INBOX',emailError:'',_showAdd:false}") }
+			data-signals={ fmt.Sprintf("{emailSettingsEdit:'',emailName:'',emailHost:'',emailPort:'993',emailUser:'',emailPass:'',emailTLS:'tls',emailFolder:'INBOX',emailSMTPHost:'',emailSMTPPort:'587',emailSMTPTLS:'starttls',emailError:'',_showAdd:false}") }
 			data-init="@get('/sse/email-accounts')"
 		>
 			<!-- Header row -->
@@ -349,7 +382,7 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 					@emailField("emailUser", "Username", "user@example.com", "email")
 					@emailField("emailPass", "Password", "", "password")
 					<div class="flex flex-col gap-1">
-						<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">TLS</label>
+						<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">IMAP TLS</label>
 						<select data-bind:emailTLS class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
 							<option value="tls">TLS (port 993)</option>
 							<option value="starttls">STARTTLS (port 587)</option>
@@ -357,6 +390,19 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 						</select>
 					</div>
 					@emailField("emailFolder", "Folder", "INBOX", "text")
+					<div class="border-t border-slate-700 pt-3 mt-1">
+						<p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">SMTP (outgoing)</p>
+						@emailField("emailSMTPHost", "SMTP Host", "mail.example.com (blank = IMAP host)", "text")
+						@emailField("emailSMTPPort", "SMTP Port", "587", "number")
+						<div class="flex flex-col gap-1">
+							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">SMTP TLS</label>
+							<select data-bind:emailSMTPTLS class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
+								<option value="starttls">STARTTLS (port 587)</option>
+								<option value="tls">TLS (port 465)</option>
+								<option value="none">None (insecure)</option>
+							</select>
+						</div>
+					</div>
 					<button
 						type="button"
 						data-on:click="@post('/api/email-accounts') && ($_showAdd=false)"
@@ -394,7 +440,7 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 						/>
 					</div>
 					<div class="flex flex-col gap-1">
-						<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">TLS</label>
+						<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">IMAP TLS</label>
 						<select data-bind:emailTLS class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
 							<option value="tls">TLS (port 993)</option>
 							<option value="starttls">STARTTLS (port 587)</option>
@@ -402,6 +448,19 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 						</select>
 					</div>
 					@emailField("emailFolder", "Folder", "INBOX", "text")
+					<div class="border-t border-slate-700 pt-3 mt-1">
+						<p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">SMTP (outgoing)</p>
+						@emailField("emailSMTPHost", "SMTP Host", "mail.example.com (blank = IMAP host)", "text")
+						@emailField("emailSMTPPort", "SMTP Port", "587", "number")
+						<div class="flex flex-col gap-1">
+							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">SMTP TLS</label>
+							<select data-bind:emailSMTPTLS class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
+								<option value="starttls">STARTTLS (port 587)</option>
+								<option value="tls">TLS (port 465)</option>
+								<option value="none">None (insecure)</option>
+							</select>
+						</div>
+					</div>
 					<button
 						type="button"
 						data-on:click="@put('/api/email-accounts/'+$emailSettingsEdit)"
@@ -443,8 +502,8 @@ templ emailAccountCard(a emailqueries.AccountReadModel) {
 			<div class="flex items-center gap-2">
 				<button
 					type="button"
-					data-on:click={ fmt.Sprintf("$emailSettingsEdit=%q; $emailName=%q; $emailHost=%q; $emailPort='%d'; $emailUser=%q; $emailTLS=%q; $emailFolder=%q; $emailPass=''",
-						a.ID, a.Name, a.Host, a.Port, a.Username, a.TLS, a.Folder) }
+					data-on:click={ fmt.Sprintf("$emailSettingsEdit=%q; $emailName=%q; $emailHost=%q; $emailPort='%d'; $emailUser=%q; $emailTLS=%q; $emailFolder=%q; $emailPass=''; $emailSMTPHost=%q; $emailSMTPPort='%d'; $emailSMTPTLS=%q",
+						a.ID, a.Name, a.Host, a.Port, a.Username, a.TLS, a.Folder, a.SMTPHost, a.SMTPPort, a.SMTPTLS) }
 					class="text-xs text-slate-400 hover:text-cyan-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
 				>Edit</button>
 				if a.Status == "paused" {

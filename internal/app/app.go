@@ -85,12 +85,13 @@ import (
 	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
 
 	emailhttp "github.com/vvs/isp/internal/modules/email/adapters/http"
+	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
 	emailpersistence "github.com/vvs/isp/internal/modules/email/adapters/persistence"
+	smtpAdapter "github.com/vvs/isp/internal/modules/email/adapters/smtp"
 	emailcommands "github.com/vvs/isp/internal/modules/email/app/commands"
 	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
 	emailmigrations "github.com/vvs/isp/internal/modules/email/migrations"
 	"github.com/vvs/isp/internal/modules/email/worker"
-	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
 
 	devicehttp "github.com/vvs/isp/internal/modules/device/adapters/http"
 	devicepersistence "github.com/vvs/isp/internal/modules/device/adapters/persistence"
@@ -386,6 +387,8 @@ func New(cfg Config) (*App, error) {
 	removeTagCmd := emailcommands.NewRemoveTagHandler(emailTagRepo, publisher)
 	markReadCmd := emailcommands.NewMarkReadHandler(emailTagRepo, publisher)
 	linkCustomerCmd := emailcommands.NewLinkCustomerHandler(emailThreadRepo, publisher)
+	smtpSender := smtpAdapter.NewSender(emailEncKey)
+	sendReplyCmd := emailcommands.NewSendReplyHandler(emailThreadRepo, emailMessageRepo, emailAccountRepo, smtpSender, publisher)
 	listEmailThreadsQuery := emailqueries.NewListThreadsHandler(emailThreadRepo, emailTagRepo)
 	getEmailThreadQuery := emailqueries.NewGetThreadHandler(emailThreadRepo, emailMessageRepo, emailAttachmentRepo, emailTagRepo)
 	listEmailForCustomerQuery := emailqueries.NewListThreadsForCustomerHandler(emailThreadRepo, emailTagRepo)
@@ -393,7 +396,7 @@ func New(cfg Config) (*App, error) {
 
 	emailRoutes := emailhttp.NewHandlers(
 		configureAccountCmd, deleteAccountCmd, pauseAccountCmd, resumeAccountCmd,
-		applyTagCmd, removeTagCmd, markReadCmd, linkCustomerCmd,
+		applyTagCmd, removeTagCmd, markReadCmd, linkCustomerCmd, sendReplyCmd,
 		listEmailThreadsQuery, getEmailThreadQuery, listEmailForCustomerQuery,
 		listEmailAccountsQuery, emailAttachmentRepo,
 		subscriber, publisher,
