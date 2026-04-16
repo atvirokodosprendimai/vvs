@@ -11,6 +11,12 @@ import (
 	servicehttp "github.com/vvs/isp/internal/modules/service/adapters/http"
 	contactQueries "github.com/vvs/isp/internal/modules/contact/app/queries"
 	contacthttp "github.com/vvs/isp/internal/modules/contact/adapters/http"
+	dealQueries "github.com/vvs/isp/internal/modules/deal/app/queries"
+	dealhttp "github.com/vvs/isp/internal/modules/deal/adapters/http"
+	ticketQueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
+	tickethttp "github.com/vvs/isp/internal/modules/ticket/adapters/http"
+	taskQueries "github.com/vvs/isp/internal/modules/task/app/queries"
+	taskhttp "github.com/vvs/isp/internal/modules/task/adapters/http"
 )
 
 templ CustomerListPage() {
@@ -216,7 +222,7 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 	}
 }
 
-templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel, routerName string, notes []queries.NoteReadModel, contacts []contactQueries.ContactReadModel) {
+templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel, routerName string, notes []queries.NoteReadModel, contacts []contactQueries.ContactReadModel, deals []dealQueries.DealReadModel, tickets []ticketQueries.TicketReadModel, tasks []taskQueries.TaskReadModel) {
 	@templates.Layout(c.CompanyName) {
 		@templates.PageHeader(c.CompanyName, fmt.Sprintf("Customer %s", c.Code.String()))
 		<div class="max-w-2xl">
@@ -320,6 +326,9 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 		</div>
 		@servicehttp.ServiceSection(c.ID, services)
 		@contacthttp.ContactSection(c.ID, contacts)
+		@dealhttp.DealSection(c.ID, deals)
+		@tickethttp.TicketSection(c.ID, tickets)
+		@taskhttp.TaskSection(c.ID, tasks)
 		<!-- Notes timeline -->
 		<div class="max-w-2xl mt-6">
 			<div class="flex items-center justify-between mb-3">

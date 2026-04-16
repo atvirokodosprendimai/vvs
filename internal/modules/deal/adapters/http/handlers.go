@@ -1,0 +1,275 @@
+package http
+
+import (
+	"errors"
+	"log"
+	"net/http"
+	"reflect"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/starfederation/datastar-go/datastar"
+	"github.com/vvs/isp/internal/modules/deal/app/commands"
+	"github.com/vvs/isp/internal/modules/deal/app/queries"
+	"github.com/vvs/isp/internal/modules/deal/domain"
+	"github.com/vvs/isp/internal/shared/events"
+)
+
+type Handlers struct {
+	addCmd     *commands.AddDealHandler
+	updateCmd  *commands.UpdateDealHandler
+	deleteCmd  *commands.DeleteDealHandler
+	advanceCmd *commands.AdvanceDealHandler
+	listQuery  *queries.ListDealsForCustomerHandler
+	subscriber events.EventSubscriber
+}
+
+func NewHandlers(
+	addCmd *commands.AddDealHandler,
+	updateCmd *commands.UpdateDealHandler,
+	deleteCmd *commands.DeleteDealHandler,
+	advanceCmd *commands.AdvanceDealHandler,
+	listQuery *queries.ListDealsForCustomerHandler,
+	subscriber events.EventSubscriber,
+) *Handlers {
+	return &Handlers{
+		addCmd:     addCmd,
+		updateCmd:  updateCmd,
+		deleteCmd:  deleteCmd,
+		advanceCmd: advanceCmd,
+		listQuery:  listQuery,
+		subscriber: subscriber,
+	}
+}
+
+func (h *Handlers) RegisterRoutes(r chi.Router) {
+	r.Get("/sse/customers/{id}/deals", h.listSSE)
+	r.Post("/api/customers/{id}/deals", h.addSSE)
+	r.Put("/api/deals/{dealID}", h.updateSSE)
+	r.Put("/api/deals/{dealID}/advance", h.advanceSSE)
+	r.Delete("/api/deals/{dealID}", h.deleteSSE)
+}
+
+func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
+	customerID := chi.URLParam(r, "id")
+	if customerID == "" {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+
+	// Subscribe before initial render so no event is missed.
+	ch, cancel := h.subscriber.ChanSubscription("isp.deal.*")
+	defer cancel()
+
+	q := queries.ListDealsForCustomerQuery{CustomerID: customerID}
+
+	current, err := h.listQuery.Handle(r.Context(), q)
+	if err != nil {
+		log.Printf("deal handler: listSSE: %v", err)
+		return
+	}
+	sse.PatchElementTempl(DealList(customerID, current))
+
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				return
+			}
+			next, err := h.listQuery.Handle(r.Context(), q)
+			if err != nil {
+				log.Printf("deal handler: listSSE refresh: %v", err)
+				continue
+			}
+			if !reflect.DeepEqual(current, next) {
+				sse.PatchElementTempl(DealList(customerID, next))
+				current = next
+			}
+		case <-r.Context().Done():
+			return
+		}
+	}
+}
+
+func (h *Handlers) addSSE(w http.ResponseWriter, r *http.Request) {
+	customerID := chi.URLParam(r, "id")
+	if customerID == "" {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	var signals struct {
+		DealTitle    string `json:"dealTitle"`
+		DealValue    string `json:"dealValue"`
+		DealCurrency string `json:"dealCurrency"`
+		DealNotes    string `json:"dealNotes"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("deal handler: addSSE ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+
+	value, err := parseValueCents(signals.DealValue)
+	if err != nil {
+		log.Printf("deal handler: addSSE parse value: %v", err)
+		sse.PatchElementTempl(dealFormError("Invalid deal value"))
+		return
+	}
+
+	currency := signals.DealCurrency
+	if currency == "" {
+		currency = "EUR"
+	}
+
+	_, err = h.addCmd.Handle(r.Context(), commands.AddDealCommand{
+		CustomerID: customerID,
+		Title:      signals.DealTitle,
+		Value:      value,
+		Currency:   currency,
+		Notes:      signals.DealNotes,
+	})
+	if err != nil {
+		if errors.Is(err, domain.ErrTitleRequired) {
+			sse.PatchElementTempl(dealFormError("Title is required"))
+			return
+		}
+		log.Printf("deal handler: addSSE Handle: %v", err)
+		sse.PatchElementTempl(dealFormError("Internal server error"))
+		return
+	}
+
+	sse.Redirect("/customers/" + customerID)
+}
+
+func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
+	dealID := chi.URLParam(r, "dealID")
+	if dealID == "" {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	var signals struct {
+		DealTitle    string `json:"dealTitle"`
+		DealValue    string `json:"dealValue"`
+		DealCurrency string `json:"dealCurrency"`
+		DealNotes    string `json:"dealNotes"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("deal handler: updateSSE ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+
+	value, err := parseValueCents(signals.DealValue)
+	if err != nil {
+		log.Printf("deal handler: updateSSE parse value: %v", err)
+		sse.PatchElementTempl(dealFormError("Invalid deal value"))
+		return
+	}
+
+	currency := signals.DealCurrency
+	if currency == "" {
+		currency = "EUR"
+	}
+
+	err = h.updateCmd.Handle(r.Context(), commands.UpdateDealCommand{
+		ID:       dealID,
+		Title:    signals.DealTitle,
+		Value:    value,
+		Currency: currency,
+		Notes:    signals.DealNotes,
+	})
+	if err != nil {
+		if errors.Is(err, domain.ErrTitleRequired) {
+			sse.PatchElementTempl(dealFormError("Title is required"))
+			return
+		}
+		if errors.Is(err, domain.ErrNotFound) {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("deal handler: updateSSE Handle: %v", err)
+		sse.PatchElementTempl(dealFormError("Internal server error"))
+		return
+	}
+
+	// Notify all deal SSE listeners via event subscription.
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handlers) advanceSSE(w http.ResponseWriter, r *http.Request) {
+	dealID := chi.URLParam(r, "dealID")
+	if dealID == "" {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	var signals struct {
+		DealAdvanceAction string `json:"dealAdvanceAction"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("deal handler: advanceSSE ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+
+	err := h.advanceCmd.Handle(r.Context(), commands.AdvanceDealCommand{
+		ID:     dealID,
+		Action: signals.DealAdvanceAction,
+	})
+	if err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		if errors.Is(err, domain.ErrAlreadyClosed) {
+			sse.PatchElementTempl(dealFormError("Deal is already closed"))
+			return
+		}
+		log.Printf("deal handler: advanceSSE Handle: %v", err)
+		sse.PatchElementTempl(dealFormError("Internal server error"))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
+	dealID := chi.URLParam(r, "dealID")
+	if dealID == "" {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.deleteCmd.Handle(r.Context(), commands.DeleteDealCommand{ID: dealID}); err != nil {
+		if errors.Is(err, domain.ErrNotFound) {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		log.Printf("deal handler: deleteSSE Handle: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func parseValueCents(s string) (int64, error) {
+	if s == "" {
+		return 0, nil
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, err
+	}
+	return int64(f * 100), nil
+}

@@ -64,6 +64,24 @@ import (
 	contactqueries "github.com/vvs/isp/internal/modules/contact/app/queries"
 	contactmigrations "github.com/vvs/isp/internal/modules/contact/migrations"
 
+	dealhttp "github.com/vvs/isp/internal/modules/deal/adapters/http"
+	dealpersistence "github.com/vvs/isp/internal/modules/deal/adapters/persistence"
+	dealcommands "github.com/vvs/isp/internal/modules/deal/app/commands"
+	dealqueries "github.com/vvs/isp/internal/modules/deal/app/queries"
+	dealmigrations "github.com/vvs/isp/internal/modules/deal/migrations"
+
+	tickethttp "github.com/vvs/isp/internal/modules/ticket/adapters/http"
+	ticketpersistence "github.com/vvs/isp/internal/modules/ticket/adapters/persistence"
+	ticketcommands "github.com/vvs/isp/internal/modules/ticket/app/commands"
+	ticketqueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
+	ticketmigrations "github.com/vvs/isp/internal/modules/ticket/migrations"
+
+	taskhttp "github.com/vvs/isp/internal/modules/task/adapters/http"
+	taskpersistence "github.com/vvs/isp/internal/modules/task/adapters/persistence"
+	taskcommands "github.com/vvs/isp/internal/modules/task/app/commands"
+	taskqueries "github.com/vvs/isp/internal/modules/task/app/queries"
+	taskmigrations "github.com/vvs/isp/internal/modules/task/migrations"
+
 	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
 
 	devicehttp "github.com/vvs/isp/internal/modules/device/adapters/http"
@@ -112,6 +130,9 @@ func New(cfg Config) (*App, error) {
 		{Name: "device", FS: devicemigrations.FS, TableName: "goose_device"},
 		{Name: "cron", FS: cronmigrations.FS, TableName: "goose_cron"},
 		{Name: "contact", FS: contactmigrations.FS, TableName: "goose_contact"},
+		{Name: "deal", FS: dealmigrations.FS, TableName: "goose_deal"},
+		{Name: "ticket", FS: ticketmigrations.FS, TableName: "goose_ticket"},
+		{Name: "task", FS: taskmigrations.FS, TableName: "goose_task"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -280,6 +301,63 @@ func New(cfg Config) (*App, error) {
 		customerRoutes.WithContactsQuery(listContactsQuery)
 	}
 	log.Printf("module wired: contact")
+
+	// Deal module
+	dealRepo := dealpersistence.NewGormDealRepository(gdb)
+	addDealCmd := dealcommands.NewAddDealHandler(dealRepo, publisher)
+	updateDealCmd := dealcommands.NewUpdateDealHandler(dealRepo, publisher)
+	deleteDealCmd := dealcommands.NewDeleteDealHandler(dealRepo, publisher)
+	advanceDealCmd := dealcommands.NewAdvanceDealHandler(dealRepo, publisher)
+	listDealsQuery := dealqueries.NewListDealsForCustomerHandler(dealRepo)
+
+	dealRoutes := dealhttp.NewHandlers(addDealCmd, updateDealCmd, deleteDealCmd, advanceDealCmd, listDealsQuery, subscriber)
+	moduleRoutes = append(moduleRoutes, dealRoutes)
+	if customerRoutes != nil {
+		customerRoutes.WithDealsQuery(listDealsQuery)
+	}
+	log.Printf("module wired: deal")
+
+	// Ticket module
+	ticketRepo := ticketpersistence.NewGormTicketRepository(gdb)
+	openTicketCmd := ticketcommands.NewOpenTicketHandler(ticketRepo, publisher)
+	updateTicketCmd := ticketcommands.NewUpdateTicketHandler(ticketRepo, publisher)
+	deleteTicketCmd := ticketcommands.NewDeleteTicketHandler(ticketRepo, publisher)
+	changeTicketStatusCmd := ticketcommands.NewChangeTicketStatusHandler(ticketRepo, publisher)
+	addCommentCmd := ticketcommands.NewAddCommentHandler(ticketRepo, publisher)
+	listTicketsQuery := ticketqueries.NewListTicketsForCustomerHandler(ticketRepo)
+	listCommentsQuery := ticketqueries.NewListCommentsHandler(ticketRepo)
+
+	ticketRoutes := tickethttp.NewHandlers(
+		openTicketCmd, updateTicketCmd, deleteTicketCmd,
+		changeTicketStatusCmd, addCommentCmd,
+		listTicketsQuery, listCommentsQuery,
+		subscriber, publisher,
+	)
+	moduleRoutes = append(moduleRoutes, ticketRoutes)
+	if customerRoutes != nil {
+		customerRoutes.WithTicketsQuery(listTicketsQuery)
+	}
+	log.Printf("module wired: ticket")
+
+	// Task module
+	taskRepo := taskpersistence.NewGormTaskRepository(gdb)
+	createTaskCmd := taskcommands.NewCreateTaskHandler(taskRepo, publisher)
+	updateTaskCmd := taskcommands.NewUpdateTaskHandler(taskRepo, publisher)
+	deleteTaskCmd := taskcommands.NewDeleteTaskHandler(taskRepo, publisher)
+	changeTaskStatusCmd := taskcommands.NewChangeTaskStatusHandler(taskRepo, publisher)
+	listTasksForCustomerQuery := taskqueries.NewListTasksForCustomerHandler(taskRepo)
+	listAllTasksQuery := taskqueries.NewListAllTasksHandler(taskRepo)
+
+	taskRoutes := taskhttp.NewHandlers(
+		createTaskCmd, updateTaskCmd, deleteTaskCmd, changeTaskStatusCmd,
+		listTasksForCustomerQuery, listAllTasksQuery,
+		subscriber, publisher,
+	)
+	moduleRoutes = append(moduleRoutes, taskRoutes)
+	if customerRoutes != nil {
+		customerRoutes.WithTasksQuery(listTasksForCustomerQuery)
+	}
+	log.Printf("module wired: task")
 
 	// 10. Service module — commands + route registration
 	assignServiceCmd := servicecommands.NewAssignServiceHandler(serviceRepo, publisher)

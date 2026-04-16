@@ -17,6 +17,9 @@ import (
 	"github.com/vvs/isp/internal/modules/customer/app/queries"
 	"github.com/vvs/isp/internal/modules/customer/domain"
 	contactQueries "github.com/vvs/isp/internal/modules/contact/app/queries"
+	dealQueries "github.com/vvs/isp/internal/modules/deal/app/queries"
+	ticketQueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
+	taskQueries "github.com/vvs/isp/internal/modules/task/app/queries"
 	serviceQueries "github.com/vvs/isp/internal/modules/service/app/queries"
 	"github.com/vvs/isp/internal/shared/events"
 )
@@ -43,6 +46,9 @@ type Handlers struct {
 	reader               *gorm.DB // optional — for router dropdown; nil = no network section shown
 	listServicesQuery    *serviceQueries.ListServicesForCustomerHandler
 	listContactsQuery    *contactQueries.ListContactsForCustomerHandler
+	listDealsQuery       *dealQueries.ListDealsForCustomerHandler
+	listTicketsQuery     *ticketQueries.ListTicketsForCustomerHandler
+	listTasksQuery       *taskQueries.ListTasksForCustomerHandler
 }
 
 func NewHandlers(
@@ -84,6 +90,24 @@ func (h *Handlers) WithReader(reader *gorm.DB) *Handlers {
 // WithContactsQuery injects the contact list query for the detail page.
 func (h *Handlers) WithContactsQuery(q *contactQueries.ListContactsForCustomerHandler) *Handlers {
 	h.listContactsQuery = q
+	return h
+}
+
+// WithDealsQuery injects the deal list query for the detail page.
+func (h *Handlers) WithDealsQuery(q *dealQueries.ListDealsForCustomerHandler) *Handlers {
+	h.listDealsQuery = q
+	return h
+}
+
+// WithTicketsQuery injects the ticket list query for the detail page.
+func (h *Handlers) WithTicketsQuery(q *ticketQueries.ListTicketsForCustomerHandler) *Handlers {
+	h.listTicketsQuery = q
+	return h
+}
+
+// WithTasksQuery injects the task list query for the detail page.
+func (h *Handlers) WithTasksQuery(q *taskQueries.ListTasksForCustomerHandler) *Handlers {
+	h.listTasksQuery = q
 	return h
 }
 
@@ -136,12 +160,36 @@ func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
 			contacts = nil
 		}
 	}
+	var deals []dealQueries.DealReadModel
+	if h.listDealsQuery != nil {
+		deals, err = h.listDealsQuery.Handle(r.Context(), dealQueries.ListDealsForCustomerQuery{CustomerID: id})
+		if err != nil {
+			log.Printf("detailPage: list deals: %v", err)
+			deals = nil
+		}
+	}
+	var tickets []ticketQueries.TicketReadModel
+	if h.listTicketsQuery != nil {
+		tickets, err = h.listTicketsQuery.Handle(r.Context(), ticketQueries.ListTicketsForCustomerQuery{CustomerID: id})
+		if err != nil {
+			log.Printf("detailPage: list tickets: %v", err)
+			tickets = nil
+		}
+	}
+	var tasks []taskQueries.TaskReadModel
+	if h.listTasksQuery != nil {
+		tasks, err = h.listTasksQuery.Handle(r.Context(), taskQueries.ListTasksForCustomerQuery{CustomerID: id})
+		if err != nil {
+			log.Printf("detailPage: list tasks: %v", err)
+			tasks = nil
+		}
+	}
 	routerName := h.loadRouterName(r.Context(), customer)
 	var notes []queries.NoteReadModel
 	if h.listNotesQuery != nil {
 		notes, _ = h.listNotesQuery.Handle(r.Context(), id)
 	}
-	CustomerDetailPage(customer, services, routerName, notes, contacts).Render(r.Context(), w)
+	CustomerDetailPage(customer, services, routerName, notes, contacts, deals, tickets, tasks).Render(r.Context(), w)
 }
 
 func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
