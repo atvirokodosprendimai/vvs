@@ -23,6 +23,9 @@ type attachmentFinder interface {
 // Handlers wires together email HTTP handlers.
 type Handlers struct {
 	configureCmd  *emailcommands.ConfigureAccountHandler
+	deleteCmd     *emailcommands.DeleteAccountHandler
+	pauseCmd      *emailcommands.PauseAccountHandler
+	resumeCmd     *emailcommands.ResumeAccountHandler
 	applyTagCmd   *emailcommands.ApplyTagHandler
 	removeTagCmd  *emailcommands.RemoveTagHandler
 	markReadCmd   *emailcommands.MarkReadHandler
@@ -38,6 +41,9 @@ type Handlers struct {
 
 func NewHandlers(
 	configureCmd *emailcommands.ConfigureAccountHandler,
+	deleteCmd *emailcommands.DeleteAccountHandler,
+	pauseCmd *emailcommands.PauseAccountHandler,
+	resumeCmd *emailcommands.ResumeAccountHandler,
 	applyTagCmd *emailcommands.ApplyTagHandler,
 	removeTagCmd *emailcommands.RemoveTagHandler,
 	markReadCmd *emailcommands.MarkReadHandler,
@@ -52,6 +58,9 @@ func NewHandlers(
 ) *Handlers {
 	return &Handlers{
 		configureCmd: configureCmd,
+		deleteCmd:    deleteCmd,
+		pauseCmd:     pauseCmd,
+		resumeCmd:    resumeCmd,
 		applyTagCmd:  applyTagCmd,
 		removeTagCmd: removeTagCmd,
 		markReadCmd:  markReadCmd,
@@ -68,9 +77,16 @@ func NewHandlers(
 
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/emails", h.emailPage)
+	r.Get("/emails/settings", h.settingsPage)
 	r.Get("/sse/emails", h.listSSE)
 	r.Get("/sse/emails/{threadID}", h.threadSSE)
+	r.Get("/sse/email-accounts", h.accountListSSE)
 	r.Post("/api/email-accounts", h.configureAccountSSE)
+	r.Put("/api/email-accounts/{id}", h.updateAccountSSE)
+	r.Delete("/api/email-accounts/{id}", h.deleteAccountSSE)
+	r.Post("/api/email-accounts/{id}/pause", h.pauseAccountSSE)
+	r.Post("/api/email-accounts/{id}/resume", h.resumeAccountSSE)
+	r.Post("/api/email-sync/{accountID}", h.triggerSyncSSE)
 	r.Post("/api/email-threads/{threadID}/tags", h.applyTagSSE)
 	r.Delete("/api/email-threads/{threadID}/tags/{tagID}", h.removeTagSSE)
 	r.Post("/api/email-threads/{threadID}/read", h.markReadSSE)
@@ -273,6 +289,133 @@ func (h *Handlers) linkCustomerSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+// settingsPage renders the IMAP account settings page.
+func (h *Handlers) settingsPage(w http.ResponseWriter, r *http.Request) {
+	accounts, err := h.listAccounts.Handle(r.Context())
+	if err != nil {
+		log.Printf("email: settingsPage: %v", err)
+		accounts = []emailqueries.AccountReadModel{}
+	}
+	if err := EmailSettingsPage(accounts).Render(r.Context(), w); err != nil {
+		log.Printf("email: settingsPage render: %v", err)
+	}
+}
+
+// accountListSSE streams the account list, refreshing on isp.email.* events.
+func (h *Handlers) accountListSSE(w http.ResponseWriter, r *http.Request) {
+	sse := datastar.NewSSE(w, r)
+	ch, cancel := h.subscriber.ChanSubscription("isp.email.*")
+	defer cancel()
+
+	current, err := h.listAccounts.Handle(r.Context())
+	if err != nil {
+		log.Printf("email: accountListSSE: %v", err)
+		return
+	}
+	sse.PatchElementTempl(EmailAccountList(current))
+
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				return
+			}
+			next, err := h.listAccounts.Handle(r.Context())
+			if err != nil {
+				log.Printf("email: accountListSSE refresh: %v", err)
+				continue
+			}
+			if !reflect.DeepEqual(current, next) {
+				sse.PatchElementTempl(EmailAccountList(next))
+				current = next
+			}
+		case <-r.Context().Done():
+			return
+		}
+	}
+}
+
+// updateAccountSSE updates an existing IMAP account.
+func (h *Handlers) updateAccountSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var signals struct {
+		Name     string `json:"emailName"`
+		Host     string `json:"emailHost"`
+		Port     int    `json:"emailPort"`
+		Username string `json:"emailUser"`
+		Password string `json:"emailPass"`
+		TLS      string `json:"emailTLS"`
+		Folder   string `json:"emailFolder"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("email: updateAccountSSE ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	if signals.Port == 0 {
+		signals.Port = 993
+	}
+	sse := datastar.NewSSE(w, r)
+	_, err := h.configureCmd.Handle(r.Context(), emailcommands.ConfigureAccountCommand{
+		ID:       id,
+		Name:     signals.Name,
+		Host:     signals.Host,
+		Port:     signals.Port,
+		Username: signals.Username,
+		Password: signals.Password,
+		TLS:      signals.TLS,
+		Folder:   signals.Folder,
+	})
+	if err != nil {
+		log.Printf("email: updateAccountSSE: %v", err)
+		sse.PatchSignals([]byte(`{"emailError":"` + err.Error() + `"}`))
+		return
+	}
+	sse.PatchSignals([]byte(`{"emailSettingsEdit":""}`))
+}
+
+// deleteAccountSSE deletes an IMAP account.
+func (h *Handlers) deleteAccountSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := h.deleteCmd.Handle(r.Context(), id); err != nil {
+		log.Printf("email: deleteAccountSSE: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// pauseAccountSSE pauses an IMAP account.
+func (h *Handlers) pauseAccountSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := h.pauseCmd.Handle(r.Context(), id); err != nil {
+		log.Printf("email: pauseAccountSSE: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// resumeAccountSSE resumes a paused IMAP account.
+func (h *Handlers) resumeAccountSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := h.resumeCmd.Handle(r.Context(), id); err != nil {
+		log.Printf("email: resumeAccountSSE: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// triggerSyncSSE publishes a manual sync request for an account.
+func (h *Handlers) triggerSyncSSE(w http.ResponseWriter, r *http.Request) {
+	accountID := chi.URLParam(r, "accountID")
+	h.publisher.Publish(r.Context(), "isp.email.sync_requested", events.DomainEvent{
+		ID: accountID, Type: "email.sync_requested", AggregateID: accountID,
+	})
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // downloadAttachment streams an attachment file.
