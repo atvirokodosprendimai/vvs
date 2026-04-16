@@ -8,6 +8,7 @@ import (
 	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
 	"github.com/vvs/isp/internal/modules/email/domain"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // --- mapping helpers ---
@@ -333,7 +334,8 @@ func NewGormEmailMessageRepository(db *gormsqlite.DB) *GormEmailMessageRepositor
 func (r *GormEmailMessageRepository) Save(ctx context.Context, m *domain.EmailMessage) error {
 	model := toMessageModel(m)
 	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
-		return tx.Save(&model).Error
+		// INSERT OR IGNORE: silently skip if (account_id, uid) already exists.
+		return tx.Clauses(clause.OnConflict{DoNothing: true}).Create(&model).Error
 	})
 }
 
