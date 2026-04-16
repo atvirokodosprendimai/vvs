@@ -613,7 +613,7 @@ func replyForm(threadID string) templ.Component {
 			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<div id=\"email-reply-form\" class=\"mt-4 bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col gap-3\" data-signals=\"{emailReplyBody:'',emailReplyError:''}\"><h3 class=\"text-xs font-semibold text-slate-400 uppercase tracking-wider\">Reply</h3><textarea data-bind:emailReplyBody placeholder=\"Write your reply...\" rows=\"5\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 resize-y placeholder-slate-600\"></textarea><div data-show=\"$emailReplyError != ''\" class=\"text-xs text-red-400\" style=\"display:none\" data-text=\"$emailReplyError\"></div><div class=\"flex items-center gap-3\"><button type=\"button\" data-on:click=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<div id=\"email-reply-form\" class=\"mt-4 bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col gap-3\" data-signals=\"{emailReplyBody:'',emailReplyError:''}\"><h3 class=\"text-xs font-semibold text-slate-400 uppercase tracking-wider\">Reply</h3><textarea data-bind:email-reply-body placeholder=\"Write your reply...\" rows=\"5\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 resize-y placeholder-slate-600\"></textarea><div data-show=\"$emailReplyError != ''\" class=\"text-xs text-red-400\" style=\"display:none\" data-text=\"$emailReplyError\"></div><div class=\"flex items-center gap-3\"><button type=\"button\" data-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -626,7 +626,7 @@ func replyForm(threadID string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\" data-indicator:emailSending data-class:opacity-50=\"$emailSending\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">Send Reply</button> <span data-show=\"$emailSending\" class=\"text-xs text-slate-500\" style=\"display:none\">Sending...</span></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\" data-indicator:email-sending data-class:opacity-50=\"$emailSending\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">Send Reply</button> <span data-show=\"$emailSending\" class=\"text-xs text-slate-500\" style=\"display:none\">Sending...</span></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

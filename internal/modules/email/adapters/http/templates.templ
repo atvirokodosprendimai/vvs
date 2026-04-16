@@ -195,7 +195,7 @@ templ replyForm(threadID string) {
 	>
 		<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Reply</h3>
 		<textarea
-			data-bind:emailReplyBody
+			data-bind:email-reply-body
 			placeholder="Write your reply..."
 			rows="5"
 			class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 resize-y placeholder-slate-600"
@@ -210,7 +210,7 @@ templ replyForm(threadID string) {
 			<button
 				type="button"
 				data-on:click={ fmt.Sprintf("!$emailSending && @post('/api/email-threads/%s/reply')", threadID) }
-				data-indicator:emailSending
+				data-indicator:email-sending
 				data-class:opacity-50="$emailSending"
 				class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
 			>Send Reply</button>
