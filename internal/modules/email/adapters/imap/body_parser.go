@@ -3,10 +3,11 @@ package imap
 import (
 	"bytes"
 	"io"
-	"log"
+	"log/slog"
 	"strings"
 
 	"github.com/emersion/go-message/mail"
+	_ "github.com/emersion/go-message/charset" // registers CharsetReader — go-message decodes charset automatically
 )
 
 const maxAttachmentSize = 20 * 1024 * 1024 // 20 MB
@@ -45,17 +46,18 @@ func ParseMessage(raw []byte) ParsedMessage {
 			break
 		}
 		if err != nil {
-			log.Printf("email: parse part: %v", err)
+			slog.Debug("email: parse part", "err", err)
 			break
 		}
 
 		switch h := part.Header.(type) {
 		case *mail.InlineHeader:
-			ct, params, _ := h.ContentType()
-			body, err := DecodeReaderToUTF8(params["charset"], part.Body)
+			ct, _, _ := h.ContentType()
+			bodyBytes, err := io.ReadAll(part.Body)
 			if err != nil {
 				continue
 			}
+			body := string(bodyBytes)
 			switch {
 			case strings.HasPrefix(ct, "text/plain"):
 				if result.Text == "" {
