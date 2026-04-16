@@ -179,10 +179,15 @@ func fetchFolder(
 
 		fetchCmd := c.Fetch(fetchSet, &imaplib.FetchOptions{
 			UID:          true,
+			Flags:        true, // fetch current \Seen state before body access
 			Envelope:     true,
 			InternalDate: true,
-			BodySection:  []*imaplib.FetchItemBodySection{{Peek: true}}, // BODY.PEEK[] — never sets \Seen
+			BodySection:  []*imaplib.FetchItemBodySection{{Peek: true}}, // BODY.PEEK[] — avoids \Seen on compliant servers
 		})
+
+		// Track UIDs that were NOT already \Seen — only those need flag restoration.
+		var unreadUIDs imaplib.UIDSet
+		unreadCount := 0
 
 		for {
 			msg := fetchCmd.Next()
@@ -194,8 +199,21 @@ func fetchFolder(
 				slog.Error("imap: fetch collect", "account", account.Name, "folder", folder.Name, "seq", msg.SeqNum, "err", err)
 				continue
 			}
-			slog.Debug("imap: processing message", "account", account.Name, "folder", folder.Name, "uid", buf.UID)
-			if err := processMessage(ctx, account, folder.Name, buf, repos, newID); err != nil {
+
+			wasSeen := false
+			for _, f := range buf.Flags {
+				if f == imaplib.FlagSeen {
+					wasSeen = true
+					break
+				}
+			}
+			if !wasSeen {
+				unreadUIDs.AddNum(buf.UID)
+				unreadCount++
+			}
+
+			slog.Debug("imap: processing message", "account", account.Name, "folder", folder.Name, "uid", buf.UID, "seen", wasSeen)
+			if err := processMessage(ctx, account, folder.Name, buf, wasSeen, repos, newID); err != nil {
 				slog.Error("imap: process message", "account", account.Name, "folder", folder.Name, "uid", buf.UID, "err", err)
 			}
 			fetched++
@@ -204,15 +222,18 @@ func fetchFolder(
 			return fetched, fmt.Errorf("imap fetch close: %w", err)
 		}
 
-		// Explicitly unset \Seen on the fetched UIDs.
-		// BODY.PEEK[] should prevent \Seen, but some servers set it anyway.
-		storeCmd := c.Store(fetchSet, &imaplib.StoreFlags{
-			Op:     imaplib.StoreFlagsDel,
-			Silent: true,
-			Flags:  []imaplib.Flag{imaplib.FlagSeen},
-		}, nil)
-		if err := storeCmd.Close(); err != nil {
-			slog.Debug("imap: clear seen flags", "folder", folder.Name, "err", err)
+		// Restore \Seen=false only on messages that were unread before our fetch.
+		// This undoes any accidental \Seen set by non-compliant servers, without
+		// touching messages the user had already read in their external client.
+		if unreadCount > 0 {
+			storeCmd := c.Store(unreadUIDs, &imaplib.StoreFlags{
+				Op:     imaplib.StoreFlagsDel,
+				Silent: true,
+				Flags:  []imaplib.Flag{imaplib.FlagSeen},
+			}, nil)
+			if err := storeCmd.Close(); err != nil {
+				slog.Debug("imap: restore unread flags", "folder", folder.Name, "err", err)
+			}
 		}
 	}
 
@@ -286,6 +307,7 @@ func processMessage(
 	account *domain.EmailAccount,
 	folderName string,
 	buf *imapclient.FetchMessageBuffer,
+	wasSeen bool, // true if \Seen was already set on IMAP server before our fetch
 	repos Repos,
 	newID NewIDFunc,
 ) error {
@@ -372,9 +394,12 @@ func processMessage(
 		_ = persistence.AddParticipant(ctx, repos.DB, threadID, msg.FromAddr)
 	}
 
-	// Apply "unread" system tag to thread.
-	if unreadTag, err := repos.Tags.FindSystemTag(ctx, domain.TagUnread); err == nil {
-		_ = repos.Tags.ApplyToThread(ctx, domain.EmailThreadTag{ThreadID: threadID, TagID: unreadTag.ID})
+	// Apply "unread" tag only if the message was not already read on the IMAP server.
+	// Respects \Seen flag set by external email clients.
+	if !wasSeen {
+		if unreadTag, err := repos.Tags.FindSystemTag(ctx, domain.TagUnread); err == nil {
+			_ = repos.Tags.ApplyToThread(ctx, domain.EmailThreadTag{ThreadID: threadID, TagID: unreadTag.ID})
+		}
 	}
 
 	return nil
