@@ -9,15 +9,15 @@ import (
 )
 
 // EmailPage is the full inbox page.
-templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
+templ EmailPage(accounts []emailqueries.AccountReadModel, folders []emailqueries.FolderReadModel, selected, folder string) {
 	@templates.Layout("Email") {
 		@templates.PageHeader("Email", "IMAP inbox")
 		<div
 			id="email-inbox"
 			class="flex gap-4"
-			data-signals={ fmt.Sprintf("{emailAccountID: %q, emailTagFilter: '', emailSearch: '', emailFolder: '', emailPage: 0}", selected) }
+			data-signals={ fmt.Sprintf("{emailAccountID: %q, emailTagFilter: '', emailSearch: '', emailFolder: %q, emailPage: 0}", selected, folder) }
 		>
-			<!-- Sidebar: accounts + tags -->
+			<!-- Sidebar: accounts + tags + folders -->
 			<div class="w-56 flex-shrink-0 flex flex-col gap-3">
 				<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
 					<div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
@@ -26,14 +26,13 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 					</div>
 					<div class="divide-y divide-slate-800">
 						for _, a := range accounts {
-							<button
-								type="button"
-								data-on:click={ fmt.Sprintf("$emailAccountID = %q; $emailFolder = ''; $emailPage = 0; @get('/sse/emails', {openWhenHidden: false}); @get('/sse/email-folders/%s', {openWhenHidden: false})", a.ID, a.ID) }
-								class="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-2"
+							<a
+								href={ templ.SafeURL(fmt.Sprintf("/emails?account=%s", a.ID)) }
+								class={ "block px-4 py-2.5 text-sm hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-2 no-underline " + accountActiveClass(a.ID, selected) }
 							>
 								<span class="truncate">{ a.Name }</span>
 								@accountStatusDot(a.Status)
-							</button>
+							</a>
 						}
 					</div>
 				</div>
@@ -50,8 +49,10 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 					</div>
 				</div>
 
-				<!-- Folder filter (populated via SSE when account selected) -->
-				<div id="email-folder-sidebar"></div>
+				<!-- Folder filter (server-rendered, shown when account selected) -->
+				if selected != "" && len(folders) > 0 {
+					@EmailFolderSidebar(selected, folder, folders)
+				}
 			</div>
 
 			<!-- Thread list -->
@@ -612,25 +613,23 @@ templ EmailFolderList(accountID string, folders []emailqueries.FolderReadModel) 
 	</div>
 }
 
-// EmailFolderSidebar is the patchable folder filter section in the inbox sidebar.
-templ EmailFolderSidebar(folders []emailqueries.FolderReadModel) {
-	<div id="email-folder-sidebar" class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+// EmailFolderSidebar renders folder links for the inbox sidebar.
+templ EmailFolderSidebar(accountID, activeFolder string, folders []emailqueries.FolderReadModel) {
+	<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
 		<div class="px-4 py-3 border-b border-slate-800">
 			<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Folders</h3>
 		</div>
 		<div class="divide-y divide-slate-800">
-			<button
-				type="button"
-				data-on:click="$emailFolder = ''; $emailPage = 0; @get('/sse/emails', {openWhenHidden: false})"
-				class="w-full text-left px-4 py-2 text-sm text-slate-400 hover:bg-slate-800/60 transition-colors"
-			>All folders</button>
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/emails?account=%s", accountID)) }
+				class={ "block px-4 py-2 text-sm hover:bg-slate-800/60 transition-colors no-underline " + folderActiveClass("", activeFolder) }
+			>All folders</a>
 			for _, f := range folders {
 				if f.Enabled {
-					<button
-						type="button"
-						data-on:click={ fmt.Sprintf("$emailFolder = %q; $emailPage = 0; @get('/sse/emails', {openWhenHidden: false})", f.Name) }
-						class="w-full text-left px-4 py-2 text-sm text-slate-400 hover:bg-slate-800/60 transition-colors truncate"
-					>{ f.Name }</button>
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/emails?account=%s&folder=%s", accountID, f.Name)) }
+						class={ "block px-4 py-2 text-sm hover:bg-slate-800/60 transition-colors truncate no-underline " + folderActiveClass(f.Name, activeFolder) }
+					>{ f.Name }</a>
 				}
 			}
 		</div>
@@ -672,6 +671,20 @@ templ EmailThreadsSection(customerID string, threads []emailqueries.ThreadReadMo
 }
 
 // --- helpers ---
+
+func accountActiveClass(id, selected string) string {
+	if id == selected {
+		return "text-cyan-400 bg-slate-800/60"
+	}
+	return "text-slate-300"
+}
+
+func folderActiveClass(name, active string) string {
+	if name == active {
+		return "text-cyan-400 bg-slate-800/60"
+	}
+	return "text-slate-400"
+}
 
 func firstParticipant(s string) string {
 	if s == "" {

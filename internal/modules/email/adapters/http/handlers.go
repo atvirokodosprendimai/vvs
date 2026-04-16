@@ -129,8 +129,17 @@ func (h *Handlers) emailPage(w http.ResponseWriter, r *http.Request) {
 		log.Printf("email: emailPage: %v", err)
 		accounts = []emailqueries.AccountReadModel{}
 	}
-	component := EmailPage(accounts, "")
-	if err := component.Render(r.Context(), w); err != nil {
+
+	q := r.URL.Query()
+	accountID := q.Get("account")
+	folder := q.Get("folder")
+
+	var folders []emailqueries.FolderReadModel
+	if accountID != "" {
+		folders, _ = h.listFolders.Handle(r.Context(), accountID)
+	}
+
+	if err := EmailPage(accounts, folders, accountID, folder).Render(r.Context(), w); err != nil {
 		log.Printf("email: emailPage render: %v", err)
 	}
 }
@@ -520,7 +529,6 @@ func (h *Handlers) discoverFoldersSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sse.PatchElementTempl(EmailFolderList(accountID, folders))
-	sse.PatchElementTempl(EmailFolderSidebar(folders))
 }
 
 // toggleFolderSSE flips the Enabled flag on a folder and patches the folder list.
@@ -545,7 +553,6 @@ func (h *Handlers) toggleFolderSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sse.PatchElementTempl(EmailFolderList(f.AccountID, folders))
-	sse.PatchElementTempl(EmailFolderSidebar(folders))
 }
 
 // folderListSSE streams folder list for an account, refreshing on isp.email.* events.
@@ -561,7 +568,6 @@ func (h *Handlers) folderListSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sse.PatchElementTempl(EmailFolderList(accountID, folders))
-	sse.PatchElementTempl(EmailFolderSidebar(folders))
 
 	for {
 		select {
@@ -576,7 +582,6 @@ func (h *Handlers) folderListSSE(w http.ResponseWriter, r *http.Request) {
 			}
 			if !reflect.DeepEqual(folders, next) {
 				sse.PatchElementTempl(EmailFolderList(accountID, next))
-				sse.PatchElementTempl(EmailFolderSidebar(next))
 				folders = next
 			}
 		case <-r.Context().Done():
