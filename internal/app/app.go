@@ -56,6 +56,8 @@ import (
 	servicecommands "github.com/vvs/isp/internal/modules/service/app/commands"
 	servicequeries "github.com/vvs/isp/internal/modules/service/app/queries"
 	servicemigrations "github.com/vvs/isp/internal/modules/service/migrations"
+
+	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
 )
 
 type App struct {
@@ -65,6 +67,7 @@ type App struct {
 	Publisher  events.EventPublisher
 	Subscriber events.EventSubscriber
 	HTTPServer *infrahttp.Server
+	RPCServer  *natsrpc.Server
 }
 
 func New(cfg Config) (*App, error) {
@@ -181,25 +184,23 @@ func New(cfg Config) (*App, error) {
 	listRoutersQuery := networkqueries.NewListRoutersHandler(routerRepo)
 	getRouterQuery := networkqueries.NewGetRouterHandler(routerRepo)
 
+	provisioner := &provisionerDispatcher{
+		mikrotik: mikrotik.New(),
+		arista:   arista.New(),
+	}
+	var ipamProvider networkdomain.IPAMProvider
+	if cfg.NetBoxURL != "" && cfg.NetBoxToken != "" {
+		ipamProvider = netbox.New(cfg.NetBoxURL, cfg.NetBoxToken)
+		log.Printf("NetBox IPAM configured: %s", cfg.NetBoxURL)
+	}
+	syncARPCmd := networkcommands.NewSyncCustomerARPHandler(
+		&customerARPBridge{repo: customerRepo}, routerRepo, provisioner, ipamProvider, publisher,
+	)
+
 	if cfg.IsEnabled("network") {
 		if customerRoutes != nil {
 			customerRoutes.WithReader(gdb.R)
 		}
-
-		provisioner := &provisionerDispatcher{
-			mikrotik: mikrotik.New(),
-			arista:   arista.New(),
-		}
-
-		var ipamProvider networkdomain.IPAMProvider
-		if cfg.NetBoxURL != "" && cfg.NetBoxToken != "" {
-			ipamProvider = netbox.New(cfg.NetBoxURL, cfg.NetBoxToken)
-			log.Printf("NetBox IPAM configured: %s", cfg.NetBoxURL)
-		}
-
-		syncARPCmd := networkcommands.NewSyncCustomerARPHandler(
-			&customerARPBridge{repo: customerRepo}, routerRepo, provisioner, ipamProvider, publisher,
-		)
 
 		networkRoutes := networkhttp.NewHandlers(
 			createRouterCmd, updateRouterCmd, deleteRouterCmd,
@@ -242,7 +243,42 @@ func New(cfg Config) (*App, error) {
 	chatHandler := infrahttp.NewChatHandler(chatStore, subscriber, publisher)
 	globalHandler := infrahttp.NewGlobalHandler(notifStore, chatStore, subscriber)
 
-	// 12. HTTP router — pass gdb.R to dashboard handler
+	// 12. NATS RPC server — request/reply for all core functions
+	rpcServer := natsrpc.New(nc, natsrpc.Config{
+		ListUsers:  listUsersQuery,
+		CreateUser: createUserCmd,
+		DeleteUser: deleteUserCmd,
+
+		ListCustomers:  listCustomersQuery,
+		GetCustomer:    getCustomerQuery,
+		CreateCustomer: createCustomerCmd,
+		UpdateCustomer: updateCustomerCmd,
+		DeleteCustomer: deleteCustomerCmd,
+
+		ListProducts:  listProductsQuery,
+		GetProduct:    getProductQuery,
+		CreateProduct: createProductCmd,
+		UpdateProduct: updateProductCmd,
+		DeleteProduct: deleteProductCmd,
+
+		ListRouters:  listRoutersQuery,
+		GetRouter:    getRouterQuery,
+		CreateRouter: createRouterCmd,
+		UpdateRouter: updateRouterCmd,
+		DeleteRouter: deleteRouterCmd,
+		SyncARP:      syncARPCmd,
+
+		ListServices:      listServicesQuery,
+		AssignService:     assignServiceCmd,
+		SuspendService:    suspendServiceCmd,
+		ReactivateService: reactivateServiceCmd,
+		CancelService:     cancelServiceCmd,
+	})
+	if err := rpcServer.Register(); err != nil {
+		return nil, fmt.Errorf("nats rpc: %w", err)
+	}
+
+	// 13. HTTP router — pass gdb.R to dashboard handler
 	router := infrahttp.NewRouter(gdb.R, getCurrentUserQuery, notifHandler, chatHandler, globalHandler, cfg.APIToken, moduleRoutes...)
 	httpServer := infrahttp.NewServer(cfg.ListenAddr, router)
 
@@ -259,6 +295,7 @@ func New(cfg Config) (*App, error) {
 		Publisher:  publisher,
 		Subscriber: subscriber,
 		HTTPServer: httpServer,
+		RPCServer:  rpcServer,
 	}, nil
 }
 
@@ -268,6 +305,9 @@ func (a *App) Start() error {
 
 func (a *App) Shutdown(ctx context.Context) error {
 	err := a.HTTPServer.Shutdown(ctx)
+	if a.RPCServer != nil {
+		a.RPCServer.Close()
+	}
 	if a.Subscriber != nil {
 		a.Subscriber.Close()
 	}
