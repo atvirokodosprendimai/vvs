@@ -8,20 +8,28 @@ import (
 )
 
 type ListThreadsQuery struct {
-	AccountID string // empty = all accounts
-	TagFilter string // tag name to filter by; empty = no filter
-	Search    string // filter by subject or participant address (case-insensitive)
-	Page      int    // 0-based page number
-	PageSize  int    // 0 → DefaultPageSize
+	AccountID    string // empty = all accounts
+	TagFilter    string // tag name to filter by; empty = no filter
+	Search       string // filter by subject or participant address (case-insensitive)
+	FolderFilter string // IMAP folder name to filter by; empty = no filter
+	Page         int    // 0-based page number
+	PageSize     int    // 0 → DefaultPageSize
 }
 
 type ListThreadsHandler struct {
 	threads domain.EmailThreadRepository
 	tags    domain.EmailTagRepository
+	folders domain.EmailFolderRepository // optional; enables FolderFilter
 }
 
 func NewListThreadsHandler(threads domain.EmailThreadRepository, tags domain.EmailTagRepository) *ListThreadsHandler {
 	return &ListThreadsHandler{threads: threads, tags: tags}
+}
+
+// WithFolderRepo attaches a folder repo so FolderFilter is applied.
+func (h *ListThreadsHandler) WithFolderRepo(folders domain.EmailFolderRepository) *ListThreadsHandler {
+	h.folders = folders
+	return h
 }
 
 func (h *ListThreadsHandler) Handle(ctx context.Context, q ListThreadsQuery) (ThreadListResult, error) {
@@ -43,8 +51,23 @@ func (h *ListThreadsHandler) Handle(ctx context.Context, q ListThreadsQuery) (Th
 
 	search := strings.ToLower(strings.TrimSpace(q.Search))
 
+	// Build folder-thread set if FolderFilter is active.
+	var folderThreadSet map[string]struct{}
+	if q.FolderFilter != "" && q.AccountID != "" && h.folders != nil {
+		ids, _ := h.folders.ListThreadIDsWithFolder(ctx, q.AccountID, q.FolderFilter)
+		folderThreadSet = make(map[string]struct{}, len(ids))
+		for _, id := range ids {
+			folderThreadSet[id] = struct{}{}
+		}
+	}
+
 	all := make([]ThreadReadModel, 0, len(threadList))
 	for _, t := range threadList {
+		if folderThreadSet != nil {
+			if _, ok := folderThreadSet[t.ID]; !ok {
+				continue
+			}
+		}
 		tags, _ := h.tags.ListForThread(ctx, t.ID)
 		trm := threadToReadModel(t, tags)
 		if q.TagFilter != "" && !hasTagByName(trm.Tags, q.TagFilter) {

@@ -84,6 +84,8 @@ import (
 
 	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
 
+	"github.com/google/uuid"
+
 	emailhttp "github.com/vvs/isp/internal/modules/email/adapters/http"
 	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
 	emailpersistence "github.com/vvs/isp/internal/modules/email/adapters/persistence"
@@ -372,6 +374,7 @@ func New(cfg Config) (*App, error) {
 
 	// Email module
 	emailAccountRepo := emailpersistence.NewGormEmailAccountRepository(gdb)
+	emailFolderRepo := emailpersistence.NewGormEmailFolderRepository(gdb)
 	emailThreadRepo := emailpersistence.NewGormEmailThreadRepository(gdb)
 	emailMessageRepo := emailpersistence.NewGormEmailMessageRepository(gdb)
 	emailAttachmentRepo := emailpersistence.NewGormEmailAttachmentRepository(gdb)
@@ -389,16 +392,42 @@ func New(cfg Config) (*App, error) {
 	linkCustomerCmd := emailcommands.NewLinkCustomerHandler(emailThreadRepo, publisher)
 	smtpSender := smtpAdapter.NewSender(emailEncKey)
 	sendReplyCmd := emailcommands.NewSendReplyHandler(emailThreadRepo, emailMessageRepo, emailAccountRepo, smtpSender, publisher)
-	listEmailThreadsQuery := emailqueries.NewListThreadsHandler(emailThreadRepo, emailTagRepo)
+	listEmailThreadsQuery := emailqueries.NewListThreadsHandler(emailThreadRepo, emailTagRepo).
+		WithFolderRepo(emailFolderRepo)
 	getEmailThreadQuery := emailqueries.NewGetThreadHandler(emailThreadRepo, emailMessageRepo, emailAttachmentRepo, emailTagRepo)
 	listEmailForCustomerQuery := emailqueries.NewListThreadsForCustomerHandler(emailThreadRepo, emailTagRepo)
 	listEmailAccountsQuery := emailqueries.NewListAccountsHandler(emailAccountRepo)
+	listFoldersQuery := emailqueries.NewListFoldersHandler(emailFolderRepo)
+
+	emailRepos := imapAdapter.Repos{
+		DB:          gdb,
+		Accounts:    emailAccountRepo,
+		Folders:     emailFolderRepo,
+		Threads:     emailThreadRepo,
+		Messages:    emailMessageRepo,
+		Attachments: emailAttachmentRepo,
+		Tags:        emailTagRepo,
+		EncKey:      emailEncKey,
+	}
+
+	discoverFn := func(ctx context.Context, accountID string) ([]emailqueries.FolderReadModel, error) {
+		acc, err := emailAccountRepo.FindByID(ctx, accountID)
+		if err != nil {
+			return nil, err
+		}
+		newID := func() string { return uuid.Must(uuid.NewV7()).String() }
+		if _, err := imapAdapter.DiscoverFolders(ctx, acc, emailRepos, newID); err != nil {
+			return nil, err
+		}
+		return listFoldersQuery.Handle(ctx, accountID)
+	}
 
 	emailRoutes := emailhttp.NewHandlers(
 		configureAccountCmd, deleteAccountCmd, pauseAccountCmd, resumeAccountCmd,
 		applyTagCmd, removeTagCmd, markReadCmd, linkCustomerCmd, sendReplyCmd,
 		listEmailThreadsQuery, getEmailThreadQuery, listEmailForCustomerQuery,
-		listEmailAccountsQuery, emailAttachmentRepo,
+		listEmailAccountsQuery, listFoldersQuery, emailFolderRepo, discoverFn,
+		emailAttachmentRepo,
 		subscriber, publisher,
 	)
 	moduleRoutes = append(moduleRoutes, emailRoutes)
@@ -406,15 +435,6 @@ func New(cfg Config) (*App, error) {
 		customerRoutes.WithEmailThreadsQuery(listEmailForCustomerQuery)
 	}
 
-	emailRepos := imapAdapter.Repos{
-		DB:          gdb,
-		Accounts:    emailAccountRepo,
-		Threads:     emailThreadRepo,
-		Messages:    emailMessageRepo,
-		Attachments: emailAttachmentRepo,
-		Tags:        emailTagRepo,
-		EncKey:      emailEncKey,
-	}
 	emailSyncInterval := time.Duration(cfg.EmailSyncIntervalSecs) * time.Second
 	emailWorker := worker.NewSyncWorker(emailRepos, publisher, subscriber, emailSyncInterval)
 	emailWorker.Start()

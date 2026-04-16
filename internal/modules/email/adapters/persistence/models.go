@@ -17,6 +17,9 @@ type accountModel struct {
 	LastError   string    `gorm:"column:last_error"`
 	LastSyncAt  time.Time `gorm:"column:last_sync_at"`
 	LastUID     uint32    `gorm:"column:last_uid"`
+	SMTPHost    string    `gorm:"column:smtp_host"`
+	SMTPPort    int       `gorm:"column:smtp_port"`
+	SMTPTLS     string    `gorm:"column:smtp_tls"`
 	CreatedAt   time.Time `gorm:"column:created_at"`
 	UpdatedAt   time.Time `gorm:"column:updated_at"`
 }
@@ -42,6 +45,7 @@ type messageModel struct {
 	ThreadID   string    `gorm:"column:thread_id"`
 	UID        uint32    `gorm:"column:uid"`
 	Folder     string    `gorm:"column:folder"`
+	Direction  string    `gorm:"column:direction"`
 	MessageID  string    `gorm:"column:message_id"`
 	References string    `gorm:"column:ref_ids"`
 	InReplyTo  string    `gorm:"column:in_reply_to"`
@@ -79,6 +83,17 @@ type tagModel struct {
 }
 
 func (tagModel) TableName() string { return "email_tags" }
+
+type folderModel struct {
+	ID        string    `gorm:"primaryKey;column:id"`
+	AccountID string    `gorm:"column:account_id"`
+	Name      string    `gorm:"column:name"`
+	LastUID   uint32    `gorm:"column:last_uid"`
+	Enabled   bool      `gorm:"column:enabled"`
+	CreatedAt time.Time `gorm:"column:created_at"`
+}
+
+func (folderModel) TableName() string { return "email_account_folders" }
 
 type threadTagModel struct {
 	ThreadID string `gorm:"column:thread_id"`

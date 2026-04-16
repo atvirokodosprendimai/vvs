@@ -36,6 +36,9 @@ func (h *ListAccountsHandler) Handle(ctx context.Context) ([]AccountReadModel, e
 			Status:     a.Status,
 			LastError:  a.LastError,
 			LastSyncAt: a.LastSyncAt,
+			SMTPHost:   a.SMTPHost,
+			SMTPPort:   a.SMTPPort,
+			SMTPTLS:    a.SMTPTLS,
 		}
 	}
 	return out, nil

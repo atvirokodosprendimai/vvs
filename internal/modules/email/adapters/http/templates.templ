@@ -15,7 +15,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 		<div
 			id="email-inbox"
 			class="flex gap-4"
-			data-signals={ fmt.Sprintf("{emailAccountID: %q, emailTagFilter: '', emailSearch: '', emailPage: 0}", selected) }
+			data-signals={ fmt.Sprintf("{emailAccountID: %q, emailTagFilter: '', emailSearch: '', emailFolder: '', emailPage: 0}", selected) }
 		>
 			<!-- Sidebar: accounts + tags -->
 			<div class="w-56 flex-shrink-0 flex flex-col gap-3">
@@ -28,7 +28,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 						for _, a := range accounts {
 							<button
 								type="button"
-								data-on:click={ fmt.Sprintf("$emailAccountID = %q; $emailPage = 0; @get('/sse/emails')", a.ID) }
+								data-on:click={ fmt.Sprintf("$emailAccountID = %q; $emailFolder = ''; $emailPage = 0; @get('/sse/emails'); @get('/sse/email-folders/%s')", a.ID, a.ID) }
 								class="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-2"
 							>
 								<span class="truncate">{ a.Name }</span>
@@ -49,6 +49,9 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 						@tagFilterButton("archived", "#6b7280", "Archived")
 					</div>
 				</div>
+
+				<!-- Folder filter (populated via SSE when account selected) -->
+				<div id="email-folder-sidebar"></div>
 			</div>
 
 			<!-- Thread list -->
@@ -550,6 +553,15 @@ templ emailAccountCard(a emailqueries.AccountReadModel) {
 				<span class="text-red-400 truncate">{ a.LastError }</span>
 			}
 		</div>
+		<!-- Folder list (loaded via SSE) -->
+		<div
+			id={ fmt.Sprintf("email-folders-%s", a.ID) }
+			data-init={ fmt.Sprintf("@get('/sse/email-folders/%s')", a.ID) }
+		>
+			<div class="mt-3 border-t border-slate-800 pt-3">
+				<span class="text-xs text-slate-600">Loading folders…</span>
+			</div>
+		</div>
 	</div>
 }
 
@@ -564,6 +576,65 @@ templ emailAccountStatusBadge(status string) {
 		default:
 			<span class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-500 font-medium">{ status }</span>
 	}
+}
+
+// EmailFolderList is the SSE-patchable folder list in the settings account card.
+templ EmailFolderList(accountID string, folders []emailqueries.FolderReadModel) {
+	<div id={ fmt.Sprintf("email-folders-%s", accountID) } class="mt-3 border-t border-slate-800 pt-3 flex flex-col gap-1">
+		<div class="flex items-center justify-between mb-1">
+			<span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Folders</span>
+			<button
+				type="button"
+				data-on:click={ fmt.Sprintf("@post('/api/email-accounts/%s/discover-folders')", accountID) }
+				class="text-xs text-cyan-500 hover:text-cyan-400 transition-colors"
+			>Discover</button>
+		</div>
+		if len(folders) == 0 {
+			<p class="text-xs text-slate-600 py-1">No folders found. Click "Discover" to scan server.</p>
+		} else {
+			for _, f := range folders {
+				<div class="flex items-center justify-between text-xs py-0.5">
+					<span class={ templ.KV("text-slate-300", f.Enabled), templ.KV("text-slate-600 line-through", !f.Enabled) }>{ f.Name }</span>
+					<button
+						type="button"
+						data-on:click={ fmt.Sprintf("@put('/api/email-folders/%s/toggle')", f.ID) }
+						class="ml-2 text-slate-500 hover:text-cyan-400 transition-colors"
+					>
+						if f.Enabled {
+							Disable
+						} else {
+							Enable
+						}
+					</button>
+				</div>
+			}
+		}
+	</div>
+}
+
+// EmailFolderSidebar is the patchable folder filter section in the inbox sidebar.
+templ EmailFolderSidebar(folders []emailqueries.FolderReadModel) {
+	<div id="email-folder-sidebar" class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+		<div class="px-4 py-3 border-b border-slate-800">
+			<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Folders</h3>
+		</div>
+		<div class="divide-y divide-slate-800">
+			<button
+				type="button"
+				data-on:click="$emailFolder = ''; $emailPage = 0; @get('/sse/emails')"
+				class="w-full text-left px-4 py-2 text-sm text-slate-400 hover:bg-slate-800/60 transition-colors"
+			>All folders</button>
+			for _, f := range folders {
+				if f.Enabled {
+					<button
+						type="button"
+						data-on:click={ fmt.Sprintf("$emailFolder = %q; $emailPage = 0; @get('/sse/emails')", f.Name) }
+						class="w-full text-left px-4 py-2 text-sm text-slate-400 hover:bg-slate-800/60 transition-colors truncate"
+					>{ f.Name }</button>
+				}
+			}
+		</div>
+	</div>
 }
 
 // EmailThreadsSection is the email section on the customer detail page.

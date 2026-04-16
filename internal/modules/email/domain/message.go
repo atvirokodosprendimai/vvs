@@ -28,8 +28,9 @@ type EmailMessage struct {
 	ID         string
 	AccountID  string
 	ThreadID   string
-	UID        uint32 // IMAP UID (folder-scoped)
+	UID        uint32 // IMAP UID (folder-scoped); 0 for outbound
 	Folder     string
+	Direction  string // "in" (received) | "out" (sent); default "in"
 	MessageID  string // RFC 2822 Message-ID header value
 	References string // space-joined References header
 	InReplyTo  string

@@ -57,6 +57,7 @@ func (h *GetThreadHandler) Handle(ctx context.Context, threadID string) (*Thread
 			ID:          m.ID,
 			ThreadID:    m.ThreadID,
 			MessageID:   m.MessageID,
+			Direction:   m.Direction,
 			Subject:     m.Subject,
 			FromAddr:    m.FromAddr,
 			FromName:    m.FromName,

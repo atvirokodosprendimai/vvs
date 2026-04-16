@@ -15,6 +15,7 @@ import (
 	imaplib "github.com/emersion/go-imap/v2"
 	"github.com/emersion/go-imap/v2/imapclient"
 	"github.com/emersion/go-message/charset"
+	"github.com/google/uuid"
 	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
 	"github.com/vvs/isp/internal/modules/email/adapters/persistence"
 	"github.com/vvs/isp/internal/modules/email/domain"
@@ -25,6 +26,7 @@ import (
 type Repos struct {
 	DB          *gormsqlite.DB
 	Accounts    *persistence.GormEmailAccountRepository
+	Folders     *persistence.GormEmailFolderRepository
 	Threads     *persistence.GormEmailThreadRepository
 	Messages    *persistence.GormEmailMessageRepository
 	Attachments *persistence.GormEmailAttachmentRepository
@@ -35,8 +37,8 @@ type Repos struct {
 // NewIDFunc generates a new unique string ID.
 type NewIDFunc func() string
 
-// Fetch connects to the IMAP server for the given account, fetches new messages
-// (UID > account.LastUID), stores them, and updates the account sync state.
+// Fetch connects to the IMAP server, syncs all enabled folders for the account,
+// and updates per-folder LastUID cursors.
 func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID NewIDFunc, pub events.EventPublisher) error {
 	slog.Debug("imap: connecting", "account", account.Name, "host", account.Host, "port", account.Port)
 	c, err := dial(account)
@@ -54,38 +56,100 @@ func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID
 	}
 	slog.Debug("imap: logged in", "account", account.Name, "user", account.Username)
 
-	// EXAMINE = readonly select.
-	if _, err := c.Select(account.Folder, &imaplib.SelectOptions{ReadOnly: true}).Wait(); err != nil {
-		return fmt.Errorf("imap select %q: %w", account.Folder, err)
+	// Load configured folders. If none exist yet, seed from account.Folder.
+	folders, err := repos.Folders.ListForAccount(ctx, account.ID)
+	if err != nil {
+		return fmt.Errorf("imap: list folders: %w", err)
+	}
+	if len(folders) == 0 {
+		seed := &domain.EmailFolder{
+			ID:        uuid.Must(uuid.NewV7()).String(),
+			AccountID: account.ID,
+			Name:      account.Folder,
+			LastUID:   account.LastUID,
+			Enabled:   true,
+			CreatedAt: time.Now().UTC(),
+		}
+		if err := repos.Folders.Save(ctx, seed); err != nil {
+			slog.Error("imap: seed folder", "account", account.Name, "err", err)
+		}
+		folders = []*domain.EmailFolder{seed}
 	}
 
-	// Build UID search criteria for UIDs > lastUID.
+	totalFetched := 0
+	for _, folder := range folders {
+		if !folder.Enabled {
+			continue
+		}
+		n, err := fetchFolder(ctx, c, account, folder, repos, newID)
+		if err != nil {
+			slog.Error("imap: folder sync failed", "account", account.Name, "folder", folder.Name, "err", err)
+			continue
+		}
+		totalFetched += n
+	}
+
+	// Mark account synced (status + timestamp) if everything went fine.
+	account.MarkSynced(account.LastUID) // keep LastUID unchanged; per-folder cursors are in Folders table
+	if err := repos.Accounts.Save(ctx, account); err != nil {
+		return fmt.Errorf("save account: %w", err)
+	}
+
+	if totalFetched > 0 {
+		slog.Info("imap: sync complete", "account", account.Name, "fetched", totalFetched)
+		if pub != nil {
+			_ = pub.Publish(ctx, "isp.email.synced", events.DomainEvent{
+				Type:        "email.synced",
+				AggregateID: account.ID,
+				OccurredAt:  time.Now().UTC(),
+				Data:        []byte(fmt.Sprintf(`{"count":%d}`, totalFetched)),
+			})
+		}
+	} else {
+		slog.Debug("imap: no new messages fetched", "account", account.Name)
+	}
+	return nil
+}
+
+// fetchFolder syncs a single IMAP folder and returns the number of new messages fetched.
+func fetchFolder(
+	ctx context.Context,
+	c *imapclient.Client,
+	account *domain.EmailAccount,
+	folder *domain.EmailFolder,
+	repos Repos,
+	newID NewIDFunc,
+) (int, error) {
+	// EXAMINE = readonly select (never sets \Seen).
+	if _, err := c.Select(folder.Name, &imaplib.SelectOptions{ReadOnly: true}).Wait(); err != nil {
+		return 0, fmt.Errorf("imap select %q: %w", folder.Name, err)
+	}
+
 	criteria := &imaplib.SearchCriteria{}
-	if account.LastUID > 0 {
+	if folder.LastUID > 0 {
 		var uidSet imaplib.UIDSet
-		uidSet.AddRange(imaplib.UID(account.LastUID+1), 0) // 0 = * (all remaining)
+		uidSet.AddRange(imaplib.UID(folder.LastUID+1), 0) // 0 = *
 		criteria.UID = []imaplib.UIDSet{uidSet}
 	}
 
 	searchData, err := c.UIDSearch(criteria, nil).Wait()
 	if err != nil {
-		return fmt.Errorf("imap search: %w", err)
+		return 0, fmt.Errorf("imap search: %w", err)
 	}
 
 	uidSet, ok := searchData.All.(imaplib.UIDSet)
 	if !ok {
-		slog.Debug("imap: no new messages", "account", account.Name)
-		return nil
+		slog.Debug("imap: no new messages", "account", account.Name, "folder", folder.Name)
+		return 0, nil
 	}
 	allUIDs, valid := uidSet.Nums()
 	if !valid || len(allUIDs) == 0 {
-		slog.Debug("imap: no new messages", "account", account.Name)
-		return nil
+		slog.Debug("imap: no new messages", "account", account.Name, "folder", folder.Name)
+		return 0, nil
 	}
 
-	slog.Info("imap: fetching new messages", "account", account.Name, "count", len(allUIDs), "last_uid", account.LastUID)
+	slog.Info("imap: fetching new messages", "account", account.Name, "folder", folder.Name, "count", len(allUIDs), "last_uid", folder.LastUID)
 
-	// Fetch in batches of 50.
 	const batchSize = 50
 	var maxUID uint32
 	fetched := 0
@@ -96,8 +160,6 @@ func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID
 			end = len(allUIDs)
 		}
 		batch := allUIDs[i:end]
-
-		slog.Debug("imap: fetching batch", "account", account.Name, "batch_start", i+1, "batch_end", end, "total", len(allUIDs))
 
 		var fetchSet imaplib.UIDSet
 		for _, uid := range batch {
@@ -121,46 +183,89 @@ func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID
 			}
 			buf, err := msg.Collect()
 			if err != nil {
-				slog.Error("imap: fetch collect", "account", account.Name, "seq", msg.SeqNum, "err", err)
+				slog.Error("imap: fetch collect", "account", account.Name, "folder", folder.Name, "seq", msg.SeqNum, "err", err)
 				continue
 			}
-			slog.Debug("imap: processing message", "account", account.Name, "uid", buf.UID)
-			if err := processMessage(ctx, account, buf, repos, newID); err != nil {
-				slog.Error("imap: process message", "account", account.Name, "uid", buf.UID, "err", err)
+			slog.Debug("imap: processing message", "account", account.Name, "folder", folder.Name, "uid", buf.UID)
+			if err := processMessage(ctx, account, folder.Name, buf, repos, newID); err != nil {
+				slog.Error("imap: process message", "account", account.Name, "folder", folder.Name, "uid", buf.UID, "err", err)
 			}
 			fetched++
 		}
 		if err := fetchCmd.Close(); err != nil {
-			return fmt.Errorf("imap fetch close: %w", err)
+			return fetched, fmt.Errorf("imap fetch close: %w", err)
 		}
 	}
 
-	if maxUID > account.LastUID {
-		account.MarkSynced(maxUID)
-		if err := repos.Accounts.Save(ctx, account); err != nil {
-			return fmt.Errorf("save account: %w", err)
+	if maxUID > folder.LastUID {
+		folder.LastUID = maxUID
+		if err := repos.Folders.Save(ctx, folder); err != nil {
+			slog.Error("imap: save folder last_uid", "account", account.Name, "folder", folder.Name, "err", err)
 		}
 	}
 
-	if fetched > 0 {
-		slog.Info("imap: sync complete", "account", account.Name, "fetched", fetched, "max_uid", maxUID)
-		if pub != nil {
-			_ = pub.Publish(ctx, "isp.email.synced", events.DomainEvent{
-				Type:        "email.synced",
-				AggregateID: account.ID,
-				OccurredAt:  time.Now().UTC(),
-				Data:        []byte(fmt.Sprintf(`{"count":%d}`, fetched)),
-			})
-		}
-	} else {
-		slog.Debug("imap: no new messages fetched", "account", account.Name)
+	return fetched, nil
+}
+
+// DiscoverFolders connects to IMAP, lists all mailboxes, and upserts them into the
+// email_account_folders table (enabled=true if new, preserves existing enabled state).
+func DiscoverFolders(ctx context.Context, account *domain.EmailAccount, repos Repos, newID NewIDFunc) ([]*domain.EmailFolder, error) {
+	c, err := dial(account)
+	if err != nil {
+		return nil, fmt.Errorf("imap dial: %w", err)
 	}
-	return nil
+	defer c.Close()
+
+	password, err := decryptPassword(repos.EncKey, account.PasswordEnc)
+	if err != nil {
+		return nil, fmt.Errorf("imap decrypt password: %w", err)
+	}
+	if err := c.Login(account.Username, string(password)).Wait(); err != nil {
+		return nil, fmt.Errorf("imap login: %w", err)
+	}
+
+	listCmd := c.List("", "*", nil)
+	var names []string
+	for {
+		mb := listCmd.Next()
+		if mb == nil {
+			break
+		}
+		names = append(names, mb.Mailbox)
+	}
+	if err := listCmd.Close(); err != nil {
+		return nil, fmt.Errorf("imap list close: %w", err)
+	}
+
+	var result []*domain.EmailFolder
+	for _, name := range names {
+		existing, err := repos.Folders.FindByAccountAndName(ctx, account.ID, name)
+		if err == nil {
+			result = append(result, existing)
+			continue
+		}
+		f := &domain.EmailFolder{
+			ID:        newID(),
+			AccountID: account.ID,
+			Name:      name,
+			LastUID:   0,
+			Enabled:   true,
+			CreatedAt: time.Now().UTC(),
+		}
+		if err := repos.Folders.Save(ctx, f); err != nil {
+			slog.Error("imap: save discovered folder", "name", name, "err", err)
+			continue
+		}
+		result = append(result, f)
+	}
+	slog.Info("imap: discovered folders", "account", account.Name, "count", len(result))
+	return result, nil
 }
 
 func processMessage(
 	ctx context.Context,
 	account *domain.EmailAccount,
+	folderName string,
 	buf *imapclient.FetchMessageBuffer,
 	repos Repos,
 	newID NewIDFunc,
@@ -192,7 +297,7 @@ func processMessage(
 		ID:         newID(),
 		AccountID:  account.ID,
 		UID:        uint32(buf.UID),
-		Folder:     account.Folder,
+		Folder:     folderName,
 		MessageID:  env.MessageID,
 		References: parsed.References,
 		InReplyTo:  strings.Join(env.InReplyTo, " "),
@@ -220,8 +325,7 @@ func processMessage(
 		return fmt.Errorf("save message: %w", err)
 	}
 
-	// Re-resolve the message ID: if the row was INSERT OR IGNORE'd (duplicate UID),
-	// the existing row has a different ID — use that for attachments to avoid FK errors.
+	// Re-resolve the message ID (covers any unlikely duplicate).
 	if existing, err := repos.Messages.FindByUID(ctx, account.ID, msg.UID); err == nil {
 		msg.ID = existing.ID
 	}

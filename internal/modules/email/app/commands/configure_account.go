@@ -24,6 +24,9 @@ type ConfigureAccountCommand struct {
 	Password string // plaintext — will be encrypted
 	TLS      string
 	Folder   string
+	SMTPHost string
+	SMTPPort int
+	SMTPTLS  string
 }
 
 type ConfigureAccountHandler struct {
@@ -51,6 +54,9 @@ func (h *ConfigureAccountHandler) Handle(ctx context.Context, cmd ConfigureAccou
 		if err != nil {
 			return nil, err
 		}
+		a.SMTPHost = cmd.SMTPHost
+		a.SMTPPort = cmd.SMTPPort
+		a.SMTPTLS = cmd.SMTPTLS
 		if err := h.repo.Save(ctx, a); err != nil {
 			return nil, err
 		}
@@ -77,6 +83,11 @@ func (h *ConfigureAccountHandler) Handle(ctx context.Context, cmd ConfigureAccou
 	}
 	if cmd.Folder != "" {
 		a.Folder = cmd.Folder
+	}
+	a.SMTPHost = cmd.SMTPHost
+	a.SMTPPort = cmd.SMTPPort
+	if cmd.SMTPTLS != "" {
+		a.SMTPTLS = cmd.SMTPTLS
 	}
 	if err := h.repo.Save(ctx, a); err != nil {
 		return nil, err

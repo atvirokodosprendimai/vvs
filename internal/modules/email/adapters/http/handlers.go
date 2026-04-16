@@ -23,6 +23,14 @@ type attachmentFinder interface {
 	FindByID(ctx context.Context, id string) (*domain.EmailAttachment, error)
 }
 
+// folderToggler is the minimal interface for folder enable/disable.
+type folderToggler interface {
+	FindByID(ctx context.Context, id string) (*domain.EmailFolder, error)
+	FindByAccountAndName(ctx context.Context, accountID, name string) (*domain.EmailFolder, error)
+	Save(ctx context.Context, f *domain.EmailFolder) error
+	ListForAccount(ctx context.Context, accountID string) ([]*domain.EmailFolder, error)
+}
+
 // Handlers wires together email HTTP handlers.
 type Handlers struct {
 	configureCmd  *emailcommands.ConfigureAccountHandler
@@ -38,6 +46,9 @@ type Handlers struct {
 	getThread     *emailqueries.GetThreadHandler
 	listForCust   *emailqueries.ListThreadsForCustomerHandler
 	listAccounts  *emailqueries.ListAccountsHandler
+	listFolders   *emailqueries.ListFoldersHandler
+	folderRepo    folderToggler
+	discoverFn    func(ctx context.Context, accountID string) ([]emailqueries.FolderReadModel, error)
 	attachments   attachmentFinder
 	subscriber    events.EventSubscriber
 	publisher     events.EventPublisher
@@ -57,6 +68,9 @@ func NewHandlers(
 	getThread *emailqueries.GetThreadHandler,
 	listForCust *emailqueries.ListThreadsForCustomerHandler,
 	listAccounts *emailqueries.ListAccountsHandler,
+	listFolders *emailqueries.ListFoldersHandler,
+	folderRepo folderToggler,
+	discoverFn func(ctx context.Context, accountID string) ([]emailqueries.FolderReadModel, error),
 	attachments attachmentFinder,
 	subscriber events.EventSubscriber,
 	publisher events.EventPublisher,
@@ -75,6 +89,9 @@ func NewHandlers(
 		getThread:    getThread,
 		listForCust:  listForCust,
 		listAccounts: listAccounts,
+		listFolders:  listFolders,
+		folderRepo:   folderRepo,
+		discoverFn:   discoverFn,
 		attachments:  attachments,
 		subscriber:   subscriber,
 		publisher:    publisher,
@@ -100,6 +117,9 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/email-threads/{threadID}/reply", h.replySSE)
 	r.Post("/api/email-threads/{threadID}/link", h.linkCustomerSSE)
 	r.Get("/api/email-attachments/{id}", h.downloadAttachment)
+	r.Post("/api/email-accounts/{id}/discover-folders", h.discoverFoldersSSE)
+	r.Put("/api/email-folders/{folderID}/toggle", h.toggleFolderSSE)
+	r.Get("/sse/email-folders/{accountID}", h.folderListSSE)
 }
 
 // emailPage renders the full inbox page.
@@ -118,10 +138,11 @@ func (h *Handlers) emailPage(w http.ResponseWriter, r *http.Request) {
 // listSSE streams the thread list, refreshing on isp.email.* events.
 func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
-		AccountID string `json:"emailAccountID"`
-		TagFilter string `json:"emailTagFilter"`
-		Search    string `json:"emailSearch"`
-		Page      int    `json:"emailPage"`
+		AccountID    string `json:"emailAccountID"`
+		TagFilter    string `json:"emailTagFilter"`
+		Search       string `json:"emailSearch"`
+		FolderFilter string `json:"emailFolder"`
+		Page         int    `json:"emailPage"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		log.Printf("email: listSSE ReadSignals: %v", err)
@@ -132,10 +153,11 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	q := emailqueries.ListThreadsQuery{
-		AccountID: signals.AccountID,
-		TagFilter: signals.TagFilter,
-		Search:    signals.Search,
-		Page:      signals.Page,
+		AccountID:    signals.AccountID,
+		TagFilter:    signals.TagFilter,
+		Search:       signals.Search,
+		FolderFilter: signals.FolderFilter,
+		Page:         signals.Page,
 	}
 
 	current, err := h.listThreads.Handle(r.Context(), q)
@@ -485,6 +507,82 @@ func (h *Handlers) triggerSyncSSE(w http.ResponseWriter, r *http.Request) {
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.sync_requested", AggregateID: accountID,
 	})
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// discoverFoldersSSE runs IMAP LIST, upserts folders, and patches the folder list.
+func (h *Handlers) discoverFoldersSSE(w http.ResponseWriter, r *http.Request) {
+	accountID := chi.URLParam(r, "id")
+	sse := datastar.NewSSE(w, r)
+	folders, err := h.discoverFn(r.Context(), accountID)
+	if err != nil {
+		log.Printf("email: discoverFoldersSSE: %v", err)
+		sse.PatchSignals([]byte(`{"emailError":"folder discovery failed"}`))
+		return
+	}
+	sse.PatchElementTempl(EmailFolderList(accountID, folders))
+	sse.PatchElementTempl(EmailFolderSidebar(folders))
+}
+
+// toggleFolderSSE flips the Enabled flag on a folder and patches the folder list.
+func (h *Handlers) toggleFolderSSE(w http.ResponseWriter, r *http.Request) {
+	folderID := chi.URLParam(r, "folderID")
+	sse := datastar.NewSSE(w, r)
+	f, err := h.folderRepo.FindByID(r.Context(), folderID)
+	if err != nil {
+		log.Printf("email: toggleFolderSSE: %v", err)
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	f.Enabled = !f.Enabled
+	if err := h.folderRepo.Save(r.Context(), f); err != nil {
+		log.Printf("email: toggleFolderSSE save: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	folders, err := h.listFolders.Handle(r.Context(), f.AccountID)
+	if err != nil {
+		log.Printf("email: toggleFolderSSE list: %v", err)
+		return
+	}
+	sse.PatchElementTempl(EmailFolderList(f.AccountID, folders))
+	sse.PatchElementTempl(EmailFolderSidebar(folders))
+}
+
+// folderListSSE streams folder list for an account, refreshing on isp.email.* events.
+func (h *Handlers) folderListSSE(w http.ResponseWriter, r *http.Request) {
+	accountID := chi.URLParam(r, "accountID")
+	sse := datastar.NewSSE(w, r)
+	ch, cancel := h.subscriber.ChanSubscription("isp.email.*")
+	defer cancel()
+
+	folders, err := h.listFolders.Handle(r.Context(), accountID)
+	if err != nil {
+		log.Printf("email: folderListSSE: %v", err)
+		return
+	}
+	sse.PatchElementTempl(EmailFolderList(accountID, folders))
+	sse.PatchElementTempl(EmailFolderSidebar(folders))
+
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				return
+			}
+			next, err := h.listFolders.Handle(r.Context(), accountID)
+			if err != nil {
+				log.Printf("email: folderListSSE refresh: %v", err)
+				continue
+			}
+			if !reflect.DeepEqual(folders, next) {
+				sse.PatchElementTempl(EmailFolderList(accountID, next))
+				sse.PatchElementTempl(EmailFolderSidebar(next))
+				folders = next
+			}
+		case <-r.Context().Done():
+			return
+		}
+	}
 }
 
 // downloadAttachment streams an attachment file.

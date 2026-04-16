@@ -39,6 +39,15 @@ type EmailAttachmentRepository interface {
 	ListForMessage(ctx context.Context, messageID string) ([]*EmailAttachment, error)
 }
 
+// EmailFolderRepository is the port for per-account folder sync state.
+type EmailFolderRepository interface {
+	Save(ctx context.Context, f *EmailFolder) error
+	ListForAccount(ctx context.Context, accountID string) ([]*EmailFolder, error)
+	FindByAccountAndName(ctx context.Context, accountID, name string) (*EmailFolder, error)
+	// ListThreadIDsWithFolder returns thread IDs that have at least one message in the given folder.
+	ListThreadIDsWithFolder(ctx context.Context, accountID, folder string) ([]string, error)
+}
+
 // EmailTagRepository is the port for tag persistence.
 type EmailTagRepository interface {
 	Save(ctx context.Context, t *EmailTag) error

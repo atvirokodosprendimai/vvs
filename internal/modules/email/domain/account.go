@@ -40,8 +40,12 @@ type EmailAccount struct {
 	LastError   string
 	LastSyncAt  time.Time
 	LastUID     uint32 // last fetched IMAP UID for incremental sync
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	// SMTP outbound settings
+	SMTPHost string // empty = use IMAP Host
+	SMTPPort int    // 0 = use 587
+	SMTPTLS  string // none | starttls | tls (default "starttls")
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // NewEmailAccount creates an EmailAccount with defaults.

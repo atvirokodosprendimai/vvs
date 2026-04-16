@@ -28,6 +28,7 @@ type MessageReadModel struct {
 	ID          string
 	ThreadID    string
 	MessageID   string
+	Direction   string // "in" | "out"
 	Subject     string
 	FromAddr    string
 	FromName    string
@@ -58,6 +59,17 @@ type AccountReadModel struct {
 	Status     string
 	LastError  string
 	LastSyncAt time.Time
+	SMTPHost   string
+	SMTPPort   int
+	SMTPTLS    string
+}
+
+// FolderReadModel is the view model for a per-account IMAP folder.
+type FolderReadModel struct {
+	ID        string
+	Name      string
+	LastUID   uint32
+	Enabled   bool
 }
 
 // TagReadModel is the view model for a tag.
