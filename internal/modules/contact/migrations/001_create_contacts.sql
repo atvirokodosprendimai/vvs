@@ -1,3 +1,4 @@
+-- +goose Up
 CREATE TABLE contacts (
     id          TEXT PRIMARY KEY,
     customer_id TEXT NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
