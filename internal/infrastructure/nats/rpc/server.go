@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -148,9 +149,9 @@ func New(nc *nats.Conn, cfg Config) *Server {
 	}
 }
 
-// Register subscribes all RPC subjects. Call once on startup.
-func (s *Server) Register() error {
-	routes := map[string]func(context.Context, []byte) (any, error){
+// handlers returns the full subject → handler dispatch table.
+func (s *Server) handlers() map[string]func(context.Context, []byte) (any, error) {
+	return map[string]func(context.Context, []byte) (any, error){
 		// auth
 		"isp.rpc.user.list":   s.handleUserList,
 		"isp.rpc.user.create": s.handleUserCreate,
@@ -181,6 +182,21 @@ func (s *Server) Register() error {
 		"isp.rpc.service.reactivate": s.handleServiceReactivate,
 		"isp.rpc.service.cancel":     s.handleServiceCancel,
 	}
+}
+
+// Dispatch executes the handler for a subject directly (no NATS round-trip).
+// Used by the HTTP RPC endpoint for CLI fallback transport.
+func (s *Server) Dispatch(ctx context.Context, subject string, payload []byte) (any, error) {
+	h, ok := s.handlers()[subject]
+	if !ok {
+		return nil, fmt.Errorf("unknown subject: %s", subject)
+	}
+	return h(ctx, payload)
+}
+
+// Register subscribes all RPC subjects. Call once on startup.
+func (s *Server) Register() error {
+	routes := s.handlers()
 
 	s.mu.Lock()
 	defer s.mu.Unlock()

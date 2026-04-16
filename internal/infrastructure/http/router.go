@@ -19,7 +19,7 @@ type APIRoutes interface {
 	RegisterAPIRoutes(r chi.Router)
 }
 
-func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, notif *NotifHandler, chatHandler *ChatHandler, global *GlobalHandler, apiToken string, modules ...ModuleRoutes) http.Handler {
+func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, notif *NotifHandler, chatHandler *ChatHandler, global *GlobalHandler, apiToken string, rpc RPCDispatcher, modules ...ModuleRoutes) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Recoverer)
@@ -70,6 +70,10 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 			if a, ok := m.(APIRoutes); ok {
 				a.RegisterAPIRoutes(r)
 			}
+		}
+		// Generic RPC dispatch endpoint for CLI HTTP transport
+		if rpc != nil {
+			r.Post("/api/v1/rpc/*", rpcHandler(rpc))
 		}
 	})
 
