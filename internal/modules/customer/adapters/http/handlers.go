@@ -268,7 +268,6 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 // arpSSE publishes isp.network.arp_requested and redirects back to the detail page.
 // The network module's ARPWorker handles the event asynchronously.
 func (h *Handlers) arpSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
 	id := chi.URLParam(r, "id")
 
 	var signals struct {
@@ -279,6 +278,7 @@ func (h *Handlers) arpSSE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	type arpRequestedPayload struct {
 		CustomerID string `json:"customer_id"`
