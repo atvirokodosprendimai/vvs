@@ -14,7 +14,7 @@ templ Layout(title string) {
 		</style>
 	</head>
 	<body class="bg-slate-950 text-slate-100 h-screen overflow-hidden">
-		<div class="flex h-full" data-init="@get('/sse')">
+		<div class="flex h-full" data-init="@get('/sse', {openWhenHidden: false})">
 			@Sidebar()
 			<main class="flex-1 p-6 overflow-auto">
 				{ children... }

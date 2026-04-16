@@ -63,7 +63,7 @@ func ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThreadI
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" data-init=\"@get('/sse/chat-page')\"><!-- Thread sidebar — patched by /sse/chat-page --><div id=\"chat-threads\" class=\"w-64 border-r border-slate-800 flex flex-col flex-shrink-0 min-h-0 overflow-y-auto\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" data-init=\"@get('/sse/chat-page', {openWhenHidden: false})\"><!-- Thread sidebar — patched by /sse/chat-page --><div id=\"chat-threads\" class=\"w-64 border-r border-slate-800 flex flex-col flex-shrink-0 min-h-0 overflow-y-auto\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

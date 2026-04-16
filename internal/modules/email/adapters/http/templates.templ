@@ -66,7 +66,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, selected string) {
 				/>
 				<div
 					id="email-thread-list"
-					data-init="@get('/sse/emails')"
+					data-init="@get('/sse/emails', {openWhenHidden: false})"
 				>
 					<div class="text-slate-600 py-8 text-center text-sm">Loading...</div>
 				</div>
@@ -339,7 +339,7 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 		<div
 			id="email-settings"
 			data-signals={ fmt.Sprintf("{emailSettingsEdit:'',emailName:'',emailHost:'',emailPort:'993',emailUser:'',emailPass:'',emailTLS:'tls',emailFolder:'INBOX',emailSMTPHost:'',emailSMTPPort:'587',emailSMTPTLS:'starttls',emailError:'',_showAdd:false}") }
-			data-init="@get('/sse/email-accounts')"
+			data-init="@get('/sse/email-accounts', {openWhenHidden: false})"
 		>
 			<!-- Header row -->
 			<div class="flex items-center justify-between mb-4">
@@ -556,7 +556,7 @@ templ emailAccountCard(a emailqueries.AccountReadModel) {
 		<!-- Folder list (loaded via SSE) -->
 		<div
 			id={ fmt.Sprintf("email-folders-%s", a.ID) }
-			data-init={ fmt.Sprintf("@get('/sse/email-folders/%s')", a.ID) }
+			data-init={ fmt.Sprintf("@get('/sse/email-folders/%s', {openWhenHidden: false})", a.ID) }
 		>
 			<div class="mt-3 border-t border-slate-800 pt-3">
 				<span class="text-xs text-slate-600">Loading folders…</span>

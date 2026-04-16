@@ -46,7 +46,7 @@ templ DeviceListPage(devices []queries.DeviceReadModel, statusFilter string) {
 			<!-- Live table -->
 			<div
 				id="device-table"
-				data-init={ fmt.Sprintf("@get('/sse/devices?status=%s')", statusFilter) }
+				data-init={ fmt.Sprintf("@get('/sse/devices?status=%s', {openWhenHidden: false})", statusFilter) }
 			>
 				@DeviceTable(devices)
 			</div>

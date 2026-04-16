@@ -32,7 +32,7 @@ templ CronListPage(jobs []queries.JobReadModel) {
 			<!-- Live table -->
 			<div
 				id="cron-table"
-				data-init="@get('/sse/cron')"
+				data-init="@get('/sse/cron', {openWhenHidden: false})"
 			>
 				@CronTable(jobs)
 			</div>

@@ -975,9 +975,9 @@ func CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRea
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var38 string
-			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@get('/sse/customers/%s/crm')", c.ID))
+			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@get('/sse/customers/%s/crm', {openWhenHidden: false})", c.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 330, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 330, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
@@ -1029,9 +1029,9 @@ func CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRea
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var40 string
-			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@get('/sse/customers/%s/notes')", c.ID))
+			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@get('/sse/customers/%s/notes', {openWhenHidden: false})", c.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 360, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/customer/adapters/http/templates.templ`, Line: 360, Col: 94}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 			if templ_7745c5c3_Err != nil {

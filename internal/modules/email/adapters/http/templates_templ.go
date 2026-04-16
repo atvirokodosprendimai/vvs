@@ -127,7 +127,7 @@ func EmailPage(accounts []emailqueries.AccountReadModel, selected string) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div></div><!-- Folder filter (populated via SSE when account selected) --><div id=\"email-folder-sidebar\"></div></div><!-- Thread list --><div class=\"flex-1 min-w-0 flex flex-col gap-2\"><!-- Search --><input type=\"text\" data-bind:emailSearch data-on:input__debounce.300ms=\"$emailPage = 0; @get('/sse/emails')\" placeholder=\"Search subject or address…\" class=\"w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-cyan-500\"><div id=\"email-thread-list\" data-init=\"@get('/sse/emails')\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div></div><!-- Folder filter (populated via SSE when account selected) --><div id=\"email-folder-sidebar\"></div></div><!-- Thread list --><div class=\"flex-1 min-w-0 flex flex-col gap-2\"><!-- Search --><input type=\"text\" data-bind:emailSearch data-on:input__debounce.300ms=\"$emailPage = 0; @get('/sse/emails')\" placeholder=\"Search subject or address…\" class=\"w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-cyan-500\"><div id=\"email-thread-list\" data-init=\"@get('/sse/emails', {openWhenHidden: false})\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1061,7 +1061,7 @@ func EmailSettingsPage(accounts []emailqueries.AccountReadModel) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "\" data-init=\"@get('/sse/email-accounts')\"><!-- Header row --><div class=\"flex items-center justify-between mb-4\"><div></div><button type=\"button\" data-on:click=\"$_showAdd=true\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white text-sm px-4 py-2 rounded-lg transition-colors\">+ Add Account</button></div><!-- Live account list --><div id=\"email-account-list\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "\" data-init=\"@get('/sse/email-accounts', {openWhenHidden: false})\"><!-- Header row --><div class=\"flex items-center justify-between mb-4\"><div></div><button type=\"button\" data-on:click=\"$_showAdd=true\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white text-sm px-4 py-2 rounded-lg transition-colors\">+ Add Account</button></div><!-- Live account list --><div id=\"email-account-list\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1462,9 +1462,9 @@ func emailAccountCard(a emailqueries.AccountReadModel) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var65 string
-		templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@get('/sse/email-folders/%s')", a.ID))
+		templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@get('/sse/email-folders/%s', {openWhenHidden: false})", a.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 559, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/email/adapters/http/templates.templ`, Line: 559, Col: 90}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
 		if templ_7745c5c3_Err != nil {

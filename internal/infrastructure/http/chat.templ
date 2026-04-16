@@ -14,7 +14,7 @@ templ ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThread
 		<div
 			class="flex h-full -m-6 overflow-hidden min-h-0"
 			data-signals={ fmt.Sprintf("{threadid:'%s',chatmsg:'',_newdm:false,_newchannel:false,channelname:'',isprivate:false,newdmtarget:''}", initialThreadID) }
-			data-init="@get('/sse/chat-page')"
+			data-init="@get('/sse/chat-page', {openWhenHidden: false})"
 		>
 			<!-- Thread sidebar — patched by /sse/chat-page -->
 			<div
