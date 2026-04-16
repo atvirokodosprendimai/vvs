@@ -158,7 +158,7 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary) {
 									>
 										<option value="">— None —</option>
 										for _, rt := range routers {
-											<option value={ rt.ID }>{ rt.Name } ({ rt.Host })</option>
+											<option value={ rt.ID } selected?={ customer != nil && customer.RouterID != nil && *customer.RouterID == rt.ID }>{ rt.Name } ({ rt.Host })</option>
 										}
 									</select>
 								</div>
