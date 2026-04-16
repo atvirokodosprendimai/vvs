@@ -126,10 +126,7 @@ func fetchFolder(
 	repos Repos,
 	newID NewIDFunc,
 ) (int, error) {
-	// SELECT in read-write mode so we can issue STORE to remove \Seen after fetch.
-	// EXAMINE (ReadOnly:true) + PEEK is unreliable on Exchange/Dovecot — some servers
-	// set \Seen regardless. We use SELECT + BODY.PEEK[] + explicit STORE -FLAGS (\Seen).
-	if _, err := c.Select(folder.Name, nil).Wait(); err != nil {
+	if _, err := c.Select(folder.Name, &imaplib.SelectOptions{ReadOnly: true}).Wait(); err != nil {
 		return 0, fmt.Errorf("imap select %q: %w", folder.Name, err)
 	}
 
