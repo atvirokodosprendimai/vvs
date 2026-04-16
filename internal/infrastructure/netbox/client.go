@@ -20,10 +20,9 @@ type IPRecord struct {
 
 // Client is a minimal NetBox REST client.
 type Client struct {
-	baseURL  string
-	token    string
-	prefixID int // NetBox prefix PK to allocate IPs from; 0 = disabled
-	http     httpDoer
+	baseURL string
+	token   string
+	http    httpDoer
 }
 
 // httpDoer allows injecting a fake HTTP client in tests.
@@ -32,13 +31,11 @@ type httpDoer interface {
 }
 
 // New creates a NetBox client.
-// prefixID is the NetBox prefix PK used for IP allocation; 0 disables allocation.
-func New(baseURL, token string, prefixID int) *Client {
+func New(baseURL, token string) *Client {
 	return &Client{
-		baseURL:  strings.TrimRight(baseURL, "/"),
-		token:    token,
-		prefixID: prefixID,
-		http:     &http.Client{Timeout: 10 * time.Second},
+		baseURL: strings.TrimRight(baseURL, "/"),
+		token:   token,
+		http:    &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
@@ -104,15 +101,10 @@ func (c *Client) GetIPByCustomerCode(ctx context.Context, customerCode string) (
 	return rawIP, macAddr, rec.ID, nil
 }
 
-// AllocateIP claims the next available IP from the configured prefix and sets
-// customerCode as the description. Returns the IP (without prefix) and record ID.
-// Returns an error if no prefix is configured (prefixID == 0).
-func (c *Client) AllocateIP(ctx context.Context, customerCode string) (ip string, id int, err error) {
-	if c.prefixID == 0 {
-		return "", 0, fmt.Errorf("netbox: no prefix configured for IP allocation (set NETBOX_PREFIX_ID)")
-	}
-
-	endpoint := fmt.Sprintf("%s/api/ipam/prefixes/%d/available-ips/", c.baseURL, c.prefixID)
+// AllocateFromPrefix claims the next available IP from the given NetBox prefix ID
+// and sets customerCode as the description. Returns the IP (without prefix) and record ID.
+func (c *Client) AllocateFromPrefix(ctx context.Context, prefixID int, customerCode string) (ip string, id int, err error) {
+	endpoint := fmt.Sprintf("%s/api/ipam/prefixes/%d/available-ips/", c.baseURL, prefixID)
 	desc, _ := json.Marshal(customerCode)
 	payload := fmt.Sprintf(`{"description":%s,"status":"active"}`, string(desc))
 

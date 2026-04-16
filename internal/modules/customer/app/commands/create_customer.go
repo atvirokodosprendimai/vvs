@@ -16,12 +16,13 @@ type CreateCustomerCommand struct {
 	ContactName string
 	Email       string
 	Phone       string
+	NetworkZone string // zone for IP allocation (e.g. "Kaunas")
 }
 
 // IPAllocator is a minimal port used only for IP allocation on customer create.
-// Satisfied by *netbox.Client via the network module's IPAMProvider interface.
+// Satisfied by *services.IPAllocatorService.
 type IPAllocator interface {
-	AllocateIP(ctx context.Context, customerCode string) (ip string, id int, err error)
+	AllocateIP(ctx context.Context, customerCode, zone string) (ip string, id int, err error)
 }
 
 type CreateCustomerHandler struct {
@@ -44,6 +45,7 @@ func (h *CreateCustomerHandler) Handle(ctx context.Context, cmd CreateCustomerCo
 	if err != nil {
 		return nil, err
 	}
+	customer.SetNetworkZone(cmd.NetworkZone)
 
 	if err := h.repo.Save(ctx, customer); err != nil {
 		return nil, err
@@ -51,7 +53,7 @@ func (h *CreateCustomerHandler) Handle(ctx context.Context, cmd CreateCustomerCo
 
 	// Auto-allocate IP from NetBox if configured (best-effort — never blocks create)
 	if h.ipam != nil {
-		if ip, _, err := h.ipam.AllocateIP(ctx, customer.Code.String()); err != nil {
+		if ip, _, err := h.ipam.AllocateIP(ctx, customer.Code.String(), customer.NetworkZone); err != nil {
 			log.Printf("warn: create customer %s: netbox ip allocation: %v", customer.Code, err)
 		} else if ip != "" {
 			customer.SetNetworkInfo("", ip, "")

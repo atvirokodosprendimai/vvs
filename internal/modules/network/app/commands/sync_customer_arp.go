@@ -74,7 +74,7 @@ func (h *SyncCustomerARPHandler) Handle(ctx context.Context, cmd SyncCustomerARP
 		if lookupErr != nil {
 			// Not found in NetBox yet — allocate a new IP from the prefix
 			var allocErr error
-			ip, id, allocErr = h.ipam.AllocateIP(ctx, arpData.Code)
+			ip, id, allocErr = h.ipam.AllocateIP(ctx, arpData.Code, arpData.NetworkZone)
 			if allocErr != nil {
 				return fmt.Errorf("sync arp: resolve IP: lookup: %w; allocate: %v", lookupErr, allocErr)
 			}

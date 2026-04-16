@@ -113,7 +113,7 @@ templ customerStatusBadge(status domain.CustomerStatus) {
 	}
 }
 
-templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary) {
+templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones []string) {
 	@templates.Layout(formTitle(customer)) {
 		@templates.PageHeader(formTitle(customer), formSubtitle(customer))
 		<div class="max-w-xl">
@@ -162,6 +162,21 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary) {
 										}
 									</select>
 								</div>
+								if len(zones) > 0 {
+									<div class="flex flex-col gap-1">
+										<label for="networkZone" class="text-xs font-medium text-slate-400 uppercase tracking-wider">IP Zone</label>
+										<select
+											id="networkZone"
+											data-bind:networkZone
+											class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+										>
+											<option value="">— Any zone —</option>
+											for _, z := range zones {
+												<option value={ z } selected?={ customer != nil && customer.NetworkZone == z }>{ z }</option>
+											}
+										</select>
+									</div>
+								}
 								<div class="grid grid-cols-2 gap-3">
 									@templates.DataInput("ipAddress", "IP Address", "text", "10.0.1.55", "ipAddress")
 									@templates.DataInput("macAddress", "MAC Address", "text", "AA:BB:CC:DD:EE:FF", "macAddress")
@@ -298,6 +313,7 @@ func formSignals(c *domain.Customer) string {
 		TaxID       string `json:"taxId"`
 		Notes       string `json:"notes"`
 		RouterID    string `json:"routerId"`
+		NetworkZone string `json:"networkZone"`
 		IPAddress   string `json:"ipAddress"`
 		MACAddress  string `json:"macAddress"`
 	}
@@ -321,6 +337,7 @@ func formSignals(c *domain.Customer) string {
 		TaxID:       c.TaxID,
 		Notes:       c.Notes,
 		RouterID:    routerID,
+		NetworkZone: c.NetworkZone,
 		IPAddress:   c.IPAddress,
 		MACAddress:  c.MACAddress,
 	})

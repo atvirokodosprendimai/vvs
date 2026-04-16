@@ -39,6 +39,7 @@ import (
 	networkpersistence "github.com/vvs/isp/internal/modules/network/adapters/persistence"
 	networkcommands "github.com/vvs/isp/internal/modules/network/app/commands"
 	networkqueries "github.com/vvs/isp/internal/modules/network/app/queries"
+	networkservices "github.com/vvs/isp/internal/modules/network/app/services"
 	networksubscribers "github.com/vvs/isp/internal/modules/network/app/subscribers"
 	networkmigrations "github.com/vvs/isp/internal/modules/network/migrations"
 
@@ -190,9 +191,12 @@ func New(cfg Config) (*App, error) {
 		mikrotik: mikrotik.New(),
 		arista:   arista.New(),
 	}
+	prefixRepo := networkpersistence.NewGormPrefixRepository(gdb)
 	var ipamProvider networkdomain.IPAMProvider
 	if cfg.NetBoxURL != "" && cfg.NetBoxToken != "" {
-		ipamProvider = netbox.New(cfg.NetBoxURL, cfg.NetBoxToken, cfg.NetBoxPrefixID)
+		nbClient := netbox.New(cfg.NetBoxURL, cfg.NetBoxToken)
+		allocator := networkservices.NewIPAllocatorService(prefixRepo, nbClient)
+		ipamProvider = allocator
 		log.Printf("NetBox IPAM configured: %s", cfg.NetBoxURL)
 	}
 	createCustomerCmd := customercommands.NewCreateCustomerHandler(customerRepo, publisher, ipamProvider)
@@ -218,7 +222,7 @@ func New(cfg Config) (*App, error) {
 
 		networkRoutes := networkhttp.NewHandlers(
 			createRouterCmd, updateRouterCmd, deleteRouterCmd,
-			listRoutersQuery, getRouterQuery, syncARPCmd, subscriber,
+			listRoutersQuery, getRouterQuery, syncARPCmd, prefixRepo, subscriber,
 		)
 		moduleRoutes = append(moduleRoutes, networkRoutes)
 
@@ -393,11 +397,12 @@ func (b *customerARPBridge) FindARPData(ctx context.Context, id string) (network
 		return networkdomain.CustomerARPData{}, err
 	}
 	return networkdomain.CustomerARPData{
-		ID:         c.ID,
-		Code:       c.Code.String(),
-		RouterID:   c.RouterID,
-		IPAddress:  c.IPAddress,
-		MACAddress: c.MACAddress,
+		ID:          c.ID,
+		Code:        c.Code.String(),
+		RouterID:    c.RouterID,
+		IPAddress:   c.IPAddress,
+		MACAddress:  c.MACAddress,
+		NetworkZone: c.NetworkZone,
 	}, nil
 }
 

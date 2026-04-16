@@ -10,6 +10,7 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 	"github.com/vvs/isp/internal/modules/network/app/commands"
 	"github.com/vvs/isp/internal/modules/network/app/queries"
+	"github.com/vvs/isp/internal/modules/network/domain"
 	"github.com/vvs/isp/internal/shared/events"
 )
 
@@ -20,6 +21,7 @@ type Handlers struct {
 	listQuery   *queries.ListRoutersHandler
 	getQuery    *queries.GetRouterHandler
 	syncARPCmd  *commands.SyncCustomerARPHandler
+	prefixRepo  domain.PrefixRepository
 	subscriber  events.EventSubscriber
 }
 
@@ -30,6 +32,7 @@ func NewHandlers(
 	listQuery *queries.ListRoutersHandler,
 	getQuery *queries.GetRouterHandler,
 	syncARPCmd *commands.SyncCustomerARPHandler,
+	prefixRepo domain.PrefixRepository,
 	subscriber events.EventSubscriber,
 ) *Handlers {
 	return &Handlers{
@@ -39,6 +42,7 @@ func NewHandlers(
 		listQuery:  listQuery,
 		getQuery:   getQuery,
 		syncARPCmd: syncARPCmd,
+		prefixRepo: prefixRepo,
 		subscriber: subscriber,
 	}
 }
@@ -53,6 +57,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/routers", h.createSSE)
 	r.Put("/api/routers/{id}", h.updateSSE)
 	r.Delete("/api/routers/{id}", h.deleteSSE)
+
+	h.prefixRoutes(r)
 }
 
 func (h *Handlers) listPage(w http.ResponseWriter, r *http.Request) {

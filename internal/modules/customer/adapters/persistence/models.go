@@ -25,6 +25,7 @@ type CustomerModel struct {
 	RouterID    *string `gorm:"type:text"`
 	IPAddress   string  `gorm:"type:text"`
 	MACAddress  string  `gorm:"type:text"`
+	NetworkZone string  `gorm:"type:text;not null;default:''"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
@@ -49,6 +50,7 @@ func toModel(c *domain.Customer) *CustomerModel {
 		RouterID:    c.RouterID,
 		IPAddress:   c.IPAddress,
 		MACAddress:  c.MACAddress,
+		NetworkZone: c.NetworkZone,
 		CreatedAt:   c.CreatedAt,
 		UpdatedAt:   c.UpdatedAt,
 	}
@@ -72,6 +74,7 @@ func toDomain(m *CustomerModel) *domain.Customer {
 		RouterID:    m.RouterID,
 		IPAddress:   m.IPAddress,
 		MACAddress:  m.MACAddress,
+		NetworkZone: m.NetworkZone,
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 	}

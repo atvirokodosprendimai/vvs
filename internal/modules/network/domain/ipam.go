@@ -10,10 +10,11 @@ type IPAMProvider interface {
 	// Returns an error if no IP is found.
 	GetIPByCustomerCode(ctx context.Context, customerCode string) (ip, mac string, id int, err error)
 
-	// AllocateIP claims the next available IP from the configured prefix and
-	// tags it with customerCode as description. Returns the allocated IP
-	// (without prefix length) and the NetBox record ID.
-	AllocateIP(ctx context.Context, customerCode string) (ip string, id int, err error)
+	// AllocateIP claims the next available IP for the given zone (location) and
+	// tags it with customerCode as description. Tries prefixes for the zone in
+	// priority order; moves to the next prefix if one is full.
+	// Returns the allocated IP (without prefix length) and the NetBox record ID.
+	AllocateIP(ctx context.Context, customerCode, zone string) (ip string, id int, err error)
 
 	// UpdateARPStatus writes the arp_status custom field to the IP record.
 	// status should be "active" or "disabled".

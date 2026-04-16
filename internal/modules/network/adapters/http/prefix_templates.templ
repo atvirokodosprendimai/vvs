@@ -1,0 +1,94 @@
+package http
+
+import (
+	"fmt"
+	"github.com/vvs/isp/internal/infrastructure/http/templates"
+	"github.com/vvs/isp/internal/modules/network/domain"
+)
+
+templ PrefixListPage(prefixes []*domain.NetBoxPrefix) {
+	@templates.Layout("IP Prefixes") {
+		@templates.PageHeader("IP Prefixes", "NetBox prefix pool for automatic IP allocation")
+		<div
+			data-signals="{_prefixAddOpen:false,prefixNetboxId:'',prefixCidr:'',prefixLocation:'',prefixPriority:'0'}"
+		>
+			<div class="flex items-center justify-between mb-4">
+				<div></div>
+				<button
+					data-on-click="$_prefixAddOpen=true"
+					class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+				>
+					+ Add Prefix
+				</button>
+			</div>
+
+			<!-- Add modal -->
+			<div
+				data-show="$_prefixAddOpen"
+				class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+			>
+				<div class="bg-slate-900 rounded-lg p-6 w-full max-w-md border border-slate-700">
+					<h2 class="text-white font-semibold text-lg mb-4">Add NetBox Prefix</h2>
+					<div class="flex flex-col gap-3">
+						@templates.DataInput("prefixNetboxId", "NetBox Prefix ID *", "number", "e.g. 42", "prefixNetboxId")
+						@templates.DataInput("prefixCidr", "CIDR (display only)", "text", "e.g. 10.0.1.0/24", "prefixCidr")
+						@templates.DataInput("prefixLocation", "Location *", "text", "e.g. Kaunas", "prefixLocation")
+						@templates.DataInput("prefixPriority", "Priority (lower = first)", "number", "0", "prefixPriority")
+						<div id="prefix-form-errors"></div>
+						<div class="flex gap-2 pt-1">
+							<button
+								data-on-click="@post('/api/prefixes')"
+								class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium flex-1"
+							>Save</button>
+							<button
+								data-on-click="$_prefixAddOpen=false"
+								class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded text-sm font-medium"
+							>Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Table -->
+			<div id="prefix-table">
+				@PrefixTable(prefixes)
+			</div>
+		</div>
+	}
+}
+
+templ PrefixTable(prefixes []*domain.NetBoxPrefix) {
+	<div id="prefix-table">
+		if len(prefixes) == 0 {
+			<div class="text-slate-500 text-sm py-8 text-center">No prefixes configured. Add one to enable automatic IP allocation.</div>
+		} else {
+			<table class="w-full text-sm">
+				<thead>
+					<tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider">
+						<th class="text-left py-2 px-3">NetBox ID</th>
+						<th class="text-left py-2 px-3">CIDR</th>
+						<th class="text-left py-2 px-3">Location</th>
+						<th class="text-left py-2 px-3">Priority</th>
+						<th class="py-2 px-3"></th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, p := range prefixes {
+						<tr class="border-b border-slate-800/50 hover:bg-slate-800/30">
+							<td class="py-2 px-3 text-slate-300 font-mono">{ fmt.Sprintf("%d", p.NetBoxID) }</td>
+							<td class="py-2 px-3 text-slate-300 font-mono">{ p.CIDR }</td>
+							<td class="py-2 px-3 text-slate-100">{ p.Location }</td>
+							<td class="py-2 px-3 text-slate-400">{ fmt.Sprintf("%d", p.Priority) }</td>
+							<td class="py-2 px-3 text-right">
+								<button
+									data-on-click={ fmt.Sprintf("@delete('/api/prefixes/%s')", p.ID) }
+									class="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded hover:bg-red-900/30 transition-colors"
+								>Delete</button>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}

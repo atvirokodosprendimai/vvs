@@ -88,7 +88,8 @@ func (h *Handlers) listPage(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) createPage(w http.ResponseWriter, r *http.Request) {
 	routers := h.loadRouters(r.Context())
-	CustomerFormPage(nil, routers).Render(r.Context(), w)
+	zones := h.loadZones(r.Context())
+	CustomerFormPage(nil, routers, zones).Render(r.Context(), w)
 }
 
 func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
@@ -117,7 +118,8 @@ func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	routers := h.loadRouters(r.Context())
-	CustomerFormPage(customer, routers).Render(r.Context(), w)
+	zones := h.loadZones(r.Context())
+	CustomerFormPage(customer, routers, zones).Render(r.Context(), w)
 }
 
 func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
@@ -181,6 +183,7 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		ContactName string `json:"contactName"`
 		Email       string `json:"email"`
 		Phone       string `json:"phone"`
+		NetworkZone string `json:"networkZone"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		log.Printf("handler: ReadSignals: %v", err)
@@ -194,6 +197,7 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		ContactName: signals.ContactName,
 		Email:       signals.Email,
 		Phone:       signals.Phone,
+		NetworkZone: signals.NetworkZone,
 	})
 	if err != nil {
 		sse.PatchElementTempl(formError(err.Error()))
@@ -218,6 +222,7 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		TaxID       string `json:"taxId"`
 		Notes       string `json:"notes"`
 		RouterID    string `json:"routerId"`
+		NetworkZone string `json:"networkZone"`
 		IPAddress   string `json:"ipAddress"`
 		MACAddress  string `json:"macAddress"`
 	}
@@ -241,6 +246,7 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		TaxID:       signals.TaxID,
 		Notes:       signals.Notes,
 		RouterID:    signals.RouterID,
+		NetworkZone: signals.NetworkZone,
 		IPAddress:   signals.IPAddress,
 		MACAddress:  signals.MACAddress,
 	})
@@ -313,4 +319,17 @@ func (h *Handlers) loadRouters(ctx context.Context) []RouterSummary {
 		summaries[i] = RouterSummary{ID: row.ID, Name: row.Name, Host: row.Host}
 	}
 	return summaries
+}
+
+// loadZones reads distinct locations from netbox_prefixes via the shared SQLite reader.
+// Returns nil when reader is not set.
+func (h *Handlers) loadZones(ctx context.Context) []string {
+	if h.reader == nil {
+		return nil
+	}
+	var zones []string
+	h.reader.WithContext(ctx).Raw(
+		"SELECT DISTINCT location FROM netbox_prefixes ORDER BY location",
+	).Pluck("location", &zones)
+	return zones
 }

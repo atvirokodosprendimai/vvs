@@ -6,11 +6,12 @@ import "context"
 // needs to provision ARP entries. Defined here so the network module does
 // not import the customer domain package.
 type CustomerARPData struct {
-	ID         string
-	Code       string
-	RouterID   *string
-	IPAddress  string
-	MACAddress string
+	ID          string
+	Code        string
+	RouterID    *string
+	IPAddress   string
+	MACAddress  string
+	NetworkZone string
 }
 
 // HasNetworkProvisioning reports whether the customer has a router assigned.

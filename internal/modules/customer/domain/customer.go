@@ -39,9 +39,10 @@ type Customer struct {
 	Status      CustomerStatus
 	Notes       string
 	// Network provisioning fields — set when customer has a managed network connection
-	RouterID   *string // FK to routers table; nil = no provisioning
-	IPAddress  string  // e.g. "10.0.1.55"
-	MACAddress string  // e.g. "AA:BB:CC:DD:EE:FF"
+	RouterID     *string // FK to routers table; nil = no provisioning
+	IPAddress    string  // e.g. "10.0.1.55"
+	MACAddress   string  // e.g. "AA:BB:CC:DD:EE:FF"
+	NetworkZone  string  // matches netbox_prefixes.location for IP allocation, e.g. "Kaunas"
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }
@@ -105,6 +106,12 @@ func (c *Customer) SetNetworkInfo(routerID, ipAddress, macAddress string) {
 	}
 	c.IPAddress = strings.TrimSpace(ipAddress)
 	c.MACAddress = strings.TrimSpace(macAddress)
+	c.UpdatedAt = time.Now().UTC()
+}
+
+// SetNetworkZone sets the zone used for IP allocation.
+func (c *Customer) SetNetworkZone(zone string) {
+	c.NetworkZone = strings.TrimSpace(zone)
 	c.UpdatedAt = time.Now().UTC()
 }
 

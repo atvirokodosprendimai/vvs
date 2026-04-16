@@ -7,9 +7,8 @@ type Config struct {
 	ListenAddr    string
 	AdminUser     string
 	AdminPassword string
-	NetBoxURL      string // optional; NETBOX_URL env var
-	NetBoxToken    string // optional; NETBOX_TOKEN env var
-	NetBoxPrefixID int    // optional; NETBOX_PREFIX_ID — prefix to allocate IPs from
+	NetBoxURL   string // optional; NETBOX_URL env var
+	NetBoxToken string // optional; NETBOX_TOKEN env var
 
 	// NATS options — mutually exclusive
 	NATSUrl        string // if set, connect to external NATS instead of starting embedded

@@ -123,21 +123,12 @@ func TestAllocateIP_OK(t *testing.T) {
 	defer srv.Close()
 
 	c := newWithHTTP(srv.URL, "tok", srv.Client())
-	c.prefixID = 10
-	ip, id, err := c.AllocateIP(context.Background(), "CLI-00006")
+	ip, id, err := c.AllocateFromPrefix(context.Background(), 10, "CLI-00006")
 	require.NoError(t, err)
 	assert.Equal(t, "10.0.1.10", ip)
 	assert.Equal(t, 55, id)
 	assert.Contains(t, gotBody, "CLI-00006")
 	assert.Contains(t, gotBody, `"active"`)
-}
-
-func TestAllocateIP_NoPrefixConfigured_Error(t *testing.T) {
-	c := newWithHTTP("http://netbox", "tok", http.DefaultClient)
-	// prefixID = 0 (default)
-	_, _, err := c.AllocateIP(context.Background(), "CLI-00006")
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "prefix")
 }
 
 func TestAllocateIP_HTTPError(t *testing.T) {
@@ -148,8 +139,7 @@ func TestAllocateIP_HTTPError(t *testing.T) {
 	defer srv.Close()
 
 	c := newWithHTTP(srv.URL, "tok", srv.Client())
-	c.prefixID = 10
-	_, _, err := c.AllocateIP(context.Background(), "CLI-00006")
+	_, _, err := c.AllocateFromPrefix(context.Background(), 10, "CLI-00006")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "400")
 }

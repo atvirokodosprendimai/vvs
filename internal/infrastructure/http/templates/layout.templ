@@ -108,6 +108,7 @@ templ Sidebar() {
 			@NavItem("/customers", "Customers", customersIcon())
 			@NavItem("/products", "Products", productsIcon())
 			@NavItem("/routers", "Routers", routersIcon())
+			@NavItem("/prefixes", "Prefixes", prefixesIcon())
 			@NavItem("/devices", "Devices", devicesIcon())
 			@NavItem("/cron", "Cron", cronIcon())
 			@NavItem("/users", "Users", usersIcon())
@@ -206,6 +207,10 @@ func productsIcon() string {
 
 func routersIcon() string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"/></svg>`
+}
+
+func prefixesIcon() string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M12 17.25h8.25"/></svg>`
 }
 
 func devicesIcon() string {

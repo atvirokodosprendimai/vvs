@@ -22,9 +22,10 @@ type UpdateCustomerCommand struct {
 	Country     string
 	TaxID       string
 	Notes       string
-	RouterID    string // empty = clear provisioning
-	IPAddress   string
-	MACAddress  string
+	RouterID     string // empty = clear provisioning
+	IPAddress    string
+	MACAddress   string
+	NetworkZone  string
 }
 
 type UpdateCustomerHandler struct {
@@ -50,6 +51,7 @@ func (h *UpdateCustomerHandler) Handle(ctx context.Context, cmd UpdateCustomerCo
 	}
 
 	customer.SetNetworkInfo(cmd.RouterID, cmd.IPAddress, cmd.MACAddress)
+	customer.SetNetworkZone(cmd.NetworkZone)
 
 	if err := h.repo.Save(ctx, customer); err != nil {
 		return err
