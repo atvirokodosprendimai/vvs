@@ -1,6 +1,6 @@
 ---
 tldr: Add `vvs cron daemon` — long-running process that schedules jobs using robfig/cron/v3, reloads DB every minute for changes, replaces need for system cron
-status: active
+status: completed
 ---
 
 # Plan: Cron Daemon
@@ -67,19 +67,17 @@ cmd/server/cli_cron.go      — add `daemon` subcommand
 
 ## Phases
 
-### Phase 1 — Daemon implementation - status: open
+### Phase 1 — Daemon implementation - status: completed
 
-1. [ ] `cmd/server/cron_daemon.go`
-   - `Daemon` struct: holds `*cron.Cron`, `map[string]cron.EntryID`, `JobRepository`, `*natsrpc.Server`
-   - `NewDaemon(repo, rpc)` constructor
-   - `Start(ctx)` — loads jobs, schedules each, schedules reload func, starts cron
-   - `reload(ctx)` — diff DB state against scheduled entries, add/remove as needed
-   - `Stop()` — `cron.Stop()`, wait for running jobs
+1. [x] `cmd/server/cron_daemon.go`
+   - => `Daemon` struct: `*cron.Cron`, `map[string]cron.EntryID`, `JobRepository`, `*natsrpc.Server`
+   - => `reload` diffs active jobs vs scheduled entries: unschedule removed, schedule new
+   - => `Start(ctx)` blocks until ctx done, then calls `cron.Stop()` and waits for in-flight jobs
+   - => Reload also scheduled as `* * * * *` cron entry alongside job entries
 
-2. [ ] `cmd/server/cli_cron.go` — add `daemon` command
-   - Opens DB via `gormsqlite.Open` + `app.NewDirect` (same as cron run command)
-   - `signal.NotifyContext` for graceful shutdown
-   - Calls `NewDaemon(repo, rpc).Start(ctx)`
+2. [x] `cmd/server/cli_cron.go` — `daemon` subcommand added
+   - => Opens DB twice (repo + NewDirect for rpcServer) same pattern as `cron run`
+   - => `signal.NotifyContext` handles SIGTERM/SIGINT
 
 ---
 
@@ -100,3 +98,4 @@ cmd/server/cli_cron.go      — add `daemon` subcommand
 | Timestamp | Entry |
 |-----------|-------|
 | 2604160356 | Plan created |
+| 2604160356 | Implemented and committed 6796643 |
