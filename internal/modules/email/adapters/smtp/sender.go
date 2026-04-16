@@ -22,24 +22,14 @@ func NewSender(encKey []byte) *Sender {
 	return &Sender{encKey: encKey}
 }
 
-func (s *Sender) Send(_ context.Context, account *domain.EmailAccount, to, subject, body, inReplyTo, references string) error {
-	password, err := emailcommands.DecryptPassword(s.encKey, account.PasswordEnc)
-	if err != nil {
-		return fmt.Errorf("smtp: decrypt password: %w", err)
-	}
-
+// BuildMessage constructs a RFC 2822 message and returns its Message-ID and raw bytes.
+// Exported so command handlers can reuse the same bytes for IMAP APPEND.
+func BuildMessage(account *domain.EmailAccount, to, subject, body, inReplyTo, references string) (msgID string, raw []byte) {
 	smtpHost := account.SMTPHost
 	if smtpHost == "" {
 		smtpHost = account.Host
 	}
-	smtpPort := account.SMTPPort
-	if smtpPort == 0 {
-		smtpPort = 587
-	}
-	addr := fmt.Sprintf("%s:%d", smtpHost, smtpPort)
-
-	// Build RFC 2822 message.
-	msgID := fmt.Sprintf("<%s@%s>", uuid.Must(uuid.NewV7()).String(), smtpHost)
+	msgID = fmt.Sprintf("<%s@%s>", uuid.Must(uuid.NewV7()).String(), smtpHost)
 	var buf strings.Builder
 	buf.WriteString("From: " + account.Username + "\r\n")
 	buf.WriteString("To: " + to + "\r\n")
@@ -56,7 +46,26 @@ func (s *Sender) Send(_ context.Context, account *domain.EmailAccount, to, subje
 	buf.WriteString("Content-Type: text/plain; charset=utf-8\r\n")
 	buf.WriteString("\r\n")
 	buf.WriteString(body)
-	msgBytes := []byte(buf.String())
+	return msgID, []byte(buf.String())
+}
+
+func (s *Sender) Send(_ context.Context, account *domain.EmailAccount, to, subject, body, inReplyTo, references string) error {
+	password, err := emailcommands.DecryptPassword(s.encKey, account.PasswordEnc)
+	if err != nil {
+		return fmt.Errorf("smtp: decrypt password: %w", err)
+	}
+
+	smtpHost := account.SMTPHost
+	if smtpHost == "" {
+		smtpHost = account.Host
+	}
+	smtpPort := account.SMTPPort
+	if smtpPort == 0 {
+		smtpPort = 587
+	}
+	addr := fmt.Sprintf("%s:%d", smtpHost, smtpPort)
+
+	_, msgBytes := BuildMessage(account, to, subject, body, inReplyTo, references)
 
 	tlsMode := account.SMTPTLS
 	if tlsMode == "" {
