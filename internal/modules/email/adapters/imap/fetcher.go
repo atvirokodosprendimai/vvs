@@ -111,7 +111,7 @@ func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID
 			UID:          true,
 			Envelope:     true,
 			InternalDate: true,
-			BodySection:  []*imaplib.FetchItemBodySection{{}}, // full body
+			BodySection:  []*imaplib.FetchItemBodySection{{Peek: true}}, // BODY.PEEK[] — never sets \Seen
 		})
 
 		for {
