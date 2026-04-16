@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os/exec"
 	"time"
 
-	"github.com/vvs/isp/internal/modules/cron/domain"
 	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
+	"github.com/vvs/isp/internal/modules/cron/domain"
 )
 
 // RunDueJobs loads all active jobs where next_run <= now, executes each, and
@@ -43,6 +45,8 @@ func runJob(ctx context.Context, job *domain.Job, repo domain.JobRepository, rpc
 		runErr = runShell(jobCtx, job.Payload)
 	case domain.TypeRPC:
 		runErr = runRPC(jobCtx, job.Payload, rpc)
+	case domain.TypeURL:
+		runErr = runURL(jobCtx, job.Payload)
 	default:
 		runErr = fmt.Errorf("unknown job type: %s", job.JobType)
 	}
@@ -94,4 +98,45 @@ func runRPC(ctx context.Context, payload string, rpc *natsrpc.Server) error {
 	}
 	_, err := rpc.Dispatch(ctx, req.Subject, req.Body)
 	return err
+}
+
+// URLPayload is the JSON structure stored in Job.Payload for type=url.
+type URLPayload struct {
+	URL     string            `json:"url"`
+	Method  string            `json:"method,omitempty"`  // default: GET
+	Headers map[string]string `json:"headers,omitempty"` // e.g. {"Authorization": "Bearer token"}
+}
+
+func runURL(ctx context.Context, payload string) error {
+	var p URLPayload
+	if err := json.Unmarshal([]byte(payload), &p); err != nil {
+		return fmt.Errorf("parse url payload: %w", err)
+	}
+	if p.URL == "" {
+		return fmt.Errorf("url payload missing url")
+	}
+	method := p.Method
+	if method == "" {
+		method = http.MethodGet
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, p.URL, nil)
+	if err != nil {
+		return fmt.Errorf("build request: %w", err)
+	}
+	for k, v := range p.Headers {
+		req.Header.Set(k, v)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("request: %w", err)
+	}
+	defer resp.Body.Close()
+	io.Copy(io.Discard, resp.Body) //nolint:errcheck
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	return nil
 }

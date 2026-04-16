@@ -15,6 +15,7 @@ const (
 	TypeRPC    = "rpc"
 	TypeAction = "action"
 	TypeShell  = "shell"
+	TypeURL    = "url"
 )
 
 var (

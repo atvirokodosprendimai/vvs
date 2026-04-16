@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/urfave/cli/v3"
@@ -52,14 +54,17 @@ func cronCommands() *cli.Command {
 				Flags: []cli.Flag{
 					&cli.StringFlag{Name: "name", Required: true, Usage: "Job name (unique)"},
 					&cli.StringFlag{Name: "schedule", Required: true, Usage: "5-field cron expression (e.g. '0 3 * * *')"},
-					&cli.StringFlag{Name: "type", Required: true, Usage: "Job type: action | shell | rpc"},
+					&cli.StringFlag{Name: "type", Required: true, Usage: "Job type: action | shell | rpc | url"},
 					&cli.StringFlag{Name: "action", Usage: "Built-in action name (for type=action)"},
 					&cli.StringFlag{Name: "command", Usage: "Shell command (for type=shell)"},
 					&cli.StringFlag{Name: "subject", Usage: "RPC subject (for type=rpc, e.g. isp.rpc.service.cancel)"},
+					&cli.StringFlag{Name: "url", Usage: "URL to ping (for type=url)"},
+					&cli.StringFlag{Name: "method", Value: "GET", Usage: "HTTP method (for type=url, default GET)"},
+					&cli.StringSliceFlag{Name: "header", Usage: "HTTP header 'Name: Value' (for type=url, repeatable)"},
 				},
 				Action: func(ctx context.Context, cmd *cli.Command) error {
 					jobType := cmd.String("type")
-					payload, err := buildCronPayload(jobType, cmd.String("action"), cmd.String("command"), cmd.String("subject"))
+					payload, err := buildCronPayload(jobType, cmd.String("action"), cmd.String("command"), cmd.String("subject"), cmd.String("url"), cmd.String("method"), cmd.StringSlice("header"))
 					if err != nil {
 						return cli.Exit(err.Error(), 1)
 					}
@@ -190,7 +195,7 @@ func cronDaemonCommand() *cli.Command {
 	}
 }
 
-func buildCronPayload(jobType, action, command, subject string) (string, error) {
+func buildCronPayload(jobType, action, command, subject, rawURL, method string, headers []string) (string, error) {
 	switch jobType {
 	case "action":
 		if action == "" {
@@ -207,7 +212,31 @@ func buildCronPayload(jobType, action, command, subject string) (string, error) 
 			return "", fmt.Errorf("--subject required for type=rpc")
 		}
 		return fmt.Sprintf(`{"subject":%q,"body":{}}`, subject), nil
+	case "url":
+		if rawURL == "" {
+			return "", fmt.Errorf("--url required for type=url")
+		}
+		p := map[string]any{"url": rawURL}
+		if method != "" && strings.ToUpper(method) != "GET" {
+			p["method"] = strings.ToUpper(method)
+		}
+		if len(headers) > 0 {
+			hmap := make(map[string]string, len(headers))
+			for _, h := range headers {
+				parts := strings.SplitN(h, ":", 2)
+				if len(parts) != 2 {
+					return "", fmt.Errorf("invalid header %q: must be 'Name: Value'", h)
+				}
+				hmap[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+			}
+			p["headers"] = hmap
+		}
+		b, err := json.Marshal(p)
+		if err != nil {
+			return "", err
+		}
+		return string(b), nil
 	default:
-		return "", fmt.Errorf("unknown type %q: must be action|shell|rpc", jobType)
+		return "", fmt.Errorf("unknown type %q: must be action|shell|rpc|url", jobType)
 	}
 }
