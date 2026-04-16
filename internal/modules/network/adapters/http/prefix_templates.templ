@@ -15,7 +15,7 @@ templ PrefixListPage(prefixes []*domain.NetBoxPrefix) {
 			<div class="flex items-center justify-between mb-4">
 				<div></div>
 				<button
-					data-on-click="$_prefixAddOpen=true"
+					data-on:click="$_prefixAddOpen=true"
 					class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
 				>
 					+ Add Prefix
@@ -26,6 +26,7 @@ templ PrefixListPage(prefixes []*domain.NetBoxPrefix) {
 			<div
 				data-show="$_prefixAddOpen"
 				class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+				style="display:none"
 			>
 				<div class="bg-slate-900 rounded-lg p-6 w-full max-w-md border border-slate-700">
 					<h2 class="text-white font-semibold text-lg mb-4">Add NetBox Prefix</h2>
@@ -37,11 +38,11 @@ templ PrefixListPage(prefixes []*domain.NetBoxPrefix) {
 						<div id="prefix-form-errors"></div>
 						<div class="flex gap-2 pt-1">
 							<button
-								data-on-click="@post('/api/prefixes')"
+								data-on:click="@post('/api/prefixes')"
 								class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium flex-1"
 							>Save</button>
 							<button
-								data-on-click="$_prefixAddOpen=false"
+								data-on:click="$_prefixAddOpen=false"
 								class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded text-sm font-medium"
 							>Cancel</button>
 						</div>
@@ -81,7 +82,7 @@ templ PrefixTable(prefixes []*domain.NetBoxPrefix) {
 							<td class="py-2 px-3 text-slate-400">{ fmt.Sprintf("%d", p.Priority) }</td>
 							<td class="py-2 px-3 text-right">
 								<button
-									data-on-click={ fmt.Sprintf("@delete('/api/prefixes/%s')", p.ID) }
+									data-on:click={ fmt.Sprintf("@delete('/api/prefixes/%s')", p.ID) }
 									class="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded hover:bg-red-900/30 transition-colors"
 								>Delete</button>
 							</td>
