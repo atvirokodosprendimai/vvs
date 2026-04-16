@@ -10,3 +10,5 @@
 - [HTTP handler local interfaces](feedback_http_handler_local_interfaces.md) — Define minimal local interfaces in adapters/http instead of importing concrete persistence types
 - [SQLite reserved keywords](feedback_sqlite_reserved_keywords.md) — `references`, `order`, `group`, `index`, `key` etc. are reserved; never use as bare column names
 - [Codex review after coding](feedback_codex_review_after_code.md) — Auto-spawn Codex review in background after every coding task
+- [Datastar bind kebab = camelCase](feedback_datastar_bind_kebab_camel.md) — data-bind:foo-bar and $fooBar are the same signal; not a mismatch
+- [IMAP Envelope missing References](feedback_imap_envelope_no_references.md) — Parse References header from raw body bytes, not Envelope struct
