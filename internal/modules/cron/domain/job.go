@@ -113,6 +113,23 @@ func (j *Job) Resume() error {
 	return nil
 }
 
+func (j *Job) Update(name, schedule, jobType, payload string) error {
+	if name == "" {
+		return ErrNameRequired
+	}
+	nextRun, err := NextTime(schedule, time.Now().UTC())
+	if err != nil {
+		return err
+	}
+	j.Name = name
+	j.Schedule = schedule
+	j.JobType = jobType
+	j.Payload = payload
+	j.NextRun = nextRun
+	j.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
 func (j *Job) Delete() error {
 	if j.Status == StatusDeleted {
 		return ErrInvalidTransition

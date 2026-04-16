@@ -55,7 +55,7 @@ func CronListPage(jobs []queries.JobReadModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div data-signals=\"{_addOpen: false, jobType: 'action', name: '', schedule: '', action: '', command: '', subject: '', url: '', method: 'GET', headers: '{}'}\"><!-- Toolbar --><div class=\"flex items-center justify-between mb-4\"><div></div><button type=\"button\" data-on:click=\"$_addOpen = true\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ Add Job</button></div><!-- Live table --><div id=\"cron-table\" data-init=\"@get('/sse/cron')\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div data-signals=\"{_addOpen: false, jobType: 'action', name: '', schedule: '', action: '', command: '', subject: '', url: '', method: 'GET', headers: '{}', _editOpen: false, editId: '', editName: '', editSchedule: '', editJobType: 'action', editAction: '', editCommand: '', editSubject: '', editUrl: '', editMethod: 'GET', editHeaders: '{}'}\"><!-- Toolbar --><div class=\"flex items-center justify-between mb-4\"><div></div><button type=\"button\" data-on:click=\"$_addOpen = true\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ Add Job</button></div><!-- Live table --><div id=\"cron-table\" data-init=\"@get('/sse/cron')\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -63,7 +63,7 @@ func CronListPage(jobs []queries.JobReadModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><!-- Add modal --><div data-show=\"$_addOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-lg p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-slate-200\">Add Cron Job</h3><button type=\"button\" data-on:click=\"$_addOpen = false\" class=\"text-slate-500 hover:text-slate-300\"><svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><!-- Name --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Name *</label> <input type=\"text\" data-bind:name placeholder=\"e.g. daily-backup\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><!-- Schedule --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Schedule * <span class=\"normal-case font-normal text-slate-500\">(5-field cron)</span></label> <input type=\"text\" data-bind:schedule placeholder=\"e.g. 0 3 * * *\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500\"></div><!-- Type --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Type *</label> <select data-bind:job-type class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"><option value=\"action\">Action (built-in)</option> <option value=\"shell\">Shell command</option> <option value=\"url\">URL ping / webhook</option> <option value=\"rpc\">RPC subject</option></select></div><!-- action fields --><div data-show=\"$jobType === 'action'\" style=\"display:none\" class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Action name *</label> <input type=\"text\" data-bind:action placeholder=\"e.g. noop\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><!-- shell fields --><div data-show=\"$jobType === 'shell'\" style=\"display:none\" class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Shell command *</label> <textarea data-bind:command rows=\"2\" placeholder=\"e.g. pg_dump mydb > /backup.sql\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500 resize-none\"></textarea></div><!-- url fields --><div data-show=\"$jobType === 'url'\" style=\"display:none\" class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">URL *</label> <input type=\"url\" data-bind:url placeholder=\"https://example.com/health\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Method</label> <select data-bind:method class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"><option value=\"GET\">GET</option> <option value=\"POST\">POST</option> <option value=\"PUT\">PUT</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Headers <span class=\"normal-case font-normal text-slate-500\">(JSON object)</span></label> <input type=\"text\" data-bind:headers placeholder='{\"Authorization\": \"Bearer token\"}' class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500\"></div></div><!-- rpc fields --><div data-show=\"$jobType === 'rpc'\" style=\"display:none\" class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">RPC subject *</label> <input type=\"text\" data-bind:subject placeholder=\"isp.rpc.service.cancel\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500\"></div><div id=\"cron-form-errors\"></div></div><div class=\"flex gap-2 pt-1\"><button type=\"button\" data-on:click=\"@post('/api/cron')\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Add Job</button> <button type=\"button\" data-on:click=\"$_addOpen = false\" class=\"text-slate-400 hover:text-slate-200 px-4 py-2 rounded text-sm transition-colors\">Cancel</button></div></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><!-- Add modal --><div data-show=\"$_addOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-lg p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-slate-200\">Add Cron Job</h3><button type=\"button\" data-on:click=\"$_addOpen = false\" class=\"text-slate-500 hover:text-slate-300\"><svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><!-- Name --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Name *</label> <input type=\"text\" data-bind:name placeholder=\"e.g. daily-backup\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><!-- Schedule --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Schedule * <span class=\"normal-case font-normal text-slate-500\">(5-field cron)</span></label> <input type=\"text\" data-bind:schedule placeholder=\"e.g. 0 3 * * *\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500\"></div><!-- Type --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Type *</label> <select data-bind:job-type class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"><option value=\"action\">Action (built-in)</option> <option value=\"shell\">Shell command</option> <option value=\"url\">URL ping / webhook</option> <option value=\"rpc\">RPC subject</option></select></div><!-- action fields --><div data-show=\"$jobType === 'action'\" style=\"display:none\" class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Action name *</label> <input type=\"text\" data-bind:action placeholder=\"e.g. noop\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><!-- shell fields --><div data-show=\"$jobType === 'shell'\" style=\"display:none\" class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Shell command *</label> <textarea data-bind:command rows=\"2\" placeholder=\"e.g. pg_dump mydb > /backup.sql\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500 resize-none\"></textarea></div><!-- url fields --><div data-show=\"$jobType === 'url'\" style=\"display:none\" class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">URL *</label> <input type=\"url\" data-bind:url placeholder=\"https://example.com/health\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Method</label> <select data-bind:method class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"><option value=\"GET\">GET</option> <option value=\"POST\">POST</option> <option value=\"PUT\">PUT</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Headers <span class=\"normal-case font-normal text-slate-500\">(JSON object)</span></label> <input type=\"text\" data-bind:headers placeholder='{\"Authorization\": \"Bearer token\"}' class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500\"></div></div><!-- rpc fields --><div data-show=\"$jobType === 'rpc'\" style=\"display:none\" class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">RPC subject *</label> <input type=\"text\" data-bind:subject placeholder=\"isp.rpc.service.cancel\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500\"></div><div id=\"cron-form-errors\"></div></div><div class=\"flex gap-2 pt-1\"><button type=\"button\" data-on:click=\"@post('/api/cron')\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Add Job</button> <button type=\"button\" data-on:click=\"$_addOpen = false\" class=\"text-slate-400 hover:text-slate-200 px-4 py-2 rounded text-sm transition-colors\">Cancel</button></div></div></div><!-- Edit modal --><div data-show=\"$_editOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-lg p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-slate-200\">Edit Cron Job</h3><button type=\"button\" data-on:click=\"$_editOpen = false\" class=\"text-slate-500 hover:text-slate-300\"><svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><!-- Name --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Name *</label> <input type=\"text\" data-bind:edit-name placeholder=\"e.g. daily-backup\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><!-- Schedule --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Schedule * <span class=\"normal-case font-normal text-slate-500\">(5-field cron)</span></label> <input type=\"text\" data-bind:edit-schedule placeholder=\"e.g. 0 3 * * *\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500\"></div><!-- Type --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Type *</label> <select data-bind:edit-job-type class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"><option value=\"action\">Action (built-in)</option> <option value=\"shell\">Shell command</option> <option value=\"url\">URL ping / webhook</option> <option value=\"rpc\">RPC subject</option></select></div><!-- action fields --><div data-show=\"$editJobType === 'action'\" style=\"display:none\" class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Action name *</label> <input type=\"text\" data-bind:edit-action placeholder=\"e.g. noop\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><!-- shell fields --><div data-show=\"$editJobType === 'shell'\" style=\"display:none\" class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Shell command *</label> <textarea data-bind:edit-command rows=\"2\" placeholder=\"e.g. pg_dump mydb &gt; /backup.sql\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500 resize-none\"></textarea></div><!-- url fields --><div data-show=\"$editJobType === 'url'\" style=\"display:none\" class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">URL *</label> <input type=\"url\" data-bind:edit-url placeholder=\"https://example.com/health\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Method</label> <select data-bind:edit-method class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"><option value=\"GET\">GET</option> <option value=\"POST\">POST</option> <option value=\"PUT\">PUT</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Headers <span class=\"normal-case font-normal text-slate-500\">(JSON object)</span></label> <input type=\"text\" data-bind:edit-headers placeholder='{\"Authorization\": \"Bearer token\"}' class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500\"></div></div><!-- rpc fields --><div data-show=\"$editJobType === 'rpc'\" style=\"display:none\" class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">RPC subject *</label> <input type=\"text\" data-bind:edit-subject placeholder=\"isp.rpc.service.cancel\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500\"></div><div id=\"cron-edit-errors\"></div></div><div class=\"flex gap-2 pt-1\"><button type=\"button\" data-on:click=\"@put('/api/cron/' + $editId)\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Save Changes</button> <button type=\"button\" data-on:click=\"$_editOpen = false\" class=\"text-slate-400 hover:text-slate-200 px-4 py-2 rounded text-sm transition-colors\">Cancel</button></div></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -122,7 +122,7 @@ func CronTable(jobs []queries.JobReadModel) templ.Component {
 					var templ_7745c5c3_Var4 string
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(j.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 159, Col: 66}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 251, Col: 66}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
@@ -135,7 +135,7 @@ func CronTable(jobs []queries.JobReadModel) templ.Component {
 					var templ_7745c5c3_Var5 string
 					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(j.Schedule)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 160, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 252, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
@@ -164,7 +164,7 @@ func CronTable(jobs []queries.JobReadModel) templ.Component {
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(j.NextRun.Format("Jan 02 15:04"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 163, Col: 88}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 255, Col: 88}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -190,7 +190,7 @@ func CronTable(jobs []queries.JobReadModel) templ.Component {
 						var templ_7745c5c3_Var7 string
 						templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/cron/%s/pause')", j.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 170, Col: 77}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 262, Col: 77}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 						if templ_7745c5c3_Err != nil {
@@ -209,7 +209,7 @@ func CronTable(jobs []queries.JobReadModel) templ.Component {
 						var templ_7745c5c3_Var8 string
 						templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/cron/%s/resume')", j.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 177, Col: 78}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 269, Col: 78}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 						if templ_7745c5c3_Err != nil {
@@ -225,26 +225,39 @@ func CronTable(jobs []queries.JobReadModel) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var9 string
-					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/cron/%s')", j.ID))
+					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@get('/api/cron/%s/edit')", j.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 183, Col: 72}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 275, Col: 74}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" class=\"text-xs text-slate-400 hover:text-red-400 transition-colors\">Delete</button></div></td></tr>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" class=\"text-xs text-slate-400 hover:text-orange-400 transition-colors\">Edit</button> <button type=\"button\" data-on:click=\"")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var10 string
+					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/cron/%s')", j.ID))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 280, Col: 72}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" class=\"text-xs text-slate-400 hover:text-red-400 transition-colors\">Delete</button></div></td></tr>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</tbody></table></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</tbody></table></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -269,37 +282,37 @@ func cronStatusBadge(status string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var10 == nil {
-			templ_7745c5c3_Var10 = templ.NopComponent
+		templ_7745c5c3_Var11 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var11 == nil {
+			templ_7745c5c3_Var11 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		switch status {
 		case domain.StatusActive:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-900/50 text-orange-300\">active</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-900/50 text-orange-300\">active</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case domain.StatusPaused:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/40 text-yellow-300\">paused</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-900/40 text-yellow-300\">paused</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		default:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-700 text-slate-400\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-700 text-slate-400\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(status)
+			var templ_7745c5c3_Var12 string
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 207, Col: 117}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 304, Col: 117}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -324,47 +337,47 @@ func typeBadge(jobType string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var12 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var12 == nil {
-			templ_7745c5c3_Var12 = templ.NopComponent
+		templ_7745c5c3_Var13 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var13 == nil {
+			templ_7745c5c3_Var13 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		switch jobType {
 		case domain.TypeAction:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-slate-700 text-slate-300\">action</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-slate-700 text-slate-300\">action</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case domain.TypeShell:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-slate-700 text-slate-300\">shell</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-slate-700 text-slate-300\">shell</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case domain.TypeURL:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-blue-900/40 text-blue-300\">url</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-blue-900/40 text-blue-300\">url</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		case domain.TypeRPC:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-purple-900/40 text-purple-300\">rpc</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-purple-900/40 text-purple-300\">rpc</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		default:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-slate-700 text-slate-400\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<span class=\"inline-flex items-center px-1.5 py-0.5 rounded text-xs font-mono bg-slate-700 text-slate-400\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var13 string
-			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(jobType)
+			var templ_7745c5c3_Var14 string
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(jobType)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 222, Col: 118}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 319, Col: 118}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -389,62 +402,62 @@ func lastRunCell(t *time.Time, lastErr string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var14 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var14 == nil {
-			templ_7745c5c3_Var14 = templ.NopComponent
+		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var15 == nil {
+			templ_7745c5c3_Var15 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if t == nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<span class=\"text-slate-600\">never</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<span class=\"text-slate-600\">never</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else if lastErr != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<span class=\"text-red-400\" title=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(lastErr)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 230, Col: 44}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span class=\"text-red-400\" title=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 string
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(t.Format("Jan 02 15:04"))
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(lastErr)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 230, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 327, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, " ✗</span>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(t.Format("Jan 02 15:04"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 232, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 327, Col: 73}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, " ✗</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var18 string
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(t.Format("Jan 02 15:04"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/cron/adapters/http/templates.templ`, Line: 329, Col: 34}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

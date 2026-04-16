@@ -333,7 +333,9 @@ func New(cfg Config) (*App, error) {
 	// Cron web UI (always enabled)
 	cronRoutes := cronhttp.NewCronHandlers(
 		cronqueries.NewListJobsHandler(cronRepo),
+		cronqueries.NewGetJobHandler(cronRepo),
 		croncommands.NewAddJobHandler(cronRepo),
+		croncommands.NewUpdateJobHandler(cronRepo),
 		croncommands.NewPauseJobHandler(cronRepo),
 		croncommands.NewResumeJobHandler(cronRepo),
 		croncommands.NewDeleteJobHandler(cronRepo),

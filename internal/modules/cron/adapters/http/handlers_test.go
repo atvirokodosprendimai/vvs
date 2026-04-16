@@ -63,7 +63,9 @@ func (r *stubRepo) ListAll(_ context.Context) ([]*domain.Job, error) {
 func newHandlers(repo *stubRepo) *cronhttp.CronHandlers {
 	return cronhttp.NewCronHandlers(
 		cronqueries.NewListJobsHandler(repo),
+		cronqueries.NewGetJobHandler(repo),
 		croncommands.NewAddJobHandler(repo),
+		croncommands.NewUpdateJobHandler(repo),
 		croncommands.NewPauseJobHandler(repo),
 		croncommands.NewResumeJobHandler(repo),
 		croncommands.NewDeleteJobHandler(repo),
