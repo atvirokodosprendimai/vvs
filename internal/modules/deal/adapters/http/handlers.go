@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -143,7 +144,14 @@ func (h *Handlers) addSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sse.Redirect("/customers/" + customerID)
+	cleared, _ := json.Marshal(map[string]any{
+		"_dealModalOpen": false,
+		"_dealId":        "",
+		"dealTitle":      "",
+		"dealValue":      "",
+		"dealNotes":      "",
+	})
+	sse.PatchSignals(cleared)
 }
 
 func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {

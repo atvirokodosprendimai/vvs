@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"reflect"
@@ -142,7 +143,13 @@ func (h *ServiceHandlers) assignSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sse.Redirect("/customers/" + customerID)
+	cleared, _ := json.Marshal(map[string]any{
+		"_assignOpen": false,
+		"productid":   "",
+		"productname": "",
+		"priceamount": "",
+	})
+	sse.PatchSignals(cleared)
 }
 
 func (h *ServiceHandlers) suspendSSE(w http.ResponseWriter, r *http.Request) {
