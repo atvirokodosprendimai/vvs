@@ -386,10 +386,12 @@ func New(cfg Config) (*App, error) {
 	listEmailThreadsQuery := emailqueries.NewListThreadsHandler(emailThreadRepo, emailTagRepo)
 	getEmailThreadQuery := emailqueries.NewGetThreadHandler(emailThreadRepo, emailMessageRepo, emailAttachmentRepo, emailTagRepo)
 	listEmailForCustomerQuery := emailqueries.NewListThreadsForCustomerHandler(emailThreadRepo, emailTagRepo)
+	listEmailAccountsQuery := emailqueries.NewListAccountsHandler(emailAccountRepo)
 
 	emailRoutes := emailhttp.NewHandlers(
 		configureAccountCmd, applyTagCmd, removeTagCmd, markReadCmd, linkCustomerCmd,
 		listEmailThreadsQuery, getEmailThreadQuery, listEmailForCustomerQuery,
+		listEmailAccountsQuery, emailAttachmentRepo,
 		subscriber, publisher,
 	)
 	moduleRoutes = append(moduleRoutes, emailRoutes)

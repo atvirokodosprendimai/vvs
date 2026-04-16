@@ -1,6 +1,8 @@
 package http
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"reflect"
@@ -9,8 +11,14 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 	emailcommands "github.com/vvs/isp/internal/modules/email/app/commands"
 	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
+	"github.com/vvs/isp/internal/modules/email/domain"
 	"github.com/vvs/isp/internal/shared/events"
 )
+
+// attachmentFinder fetches a single attachment by ID.
+type attachmentFinder interface {
+	FindByID(ctx context.Context, id string) (*domain.EmailAttachment, error)
+}
 
 // Handlers wires together email HTTP handlers.
 type Handlers struct {
@@ -21,8 +29,10 @@ type Handlers struct {
 	linkCmd       *emailcommands.LinkCustomerHandler
 	listThreads   *emailqueries.ListThreadsHandler
 	getThread     *emailqueries.GetThreadHandler
-	listForCust *emailqueries.ListThreadsForCustomerHandler
-	subscriber  events.EventSubscriber
+	listForCust   *emailqueries.ListThreadsForCustomerHandler
+	listAccounts  *emailqueries.ListAccountsHandler
+	attachments   attachmentFinder
+	subscriber    events.EventSubscriber
 	publisher     events.EventPublisher
 }
 
@@ -35,6 +45,8 @@ func NewHandlers(
 	listThreads *emailqueries.ListThreadsHandler,
 	getThread *emailqueries.GetThreadHandler,
 	listForCust *emailqueries.ListThreadsForCustomerHandler,
+	listAccounts *emailqueries.ListAccountsHandler,
+	attachments attachmentFinder,
 	subscriber events.EventSubscriber,
 	publisher events.EventPublisher,
 ) *Handlers {
@@ -47,6 +59,8 @@ func NewHandlers(
 		listThreads:  listThreads,
 		getThread:    getThread,
 		listForCust:  listForCust,
+		listAccounts: listAccounts,
+		attachments:  attachments,
 		subscriber:   subscriber,
 		publisher:    publisher,
 	}
@@ -66,7 +80,11 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 
 // emailPage renders the full inbox page.
 func (h *Handlers) emailPage(w http.ResponseWriter, r *http.Request) {
-	accounts := []emailqueries.AccountReadModel{} // TODO: inject account query
+	accounts, err := h.listAccounts.Handle(r.Context())
+	if err != nil {
+		log.Printf("email: emailPage: %v", err)
+		accounts = []emailqueries.AccountReadModel{}
+	}
 	component := EmailPage(accounts, "")
 	if err := component.Render(r.Context(), w); err != nil {
 		log.Printf("email: emailPage render: %v", err)
@@ -259,7 +277,15 @@ func (h *Handlers) linkCustomerSSE(w http.ResponseWriter, r *http.Request) {
 
 // downloadAttachment streams an attachment file.
 func (h *Handlers) downloadAttachment(w http.ResponseWriter, r *http.Request) {
-	// Attachment download is handled by the GET /api/email-attachments/{id} route.
-	// The actual attachment data fetch requires an attachment repository — injected via app.go.
-	http.Error(w, "not implemented", http.StatusNotImplemented)
+	id := chi.URLParam(r, "id")
+	att, err := h.attachments.FindByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Disposition", "attachment; filename=\""+att.Filename+"\"")
+	w.Header().Set("Content-Type", att.MIMEType)
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", att.Size))
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(att.Data)
 }
