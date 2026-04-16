@@ -8,7 +8,7 @@ build: generate
 run: generate
 	@mkdir -p bin
 	go build -o bin/vvs ./cmd/server
-	./bin/vvs --db ./data/vvs.db --addr :8080
+	./bin/vvs 
 
 # Run all tests
 test:
