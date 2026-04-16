@@ -78,19 +78,19 @@ templ CronListPage(jobs []queries.JobReadModel) {
 						</div>
 
 						<!-- action fields -->
-						<div data-show="$jobType === 'action'" class="flex flex-col gap-1">
+						<div data-show="$jobType === 'action'" style="display:none" class="flex flex-col gap-1">
 							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Action name *</label>
 							<input type="text" data-bind:action placeholder="e.g. noop" class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
 						</div>
 
 						<!-- shell fields -->
-						<div data-show="$jobType === 'shell'" class="flex flex-col gap-1">
+						<div data-show="$jobType === 'shell'" style="display:none" class="flex flex-col gap-1">
 							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Shell command *</label>
 							<textarea data-bind:command rows="2" placeholder="e.g. pg_dump mydb > /backup.sql" class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500 resize-none"></textarea>
 						</div>
 
 						<!-- url fields -->
-						<div data-show="$jobType === 'url'" class="flex flex-col gap-3">
+						<div data-show="$jobType === 'url'" style="display:none" class="flex flex-col gap-3">
 							<div class="flex flex-col gap-1">
 								<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">URL *</label>
 								<input type="url" data-bind:url placeholder="https://example.com/health" class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
@@ -110,7 +110,7 @@ templ CronListPage(jobs []queries.JobReadModel) {
 						</div>
 
 						<!-- rpc fields -->
-						<div data-show="$jobType === 'rpc'" class="flex flex-col gap-1">
+						<div data-show="$jobType === 'rpc'" style="display:none" class="flex flex-col gap-1">
 							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">RPC subject *</label>
 							<input type="text" data-bind:subject placeholder="isp.rpc.service.cancel" class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-orange-500"/>
 						</div>

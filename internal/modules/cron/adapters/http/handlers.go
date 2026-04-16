@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"html"
 	"log"
 	"net/http"
 
@@ -95,15 +96,16 @@ func (h *CronHandlers) addSSE(w http.ResponseWriter, r *http.Request) {
 		Method  string `json:"method"`
 		Headers string `json:"headers"` // JSON: {"Key":"Value",...}
 	}
-	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &signals); err != nil {
-		sse.PatchElements(`<div id="cron-form-errors" class="text-red-400 text-xs mt-1">` + err.Error() + `</div>`)
+		log.Printf("cron: addSSE: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 
 	payload, err := buildPayload(signals.JobType, signals.Action, signals.Command, signals.Subject, signals.URL, signals.Method, signals.Headers)
 	if err != nil {
-		sse.PatchElements(`<div id="cron-form-errors" class="text-red-400 text-xs mt-1">` + err.Error() + `</div>`)
+		sse.PatchElements(`<div id="cron-form-errors" class="text-red-400 text-xs mt-1">invalid payload</div>`)
 		return
 	}
 
@@ -113,7 +115,7 @@ func (h *CronHandlers) addSSE(w http.ResponseWriter, r *http.Request) {
 		JobType:  signals.JobType,
 		Payload:  payload,
 	}); err != nil {
-		sse.PatchElements(`<div id="cron-form-errors" class="text-red-400 text-xs mt-1">` + err.Error() + `</div>`)
+		sse.PatchElements(`<div id="cron-form-errors" class="text-red-400 text-xs mt-1">` + html.EscapeString(err.Error()) + `</div>`)
 		return
 	}
 
