@@ -16,7 +16,7 @@ var _ = gorm.ErrRecordNotFound
 
 type PrefixModel struct {
 	ID        string    `gorm:"primaryKey;type:text"`
-	NetBoxID  int       `gorm:"uniqueIndex;not null"`
+	NetBoxID  int       `gorm:"column:netbox_id;uniqueIndex;not null"`
 	CIDR      string    `gorm:"type:text"`
 	Location  string    `gorm:"type:text;not null;index"`
 	Priority  int       `gorm:"not null;default:0"`
