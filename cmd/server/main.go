@@ -42,13 +42,7 @@ func main() {
 		},
 		Commands: []*cli.Command{
 			serveCommand(),
-			{
-				Name:  "cron",
-				Usage: "Cron job management",
-				Commands: []*cli.Command{
-					cronRunCommand(),
-				},
-			},
+			cronCommands(),
 			{
 				Name:  "cli",
 				Usage: "Manage ISP resources via API",
