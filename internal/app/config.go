@@ -28,6 +28,9 @@ type Config struct {
 	// EmailSyncIntervalSecs is the email sync polling interval in seconds (default 300).
 	EmailSyncIntervalSecs int // VVS_EMAIL_SYNC_INTERVAL env var
 
+	// EmailPageSize is the number of email threads per page (default 50).
+	EmailPageSize int // VVS_EMAIL_PAGE_SIZE env var
+
 	// Debug enables verbose debug logging (slog DEBUG level).
 	Debug bool
 }

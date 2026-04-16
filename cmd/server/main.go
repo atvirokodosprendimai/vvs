@@ -128,6 +128,12 @@ func serveCommand() *cli.Command {
 				Value:   300,
 				Sources: cli.EnvVars("VVS_EMAIL_SYNC_INTERVAL"),
 			},
+			&cli.IntFlag{
+				Name:    "email-page-size",
+				Usage:   "Number of email threads per inbox page",
+				Value:   50,
+				Sources: cli.EnvVars("VVS_EMAIL_PAGE_SIZE"),
+			},
 			&cli.BoolFlag{
 				Name:    "debug",
 				Usage:   "Enable verbose debug logging",
@@ -152,19 +158,20 @@ func serveCommand() *cli.Command {
 			}
 
 			cfg := app.Config{
-				DatabasePath:   cmd.String("db"),
-				ListenAddr:     cmd.String("addr"),
-				AdminUser:      cmd.String("admin-user"),
-				AdminPassword:  cmd.String("admin-password"),
-				NetBoxURL:      cmd.String("netbox-url"),
-				NetBoxToken:    cmd.String("netbox-token"),
-				NATSUrl:        cmd.Root().String("nats-url"),
-				NATSListenAddr: cmd.String("nats-listen"),
-				APIToken:       cmd.Root().String("api-token"),
-				EmailEncKey:          cmd.String("email-enc-key"),
+				DatabasePath:          cmd.String("db"),
+				ListenAddr:            cmd.String("addr"),
+				AdminUser:             cmd.String("admin-user"),
+				AdminPassword:         cmd.String("admin-password"),
+				NetBoxURL:             cmd.String("netbox-url"),
+				NetBoxToken:           cmd.String("netbox-token"),
+				NATSUrl:               cmd.Root().String("nats-url"),
+				NATSListenAddr:        cmd.String("nats-listen"),
+				APIToken:              cmd.Root().String("api-token"),
+				EmailEncKey:           cmd.String("email-enc-key"),
 				EmailSyncIntervalSecs: int(cmd.Int("email-sync-interval")),
-				EnabledModules:       enabledModules,
-				Debug:                cmd.Bool("debug"),
+				EmailPageSize:         int(cmd.Int("email-page-size")),
+				EnabledModules:        enabledModules,
+				Debug:                 cmd.Bool("debug"),
 			}
 
 			application, err := app.New(cfg)

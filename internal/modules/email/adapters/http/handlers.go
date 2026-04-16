@@ -52,6 +52,7 @@ type Handlers struct {
 	attachments   attachmentFinder
 	subscriber    events.EventSubscriber
 	publisher     events.EventPublisher
+	pageSize      int // threads per inbox page; 0 → DefaultPageSize
 }
 
 func NewHandlers(
@@ -96,6 +97,12 @@ func NewHandlers(
 		subscriber:   subscriber,
 		publisher:    publisher,
 	}
+}
+
+// WithPageSize sets the number of email threads per inbox page.
+func (h *Handlers) WithPageSize(n int) *Handlers {
+	h.pageSize = n
+	return h
 }
 
 func (h *Handlers) RegisterRoutes(r chi.Router) {
@@ -167,6 +174,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		Search:       signals.Search,
 		FolderFilter: signals.FolderFilter,
 		Page:         signals.Page,
+		PageSize:     h.pageSize,
 	}
 
 	current, err := h.listThreads.Handle(r.Context(), q)
