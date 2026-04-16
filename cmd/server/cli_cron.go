@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os/signal"
+	"syscall"
 
 	"github.com/urfave/cli/v3"
 	"github.com/vvs/isp/internal/app"
@@ -123,6 +125,7 @@ func cronCommands() *cli.Command {
 				},
 			},
 			cronRunCommand(),
+			cronDaemonCommand(),
 		},
 	}
 }
@@ -151,6 +154,37 @@ func cronRunCommand() *cli.Command {
 
 			repo := cronpersistence.NewGormJobRepository(gdb)
 			RunDueJobs(ctx, repo, rpcServer)
+			return nil
+		},
+	}
+}
+
+func cronDaemonCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "daemon",
+		Usage: "Run cron scheduler as a long-running daemon (alternative to system cron)",
+		Action: func(ctx context.Context, cmd *cli.Command) error {
+			dbPath := cmd.Root().String("db")
+
+			gdb, err := gormsqlite.Open(dbPath)
+			if err != nil {
+				return fmt.Errorf("open database: %w", err)
+			}
+			defer gdb.Close()
+
+			rpcServer, cleanup, err := app.NewDirect(dbPath)
+			if err != nil {
+				return fmt.Errorf("init rpc: %w", err)
+			}
+			defer cleanup()
+
+			repo := cronpersistence.NewGormJobRepository(gdb)
+			daemon := NewDaemon(repo, rpcServer)
+
+			ctx, stop := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
+			defer stop()
+
+			daemon.Start(ctx)
 			return nil
 		},
 	}
