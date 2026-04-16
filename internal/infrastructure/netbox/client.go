@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -69,8 +70,8 @@ func (c *Client) GetIPByCustomerCode(ctx context.Context, customerCode string) (
 		Results []ipRecord `json:"results"`
 	}
 
-	url := fmt.Sprintf("%s/api/ipam/ip-addresses/?description=%s&limit=1", c.baseURL, customerCode)
-	body, err := c.get(ctx, url)
+	endpoint := fmt.Sprintf("%s/api/ipam/ip-addresses/?description=%s&limit=1", c.baseURL, url.QueryEscape(customerCode))
+	body, err := c.get(ctx, endpoint)
 	if err != nil {
 		return "", "", 0, fmt.Errorf("netbox ip search %s: %w", customerCode, err)
 	}

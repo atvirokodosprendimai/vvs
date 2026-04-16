@@ -64,9 +64,13 @@ func (h *SyncCustomerARPHandler) Handle(ctx context.Context, cmd SyncCustomerARP
 		return nil // no router assigned — nothing to do
 	}
 
+	// ipamID tracks the NetBox IP record ID for writing arp_status back.
+	// Populated when we resolve IP from IPAM; remains 0 if IP was already known.
+	var ipamID int
+
 	// If IP unknown and IPAM configured, resolve from NetBox
 	if arpData.IPAddress == "" && h.ipam != nil {
-		ip, mac, _, err := h.ipam.GetIPByCustomerCode(ctx, arpData.Code)
+		ip, mac, id, err := h.ipam.GetIPByCustomerCode(ctx, arpData.Code)
 		if err != nil {
 			return fmt.Errorf("sync arp: resolve IP: %w", err)
 		}
@@ -75,6 +79,7 @@ func (h *SyncCustomerARPHandler) Handle(ctx context.Context, cmd SyncCustomerARP
 		}
 		arpData.IPAddress = ip
 		arpData.MACAddress = mac
+		ipamID = id
 	}
 
 	if arpData.IPAddress == "" {
@@ -107,13 +112,11 @@ func (h *SyncCustomerARPHandler) Handle(ctx context.Context, cmd SyncCustomerARP
 		return fmt.Errorf("sync arp: unknown action %q", cmd.Action)
 	}
 
-	// Write ARP status back to NetBox (best-effort)
-	if h.ipam != nil {
-		_, _, ipID, err := h.ipam.GetIPByCustomerCode(ctx, arpData.Code)
-		if err == nil && ipID > 0 {
-			if err := h.ipam.UpdateARPStatus(ctx, ipID, arpStatus); err != nil {
-				log.Printf("warn: sync arp: update netbox arp_status: %v", err)
-			}
+	// Write ARP status back to NetBox (best-effort).
+	// ipamID was captured during IP resolution above; skip if IP was already known.
+	if h.ipam != nil && ipamID > 0 {
+		if err := h.ipam.UpdateARPStatus(ctx, ipamID, arpStatus); err != nil {
+			log.Printf("warn: sync arp: update netbox arp_status: %v", err)
 		}
 	}
 

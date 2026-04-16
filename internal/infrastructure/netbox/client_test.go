@@ -108,6 +108,23 @@ func TestUpdateARPStatus_HTTPError(t *testing.T) {
 	assert.Contains(t, err.Error(), "401")
 }
 
+func TestGetIPByCustomerCode_URLEncodesCustomerCode(t *testing.T) {
+	var gotQuery string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"count":0,"results":[]}`))
+	}))
+	defer srv.Close()
+
+	c := newWithHTTP(srv.URL, "tok", srv.Client())
+	// customer code with a space — must be percent-encoded, not raw
+	_, _, _, _ = c.GetIPByCustomerCode(context.Background(), "CLI 00001")
+	if gotQuery != "description=CLI+00001&limit=1" && gotQuery != "description=CLI%2000001&limit=1" {
+		t.Fatalf("want URL-encoded description, got %q", gotQuery)
+	}
+}
+
 func TestGetIPByCustomerCode_HTTPError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
