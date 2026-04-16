@@ -156,22 +156,10 @@ func New(cfg Config) (*App, error) {
 
 	// 6. Customer module
 	customerRepo := customerpersistence.NewGormCustomerRepository(gdb)
-	createCustomerCmd := customercommands.NewCreateCustomerHandler(customerRepo, publisher)
 	updateCustomerCmd := customercommands.NewUpdateCustomerHandler(customerRepo, publisher)
 	deleteCustomerCmd := customercommands.NewDeleteCustomerHandler(customerRepo, publisher)
 	listCustomersQuery := customerqueries.NewListCustomersHandler(gdb)
 	getCustomerQuery := customerqueries.NewGetCustomerHandler(gdb)
-
-	var customerRoutes *customerhttp.Handlers
-	if cfg.IsEnabled("customer") {
-		customerRoutes = customerhttp.NewHandlers(
-			createCustomerCmd, updateCustomerCmd, deleteCustomerCmd,
-			listCustomersQuery, getCustomerQuery, subscriber, publisher,
-			listServicesQuery,
-		)
-		moduleRoutes = append(moduleRoutes, customerRoutes)
-		log.Printf("module enabled: customer")
-	}
 
 	// 6. Product module
 	productRepo := productpersistence.NewGormProductRepository(gdb)
@@ -204,12 +192,24 @@ func New(cfg Config) (*App, error) {
 	}
 	var ipamProvider networkdomain.IPAMProvider
 	if cfg.NetBoxURL != "" && cfg.NetBoxToken != "" {
-		ipamProvider = netbox.New(cfg.NetBoxURL, cfg.NetBoxToken)
+		ipamProvider = netbox.New(cfg.NetBoxURL, cfg.NetBoxToken, cfg.NetBoxPrefixID)
 		log.Printf("NetBox IPAM configured: %s", cfg.NetBoxURL)
 	}
+	createCustomerCmd := customercommands.NewCreateCustomerHandler(customerRepo, publisher, ipamProvider)
 	syncARPCmd := networkcommands.NewSyncCustomerARPHandler(
 		&customerARPBridge{repo: customerRepo}, routerRepo, provisioner, ipamProvider, publisher,
 	)
+
+	var customerRoutes *customerhttp.Handlers
+	if cfg.IsEnabled("customer") {
+		customerRoutes = customerhttp.NewHandlers(
+			createCustomerCmd, updateCustomerCmd, deleteCustomerCmd,
+			listCustomersQuery, getCustomerQuery, subscriber, publisher,
+			listServicesQuery,
+		)
+		moduleRoutes = append(moduleRoutes, customerRoutes)
+		log.Printf("module enabled: customer")
+	}
 
 	if cfg.IsEnabled("network") {
 		if customerRoutes != nil {

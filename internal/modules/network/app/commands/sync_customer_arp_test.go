@@ -58,6 +58,9 @@ func (c *countingIPAM) GetIPByCustomerCode(_ context.Context, _ string) (string,
 	c.getCalls++
 	return c.ip, c.mac, c.id, nil
 }
+func (c *countingIPAM) AllocateIP(_ context.Context, _ string) (string, int, error) {
+	return c.ip, c.id, nil
+}
 func (c *countingIPAM) UpdateARPStatus(_ context.Context, _ int, _ string) error {
 	c.updateCalls++
 	return nil

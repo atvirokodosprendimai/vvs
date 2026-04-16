@@ -20,9 +20,10 @@ type IPRecord struct {
 
 // Client is a minimal NetBox REST client.
 type Client struct {
-	baseURL string
-	token   string
-	http    httpDoer
+	baseURL  string
+	token    string
+	prefixID int // NetBox prefix PK to allocate IPs from; 0 = disabled
+	http     httpDoer
 }
 
 // httpDoer allows injecting a fake HTTP client in tests.
@@ -31,11 +32,13 @@ type httpDoer interface {
 }
 
 // New creates a NetBox client.
-func New(baseURL, token string) *Client {
+// prefixID is the NetBox prefix PK used for IP allocation; 0 disables allocation.
+func New(baseURL, token string, prefixID int) *Client {
 	return &Client{
-		baseURL: strings.TrimRight(baseURL, "/"),
-		token:   token,
-		http:    &http.Client{Timeout: 10 * time.Second},
+		baseURL:  strings.TrimRight(baseURL, "/"),
+		token:    token,
+		prefixID: prefixID,
+		http:     &http.Client{Timeout: 10 * time.Second},
 	}
 }
 
@@ -99,6 +102,50 @@ func (c *Client) GetIPByCustomerCode(ctx context.Context, customerCode string) (
 	}
 
 	return rawIP, macAddr, rec.ID, nil
+}
+
+// AllocateIP claims the next available IP from the configured prefix and sets
+// customerCode as the description. Returns the IP (without prefix) and record ID.
+// Returns an error if no prefix is configured (prefixID == 0).
+func (c *Client) AllocateIP(ctx context.Context, customerCode string) (ip string, id int, err error) {
+	if c.prefixID == 0 {
+		return "", 0, fmt.Errorf("netbox: no prefix configured for IP allocation (set NETBOX_PREFIX_ID)")
+	}
+
+	endpoint := fmt.Sprintf("%s/api/ipam/prefixes/%d/available-ips/", c.baseURL, c.prefixID)
+	desc, _ := json.Marshal(customerCode)
+	payload := fmt.Sprintf(`{"description":%s,"status":"active"}`, string(desc))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(payload))
+	if err != nil {
+		return "", 0, err
+	}
+	c.addHeaders(req)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return "", 0, fmt.Errorf("netbox allocate ip: %w", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		b, _ := io.ReadAll(resp.Body)
+		return "", 0, fmt.Errorf("netbox allocate ip %d: %s", resp.StatusCode, string(b))
+	}
+
+	var rec struct {
+		ID      int    `json:"id"`
+		Address string `json:"address"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&rec); err != nil {
+		return "", 0, fmt.Errorf("netbox allocate ip decode: %w", err)
+	}
+
+	rawIP := rec.Address
+	if idx := strings.Index(rawIP, "/"); idx != -1 {
+		rawIP = rawIP[:idx]
+	}
+	return rawIP, rec.ID, nil
 }
 
 // UpdateARPStatus writes the arp_status custom field back to the NetBox IP record.

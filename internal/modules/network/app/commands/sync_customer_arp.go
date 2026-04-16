@@ -68,11 +68,16 @@ func (h *SyncCustomerARPHandler) Handle(ctx context.Context, cmd SyncCustomerARP
 	// Populated when we resolve IP from IPAM; remains 0 if IP was already known.
 	var ipamID int
 
-	// If IP unknown and IPAM configured, resolve from NetBox
+	// If IP unknown and IPAM configured, try lookup then allocate
 	if arpData.IPAddress == "" && h.ipam != nil {
-		ip, mac, id, err := h.ipam.GetIPByCustomerCode(ctx, arpData.Code)
-		if err != nil {
-			return fmt.Errorf("sync arp: resolve IP: %w", err)
+		ip, mac, id, lookupErr := h.ipam.GetIPByCustomerCode(ctx, arpData.Code)
+		if lookupErr != nil {
+			// Not found in NetBox yet — allocate a new IP from the prefix
+			var allocErr error
+			ip, id, allocErr = h.ipam.AllocateIP(ctx, arpData.Code)
+			if allocErr != nil {
+				return fmt.Errorf("sync arp: resolve IP: lookup: %w; allocate: %v", lookupErr, allocErr)
+			}
 		}
 		if err := h.customers.UpdateNetworkInfo(ctx, arpData.ID, *arpData.RouterID, ip, mac); err != nil {
 			log.Printf("warn: sync arp: save customer after IP resolve: %v", err)

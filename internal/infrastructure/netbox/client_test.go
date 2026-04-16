@@ -2,6 +2,7 @@ package netbox
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -106,6 +107,51 @@ func TestUpdateARPStatus_HTTPError(t *testing.T) {
 	err := c.UpdateARPStatus(context.Background(), 1, "active")
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "401")
+}
+
+func TestAllocateIP_OK(t *testing.T) {
+	var gotBody string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/api/ipam/prefixes/10/available-ips/", r.URL.Path)
+		assert.Equal(t, http.MethodPost, r.Method)
+		b, _ := io.ReadAll(r.Body)
+		gotBody = string(b)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"id":55,"address":"10.0.1.10/24"}`))
+	}))
+	defer srv.Close()
+
+	c := newWithHTTP(srv.URL, "tok", srv.Client())
+	c.prefixID = 10
+	ip, id, err := c.AllocateIP(context.Background(), "CLI-00006")
+	require.NoError(t, err)
+	assert.Equal(t, "10.0.1.10", ip)
+	assert.Equal(t, 55, id)
+	assert.Contains(t, gotBody, "CLI-00006")
+	assert.Contains(t, gotBody, `"active"`)
+}
+
+func TestAllocateIP_NoPrefixConfigured_Error(t *testing.T) {
+	c := newWithHTTP("http://netbox", "tok", http.DefaultClient)
+	// prefixID = 0 (default)
+	_, _, err := c.AllocateIP(context.Background(), "CLI-00006")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "prefix")
+}
+
+func TestAllocateIP_HTTPError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"prefix":["This field is required."]}`))
+	}))
+	defer srv.Close()
+
+	c := newWithHTTP(srv.URL, "tok", srv.Client())
+	c.prefixID = 10
+	_, _, err := c.AllocateIP(context.Background(), "CLI-00006")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "400")
 }
 
 func TestGetIPByCustomerCode_URLEncodesCustomerCode(t *testing.T) {

@@ -92,7 +92,7 @@ func NewDirect(dbPath string) (*natsrpc.Server, func(), error) {
 
 	// customer
 	customerRepo := customerpersistence.NewGormCustomerRepository(gdb)
-	createCustomerCmd := customercommands.NewCreateCustomerHandler(customerRepo, pub)
+	createCustomerCmd := customercommands.NewCreateCustomerHandler(customerRepo, pub, nil)
 	updateCustomerCmd := customercommands.NewUpdateCustomerHandler(customerRepo, pub)
 	deleteCustomerCmd := customercommands.NewDeleteCustomerHandler(customerRepo, pub)
 	listCustomersQuery := customerqueries.NewListCustomersHandler(gdb)

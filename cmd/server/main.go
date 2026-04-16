@@ -101,6 +101,11 @@ func serveCommand() *cli.Command {
 				Usage:   "NetBox API token (optional)",
 				Sources: cli.EnvVars("NETBOX_TOKEN"),
 			},
+			&cli.IntFlag{
+				Name:    "netbox-prefix-id",
+				Usage:   "NetBox prefix PK to allocate IPs from (optional)",
+				Sources: cli.EnvVars("NETBOX_PREFIX_ID"),
+			},
 			&cli.StringFlag{
 				Name:    "nats-listen",
 				Usage:   "Expose embedded NATS on this TCP addr (optional, e.g. :4222)",
@@ -129,6 +134,7 @@ func serveCommand() *cli.Command {
 				AdminPassword:  cmd.String("admin-password"),
 				NetBoxURL:      cmd.String("netbox-url"),
 				NetBoxToken:    cmd.String("netbox-token"),
+				NetBoxPrefixID: int(cmd.Int("netbox-prefix-id")),
 				NATSUrl:        cmd.Root().String("nats-url"),
 				NATSListenAddr: cmd.String("nats-listen"),
 				APIToken:       cmd.Root().String("api-token"),

@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,13 +18,20 @@ type CreateCustomerCommand struct {
 	Phone       string
 }
 
+// IPAllocator is a minimal port used only for IP allocation on customer create.
+// Satisfied by *netbox.Client via the network module's IPAMProvider interface.
+type IPAllocator interface {
+	AllocateIP(ctx context.Context, customerCode string) (ip string, id int, err error)
+}
+
 type CreateCustomerHandler struct {
 	repo      domain.CustomerRepository
 	publisher events.EventPublisher
+	ipam      IPAllocator // optional; nil if NetBox not configured or no prefix set
 }
 
-func NewCreateCustomerHandler(repo domain.CustomerRepository, pub events.EventPublisher) *CreateCustomerHandler {
-	return &CreateCustomerHandler{repo: repo, publisher: pub}
+func NewCreateCustomerHandler(repo domain.CustomerRepository, pub events.EventPublisher, ipam IPAllocator) *CreateCustomerHandler {
+	return &CreateCustomerHandler{repo: repo, publisher: pub, ipam: ipam}
 }
 
 func (h *CreateCustomerHandler) Handle(ctx context.Context, cmd CreateCustomerCommand) (*domain.Customer, error) {
@@ -39,6 +47,18 @@ func (h *CreateCustomerHandler) Handle(ctx context.Context, cmd CreateCustomerCo
 
 	if err := h.repo.Save(ctx, customer); err != nil {
 		return nil, err
+	}
+
+	// Auto-allocate IP from NetBox if configured (best-effort — never blocks create)
+	if h.ipam != nil {
+		if ip, _, err := h.ipam.AllocateIP(ctx, customer.Code.String()); err != nil {
+			log.Printf("warn: create customer %s: netbox ip allocation: %v", customer.Code, err)
+		} else if ip != "" {
+			customer.SetNetworkInfo("", ip, "")
+			if err := h.repo.Save(ctx, customer); err != nil {
+				log.Printf("warn: create customer %s: save allocated ip: %v", customer.Code, err)
+			}
+		}
 	}
 
 	data, _ := json.Marshal(domainToReadModel(customer))
