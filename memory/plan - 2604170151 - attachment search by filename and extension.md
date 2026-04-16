@@ -1,6 +1,6 @@
 ---
 tldr: Search email attachments by filename/extension — new /attachments page with live SSE search
-status: active
+status: completed
 ---
 
 # Plan: Attachment search by filename and extension
@@ -14,50 +14,42 @@ Pattern to follow: URL-based navigation (`/attachments?account=X&q=Y`), SSE for 
 
 ## Phases
 
-### Phase 1 - Domain + persistence — status: open
+### Phase 1 - Domain + persistence — status: completed
 
-1. [ ] Add `SearchAttachments` to `EmailAttachmentRepository` port + GORM impl
-   - query: join `email_attachments → email_messages → email_threads`
-   - filter: `filename LIKE ?` (contains) scoped to `account_id`
-   - result: filename, mime_type, size, thread_id, thread subject, from_addr, received_at
-   - order: `received_at DESC`, limit 100
-   - add `SearchAttachments(ctx, accountID, query string) ([]*AttachmentSearchRow, error)` to port
+1. [x] Add `SearchByFilename` to `EmailAttachmentRepository` port + GORM impl
+   - => `AttachmentSearchRow` domain type added to `domain/repository.go`
+   - => SQL: join `email_attachments → email_messages → email_threads`, LIKE filter, scoped to `account_id`, ORDER BY `received_at DESC` LIMIT 100
+   - => method name: `SearchByFilename(ctx, accountID, query string) ([]*AttachmentSearchRow, error)`
 
-### Phase 2 - App query — status: open
+### Phase 2 - App query — status: completed
 
-1. [ ] Add `AttachmentSearchRow` read model to `internal/modules/email/app/queries/read_model.go`
-   - fields: ID, Filename, MIMEType, Size, ThreadID, ThreadSubject, FromAddr, ReceivedAt
-2. [ ] Add `SearchAttachmentsHandler` in `internal/modules/email/app/queries/search_attachments.go`
-   - accepts `SearchAttachmentsQuery{AccountID, Query string}`
-   - delegates to repo, maps to read model
+1. [x] Add `AttachmentSearchRow` read model to `internal/modules/email/app/queries/read_model.go`
+2. [x] Add `SearchAttachmentsHandler` in `internal/modules/email/app/queries/search_attachments.go`
+   - => empty query returns nil (no results), not an error
 
-### Phase 3 - HTTP handler + route — status: open
+### Phase 3 - HTTP handler + route — status: completed
 
-1. [ ] Add SSE handler `attachmentSearchSSE` in email `handlers.go`
-   - reads `?account` and `?q` query params (URL-based, no signals needed)
-   - calls `SearchAttachmentsHandler`
-   - patches `#attachment-results` fragment
-2. [ ] Register route `GET /sse/attachments` in email `routes.go`
-3. [ ] Add page handler `attachmentsPage` — renders `/attachments?account=X&q=Y` full page
-4. [ ] Register page route `GET /attachments` in router
+1. [x] Add SSE handler `attachmentSearchSSE` + page handler `attachmentsPage` in email `handlers.go`
+   - => reads `?account` and `?q` URL params
+   - => `WithSearchAttachments(q)` builder pattern (no constructor signature change)
+2. [x] Routes registered in `RegisterRoutes`: `GET /attachments`, `GET /sse/attachments`
 
-### Phase 4 - UI template — status: open
+### Phase 4 - UI template — status: completed
 
-1. [ ] Add `AttachmentsPage` templ in email `templates.templ`
-   - account selector sidebar (same `<a href>` pattern as email page)
-   - search input: `data-bind:q` + `data-on:input__debounce.300ms` triggers `@get('/sse/attachments?account=...', {openWhenHidden:false})`
-   - results list fragment `#attachment-results`: filename, extension badge, size, thread subject, date
-   - clicking a result opens thread in new tab: `<a href="/emails?account=X&folder=INBOX" target="_blank">`
-   - empty/no-query state: "Enter a filename or extension to search"
-2. [ ] Add "Attachments" nav item to layout sidebar
+1. [x] `AttachmentsPage` + `AttachmentResults` templ components in email `templates.templ`
+   - => `data-bind:q` (kebab — won't lowercase) + debounce 300ms + `openWhenHidden:false`
+   - => `mimeShort()` helper for readable MIME display
+   - => thread link: `/emails?account=X&thread=Y` target=_blank
+   - => `AttachmentResults` takes `accountID string` param (needed for thread link)
+2. [x] "Attachments" nav item + paperclip SVG icon in `layout.templ`
 
-### Phase 5 - Wire — status: open
+### Phase 5 - Wire — status: completed
 
-1. [ ] Add `searchAttachments` query handler field to `Handlers` struct and inject in `app.go`
+1. [x] `searchAttachmentsQuery` wired in `app.go` via `.WithSearchAttachments(searchAttachmentsQuery)`
 
 ## Verification
 
-1. `go build ./...` — clean
+1. [x] `go build ./...` — clean
 2. Navigate to `/attachments?account=<id>` — page loads with account selected
 3. Type `.pdf` in search — results show all PDF attachments with thread link
 4. Type partial filename — matching attachments appear
@@ -66,8 +58,8 @@ Pattern to follow: URL-based navigation (`/attachments?account=X&q=Y`), SSE for 
 
 ## Adjustments
 
-<!-- Plans evolve. Document changes with timestamps. -->
+- 2604170151: Shipped all phases in single commit `068c458`
 
 ## Progress Log
 
-<!-- Timestamped entries tracking work done. Updated after every action. -->
+- 2604170151: All phases complete — single session, all 5 phases done in one commit
