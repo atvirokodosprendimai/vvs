@@ -1,6 +1,6 @@
 ---
 tldr: DB-persisted cron job scheduler — cron expression, NATS RPC subjects / built-in actions / shell commands, one-shot run mode
-status: active
+status: completed
 ---
 
 # Plan: Cron Persistent Job Scheduler
@@ -179,34 +179,32 @@ cmd/server/main.go       — add `vvs cron run` top-level command + `vvs cli cro
 
 ## Phases
 
-### Phase 1 — Domain + persistence + migration - status: open
+### Phase 1 — Domain + persistence + migration - status: completed
 
-1. [ ] domain/job.go — Job aggregate, Add/Pause/Resume/Delete methods, status machine
-   - NextRun computed via `robfig/cron/v3` parser on creation and after each run
-2. [ ] domain/job_test.go — status transition tests
-3. [ ] migration 001_create_cron_jobs.sql + embed.go
-4. [ ] adapters/persistence — GormJobRepository (Save, FindByID, ListDue, ListAll, Delete)
+1. [x] domain/job.go — Job aggregate, Add/Pause/Resume/Delete methods, status machine
+   - => AdvanceNextRun advances from max(lastRun, currentNextRun) so NextRun always moves forward
+2. [x] domain/job_test.go — 14 tests, all pass
+3. [x] migration 001_create_cron_jobs.sql + embed.go
+4. [x] adapters/persistence — GormJobRepository (Save, FindByID, FindByName, ListDue, ListAll)
 
-### Phase 2 — Command/query handlers - status: open
+### Phase 2 — Command/query handlers - status: completed
 
-5. [ ] app/commands: AddJob, PauseJob, ResumeJob, DeleteJob
-6. [ ] app/queries: ListJobs, GetJob + JobReadModel
+5. [x] app/commands: AddJob, PauseJob, ResumeJob, DeleteJob
+6. [x] app/queries: ListJobs, GetJob + JobReadModel
 
-### Phase 3 — Runner + CLI - status: open
+### Phase 3 — Runner + CLI - status: completed
 
-7. [ ] cmd/server/cron_runner.go — RunDueJobs
-   - load active jobs where next_run <= now
-   - execute each by type (rpc via Dispatch, action via registry, shell via exec)
-   - update last_run / last_error / next_run
-   - print results to stdout (for cron email)
+7. [x] cmd/server/cron_runner.go — RunDueJobs
+   - => rpc payload format: `{"subject":"isp.rpc.*","body":{}}`
+   - => cronRunCommand opens DB twice (once for repo, once for rpcServer via NewDirect) — fine for SQLite
 
-8. [ ] cmd/server/cron_actions.go — action registry, default "noop" action
+8. [x] cmd/server/cron_actions.go — action registry, default "noop" action
 
-9. [ ] cmd/server/cli_cron.go
-   - `vvs cli cron {list, get, add, pause, resume, delete}`
-   - `vvs cron run` — top-level command (direct DB, no server needed)
+9. [x] cmd/server/cli_cron.go
+   - `vvs cli cron {list, get, add, pause, resume, delete, run}`
+   - `vvs cron run` — top-level alias via `vvs cron run`
 
-10. [ ] Wire into main.go + app.go + direct.go + natsrpc
+10. [x] Wire into main.go + app.go + direct.go + natsrpc (6 subjects: cron.list/get/add/pause/resume/delete)
 
 ---
 
@@ -228,3 +226,4 @@ cmd/server/main.go       — add `vvs cron run` top-level command + `vvs cli cro
 | Timestamp | Entry |
 |-----------|-------|
 | 2604160342 | Plan created |
+| 2604161600 | All phases complete — domain tests pass, persistence + CLI wired, committed 08af2e0 |
