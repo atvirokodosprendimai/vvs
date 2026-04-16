@@ -126,3 +126,68 @@ func TestCustomer_HasNetworkProvisioning(t *testing.T) {
 	c.SetNetworkInfo("router-1", "10.0.1.55", "AA:BB:CC:DD:EE:FF")
 	assert.True(t, c.HasNetworkProvisioning())
 }
+
+func TestCustomer_Qualify(t *testing.T) {
+	code := domain.NewCompanyCode("CLI", 1)
+	c, _ := NewCustomer(code, "ACME", "", "", "")
+	c.Status = StatusLead
+
+	err := c.Qualify()
+	require.NoError(t, err)
+	assert.Equal(t, StatusProspect, c.Status)
+}
+
+func TestCustomer_Qualify_NotLead(t *testing.T) {
+	code := domain.NewCompanyCode("CLI", 1)
+	c, _ := NewCustomer(code, "ACME", "", "", "")
+	// status is active
+
+	err := c.Qualify()
+	assert.ErrorIs(t, err, ErrInvalidTransition)
+}
+
+func TestCustomer_Convert(t *testing.T) {
+	code := domain.NewCompanyCode("CLI", 1)
+	c, _ := NewCustomer(code, "ACME", "", "", "")
+	c.Status = StatusProspect
+
+	err := c.Convert()
+	require.NoError(t, err)
+	assert.Equal(t, StatusActive, c.Status)
+}
+
+func TestCustomer_Convert_NotProspect(t *testing.T) {
+	code := domain.NewCompanyCode("CLI", 1)
+	c, _ := NewCustomer(code, "ACME", "", "", "")
+	// status is active
+
+	err := c.Convert()
+	assert.ErrorIs(t, err, ErrInvalidTransition)
+}
+
+func TestCustomer_Churn(t *testing.T) {
+	code := domain.NewCompanyCode("CLI", 1)
+	c, _ := NewCustomer(code, "ACME", "", "", "")
+
+	err := c.Churn()
+	require.NoError(t, err)
+	assert.Equal(t, StatusChurned, c.Status)
+}
+
+func TestCustomer_Churn_AlreadyChurned(t *testing.T) {
+	code := domain.NewCompanyCode("CLI", 1)
+	c, _ := NewCustomer(code, "ACME", "", "", "")
+	c.Churn()
+
+	err := c.Churn()
+	assert.ErrorIs(t, err, ErrAlreadyChurned)
+}
+
+func TestCustomer_Activate_FromChurned_Rejected(t *testing.T) {
+	code := domain.NewCompanyCode("CLI", 1)
+	c, _ := NewCustomer(code, "ACME", "", "", "")
+	c.Status = StatusChurned
+
+	err := c.Activate()
+	assert.ErrorIs(t, err, ErrInvalidTransition)
+}

@@ -104,12 +104,18 @@ templ CustomerRow(c *domain.Customer) {
 
 templ customerStatusBadge(status domain.CustomerStatus) {
 	switch status {
+		case domain.StatusLead:
+			@templates.Badge("", "lead")
+		case domain.StatusProspect:
+			@templates.Badge("info", "prospect")
 		case domain.StatusActive:
 			@templates.Badge("success", "active")
 		case domain.StatusSuspended:
 			@templates.Badge("warning", "suspended")
 		case domain.StatusChurned:
 			@templates.Badge("danger", "churned")
+		default:
+			@templates.Badge("", string(status))
 	}
 }
 
@@ -208,11 +214,11 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 	}
 }
 
-templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel, routerName string) {
+templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel, routerName string, notes []queries.NoteReadModel) {
 	@templates.Layout(c.CompanyName) {
 		@templates.PageHeader(c.CompanyName, fmt.Sprintf("Customer %s", c.Code.String()))
 		<div class="max-w-2xl">
-			<div class="flex items-center gap-2 mb-5">
+			<div class="flex items-center gap-2 mb-5" data-signals="{statusAction:''}">
 				@customerStatusBadge(c.Status)
 				<a
 					href={ templ.SafeURL(fmt.Sprintf("/customers/%s/edit", c.ID)) }
@@ -220,12 +226,43 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 				>
 					Edit
 				</a>
+				if c.Status == domain.StatusLead {
+					<button
+						data-on:click={ fmt.Sprintf("($statusAction='qualify') && @post('/api/customers/%s/status')", c.ID) }
+						class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+					>Qualify</button>
+				}
+				if c.Status == domain.StatusProspect {
+					<button
+						data-on:click={ fmt.Sprintf("($statusAction='convert') && @post('/api/customers/%s/status')", c.ID) }
+						class="bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+					>Convert to Active</button>
+				}
+				if c.Status == domain.StatusActive {
+					<button
+						data-on:click={ fmt.Sprintf("($statusAction='suspend') && @post('/api/customers/%s/status')", c.ID) }
+						class="bg-yellow-900/30 hover:bg-yellow-900/50 text-yellow-300 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+					>Suspend</button>
+				}
+				if c.Status == domain.StatusSuspended {
+					<button
+						data-on:click={ fmt.Sprintf("($statusAction='activate') && @post('/api/customers/%s/status')", c.ID) }
+						class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+					>Reactivate</button>
+				}
+				if c.Status != domain.StatusChurned {
+					<button
+						data-on:click={ fmt.Sprintf("($statusAction='churn') && @post('/api/customers/%s/status')", c.ID) }
+						class="bg-red-900/30 hover:bg-red-900/50 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+					>Churn</button>
+				}
 				<button
 					data-on:click={ fmt.Sprintf("@delete('/api/customers/%s')", c.ID) }
 					class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
 				>
 					Delete
 				</button>
+				<div id="status-error"></div>
 			</div>
 			@templates.Card() {
 				<div class="grid grid-cols-2 gap-5">
@@ -280,7 +317,49 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 			}
 		</div>
 		@servicehttp.ServiceSection(c.ID, services)
+		<!-- Notes timeline -->
+		<div class="max-w-2xl mt-6">
+			<div class="flex items-center justify-between mb-3">
+				<h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Notes</h3>
+			</div>
+			<div data-signals="{noteBody:''}" class="flex flex-col gap-3">
+				<div class="flex gap-2">
+					<textarea
+						data-bind:note-body
+						rows="2"
+						placeholder="Add a note..."
+						class="flex-1 bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600 resize-none"
+					></textarea>
+					<button
+						type="button"
+						data-on:click={ fmt.Sprintf("@post('/api/customers/%s/notes')", c.ID) }
+						class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors self-end"
+					>Add</button>
+				</div>
+				<div id="note-error"></div>
+				<div
+					id="customer-notes"
+					data-init={ fmt.Sprintf("@get('/sse/customers/%s/notes')", c.ID) }
+				>
+					@CustomerNotesFeed(notes)
+				</div>
+			</div>
+		</div>
 	}
+}
+
+templ CustomerNotesFeed(notes []queries.NoteReadModel) {
+	<div id="customer-notes" class="flex flex-col gap-2">
+		if len(notes) == 0 {
+			<p class="text-xs text-slate-600 py-2">No notes yet.</p>
+		}
+		for _, n := range notes {
+			<div class="bg-slate-800/50 border border-slate-800 rounded p-3">
+				<p class="text-sm text-slate-200 whitespace-pre-wrap">{ n.Body }</p>
+				<p class="text-xs text-slate-600 mt-1">{ n.CreatedAt.Format("Jan 02, 2006 15:04") }</p>
+			</div>
+		}
+	</div>
 }
 
 templ detailField(label string, value string) {

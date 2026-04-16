@@ -157,10 +157,14 @@ func New(cfg Config) (*App, error) {
 
 	// 6. Customer module
 	customerRepo := customerpersistence.NewGormCustomerRepository(gdb)
+	noteRepo := customerpersistence.NewGormNoteRepository(gdb)
 	updateCustomerCmd := customercommands.NewUpdateCustomerHandler(customerRepo, publisher)
 	deleteCustomerCmd := customercommands.NewDeleteCustomerHandler(customerRepo, publisher)
+	changeStatusCmd := customercommands.NewChangeCustomerStatusHandler(customerRepo, publisher)
+	addNoteCmd := customercommands.NewAddNoteHandler(noteRepo)
 	listCustomersQuery := customerqueries.NewListCustomersHandler(gdb)
 	getCustomerQuery := customerqueries.NewGetCustomerHandler(gdb)
+	listNotesQuery := customerqueries.NewListNotesHandler(gdb)
 
 	// 6. Product module
 	productRepo := productpersistence.NewGormProductRepository(gdb)
@@ -208,7 +212,9 @@ func New(cfg Config) (*App, error) {
 	if cfg.IsEnabled("customer") {
 		customerRoutes = customerhttp.NewHandlers(
 			createCustomerCmd, updateCustomerCmd, deleteCustomerCmd,
-			listCustomersQuery, getCustomerQuery, subscriber, publisher,
+			changeStatusCmd, addNoteCmd,
+			listCustomersQuery, getCustomerQuery, listNotesQuery,
+			subscriber, publisher,
 			listServicesQuery,
 		)
 		moduleRoutes = append(moduleRoutes, customerRoutes)

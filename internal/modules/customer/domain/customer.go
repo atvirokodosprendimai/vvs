@@ -13,12 +13,16 @@ var (
 	ErrCompanyNameRequired = errors.New("company name is required")
 	ErrAlreadySuspended    = errors.New("customer is already suspended")
 	ErrAlreadyActive       = errors.New("customer is already active")
+	ErrAlreadyChurned      = errors.New("customer is already churned")
+	ErrInvalidTransition   = errors.New("invalid status transition")
 	ErrCustomerNotFound    = errors.New("customer not found")
 )
 
 type CustomerStatus string
 
 const (
+	StatusLead      CustomerStatus = "lead"
+	StatusProspect  CustomerStatus = "prospect"
 	StatusActive    CustomerStatus = "active"
 	StatusSuspended CustomerStatus = "suspended"
 	StatusChurned   CustomerStatus = "churned"
@@ -120,11 +124,41 @@ func (c *Customer) HasNetworkProvisioning() bool {
 	return c.RouterID != nil && *c.RouterID != ""
 }
 
+func (c *Customer) Qualify() error {
+	if c.Status != StatusLead {
+		return ErrInvalidTransition
+	}
+	c.Status = StatusProspect
+	c.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
+func (c *Customer) Convert() error {
+	if c.Status != StatusProspect {
+		return ErrInvalidTransition
+	}
+	c.Status = StatusActive
+	c.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
 func (c *Customer) Activate() error {
 	if c.Status == StatusActive {
 		return ErrAlreadyActive
 	}
+	if c.Status == StatusChurned {
+		return ErrInvalidTransition
+	}
 	c.Status = StatusActive
+	c.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
+func (c *Customer) Churn() error {
+	if c.Status == StatusChurned {
+		return ErrAlreadyChurned
+	}
+	c.Status = StatusChurned
 	c.UpdatedAt = time.Now().UTC()
 	return nil
 }

@@ -32,8 +32,11 @@ type Handlers struct {
 	createCmd         *commands.CreateCustomerHandler
 	updateCmd         *commands.UpdateCustomerHandler
 	deleteCmd         *commands.DeleteCustomerHandler
+	changeStatusCmd   *commands.ChangeCustomerStatusHandler
+	addNoteCmd        *commands.AddNoteHandler
 	listQuery         *queries.ListCustomersHandler
 	getQuery          *queries.GetCustomerHandler
+	listNotesQuery    *queries.ListNotesHandler
 	subscriber        events.EventSubscriber
 	publisher         events.EventPublisher
 	reader            *gorm.DB // optional — for router dropdown; nil = no network section shown
@@ -44,8 +47,11 @@ func NewHandlers(
 	createCmd *commands.CreateCustomerHandler,
 	updateCmd *commands.UpdateCustomerHandler,
 	deleteCmd *commands.DeleteCustomerHandler,
+	changeStatusCmd *commands.ChangeCustomerStatusHandler,
+	addNoteCmd *commands.AddNoteHandler,
 	listQuery *queries.ListCustomersHandler,
 	getQuery *queries.GetCustomerHandler,
+	listNotesQuery *queries.ListNotesHandler,
 	subscriber events.EventSubscriber,
 	publisher events.EventPublisher,
 	listServicesQuery *serviceQueries.ListServicesForCustomerHandler,
@@ -54,8 +60,11 @@ func NewHandlers(
 		createCmd:         createCmd,
 		updateCmd:         updateCmd,
 		deleteCmd:         deleteCmd,
+		changeStatusCmd:   changeStatusCmd,
+		addNoteCmd:        addNoteCmd,
 		listQuery:         listQuery,
 		getQuery:          getQuery,
+		listNotesQuery:    listNotesQuery,
 		subscriber:        subscriber,
 		publisher:         publisher,
 		listServicesQuery: listServicesQuery,
@@ -81,6 +90,9 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Put("/api/customers/{id}", h.updateSSE)
 	r.Delete("/api/customers/{id}", h.deleteSSE)
 	r.Post("/api/customers/{id}/arp", h.arpSSE)
+	r.Post("/api/customers/{id}/status", h.changeStatusSSE)
+	r.Get("/sse/customers/{id}/notes", h.listNotesSSE)
+	r.Post("/api/customers/{id}/notes", h.addNoteSSE)
 }
 
 func (h *Handlers) listPage(w http.ResponseWriter, r *http.Request) {
@@ -109,7 +121,11 @@ func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	routerName := h.loadRouterName(r.Context(), customer)
-	CustomerDetailPage(customer, services, routerName).Render(r.Context(), w)
+	var notes []queries.NoteReadModel
+	if h.listNotesQuery != nil {
+		notes, _ = h.listNotesQuery.Handle(r.Context(), id)
+	}
+	CustomerDetailPage(customer, services, routerName, notes).Render(r.Context(), w)
 }
 
 func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
@@ -302,6 +318,69 @@ func (h *Handlers) arpSSE(w http.ResponseWriter, r *http.Request) {
 	})
 
 	sse.Redirect("/customers/" + id)
+}
+
+func (h *Handlers) changeStatusSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var signals struct {
+		Action string `json:"statusAction"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("changeStatus: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	if err := h.changeStatusCmd.Handle(r.Context(), commands.ChangeCustomerStatusCommand{ID: id, Action: signals.Action}); err != nil {
+		log.Printf("changeStatus %s %s: %v", id, signals.Action, err)
+		sse.PatchElementTempl(formError(err.Error()))
+		return
+	}
+	sse.Redirect("/customers/" + id)
+}
+
+func (h *Handlers) listNotesSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	notes, err := h.listNotesQuery.Handle(r.Context(), id)
+	if err != nil {
+		log.Printf("listNotes %s: %v", id, err)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElementTempl(CustomerNotesFeed(notes))
+}
+
+func (h *Handlers) addNoteSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var signals struct {
+		NoteBody string `json:"noteBody"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("addNote: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+
+	// Extract author from session cookie if available; best-effort.
+	authorID := ""
+	if c, err := r.Cookie("session"); err == nil {
+		authorID = c.Value
+	}
+
+	if _, err := h.addNoteCmd.Handle(r.Context(), commands.AddNoteCommand{
+		CustomerID: id,
+		Body:       signals.NoteBody,
+		AuthorID:   authorID,
+	}); err != nil {
+		sse.PatchElements(`<div id="note-error" class="text-red-400 text-xs">` + err.Error() + `</div>`)
+		return
+	}
+
+	notes, _ := h.listNotesQuery.Handle(r.Context(), id)
+	sse.PatchElements(`<div id="note-error"></div>`)
+	sse.PatchSignals([]byte(`{"noteBody":""}`))
+	sse.PatchElementTempl(CustomerNotesFeed(notes))
 }
 
 // loadRouters reads the routers table directly from the shared SQLite reader.
