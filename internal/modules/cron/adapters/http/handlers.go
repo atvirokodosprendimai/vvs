@@ -155,6 +155,11 @@ func (h *CronHandlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
+// BuildPayload is exported for testing.
+func BuildPayload(jobType, action, command, subject, rawURL, method, headersJSON string) (string, error) {
+	return buildPayload(jobType, action, command, subject, rawURL, method, headersJSON)
+}
+
 func buildPayload(jobType, action, command, subject, rawURL, method, headersJSON string) (string, error) {
 	switch jobType {
 	case domain.TypeAction:
