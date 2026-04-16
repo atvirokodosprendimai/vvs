@@ -1,7 +1,10 @@
 package http
 
 import (
+	"fmt"
+	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -9,6 +12,30 @@ import (
 	"github.com/vvs/isp/internal/infrastructure/http/apimw"
 	"gorm.io/gorm"
 )
+
+// requestLogger is a chi-compatible request logger using slog.
+// Unlike middleware.Logger, it treats status 0 (SSE connections where datastar flushes
+// headers via http.NewResponseController, bypassing the WrapResponseWriter hook) as 200.
+func requestLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+		start := time.Now()
+		defer func() {
+			status := ww.Status()
+			if status == 0 {
+				status = http.StatusOK // SSE: headers flushed via ResponseController, bypasses WrapResponseWriter
+			}
+			slog.Info("http",
+				"method", r.Method,
+				"path", r.URL.Path,
+				"status", status,
+				"duration", fmt.Sprintf("%dms", time.Since(start).Milliseconds()),
+				"bytes", ww.BytesWritten(),
+			)
+		}()
+		next.ServeHTTP(ww, r)
+	})
+}
 
 type ModuleRoutes interface {
 	RegisterRoutes(r chi.Router)
@@ -23,7 +50,7 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 	r := chi.NewRouter()
 
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Logger)
+	r.Use(requestLogger)
 	r.Use(middleware.RealIP)
 
 	// Static files (unauthenticated)
