@@ -18,6 +18,43 @@ func main() {
 		Usage: "VVS ISP Business Management System",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
+				Name:    "nats-url",
+				Usage:   "NATS server URL (for CLI transport or server external NATS)",
+				Sources: cli.EnvVars("NATS_URL"),
+			},
+			&cli.StringFlag{
+				Name:    "api-url",
+				Usage:   "VVS API base URL (for CLI HTTP transport fallback)",
+				Value:   "http://localhost:8080",
+				Sources: cli.EnvVars("VVS_API_URL"),
+			},
+			&cli.StringFlag{
+				Name:    "api-token",
+				Usage:   "Bearer token for REST API (/api/v1/*)",
+				Sources: cli.EnvVars("VVS_API_TOKEN"),
+			},
+		},
+		Commands: []*cli.Command{
+			serveCommand(),
+			customerCommands(),
+			productCommands(),
+			routerCommands(),
+			serviceCommands(),
+			userCommands(),
+		},
+	}
+
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func serveCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "serve",
+		Usage: "Start the VVS HTTP server",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
 				Name:    "db",
 				Usage:   "SQLite database file path",
 				Value:   "./data/vvs.db",
@@ -50,19 +87,9 @@ func main() {
 				Sources: cli.EnvVars("NETBOX_TOKEN"),
 			},
 			&cli.StringFlag{
-				Name:    "nats-url",
-				Usage:   "External NATS server URL (optional; skips embedded NATS)",
-				Sources: cli.EnvVars("NATS_URL"),
-			},
-			&cli.StringFlag{
 				Name:    "nats-listen",
 				Usage:   "Expose embedded NATS on this TCP addr (optional, e.g. :4222)",
 				Sources: cli.EnvVars("NATS_LISTEN_ADDR"),
-			},
-			&cli.StringFlag{
-				Name:    "api-token",
-				Usage:   "Bearer token required for REST API (/api/v1/*). Empty = API disabled.",
-				Sources: cli.EnvVars("VVS_API_TOKEN"),
 			},
 			&cli.StringFlag{
 				Name:    "modules",
@@ -87,9 +114,9 @@ func main() {
 				AdminPassword:  cmd.String("admin-password"),
 				NetBoxURL:      cmd.String("netbox-url"),
 				NetBoxToken:    cmd.String("netbox-token"),
-				NATSUrl:        cmd.String("nats-url"),
+				NATSUrl:        cmd.Root().String("nats-url"),
 				NATSListenAddr: cmd.String("nats-listen"),
-				APIToken:       cmd.String("api-token"),
+				APIToken:       cmd.Root().String("api-token"),
 				EnabledModules: enabledModules,
 			}
 
@@ -116,9 +143,5 @@ func main() {
 
 			return application.Shutdown(shutdownCtx)
 		},
-	}
-
-	if err := cmd.Run(context.Background(), os.Args); err != nil {
-		log.Fatal(err)
 	}
 }
