@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	authqueries "github.com/vvs/isp/internal/modules/auth/app/queries"
+	"github.com/vvs/isp/internal/infrastructure/http/apimw"
 	"gorm.io/gorm"
 )
 
@@ -13,7 +14,12 @@ type ModuleRoutes interface {
 	RegisterRoutes(r chi.Router)
 }
 
-func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, notif *NotifHandler, chatHandler *ChatHandler, global *GlobalHandler, modules ...ModuleRoutes) http.Handler {
+// APIRoutes is implemented by module handlers that expose REST JSON endpoints.
+type APIRoutes interface {
+	RegisterAPIRoutes(r chi.Router)
+}
+
+func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, notif *NotifHandler, chatHandler *ChatHandler, global *GlobalHandler, apiToken string, modules ...ModuleRoutes) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Recoverer)
@@ -54,6 +60,16 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 		// Register all module routes
 		for _, m := range modules {
 			m.RegisterRoutes(r)
+		}
+	})
+
+	// REST JSON API — bearer token protected
+	r.Group(func(r chi.Router) {
+		r.Use(apimw.BearerToken(apiToken))
+		for _, m := range modules {
+			if a, ok := m.(APIRoutes); ok {
+				a.RegisterAPIRoutes(r)
+			}
 		}
 	})
 

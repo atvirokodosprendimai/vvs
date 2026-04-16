@@ -60,6 +60,11 @@ func main() {
 				Sources: cli.EnvVars("NATS_LISTEN_ADDR"),
 			},
 			&cli.StringFlag{
+				Name:    "api-token",
+				Usage:   "Bearer token required for REST API (/api/v1/*). Empty = API disabled.",
+				Sources: cli.EnvVars("VVS_API_TOKEN"),
+			},
+			&cli.StringFlag{
 				Name:    "modules",
 				Usage:   "Comma-separated list of modules to enable (default: all)",
 				Sources: cli.EnvVars("VVS_MODULES"),
@@ -84,6 +89,7 @@ func main() {
 				NetBoxToken:    cmd.String("netbox-token"),
 				NATSUrl:        cmd.String("nats-url"),
 				NATSListenAddr: cmd.String("nats-listen"),
+				APIToken:       cmd.String("api-token"),
 				EnabledModules: enabledModules,
 			}
 

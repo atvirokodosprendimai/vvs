@@ -14,6 +14,10 @@ type Config struct {
 	NATSUrl        string // if set, connect to external NATS instead of starting embedded
 	NATSListenAddr string // if set (and NATSUrl empty), embedded NATS exposes TCP on this addr
 
+	// APIToken is the bearer token required for /api/v1/* requests.
+	// Empty string disables the REST API.
+	APIToken string // VVS_API_TOKEN env var
+
 	// EnabledModules lists which modules to start. Empty = all enabled.
 	EnabledModules []string // e.g. ["auth","customer"]
 }
