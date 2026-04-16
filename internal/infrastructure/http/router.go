@@ -42,6 +42,15 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 		r.Get("/sse", global.globalSSE)
 		r.Get("/api/dashboard/stats", newDashboardStatsHandler(reader))
 
+			// CRM overview
+			r.Get("/crm", func(w http.ResponseWriter, r *http.Request) {
+				CRMDashboardPage().Render(r.Context(), w)
+			})
+			r.Get("/api/crm/stats", newCRMStatsHandler(reader))
+			r.Get("/api/crm/pipeline", newCRMPipelineHandler(reader))
+			r.Get("/api/crm/tickets", newCRMTicketsHandler(reader))
+			r.Get("/api/crm/tasks", newCRMTasksHandler(reader))
+
 		// Notifications
 		r.Post("/api/notifications/read", notif.markRead)
 

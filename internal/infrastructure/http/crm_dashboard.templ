@@ -1,0 +1,160 @@
+package http
+
+import (
+	"github.com/vvs/isp/internal/infrastructure/http/templates"
+)
+
+templ CRMDashboardPage() {
+	@templates.Layout("CRM") {
+		@templates.PageHeader("CRM", "Sales pipeline, tickets, and tasks")
+		<div
+			id="crm-stats"
+			data-init="@get('/api/crm/stats')"
+			class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"
+		>
+			@crmStatPlaceholders()
+		</div>
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+			<!-- Pipeline by stage -->
+			<div id="crm-pipeline" data-init="@get('/api/crm/pipeline')" class="bg-slate-900 border border-slate-800 rounded-lg p-4">
+				<p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Pipeline</p>
+				<div class="text-slate-500 text-sm">Loading...</div>
+			</div>
+			<!-- Open Tickets -->
+			<div id="crm-tickets" data-init="@get('/api/crm/tickets')" class="bg-slate-900 border border-slate-800 rounded-lg p-4">
+				<p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Open Tickets</p>
+				<div class="text-slate-500 text-sm">Loading...</div>
+			</div>
+			<!-- Tasks -->
+			<div id="crm-tasks" data-init="@get('/api/crm/tasks')" class="bg-slate-900 border border-slate-800 rounded-lg p-4 lg:col-span-2">
+				<div class="flex items-center justify-between mb-3">
+					<p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Tasks</p>
+					<a href="/tasks" class="text-xs text-cyan-500 hover:text-cyan-400 transition-colors">View all →</a>
+				</div>
+				<div class="text-slate-500 text-sm">Loading...</div>
+			</div>
+		</div>
+	}
+}
+
+templ crmStatPlaceholders() {
+	<div id="crm-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+		@templates.StatCard("Active Deals", "...", dealIcon())
+		@templates.StatCard("Open Tickets", "...", ticketIcon())
+		@templates.StatCard("Pending Tasks", "...", taskIcon())
+		@templates.StatCard("Contacts", "...", contactIcon())
+	</div>
+}
+
+templ CRMStats(deals, tickets, tasks, contacts string) {
+	<div id="crm-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+		@templates.StatCard("Active Deals", deals, dealIcon())
+		@templates.StatCard("Open Tickets", tickets, ticketIcon())
+		@templates.StatCard("Pending Tasks", tasks, taskIcon())
+		@templates.StatCard("Contacts", contacts, contactIcon())
+	</div>
+}
+
+templ CRMPipeline(stages []CRMStageCount) {
+	<div id="crm-pipeline" class="bg-slate-900 border border-slate-800 rounded-lg p-4">
+		<p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Pipeline</p>
+		if len(stages) == 0 {
+			<p class="text-sm text-slate-600">No active deals.</p>
+		} else {
+			<div class="flex flex-col gap-2">
+				for _, s := range stages {
+					<div class="flex items-center justify-between">
+						<span class="text-sm text-slate-300 capitalize">{ s.Stage }</span>
+						<span class="text-sm font-mono text-cyan-400">{ s.Count }</span>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}
+
+templ CRMOpenTickets(tickets []CRMTicketRow) {
+	<div id="crm-tickets" class="bg-slate-900 border border-slate-800 rounded-lg p-4">
+		<p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Open Tickets</p>
+		if len(tickets) == 0 {
+			<p class="text-sm text-slate-600">No open tickets.</p>
+		} else {
+			<div class="flex flex-col gap-2">
+				for _, t := range tickets {
+					<div class="flex items-center justify-between">
+						<a href={ templ.SafeURL("/customers/" + t.CustomerID) } class="text-sm text-slate-300 hover:text-cyan-400 transition-colors truncate max-w-xs">{ t.Subject }</a>
+						<span class={ "text-xs px-1.5 py-0.5 rounded " + ticketPriorityClass(t.Priority) }>{ t.Priority }</span>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}
+
+templ CRMPendingTasks(tasks []CRMTaskRow) {
+	<div id="crm-tasks" class="bg-slate-900 border border-slate-800 rounded-lg p-4 lg:col-span-2">
+		<div class="flex items-center justify-between mb-3">
+			<p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Tasks</p>
+			<a href="/tasks" class="text-xs text-cyan-500 hover:text-cyan-400 transition-colors">View all →</a>
+		</div>
+		if len(tasks) == 0 {
+			<p class="text-sm text-slate-600">No pending tasks.</p>
+		} else {
+			<table class="w-full">
+				<tbody class="divide-y divide-slate-800">
+					for _, t := range tasks {
+						<tr class="hover:bg-slate-800/40 transition-colors">
+							<td class="py-2 text-sm text-slate-200">{ t.Title }</td>
+							<td class="py-2 text-xs text-slate-500 text-right">{ t.Status }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}
+
+type CRMStageCount struct {
+	Stage string
+	Count string
+}
+
+type CRMTicketRow struct {
+	CustomerID string
+	Subject    string
+	Priority   string
+}
+
+type CRMTaskRow struct {
+	Title  string
+	Status string
+}
+
+func ticketPriorityClass(p string) string {
+	switch p {
+	case "urgent":
+		return "bg-red-500/10 text-red-400 border border-red-500/20"
+	case "high":
+		return "bg-orange-500/10 text-orange-400 border border-orange-500/20"
+	case "normal":
+		return "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+	default:
+		return "bg-slate-700/50 text-slate-400 border border-slate-700"
+	}
+}
+
+func dealIcon() string {
+	return `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"/></svg>`
+}
+
+func ticketIcon() string {
+	return `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z"/></svg>`
+}
+
+func taskIcon() string {
+	return `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
+}
+
+func contactIcon() string {
+	return `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>`
+}
