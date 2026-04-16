@@ -1,6 +1,6 @@
 ---
 tldr: Full CRM — extend Customer with lead/prospect status, add Contact/Deal/Ticket/Task satellite modules, CRM dashboard
-status: active
+status: completed
 ---
 
 # Plan: CRM Module
@@ -26,93 +26,44 @@ hex module with own persistence + HTTP + UI.
    - => Ticket: open→in_progress→resolved→closed, priority, comments thread
    - => Task: attached to customer/deal/ticket (all optional), due date
 
-### Phase 2 - Customer CRM expansion - status: open
+### Phase 2 - Customer CRM expansion - status: completed
 
-2. [ ] Extend Customer status machine to include `lead` and `prospect`
-   - add `StatusLead`, `StatusProspect` consts
-   - add `Qualify()` (lead→prospect), `Convert()` (prospect→active) methods
-   - update status badge in templates
-   - migration: existing customers stay `active` — no data change needed
+2. [x] Extend Customer status machine to include `lead` and `prospect`
+3. [x] Add customer interaction/notes timeline (`customer_notes` table, AddNoteHandler)
 
-3. [ ] Add customer interaction/notes timeline
-   - `CustomerNote` entity: ID, CustomerID, Body, AuthorID, CreatedAt
-   - own table `customer_notes`; append-only (no update/delete)
-   - displayed in customer detail page as a feed
+### Phase 3 - Contact module - status: completed
 
-### Phase 3 - Contact module - status: open
-
-4. [ ] Domain: Contact aggregate
+4. [x] Domain: Contact aggregate
    - `internal/modules/contact/domain/contact.go`
    - fields: ID, CustomerID, FirstName, LastName, Email, Phone, Role, IsPrimary, CreatedAt
    - rules: only one primary per customer (enforced at app layer)
    - commands: AddContact, UpdateContact, RemoveContact, SetPrimary
 
-5. [ ] Persistence: GORM repo + migration `001_create_contacts.sql`
+5. [x] Persistence: GORM repo + migration `001_create_contacts.sql`
+6. [x] HTTP + UI: contacts section on customer detail page
 
-6. [ ] HTTP + UI: contacts section on customer detail page
-   - `GET /sse/customers/{id}/contacts` — SSE live list
-   - `POST /api/contacts` — add
-   - `PUT /api/contacts/{id}` — update
-   - `DELETE /api/contacts/{id}` — remove
-   - inline table + add/edit modal in customer detail page
+### Phase 4 - Deal module - status: completed
 
-### Phase 4 - Deal module - status: open
+7. [x] Domain: Deal aggregate
+8. [x] Persistence: GORM repo + migration `001_create_deals.sql`
+9. [x] HTTP + UI: deals page + customer detail section
 
-7. [ ] Domain: Deal aggregate
-   - `internal/modules/deal/domain/deal.go`
-   - fields: ID, CustomerID, Title, Value (int64 cents), Currency, Stage, Notes, CloseDate, CreatedAt
-   - stages: `lead` → `qualified` → `proposal` → `negotiation` → `won` | `lost`
-   - commands: CreateDeal, UpdateDeal, AdvanceStage, MarkWon, MarkLost
+### Phase 5 - Ticket module - status: completed
 
-8. [ ] Persistence: GORM repo + migration `001_create_deals.sql`
+10. [x] Domain: Ticket aggregate + TicketComment
+11. [x] Persistence: GORM repo + migrations
+12. [x] HTTP + UI: tickets page + customer detail section
 
-9. [ ] HTTP + UI: deals page + customer detail section
-   - `/deals` list page (all deals, filterable by stage/customer)
-   - `GET /sse/customers/{id}/deals` — live deal list on customer detail
-   - add/edit modal, stage advancement buttons
-   - pipeline board view on `/deals` (columns per stage)
+### Phase 6 - Task module - status: completed
 
-### Phase 5 - Ticket module - status: open
+13. [x] Domain: Task aggregate
+14. [x] Persistence: GORM repo + migration
+15. [x] HTTP + UI: tasks widget + `/tasks` list page
 
-10. [ ] Domain: Ticket aggregate
-    - `internal/modules/ticket/domain/ticket.go`
-    - fields: ID, CustomerID, ContactID (opt), Title, Body, Status, Priority, AssigneeID, ResolvedAt
-    - status: `open` → `in_progress` → `resolved` → `closed`
-    - priority: `low` | `medium` | `high` | `urgent`
-    - commands: OpenTicket, Assign, Reopen, Resolve, Close
-    - TicketComment: append-only thread per ticket
+### Phase 7 - CRM Dashboard - status: completed
 
-11. [ ] Persistence: GORM repo + migrations for tickets + ticket_comments
-
-12. [ ] HTTP + UI: tickets page + customer detail section
-    - `/tickets` list page (filter by status, priority, assignee)
-    - `GET /sse/customers/{id}/tickets` — live list
-    - ticket detail page with comment thread
-    - add/reply modal
-
-### Phase 6 - Task module - status: open
-
-13. [ ] Domain: Task aggregate
-    - `internal/modules/task/domain/task.go`
-    - fields: ID, Title, DueAt, Done, AssigneeID, CustomerID (opt), DealID (opt), TicketID (opt), CreatedAt
-    - commands: CreateTask, Complete, Reopen, Reassign
-
-14. [ ] Persistence: GORM repo + migration
-
-15. [ ] HTTP + UI: tasks widget
-    - `/tasks` list page (my tasks, overdue, all)
-    - task creation from customer/deal/ticket pages
-    - mini task list on customer detail page
-
-### Phase 7 - CRM Dashboard - status: open
-
-16. [ ] `/crm` overview page
-    - pipeline summary (deal counts + value by stage)
-    - open ticket count by priority
-    - tasks due today / overdue
-    - recent customer activity feed (notes + status changes)
-
-17. [ ] Nav link: add CRM entry to sidebar nav
+16. [x] `/crm` overview page (CRMDashboardPage at `/crm`)
+17. [x] Nav link: CRM in sidebar nav
 
 ## Verification
 
@@ -131,3 +82,4 @@ hex module with own persistence + HTTP + UI.
 ## Progress Log
 
 - 2604161820 Phase 1 complete — CRM spec written
+- 2604162100 All phases complete — Contact/Deal/Ticket/Task/Dashboard all implemented and wired; plan status updated
