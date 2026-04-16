@@ -16,14 +16,15 @@ hex module with own persistence + HTTP + UI.
 
 ## Phases
 
-### Phase 1 - Spec - status: open
+### Phase 1 - Spec - status: completed
 
-1. [ ] `/eidos:spec` CRM module — domain model, status machines, entity relationships
-   - Customer status expansion: lead → prospect → active → suspended → churned
-   - Contact: person at customer, multiple per customer, primary flag
-   - Deal: sales pipeline, stages, value
-   - Ticket: support, status/priority/SLA, assignee
-   - Task: follow-up reminder attached to any of the above
+1. [x] `/eidos:spec` CRM module — domain model, status machines, entity relationships
+   - => [[spec - crm - customer lifecycle contacts deals tickets tasks]] created
+   - => Customer: lead→prospect→active→suspended→churned + churn terminal
+   - => Contact: multiple per customer, one primary
+   - => Deal: lead→qualified→proposal→negotiation→won/lost (terminals)
+   - => Ticket: open→in_progress→resolved→closed, priority, comments thread
+   - => Task: attached to customer/deal/ticket (all optional), due date
 
 ### Phase 2 - Customer CRM expansion - status: open
 
@@ -128,3 +129,5 @@ hex module with own persistence + HTTP + UI.
 ## Adjustments
 
 ## Progress Log
+
+- 2604161820 Phase 1 complete — CRM spec written
