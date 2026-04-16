@@ -182,12 +182,6 @@ func New(cfg Config) (*App, error) {
 	getRouterQuery := networkqueries.NewGetRouterHandler(routerRepo)
 
 	if cfg.IsEnabled("network") {
-		networkRoutes := networkhttp.NewHandlers(
-			createRouterCmd, updateRouterCmd, deleteRouterCmd,
-			listRoutersQuery, getRouterQuery, subscriber,
-		)
-		moduleRoutes = append(moduleRoutes, networkRoutes)
-
 		if customerRoutes != nil {
 			customerRoutes.WithReader(gdb.R)
 		}
@@ -206,6 +200,12 @@ func New(cfg Config) (*App, error) {
 		syncARPCmd := networkcommands.NewSyncCustomerARPHandler(
 			&customerARPBridge{repo: customerRepo}, routerRepo, provisioner, ipamProvider, publisher,
 		)
+
+		networkRoutes := networkhttp.NewHandlers(
+			createRouterCmd, updateRouterCmd, deleteRouterCmd,
+			listRoutersQuery, getRouterQuery, syncARPCmd, subscriber,
+		)
+		moduleRoutes = append(moduleRoutes, networkRoutes)
 
 		arpWorker := networksubscribers.NewARPWorker(syncARPCmd)
 		go arpWorker.Run(context.Background(), subscriber)

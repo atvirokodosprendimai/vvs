@@ -14,12 +14,13 @@ import (
 )
 
 type Handlers struct {
-	createCmd  *commands.CreateRouterHandler
-	updateCmd  *commands.UpdateRouterHandler
-	deleteCmd  *commands.DeleteRouterHandler
-	listQuery  *queries.ListRoutersHandler
-	getQuery   *queries.GetRouterHandler
-	subscriber events.EventSubscriber
+	createCmd   *commands.CreateRouterHandler
+	updateCmd   *commands.UpdateRouterHandler
+	deleteCmd   *commands.DeleteRouterHandler
+	listQuery   *queries.ListRoutersHandler
+	getQuery    *queries.GetRouterHandler
+	syncARPCmd  *commands.SyncCustomerARPHandler
+	subscriber  events.EventSubscriber
 }
 
 func NewHandlers(
@@ -28,6 +29,7 @@ func NewHandlers(
 	deleteCmd *commands.DeleteRouterHandler,
 	listQuery *queries.ListRoutersHandler,
 	getQuery *queries.GetRouterHandler,
+	syncARPCmd *commands.SyncCustomerARPHandler,
 	subscriber events.EventSubscriber,
 ) *Handlers {
 	return &Handlers{
@@ -36,6 +38,7 @@ func NewHandlers(
 		deleteCmd:  deleteCmd,
 		listQuery:  listQuery,
 		getQuery:   getQuery,
+		syncARPCmd: syncARPCmd,
 		subscriber: subscriber,
 	}
 }
