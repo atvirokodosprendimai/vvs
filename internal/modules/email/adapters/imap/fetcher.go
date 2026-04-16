@@ -198,6 +198,12 @@ func processMessage(
 		return fmt.Errorf("save message: %w", err)
 	}
 
+	// Re-resolve the message ID: if the row was INSERT OR IGNORE'd (duplicate UID),
+	// the existing row has a different ID — use that for attachments to avoid FK errors.
+	if existing, err := repos.Messages.FindByUID(ctx, account.ID, msg.UID); err == nil {
+		msg.ID = existing.ID
+	}
+
 	// Persist attachment records.
 	for _, a := range parsed.Attachments {
 		att := &domain.EmailAttachment{
