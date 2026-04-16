@@ -65,6 +65,7 @@ import (
 	devicequeries "github.com/vvs/isp/internal/modules/device/app/queries"
 	devicemigrations "github.com/vvs/isp/internal/modules/device/migrations"
 
+	cronhttp "github.com/vvs/isp/internal/modules/cron/adapters/http"
 	cronpersistence "github.com/vvs/isp/internal/modules/cron/adapters/persistence"
 	croncommands "github.com/vvs/isp/internal/modules/cron/app/commands"
 	cronqueries "github.com/vvs/isp/internal/modules/cron/app/queries"
@@ -324,6 +325,16 @@ func New(cfg Config) (*App, error) {
 		ResumeJob: croncommands.NewResumeJobHandler(cronRepo),
 		DeleteJob: croncommands.NewDeleteJobHandler(cronRepo),
 	})
+
+	// Cron web UI (always enabled)
+	cronRoutes := cronhttp.NewCronHandlers(
+		cronqueries.NewListJobsHandler(cronRepo),
+		croncommands.NewAddJobHandler(cronRepo),
+		croncommands.NewPauseJobHandler(cronRepo),
+		croncommands.NewResumeJobHandler(cronRepo),
+		croncommands.NewDeleteJobHandler(cronRepo),
+	)
+	moduleRoutes = append(moduleRoutes, cronRoutes)
 	if err := rpcServer.Register(); err != nil {
 		return nil, fmt.Errorf("nats rpc: %w", err)
 	}
