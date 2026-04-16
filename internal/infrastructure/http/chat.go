@@ -50,91 +50,114 @@ func (h *ChatHandler) chatPage(w http.ResponseWriter, r *http.Request) {
 	ChatPage(threads, user.ID, threadID).Render(r.Context(), w)
 }
 
-// threadMessagesSSE streams messages for a specific thread (used by /chat page).
-func (h *ChatHandler) threadMessagesSSE(w http.ResponseWriter, r *http.Request) {
+// chatPageSSE is the single consolidated SSE for the full /chat page.
+// It multiplexes the thread list (isp.chat.>) and messages (isp.chat.message.{threadID})
+// over one connection. When the user selects a thread, the client reconnects with the
+// updated $threadid signal and this handler restarts with the new thread.
+func (h *ChatHandler) chatPageSSE(w http.ResponseWriter, r *http.Request) {
 	user := authhttp.UserFromContext(r.Context())
 	if user == nil {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
-	threadID := chi.URLParam(r, "threadID")
-	if threadID == "" {
-		http.Error(w, "missing thread id", http.StatusBadRequest)
-		return
+
+	if err := h.store.EnsurePublicMembership(r.Context(), user.ID); err != nil {
+		log.Printf("chatPageSSE: EnsurePublicMembership: %v", err)
 	}
 
-	// For public channels, auto-join on first access.
-	member, err := h.store.IsMember(r.Context(), threadID, user.ID)
-	if err != nil {
-		log.Printf("threadMessagesSSE: IsMember: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
+	var signals struct {
+		ThreadID string `json:"threadid"`
 	}
-	if !member {
-		channels, err := h.store.ListPublicChannels(r.Context())
-		if err != nil {
-			log.Printf("threadMessagesSSE: ListPublicChannels: %v", err)
-			http.Error(w, "internal server error", http.StatusInternalServerError)
-			return
-		}
-		isPublic := false
-		for _, c := range channels {
-			if c.ID == threadID {
-				isPublic = true
-				break
+	_ = datastar.ReadSignals(r, &signals)
+	threadID := signals.ThreadID
+
+	// Ensure membership + mark read for the selected thread.
+	if threadID != "" {
+		member, err := h.store.IsMember(r.Context(), threadID, user.ID)
+		if err == nil && !member {
+			if channels, err := h.store.ListPublicChannels(r.Context()); err == nil {
+				for _, c := range channels {
+					if c.ID == threadID {
+						_ = h.store.AddMember(r.Context(), threadID, user.ID)
+						break
+					}
+				}
 			}
 		}
-		if !isPublic {
-			http.Error(w, "forbidden", http.StatusForbidden)
-			return
-		}
-		if err := h.store.AddMember(r.Context(), threadID, user.ID); err != nil {
-			log.Printf("threadMessagesSSE: AddMember: %v", err)
+		if err := h.store.MarkRead(r.Context(), threadID, user.ID); err == nil {
+			h.publisher.Publish(r.Context(), "isp.chat.read."+threadID, events.DomainEvent{
+				ID:          uuid.Must(uuid.NewV7()).String(),
+				Type:        "chat.read",
+				AggregateID: threadID,
+				OccurredAt:  time.Now().UTC(),
+			})
 		}
 	}
 
-	// Mark thread as read on connect and notify threadsSSE to refresh badge.
-	if err := h.store.MarkRead(r.Context(), threadID, user.ID); err != nil {
-		log.Printf("threadMessagesSSE: MarkRead: %v", err)
-	} else {
-		h.publisher.Publish(r.Context(), "isp.chat.read."+threadID, events.DomainEvent{
-			ID:          uuid.Must(uuid.NewV7()).String(),
-			Type:        "chat.read",
-			AggregateID: threadID,
-			OccurredAt:  time.Now().UTC(),
-		})
-	}
-
-	h.streamMessages(w, r, threadID, user.ID)
-}
-
-// streamMessages is the shared SSE loop for a given thread.
-func (h *ChatHandler) streamMessages(w http.ResponseWriter, r *http.Request, threadID, userID string) {
 	sse := datastar.NewSSE(w, r)
 
-	ch, cancel := h.subscriber.ChanSubscription("isp.chat.message." + threadID)
-	defer cancel()
+	// Subscribe to thread list events.
+	chatCh, cancelChat := h.subscriber.ChanSubscription("isp.chat.>")
+	defer cancelChat()
 
-	msgs, err := h.store.Recent(r.Context(), threadID, chatHistoryLimit)
-	if err != nil {
-		log.Printf("streamMessages: Recent: %v", err)
+	// Subscribe to messages for the selected thread (nil channel = never fires).
+	var msgCh <-chan events.DomainEvent
+	cancelMsg := func() {}
+	defer func() { cancelMsg() }()
+	if threadID != "" {
+		ch, cancel := h.subscriber.ChanSubscription("isp.chat.message." + threadID)
+		msgCh = ch
+		cancelMsg = cancel
 	}
-	sse.PatchElementTempl(ChatMessages(msgs, userID))
-	scrollToBottom(sse)
+
+	// Initial render: thread list.
+	currentThreads, err := h.store.ListThreadsForUser(r.Context(), user.ID)
+	if err != nil {
+		log.Printf("chatPageSSE: ListThreadsForUser: %v", err)
+	}
+	sse.PatchElementTempl(ChatThreadList(currentThreads, user.ID))
+
+	// Initial render: messages for selected thread.
+	if threadID != "" {
+		msgs, err := h.store.Recent(r.Context(), threadID, chatHistoryLimit)
+		if err != nil {
+			log.Printf("chatPageSSE: Recent: %v", err)
+		}
+		sse.PatchElementTempl(ChatMessages(msgs, user.ID))
+		scrollToBottom(sse)
+	}
 
 	for {
 		select {
-		case event, ok := <-ch:
+		case event, ok := <-chatCh:
+			if !ok {
+				return
+			}
+			if event.Type == "chat.thread.created" {
+				if err := h.store.EnsurePublicMembership(r.Context(), user.ID); err != nil {
+					log.Printf("chatPageSSE: EnsurePublicMembership: %v", err)
+				}
+			}
+			next, err := h.store.ListThreadsForUser(r.Context(), user.ID)
+			if err != nil {
+				log.Printf("chatPageSSE: ListThreadsForUser: %v", err)
+				continue
+			}
+			if !reflect.DeepEqual(currentThreads, next) {
+				sse.PatchElementTempl(ChatThreadList(next, user.ID))
+				currentThreads = next
+			}
+		case event, ok := <-msgCh:
 			if !ok {
 				return
 			}
 			var msg chat.Message
 			if err := json.Unmarshal(event.Data, &msg); err != nil {
-				log.Printf("streamMessages: unmarshal event: %v", err)
+				log.Printf("chatPageSSE: unmarshal message: %v", err)
 				continue
 			}
 			var buf bytes.Buffer
-			ChatMessageItem(msg, userID).Render(r.Context(), &buf)
+			ChatMessageItem(msg, user.ID).Render(r.Context(), &buf)
 			sse.PatchElements(buf.String(),
 				datastar.WithSelector("#chat-messages"),
 				datastar.WithMode(datastar.ElementPatchModeAppend),
@@ -146,57 +169,6 @@ func (h *ChatHandler) streamMessages(w http.ResponseWriter, r *http.Request, thr
 	}
 }
 
-// threadsSSE streams the thread list for the current user.
-func (h *ChatHandler) threadsSSE(w http.ResponseWriter, r *http.Request) {
-	user := authhttp.UserFromContext(r.Context())
-	if user == nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	if err := h.store.EnsurePublicMembership(r.Context(), user.ID); err != nil {
-		log.Printf("threadsSSE: EnsurePublicMembership: %v", err)
-	}
-
-	sse := datastar.NewSSE(w, r)
-
-	// Subscribe to all chat events — any message in any thread may affect the list.
-	ch, cancel := h.subscriber.ChanSubscription("isp.chat.>")
-	defer cancel()
-
-	current, err := h.store.ListThreadsForUser(r.Context(), user.ID)
-	if err != nil {
-		log.Printf("threadsSSE: ListThreadsForUser: %v", err)
-	}
-	sse.PatchElementTempl(ChatThreadList(current, user.ID))
-
-	for {
-		select {
-		case event, ok := <-ch:
-			if !ok {
-				return
-			}
-			// Only re-ensure membership when a new thread is created (avoids write
-			// contention on the single SQLite writer for every chat message).
-			if event.Type == "chat.thread.created" {
-				if err := h.store.EnsurePublicMembership(r.Context(), user.ID); err != nil {
-					log.Printf("threadsSSE: EnsurePublicMembership: %v", err)
-				}
-			}
-			next, err := h.store.ListThreadsForUser(r.Context(), user.ID)
-			if err != nil {
-				log.Printf("threadsSSE: ListThreadsForUser: %v", err)
-				continue
-			}
-			if !reflect.DeepEqual(current, next) {
-				sse.PatchElementTempl(ChatThreadList(next, user.ID))
-				current = next
-			}
-		case <-r.Context().Done():
-			return
-		}
-	}
-}
 
 // chatSend saves and broadcasts a message to a thread.
 func (h *ChatHandler) chatSend(w http.ResponseWriter, r *http.Request) {

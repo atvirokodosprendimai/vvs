@@ -14,30 +14,20 @@ templ ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThread
 		<div
 			class="flex h-full -m-6 overflow-hidden min-h-0"
 			data-signals={ fmt.Sprintf("{threadid:'%s',chatmsg:'',_newdm:false,_newchannel:false,channelname:'',isprivate:false,newdmtarget:''}", initialThreadID) }
+			data-init="@get('/sse/chat-page')"
 		>
-			<!-- Thread sidebar -->
+			<!-- Thread sidebar — patched by /sse/chat-page -->
 			<div
 				id="chat-threads"
-				data-init="@get('/sse/chat/threads')"
 				class="w-64 border-r border-slate-800 flex flex-col flex-shrink-0 min-h-0 overflow-y-auto"
 			>
 				@ChatThreadList(threads, currentUserID)
 			</div>
-			<!-- Message panel -->
+			<!-- Message panel — patched by /sse/chat-page -->
 			<div class="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
-				if initialThreadID != "" {
-					<div
-						id="chat-panel"
-						data-init={ fmt.Sprintf("@get('/sse/chat/messages/%s')", initialThreadID) }
-						class="flex-1 flex flex-col min-h-0"
-					>
-						@ChatPanelEmpty()
-					</div>
-				} else {
-					<div id="chat-panel" class="flex-1 flex flex-col min-h-0">
-						@ChatPanelEmpty()
-					</div>
-				}
+				<div id="chat-panel" class="flex-1 flex flex-col min-h-0">
+					@ChatPanelEmpty()
+				</div>
 			</div>
 		</div>
 		<!-- New DM modal -->
@@ -144,7 +134,7 @@ templ ChatThreadList(threads []chat.ThreadSummary, currentUserID string) {
 // ChatThreadRow renders a single thread in the sidebar.
 templ ChatThreadRow(t chat.ThreadSummary, currentUserID string) {
 	<button
-		data-on:click={ fmt.Sprintf("($threadid='%s') && @get('/sse/chat/messages/%s')", t.ID, t.ID) }
+		data-on:click={ fmt.Sprintf("($threadid='%s') && @get('/sse/chat-page')", t.ID) }
 		class="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-slate-800 transition-colors group"
 	>
 		<span class="flex-1 min-w-0">
@@ -161,13 +151,6 @@ templ ChatThreadRow(t chat.ThreadSummary, currentUserID string) {
 			</span>
 		}
 	</button>
-}
-
-// ChatPanel is the right-side message area for a thread.
-templ ChatPanel(threadID string) {
-	<div id="chat-panel" class="flex-1 flex flex-col" data-init={ fmt.Sprintf("@get('/sse/chat/messages/%s')", threadID) }>
-		@ChatPanelEmpty()
-	</div>
 }
 
 // ChatPanelEmpty is the placeholder before a thread is selected.

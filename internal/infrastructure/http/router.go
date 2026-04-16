@@ -59,8 +59,7 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 
 		// Chat full page
 		r.Get("/chat", chatHandler.chatPage)
-		r.Get("/sse/chat/threads", chatHandler.threadsSSE)
-		r.Get("/sse/chat/messages/{threadID}", chatHandler.threadMessagesSSE)
+		r.Get("/sse/chat-page", chatHandler.chatPageSSE)
 		r.Post("/api/chat/threads/direct", chatHandler.createDirect)
 		r.Post("/api/chat/threads/channel", chatHandler.createChannel)
 		r.Post("/api/chat/threads/{threadID}/members", chatHandler.addMember)
