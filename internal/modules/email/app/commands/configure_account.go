@@ -81,6 +81,9 @@ func (h *ConfigureAccountHandler) Handle(ctx context.Context, cmd ConfigureAccou
 	if err := h.repo.Save(ctx, a); err != nil {
 		return nil, err
 	}
+	h.publisher.Publish(ctx, "isp.email.account_configured", events.DomainEvent{
+		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.account_configured", AggregateID: a.ID,
+	})
 	return a, nil
 }
 

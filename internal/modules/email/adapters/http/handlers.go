@@ -7,7 +7,10 @@ import (
 	"net/http"
 	"reflect"
 
+	"strconv"
+
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	"github.com/starfederation/datastar-go/datastar"
 	emailcommands "github.com/vvs/isp/internal/modules/email/app/commands"
 	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
@@ -199,7 +202,7 @@ func (h *Handlers) configureAccountSSE(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
 		Name     string `json:"emailName"`
 		Host     string `json:"emailHost"`
-		Port     int    `json:"emailPort"`
+		Port     string `json:"emailPort"`
 		Username string `json:"emailUser"`
 		Password string `json:"emailPass"`
 		TLS      string `json:"emailTLS"`
@@ -211,15 +214,16 @@ func (h *Handlers) configureAccountSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if signals.Port == 0 {
-		signals.Port = 993
+	port, _ := strconv.Atoi(signals.Port)
+	if port == 0 {
+		port = 993
 	}
 
 	sse := datastar.NewSSE(w, r)
 	_, err := h.configureCmd.Handle(r.Context(), emailcommands.ConfigureAccountCommand{
 		Name:     signals.Name,
 		Host:     signals.Host,
-		Port:     signals.Port,
+		Port:     port,
 		Username: signals.Username,
 		Password: signals.Password,
 		TLS:      signals.TLS,
@@ -343,7 +347,7 @@ func (h *Handlers) updateAccountSSE(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
 		Name     string `json:"emailName"`
 		Host     string `json:"emailHost"`
-		Port     int    `json:"emailPort"`
+		Port     string `json:"emailPort"`
 		Username string `json:"emailUser"`
 		Password string `json:"emailPass"`
 		TLS      string `json:"emailTLS"`
@@ -354,15 +358,16 @@ func (h *Handlers) updateAccountSSE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
-	if signals.Port == 0 {
-		signals.Port = 993
+	port, _ := strconv.Atoi(signals.Port)
+	if port == 0 {
+		port = 993
 	}
 	sse := datastar.NewSSE(w, r)
 	_, err := h.configureCmd.Handle(r.Context(), emailcommands.ConfigureAccountCommand{
 		ID:       id,
 		Name:     signals.Name,
 		Host:     signals.Host,
-		Port:     signals.Port,
+		Port:     port,
 		Username: signals.Username,
 		Password: signals.Password,
 		TLS:      signals.TLS,
@@ -409,11 +414,11 @@ func (h *Handlers) resumeAccountSSE(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// triggerSyncSSE publishes a manual sync request for an account.
+// triggerSyncSSE publishes a manual sync request for a specific account.
 func (h *Handlers) triggerSyncSSE(w http.ResponseWriter, r *http.Request) {
 	accountID := chi.URLParam(r, "accountID")
-	h.publisher.Publish(r.Context(), "isp.email.sync_requested", events.DomainEvent{
-		ID: accountID, Type: "email.sync_requested", AggregateID: accountID,
+	h.publisher.Publish(r.Context(), "isp.email.sync_requested."+accountID, events.DomainEvent{
+		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.sync_requested", AggregateID: accountID,
 	})
 	w.WriteHeader(http.StatusNoContent)
 }

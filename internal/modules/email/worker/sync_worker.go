@@ -52,11 +52,11 @@ func (w *SyncWorker) Stop() {
 }
 
 func (w *SyncWorker) run() {
-	// Subscribe to manual sync trigger events.
+	// Subscribe to per-account manual sync trigger: isp.email.sync_requested.{accountID}
 	var manualTrigger <-chan events.DomainEvent
 	var cancelSub func()
 	if w.sub != nil {
-		manualTrigger, cancelSub = w.sub.ChanSubscription("isp.email.sync_requested")
+		manualTrigger, cancelSub = w.sub.ChanSubscription("isp.email.sync_requested.*")
 		defer cancelSub()
 	}
 
@@ -70,12 +70,30 @@ func (w *SyncWorker) run() {
 		select {
 		case <-ticker.C:
 			w.syncAll()
-		case <-manualTrigger:
-			w.syncAll()
+		case evt, ok := <-manualTrigger:
+			if !ok {
+				return
+			}
+			w.syncOne(evt.AggregateID)
 		case <-w.stop:
 			return
 		}
 	}
+}
+
+func (w *SyncWorker) syncOne(accountID string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	account, err := w.repos.Accounts.FindByID(ctx, accountID)
+	if err != nil {
+		log.Printf("email sync: find account %s: %v", accountID, err)
+		return
+	}
+	if account.Status == domain.AccountStatusPaused {
+		return
+	}
+	w.syncAccount(ctx, account)
 }
 
 func (w *SyncWorker) syncAll() {
