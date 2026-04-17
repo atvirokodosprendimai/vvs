@@ -23,6 +23,9 @@ func NewDeleteContactHandler(repo domain.ContactRepository, pub events.EventPubl
 }
 
 func (h *DeleteContactHandler) Handle(ctx context.Context, cmd DeleteContactCommand) error {
+	if _, err := h.repo.FindByID(ctx, cmd.ID); err != nil {
+		return err
+	}
 	if err := h.repo.Delete(ctx, cmd.ID); err != nil {
 		return err
 	}

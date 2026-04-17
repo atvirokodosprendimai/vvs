@@ -196,6 +196,44 @@ func TestAdvanceDealHandler_FullPipeline(t *testing.T) {
 	assert.Equal(t, domain.StageWon, found.Stage)
 }
 
+func TestUpdateDealHandler_NotFound(t *testing.T) {
+	db, _ := setupDealDB(t)
+	pub, _ := testutil.NewTestNATS(t)
+
+	repo := persistence.NewGormDealRepository(db)
+	handler := commands.NewUpdateDealHandler(repo, pub)
+
+	err := handler.Handle(context.Background(), commands.UpdateDealCommand{
+		ID:       "nonexistent-id",
+		Title:    "X",
+		Value:    1,
+		Currency: "EUR",
+	})
+	assert.ErrorIs(t, err, domain.ErrNotFound)
+}
+
+func TestDeleteDealHandler_NotFound(t *testing.T) {
+	db, _ := setupDealDB(t)
+	pub, _ := testutil.NewTestNATS(t)
+
+	repo := persistence.NewGormDealRepository(db)
+	handler := commands.NewDeleteDealHandler(repo, pub)
+
+	err := handler.Handle(context.Background(), commands.DeleteDealCommand{ID: "nonexistent-id"})
+	assert.ErrorIs(t, err, domain.ErrNotFound)
+}
+
+func TestAdvanceDealHandler_NotFound(t *testing.T) {
+	db, _ := setupDealDB(t)
+	pub, _ := testutil.NewTestNATS(t)
+
+	repo := persistence.NewGormDealRepository(db)
+	handler := commands.NewAdvanceDealHandler(repo, pub)
+
+	err := handler.Handle(context.Background(), commands.AdvanceDealCommand{ID: "nonexistent-id", Action: "qualify"})
+	assert.ErrorIs(t, err, domain.ErrNotFound)
+}
+
 func TestAdvanceDealHandler_UnknownAction(t *testing.T) {
 	db, customerID := setupDealDB(t)
 	pub, _ := testutil.NewTestNATS(t)

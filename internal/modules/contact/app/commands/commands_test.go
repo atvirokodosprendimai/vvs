@@ -127,6 +127,32 @@ func TestUpdateContactHandler_HappyPath(t *testing.T) {
 	assert.Equal(t, "Updated contact", found.Notes)
 }
 
+func TestUpdateContactHandler_NotFound(t *testing.T) {
+	db, _ := setupContactDB(t)
+	pub, _ := testutil.NewTestNATS(t)
+
+	repo := persistence.NewGormContactRepository(db)
+	handler := commands.NewUpdateContactHandler(repo, pub)
+
+	err := handler.Handle(context.Background(), commands.UpdateContactCommand{
+		ID:        "nonexistent-id",
+		FirstName: "X",
+		LastName:  "Y",
+	})
+	assert.ErrorIs(t, err, domain.ErrNotFound)
+}
+
+func TestDeleteContactHandler_NotFound(t *testing.T) {
+	db, _ := setupContactDB(t)
+	pub, _ := testutil.NewTestNATS(t)
+
+	repo := persistence.NewGormContactRepository(db)
+	handler := commands.NewDeleteContactHandler(repo, pub)
+
+	err := handler.Handle(context.Background(), commands.DeleteContactCommand{ID: "nonexistent-id"})
+	assert.ErrorIs(t, err, domain.ErrNotFound)
+}
+
 func TestDeleteContactHandler_HappyPath(t *testing.T) {
 	db, customerID := setupContactDB(t)
 	pub, _ := testutil.NewTestNATS(t)

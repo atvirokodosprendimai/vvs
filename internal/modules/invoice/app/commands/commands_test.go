@@ -330,6 +330,77 @@ func TestGenerateFromSubscriptionsHandler(t *testing.T) {
 	assert.WithinDuration(t, time.Now().UTC().AddDate(0, 0, 30), inv.DueDate, 5*time.Second)
 }
 
+func TestUpdateLineItemHandler_HappyPath(t *testing.T) {
+	db := testutil.NewTestDB(t)
+	testutil.RunMigrations(t, db, migrations.FS, "goose_invoice")
+	pub, _ := testutil.NewTestNATS(t)
+	repo := persistence.NewInvoiceRepository(db)
+
+	createHandler := commands.NewCreateInvoiceHandler(repo, pub)
+	inv := createDraftInvoice(t, repo, createHandler)
+	require.Len(t, inv.LineItems, 1)
+	lineItemID := inv.LineItems[0].ID
+
+	updateHandler := commands.NewUpdateLineItemHandler(repo, pub)
+	updated, err := updateHandler.Handle(context.Background(), commands.UpdateLineItemCommand{
+		InvoiceID:      inv.ID,
+		LineItemID:     lineItemID,
+		ProductName:    "Internet 1Gbps",
+		Description:    "Upgraded plan",
+		Quantity:       2,
+		UnitPriceGross: 4999,
+	})
+	require.NoError(t, err)
+	require.Len(t, updated.LineItems, 1)
+	assert.Equal(t, "Internet 1Gbps", updated.LineItems[0].ProductName)
+	assert.Equal(t, "Upgraded plan", updated.LineItems[0].Description)
+	assert.Equal(t, 2, updated.LineItems[0].Quantity)
+	assert.Equal(t, int64(9998), updated.TotalAmount)
+
+	// Verify persisted
+	found, err := repo.FindByID(context.Background(), inv.ID)
+	require.NoError(t, err)
+	assert.Equal(t, int64(9998), found.TotalAmount)
+	assert.Equal(t, "Internet 1Gbps", found.LineItems[0].ProductName)
+}
+
+func TestUpdateLineItemHandler_InvoiceNotFound(t *testing.T) {
+	db := testutil.NewTestDB(t)
+	testutil.RunMigrations(t, db, migrations.FS, "goose_invoice")
+	pub, _ := testutil.NewTestNATS(t)
+	repo := persistence.NewInvoiceRepository(db)
+
+	handler := commands.NewUpdateLineItemHandler(repo, pub)
+	_, err := handler.Handle(context.Background(), commands.UpdateLineItemCommand{
+		InvoiceID:      "nonexistent-id",
+		LineItemID:     "li-1",
+		ProductName:    "X",
+		Quantity:       1,
+		UnitPriceGross: 100,
+	})
+	assert.ErrorIs(t, err, domain.ErrInvoiceNotFound)
+}
+
+func TestUpdateLineItemHandler_LineItemNotFound(t *testing.T) {
+	db := testutil.NewTestDB(t)
+	testutil.RunMigrations(t, db, migrations.FS, "goose_invoice")
+	pub, _ := testutil.NewTestNATS(t)
+	repo := persistence.NewInvoiceRepository(db)
+
+	createHandler := commands.NewCreateInvoiceHandler(repo, pub)
+	inv := createDraftInvoice(t, repo, createHandler)
+
+	handler := commands.NewUpdateLineItemHandler(repo, pub)
+	_, err := handler.Handle(context.Background(), commands.UpdateLineItemCommand{
+		InvoiceID:      inv.ID,
+		LineItemID:     "nonexistent-line-item",
+		ProductName:    "X",
+		Quantity:       1,
+		UnitPriceGross: 100,
+	})
+	assert.ErrorIs(t, err, domain.ErrLineItemNotFound)
+}
+
 // stubServiceLister is a test double for ActiveServiceLister.
 type stubServiceLister struct {
 	services []commands.ServiceInfo
