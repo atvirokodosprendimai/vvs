@@ -61,6 +61,17 @@ type customerInfoResolver interface {
 	ResolveCustomerCode(ctx context.Context, id string) string
 }
 
+// contactEmailLookup finds a customer linked to a contact email address.
+// Used to suggest customer links when a thread participant matches a known contact.
+type contactEmailLookup interface {
+	FindCustomerByContactEmail(ctx context.Context, email string) (customerID, customerName, customerCode string, err error)
+}
+
+// starToggler toggles the "starred" system tag on a thread.
+type starToggler interface {
+	Handle(ctx context.Context, threadID string) error
+}
+
 // folderToggler is the minimal interface for folder enable/disable.
 type folderToggler interface {
 	FindByID(ctx context.Context, id string) (*domain.EmailFolder, error)
@@ -97,6 +108,8 @@ type Handlers struct {
 	publisher          events.EventPublisher
 	pageSize           int // threads per inbox page; 0 → DefaultPageSize
 	custInfo           customerInfoResolver
+	contactLookup      contactEmailLookup
+	starToggle         starToggler
 }
 
 func NewHandlers(
@@ -149,6 +162,18 @@ func (h *Handlers) WithCustomerInfo(r customerInfoResolver) *Handlers {
 	return h
 }
 
+// WithContactEmailLookup injects the contact email → customer lookup for suggestion enrichment.
+func (h *Handlers) WithContactEmailLookup(cl contactEmailLookup) *Handlers {
+	h.contactLookup = cl
+	return h
+}
+
+// WithStarToggler injects the star toggle command handler.
+func (h *Handlers) WithStarToggler(st starToggler) *Handlers {
+	h.starToggle = st
+	return h
+}
+
 // enrichThreadList sets CustomerName/CustomerCode on each thread that has a CustomerID.
 func (h *Handlers) enrichThreadList(ctx context.Context, result *emailqueries.ThreadListResult) {
 	if h.custInfo == nil {
@@ -170,6 +195,29 @@ func (h *Handlers) enrichDetail(ctx context.Context, t *emailqueries.ThreadDetai
 	}
 	t.CustomerName = h.custInfo.ResolveCustomerName(ctx, t.CustomerID)
 	t.CustomerCode = h.custInfo.ResolveCustomerCode(ctx, t.CustomerID)
+}
+
+// enrichSuggestion sets SuggestedCustomer* when thread has no linked customer
+// but a participant email matches a known contact.
+func (h *Handlers) enrichSuggestion(ctx context.Context, t *emailqueries.ThreadDetailReadModel) {
+	if h.contactLookup == nil || t.CustomerID != "" {
+		return
+	}
+	// ParticipantAddresses is a comma-separated list of addresses.
+	for _, addr := range strings.Split(t.ParticipantAddresses, ",") {
+		addr = strings.TrimSpace(addr)
+		if addr == "" {
+			continue
+		}
+		id, name, code, err := h.contactLookup.FindCustomerByContactEmail(ctx, addr)
+		if err != nil || id == "" {
+			continue
+		}
+		t.SuggestedCustomerID = id
+		t.SuggestedCustomerName = name
+		t.SuggestedCustomerCode = code
+		return
+	}
 }
 
 // WithPageSize sets the number of email threads per inbox page.
@@ -236,6 +284,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/email-accounts/{id}/discover-folders", h.discoverFoldersSSE)
 	r.Put("/api/email-folders/{folderID}/toggle", h.toggleFolderSSE)
 	r.Get("/sse/email-folders/{accountID}", h.folderListSSE)
+	r.Put("/api/email-threads/{threadID}/star", h.toggleStarSSE)
 }
 
 // emailPage renders the full inbox page.
@@ -325,6 +374,7 @@ func (h *Handlers) threadPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.enrichDetail(r.Context(), thread)
+	h.enrichSuggestion(r.Context(), thread)
 	// Mark as read on open.
 	_ = h.markReadCmd.Handle(r.Context(), emailcommands.MarkReadCommand{ThreadID: threadID})
 	if err := EmailThreadPage(*thread).Render(r.Context(), w); err != nil {
@@ -350,6 +400,7 @@ func (h *Handlers) threadSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.enrichDetail(r.Context(), current)
+	h.enrichSuggestion(r.Context(), current)
 	sse.PatchElementTempl(ThreadDetail(*current))
 
 	// Auto mark read on open.
@@ -367,6 +418,7 @@ func (h *Handlers) threadSSE(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			h.enrichDetail(r.Context(), next)
+			h.enrichSuggestion(r.Context(), next)
 			if !reflect.DeepEqual(current, next) {
 				sse.PatchElementTempl(ThreadDetail(*next))
 				current = next
@@ -397,9 +449,48 @@ func (h *Handlers) replySSE(w http.ResponseWriter, r *http.Request) {
 	thread, err := h.getThread.Handle(r.Context(), threadID)
 	if err == nil {
 		h.enrichDetail(r.Context(), thread)
+		h.enrichSuggestion(r.Context(), thread)
 		sse.PatchElementTempl(ThreadDetail(*thread))
 	}
 	sse.PatchSignals([]byte(`{"emailReplyBody":"","emailReplyError":""}`))
+}
+
+// toggleStarSSE toggles the "starred" system tag on a thread.
+func (h *Handlers) toggleStarSSE(w http.ResponseWriter, r *http.Request) {
+	threadID := chi.URLParam(r, "threadID")
+	sse := datastar.NewSSE(w, r)
+	if h.starToggle == nil {
+		sse.PatchSignals([]byte(`{"emailError":"star toggle not configured"}`))
+		return
+	}
+	if err := h.starToggle.Handle(r.Context(), threadID); err != nil {
+		slog.Error("email: toggleStarSSE", "err", err)
+		sse.PatchSignals([]byte(`{"emailError":"` + err.Error() + `"}`))
+		return
+	}
+	// Refresh the thread list so star state updates.
+	var signals struct {
+		AccountID    string `json:"emailAccountID"`
+		TagFilter    string `json:"emailTagFilter"`
+		Search       string `json:"emailSearch"`
+		FolderFilter string `json:"emailFolder"`
+		Page         int    `json:"emailPage"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("email: toggleStarSSE ReadSignals: %v", err)
+	}
+	result, err := h.listThreads.Handle(r.Context(), emailqueries.ListThreadsQuery{
+		AccountID:    signals.AccountID,
+		TagFilter:    signals.TagFilter,
+		Search:       signals.Search,
+		FolderFilter: signals.FolderFilter,
+		Page:         signals.Page,
+		PageSize:     h.pageSize,
+	})
+	if err == nil {
+		h.enrichThreadList(r.Context(), &result)
+		sse.PatchElementTempl(ThreadList(result))
+	}
 }
 
 // composeSSE sends a new email (compose) from form signals.

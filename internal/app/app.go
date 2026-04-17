@@ -443,6 +443,8 @@ func New(cfg Config) (*App, error) {
 		return listFoldersQuery.Handle(ctx, accountID)
 	}
 
+	toggleStarCmd := emailcommands.NewToggleStarHandler(emailTagRepo, publisher)
+
 	emailRoutes := emailhttp.NewHandlers(
 		configureAccountCmd, deleteAccountCmd, pauseAccountCmd, resumeAccountCmd,
 		applyTagCmd, removeTagCmd, markReadCmd, linkCustomerCmd, sendReplyCmd,
@@ -450,7 +452,12 @@ func New(cfg Config) (*App, error) {
 		listEmailAccountsQuery, listFoldersQuery, emailFolderRepo, discoverFn,
 		emailAttachmentRepo,
 		subscriber, publisher,
-	).WithPageSize(cfg.EmailPageSize).WithSearchAttachments(searchAttachmentsQuery).WithComposeCmd(composeEmailCmd)
+	).WithPageSize(cfg.EmailPageSize).
+		WithSearchAttachments(searchAttachmentsQuery).
+		WithComposeCmd(composeEmailCmd).
+		WithCustomerInfo(&emailCustomerInfoBridge{repo: customerRepo}).
+		WithContactEmailLookup(&emailContactLookupBridge{db: gdb}).
+		WithStarToggler(toggleStarCmd)
 	moduleRoutes = append(moduleRoutes, emailRoutes)
 	if customerRoutes != nil {
 		customerRoutes.WithEmailThreadsQuery(listEmailForCustomerQuery)
@@ -772,6 +779,52 @@ func (b *dealCustomerNameBridge) ResolveCustomerName(ctx context.Context, id str
 		return ""
 	}
 	return c.CompanyName
+}
+
+// emailCustomerInfoBridge adapts the customer repo to the email module's customerInfoResolver.
+type emailCustomerInfoBridge struct {
+	repo customerdomain.CustomerRepository
+}
+
+func (b *emailCustomerInfoBridge) ResolveCustomerName(ctx context.Context, id string) string {
+	c, err := b.repo.FindByID(ctx, id)
+	if err != nil {
+		return ""
+	}
+	return c.CompanyName
+}
+
+func (b *emailCustomerInfoBridge) ResolveCustomerCode(ctx context.Context, id string) string {
+	c, err := b.repo.FindByID(ctx, id)
+	if err != nil {
+		return ""
+	}
+	return c.Code.String()
+}
+
+// emailContactLookupBridge finds a customer ID from a contact email address.
+type emailContactLookupBridge struct {
+	db *gormsqlite.DB
+}
+
+func (b *emailContactLookupBridge) FindCustomerByContactEmail(ctx context.Context, email string) (customerID, customerName, customerCode string, err error) {
+	var row struct {
+		CustomerID  string
+		CompanyName string
+		Code        string
+	}
+	result := b.db.R.WithContext(ctx).Raw(
+		`SELECT c.id AS customer_id, c.company_name, c.code
+		 FROM contacts ct
+		 JOIN customers c ON c.id = ct.customer_id
+		 WHERE ct.email = ?
+		 LIMIT 1`,
+		email,
+	).Scan(&row)
+	if result.Error != nil {
+		return "", "", "", result.Error
+	}
+	return row.CustomerID, row.CompanyName, row.Code, nil
 }
 
 // provisionerDispatcher picks the right RouterProvisioner based on conn.RouterType.
