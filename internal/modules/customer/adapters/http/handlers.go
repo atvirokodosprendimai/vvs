@@ -27,6 +27,7 @@ import (
 	tickethttp "github.com/vvs/isp/internal/modules/ticket/adapters/http"
 	taskhttp "github.com/vvs/isp/internal/modules/task/adapters/http"
 	emailQueries "github.com/vvs/isp/internal/modules/email/app/queries"
+	emailhttp "github.com/vvs/isp/internal/modules/email/adapters/http"
 	"github.com/vvs/isp/internal/shared/events"
 )
 
@@ -244,7 +245,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Subscribe before initial render so no event is missed
-	ch, cancel := h.subscriber.ChanSubscription("isp.customer.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.CustomerAll.String())
 	defer cancel()
 
 	q := queries.ListCustomersQuery{
@@ -395,7 +396,7 @@ func (h *Handlers) arpSSE(w http.ResponseWriter, r *http.Request) {
 		Action     string `json:"action"`
 	}
 	data, _ := json.Marshal(arpRequestedPayload{CustomerID: id, Action: signals.Action})
-	h.publisher.Publish(r.Context(), "isp.network.arp_requested", events.DomainEvent{
+	h.publisher.Publish(r.Context(), events.NetworkARPRequested.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "network.arp_requested",
 		AggregateID: id,
@@ -433,7 +434,7 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 	sse := datastar.NewSSE(w, r)
 
 	// Broad wildcard — any ISP event triggers a diff-and-patch cycle.
-	ch, cancel := h.subscriber.ChanSubscription("isp.>")
+	ch, cancel := h.subscriber.ChanSubscription(events.Everything.String())
 	defer cancel()
 
 	type state struct {
@@ -442,6 +443,7 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 		deals    []dealQueries.DealReadModel
 		tickets  []ticketQueries.TicketReadModel
 		tasks    []taskQueries.TaskReadModel
+		emails   []emailQueries.ThreadReadModel
 	}
 
 	queryAll := func() state {
@@ -461,15 +463,24 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 		if h.listTasksQuery != nil {
 			s.tasks, _ = h.listTasksQuery.Handle(r.Context(), taskQueries.ListTasksForCustomerQuery{CustomerID: customerID})
 		}
+		if h.listEmailQuery != nil {
+			s.emails, _ = h.listEmailQuery.Handle(r.Context(), customerID)
+		}
 		return s
 	}
 
+	patchTabBar := func(s state) {
+		sse.PatchElementTempl(CRMTabBar(len(s.services), len(s.contacts), len(s.deals), len(s.tickets), len(s.tasks), len(s.emails)))
+	}
+
 	cur := queryAll()
+	patchTabBar(cur)
 	sse.PatchElementTempl(servicehttp.ServiceTable(customerID, cur.services))
 	sse.PatchElementTempl(contacthttp.ContactList(customerID, cur.contacts))
 	sse.PatchElementTempl(dealhttp.DealList(customerID, cur.deals))
 	sse.PatchElementTempl(tickethttp.TicketList(customerID, cur.tickets))
 	sse.PatchElementTempl(taskhttp.TaskList(customerID, cur.tasks))
+	sse.PatchElementTempl(emailhttp.EmailThreadsSection(customerID, cur.emails))
 
 	for {
 		select {
@@ -492,6 +503,13 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 			}
 			if !reflect.DeepEqual(cur.tasks, next.tasks) {
 				sse.PatchElementTempl(taskhttp.TaskList(customerID, next.tasks))
+			}
+			if !reflect.DeepEqual(cur.emails, next.emails) {
+				sse.PatchElementTempl(emailhttp.EmailThreadsSection(customerID, next.emails))
+			}
+			// Update tab bar counts if anything changed.
+			if !reflect.DeepEqual(cur, next) {
+				patchTabBar(next)
 			}
 			cur = next
 		case <-r.Context().Done():

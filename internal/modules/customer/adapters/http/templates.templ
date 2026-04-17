@@ -35,17 +35,17 @@ templ CustomerListPage() {
 					data-bind:search
 					data-on:input__debounce.500ms="($page = 1) && @get('/api/customers', {openWhenHidden: false})"
 					placeholder="Search customers..."
-					class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm w-72 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
+					class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-72 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
 				/>
 				<a
 					href="/customers/new"
-					class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
 				>
 					+ New Customer
 				</a>
 			</div>
 			<div id="customer-table">
-				<div class="text-slate-600 py-8 text-center text-sm">Loading...</div>
+				<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
 			</div>
 		</div>
 	}
@@ -56,19 +56,19 @@ templ CustomerTable(result queries.ListCustomersResult) {
 		if len(result.Customers) == 0 {
 			@templates.EmptyState("No customers found")
 		} else {
-			<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
 				<table class="w-full">
 					<thead>
-						<tr class="border-b border-slate-800">
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Code</th>
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Company</th>
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Contact</th>
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Email</th>
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Status</th>
-							<th class="text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Actions</th>
+						<tr class="border-b border-neutral-800">
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Code</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Company</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Contact</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Email</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Status</th>
+							<th class="text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Actions</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-slate-800">
+					<tbody class="divide-y divide-neutral-800">
 						for _, c := range result.Customers {
 							@CustomerRow(c)
 						}
@@ -83,13 +83,13 @@ templ CustomerTable(result queries.ListCustomersResult) {
 }
 
 templ CustomerRow(c *domain.Customer) {
-	<tr class="hover:bg-slate-800/40 transition-colors" id={ fmt.Sprintf("customer-%s", c.ID) }>
+	<tr class="hover:bg-neutral-800/40 transition-colors" id={ fmt.Sprintf("customer-%s", c.ID) }>
 		<td class="px-4 py-3">
-			<span class="text-cyan-400 font-mono text-sm">{ c.Code.String() }</span>
+			<a href={ templ.SafeURL(fmt.Sprintf("/customers/%s", c.ID)) } class="text-amber-400 hover:text-amber-300 font-mono text-sm transition-colors">{ c.Code.String() }</a>
 		</td>
-		<td class="px-4 py-3 font-medium text-slate-100">{ c.CompanyName }</td>
-		<td class="px-4 py-3 text-slate-400">{ c.ContactName }</td>
-		<td class="px-4 py-3 text-slate-400">{ c.Email }</td>
+		<td class="px-4 py-3 font-medium text-neutral-100">{ c.CompanyName }</td>
+		<td class="px-4 py-3 text-neutral-400">{ c.ContactName }</td>
+		<td class="px-4 py-3 text-neutral-400">{ c.Email }</td>
 		<td class="px-4 py-3">
 			@customerStatusBadge(c.Status)
 		</td>
@@ -97,13 +97,13 @@ templ CustomerRow(c *domain.Customer) {
 			<div class="flex items-center justify-end gap-3">
 				<a
 					href={ templ.SafeURL(fmt.Sprintf("/customers/%s", c.ID)) }
-					class="text-slate-500 hover:text-cyan-400 text-xs transition-colors"
+					class="text-neutral-500 hover:text-amber-400 text-xs transition-colors"
 				>
 					View
 				</a>
 				<a
 					href={ templ.SafeURL(fmt.Sprintf("/customers/%s/edit", c.ID)) }
-					class="text-slate-500 hover:text-cyan-400 text-xs transition-colors"
+					class="text-neutral-500 hover:text-amber-400 text-xs transition-colors"
 				>
 					Edit
 				</a>
@@ -152,26 +152,26 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 					</div>
 					@templates.DataInput("taxId", "Tax ID", "text", "VAT / Tax number", "taxId")
 					<div class="flex flex-col gap-1">
-						<label for="notes" class="text-xs font-medium text-slate-400 uppercase tracking-wider">Notes</label>
+						<label for="notes" class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Notes</label>
 						<textarea
 							id="notes"
 							data-bind:notes
 							rows="2"
 							placeholder="Optional notes..."
-							class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
+							class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
 						></textarea>
 					</div>
 					if len(routers) > 0 {
-						<div class="border-t border-slate-800 pt-3 mt-1">
-							<p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Network Provisioning</p>
+						<div class="border-t border-neutral-800 pt-3 mt-1">
+							<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Network Provisioning</p>
 							<div class="flex flex-col gap-3">
 								<div class="flex flex-col gap-1">
-									<label for="routerId" class="text-xs font-medium text-slate-400 uppercase tracking-wider">Router</label>
+									<label for="routerId" class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Router</label>
 									<select
 										id="routerId"
 										data-signals:router-id={ customerRouterID(customer) }
 										data-bind:router-id
-										class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+										class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
 									>
 										<option value="">— None —</option>
 										for _, rt := range routers {
@@ -181,12 +181,12 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 								</div>
 								if len(zones) > 0 {
 									<div class="flex flex-col gap-1">
-										<label for="networkZone" class="text-xs font-medium text-slate-400 uppercase tracking-wider">IP Zone</label>
+										<label for="networkZone" class="text-xs font-medium text-neutral-400 uppercase tracking-wider">IP Zone</label>
 										<select
 											id="networkZone"
 											data-signals:network-zone={ customerNetworkZone(customer) }
 											data-bind:network-zone
-											class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+											class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
 										>
 											<option value="">— Any zone —</option>
 											for _, z := range zones {
@@ -207,13 +207,13 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 						<button
 							type="button"
 							data-on:click={ formAction(customer) }
-							class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
+							class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
 						>
 							{ formButtonText(customer) }
 						</button>
 						<a
 							href="/customers"
-							class="bg-slate-800 hover:bg-slate-700 text-slate-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-slate-700"
+							class="bg-neutral-800 hover:bg-neutral-700 text-neutral-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-neutral-700"
 						>
 							Cancel
 						</a>
@@ -227,154 +227,227 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel, routerName string, notes []queries.NoteReadModel, contacts []contactQueries.ContactReadModel, deals []dealQueries.DealReadModel, tickets []ticketQueries.TicketReadModel, tasks []taskQueries.TaskReadModel, emailThreads []emailQueries.ThreadReadModel) {
 	@templates.Layout(c.CompanyName) {
 		@templates.PageHeader(c.CompanyName, fmt.Sprintf("Customer %s", c.Code.String()))
-		<div class="max-w-2xl">
-			<div class="flex items-center gap-2 mb-5" data-signals="{statusAction:''}">
-				@customerStatusBadge(c.Status)
-				<a
-					href={ templ.SafeURL(fmt.Sprintf("/customers/%s/edit", c.ID)) }
-					class="bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
-				>
-					Edit
-				</a>
-				if c.Status == domain.StatusLead {
-					<button
-						data-on:click={ fmt.Sprintf("($statusAction='qualify') && @post('/api/customers/%s/status')", c.ID) }
-						class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded text-xs font-medium transition-colors"
-					>Qualify</button>
-				}
-				if c.Status == domain.StatusProspect {
-					<button
-						data-on:click={ fmt.Sprintf("($statusAction='convert') && @post('/api/customers/%s/status')", c.ID) }
-						class="bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
-					>Convert to Active</button>
-				}
-				if c.Status == domain.StatusActive {
-					<button
-						data-on:click={ fmt.Sprintf("($statusAction='suspend') && @post('/api/customers/%s/status')", c.ID) }
-						class="bg-yellow-900/30 hover:bg-yellow-900/50 text-yellow-300 px-3 py-1.5 rounded text-xs font-medium transition-colors"
-					>Suspend</button>
-				}
-				if c.Status == domain.StatusSuspended {
-					<button
-						data-on:click={ fmt.Sprintf("($statusAction='activate') && @post('/api/customers/%s/status')", c.ID) }
-						class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded text-xs font-medium transition-colors"
-					>Reactivate</button>
-				}
-				if c.Status != domain.StatusChurned {
-					<button
-						data-on:click={ fmt.Sprintf("($statusAction='churn') && @post('/api/customers/%s/status')", c.ID) }
-						class="bg-red-900/30 hover:bg-red-900/50 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors"
-					>Churn</button>
-				}
+		<div class="flex items-center gap-2 mb-5" data-signals="{statusAction:''}">
+			@customerStatusBadge(c.Status)
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/customers/%s/edit", c.ID)) }
+				class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+			>
+				Edit
+			</a>
+			if c.Status == domain.StatusLead {
 				<button
-					data-on:click={ fmt.Sprintf("@delete('/api/customers/%s')", c.ID) }
-					class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
-				>
-					Delete
-				</button>
-				<div id="status-error"></div>
-			</div>
-			@templates.Card() {
-				<div class="grid grid-cols-2 gap-5">
-					@detailField("Company Name", c.CompanyName)
-					@detailField("Contact", c.ContactName)
-					@detailField("Email", c.Email)
-					@detailField("Phone", c.Phone)
-					@detailField("Street", c.Street)
-					@detailField("City", c.City)
-					@detailField("Postal Code", c.PostalCode)
-					@detailField("Country", c.Country)
-					@detailField("Tax ID", c.TaxID)
-				</div>
-				if c.Notes != "" {
-					<div class="mt-5 pt-5 border-t border-slate-800">
-						@detailField("Notes", c.Notes)
-					</div>
-				}
-				if c.HasNetworkProvisioning() {
-					<div class="mt-5 pt-5 border-t border-slate-800">
-						<p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Network Provisioning</p>
-						<div class="grid grid-cols-2 gap-5 mb-4">
-							@detailField("IP Address", c.IPAddress)
-							@detailField("MAC Address", c.MACAddress)
-							if routerName != "" {
-								@detailField("Router", routerName)
-							}
-							if c.NetworkZone != "" {
-								@detailField("IP Zone", c.NetworkZone)
-							}
-						</div>
-						<div
-							data-signals="{arpAction: 'enable'}"
-							class="flex items-center gap-2"
-						>
-							<button
-								data-on:click={ fmt.Sprintf("($arpAction='enable') && @post('/api/customers/%s/arp')", c.ID) }
-								class="bg-lime-500/10 hover:bg-lime-500/20 text-lime-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-lime-500/20"
-							>
-								Enable Access
-							</button>
-							<button
-								data-on:click={ fmt.Sprintf("($arpAction='disable') && @post('/api/customers/%s/arp')", c.ID) }
-								class="bg-slate-800 hover:bg-slate-700 text-slate-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-slate-700"
-							>
-								Disable Access
-							</button>
-							<div id="arp-error"></div>
-						</div>
-					</div>
-				}
+					data-on:click={ fmt.Sprintf("($statusAction='qualify') && @post('/api/customers/%s/status')", c.ID) }
+					class="bg-neutral-700 hover:bg-neutral-600 text-neutral-200 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+				>Qualify</button>
 			}
+			if c.Status == domain.StatusProspect {
+				<button
+					data-on:click={ fmt.Sprintf("($statusAction='convert') && @post('/api/customers/%s/status')", c.ID) }
+					class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+				>Convert to Active</button>
+			}
+			if c.Status == domain.StatusActive {
+				<button
+					data-on:click={ fmt.Sprintf("($statusAction='suspend') && @post('/api/customers/%s/status')", c.ID) }
+					class="bg-yellow-900/30 hover:bg-yellow-900/50 text-yellow-300 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+				>Suspend</button>
+			}
+			if c.Status == domain.StatusSuspended {
+				<button
+					data-on:click={ fmt.Sprintf("($statusAction='activate') && @post('/api/customers/%s/status')", c.ID) }
+					class="bg-neutral-700 hover:bg-neutral-600 text-neutral-200 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+				>Reactivate</button>
+			}
+			if c.Status != domain.StatusChurned {
+				<button
+					data-on:click={ fmt.Sprintf("($statusAction='churn') && @post('/api/customers/%s/status')", c.ID) }
+					class="bg-red-900/30 hover:bg-red-900/50 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+				>Churn</button>
+			}
+			<button
+				data-on:click={ fmt.Sprintf("@delete('/api/customers/%s')", c.ID) }
+				class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
+			>
+				Delete
+			</button>
+			<div id="status-error"></div>
 		</div>
-		<div class="max-w-4xl">
-			<div data-init={ fmt.Sprintf("@get('/sse/customers/%s/crm', {openWhenHidden: false})", c.ID) }></div>
-			@servicehttp.ServiceSection(c.ID, services)
-			@contacthttp.ContactSection(c.ID, contacts)
-			@dealhttp.DealSection(c.ID, deals)
-			@tickethttp.TicketSection(c.ID, tickets)
-			@taskhttp.TaskSection(c.ID, tasks)
-			@emailhttp.EmailThreadsSection(c.ID, emailThreads)
-		</div>
-		<!-- Notes timeline -->
-		<div class="max-w-2xl mt-4">
-			<div class="flex items-center justify-between mb-3">
-				<h3 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Notes</h3>
-			</div>
-			<div data-signals="{noteBody:''}" class="flex flex-col gap-3">
-				<div class="flex gap-2">
-					<textarea
-						data-bind:note-body
-						rows="2"
-						placeholder="Add a note..."
-						class="flex-1 bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600 resize-none"
-					></textarea>
-					<button
-						type="button"
-						data-on:click={ fmt.Sprintf("@post('/api/customers/%s/notes')", c.ID) }
-						class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors self-end"
-					>Add</button>
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+			<!-- Left column: info + notes -->
+			<div class="lg:col-span-1 flex flex-col gap-4">
+				@templates.Card() {
+					<div class="flex flex-col gap-4">
+						@detailField("Company Name", c.CompanyName)
+						@detailField("Contact", c.ContactName)
+						@detailField("Email", c.Email)
+						@detailField("Phone", c.Phone)
+						<div class="border-t border-neutral-700 pt-4">
+							@detailField("Street", c.Street)
+							<div class="grid grid-cols-2 gap-4 mt-4">
+								@detailField("City", c.City)
+								@detailField("Postal Code", c.PostalCode)
+							</div>
+							<div class="grid grid-cols-2 gap-4 mt-4">
+								@detailField("Country", c.Country)
+								@detailField("Tax ID", c.TaxID)
+							</div>
+						</div>
+						if c.Notes != "" {
+							<div class="border-t border-neutral-700 pt-4">
+								@detailField("Notes", c.Notes)
+							</div>
+						}
+						if c.HasNetworkProvisioning() {
+							<div class="border-t border-neutral-700 pt-4">
+								<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Network</p>
+								<div class="grid grid-cols-2 gap-4">
+									@detailField("IP Address", c.IPAddress)
+									@detailField("MAC Address", c.MACAddress)
+								</div>
+								if routerName != "" {
+									<div class="mt-4">
+										@detailField("Router", routerName)
+									</div>
+								}
+								if c.NetworkZone != "" {
+									<div class="mt-4">
+										@detailField("IP Zone", c.NetworkZone)
+									</div>
+								}
+								<div
+									data-signals="{arpAction: 'enable'}"
+									class="flex items-center gap-2 mt-3"
+								>
+									<button
+										data-on:click={ fmt.Sprintf("($arpAction='enable') && @post('/api/customers/%s/arp')", c.ID) }
+										class="bg-lime-500/10 hover:bg-lime-500/20 text-lime-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-lime-500/20"
+									>
+										Enable Access
+									</button>
+									<button
+										data-on:click={ fmt.Sprintf("($arpAction='disable') && @post('/api/customers/%s/arp')", c.ID) }
+										class="bg-neutral-800 hover:bg-neutral-700 text-neutral-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-neutral-700"
+									>
+										Disable Access
+									</button>
+									<div id="arp-error"></div>
+								</div>
+							</div>
+						}
+					</div>
+				}
+				<!-- Notes -->
+				<div>
+					<h3 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-3">Notes</h3>
+					<div data-signals="{noteBody:''}" class="flex flex-col gap-3">
+						<div class="flex gap-2">
+							<textarea
+								data-bind:note-body
+								rows="2"
+								placeholder="Add a note..."
+								class="flex-1 bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600 resize-none"
+							></textarea>
+							<button
+								type="button"
+								data-on:click={ fmt.Sprintf("@post('/api/customers/%s/notes')", c.ID) }
+								class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors self-end"
+							>Add</button>
+						</div>
+						<div id="note-error"></div>
+						<div
+							id="customer-notes"
+							data-init={ fmt.Sprintf("@get('/sse/customers/%s/notes', {openWhenHidden: false})", c.ID) }
+						>
+							@CustomerNotesFeed(notes)
+						</div>
+					</div>
 				</div>
-				<div id="note-error"></div>
-				<div
-					id="customer-notes"
-					data-init={ fmt.Sprintf("@get('/sse/customers/%s/notes', {openWhenHidden: false})", c.ID) }
-				>
-					@CustomerNotesFeed(notes)
+			</div>
+			<!-- Right column: Tabbed CRM -->
+			<div class="lg:col-span-2" data-signals="{_crmTab: 'tickets'}">
+				@CRMTabBar(len(services), len(contacts), len(deals), len(tickets), len(tasks), len(emailThreads))
+				<div data-init={ fmt.Sprintf("@get('/sse/customers/%s/crm', {openWhenHidden: false})", c.ID) }></div>
+				<div data-show="$_crmTab === 'services'" style="display:none">
+					@servicehttp.ServiceSection(c.ID, services)
+				</div>
+				<div data-show="$_crmTab === 'contacts'" style="display:none">
+					@contacthttp.ContactSection(c.ID, contacts)
+				</div>
+				<div data-show="$_crmTab === 'deals'" style="display:none">
+					@dealhttp.DealSection(c.ID, deals)
+				</div>
+				<div data-show="$_crmTab === 'tickets'" style="display:none">
+					@tickethttp.TicketSection(c.ID, tickets)
+				</div>
+				<div data-show="$_crmTab === 'tasks'" style="display:none">
+					@taskhttp.TaskSection(c.ID, tasks)
+				</div>
+				<div data-show="$_crmTab === 'emails'" style="display:none">
+					@emailhttp.EmailThreadsSection(c.ID, emailThreads)
 				</div>
 			</div>
 		</div>
 	}
 }
 
+// crmTabClasses returns a Datastar data-class object expression for tab button styling.
+func crmTabClasses(key string) string {
+	return fmt.Sprintf(
+		"{'bg-amber-600/20 text-amber-400 border-amber-600/30': $_crmTab === '%s', 'bg-neutral-800/50 text-neutral-500 border-neutral-800 hover:text-neutral-300 hover:border-neutral-700': $_crmTab !== '%s'}",
+		key, key,
+	)
+}
+
+// crmTabBadgeClasses returns a Datastar data-class object expression for tab badge styling.
+func crmTabBadgeClasses(key string) string {
+	return fmt.Sprintf(
+		"{'bg-amber-600/30 text-amber-300': $_crmTab === '%s', 'bg-neutral-700 text-neutral-400': $_crmTab !== '%s'}",
+		key, key,
+	)
+}
+
+// CRMTabBar renders the tab navigation for the customer CRM panel.
+// Patchable via SSE to update counts live.
+templ CRMTabBar(serviceCount, contactCount, dealCount, ticketCount, taskCount, emailCount int) {
+	<div id="crm-tab-bar" class="flex flex-wrap items-center gap-1.5 mb-1">
+		@crmTab("services", "Services", serviceCount)
+		@crmTab("contacts", "Contacts", contactCount)
+		@crmTab("deals", "Deals", dealCount)
+		@crmTab("tickets", "Tickets", ticketCount)
+		@crmTab("tasks", "Tasks", taskCount)
+		@crmTab("emails", "Emails", emailCount)
+	</div>
+}
+
+templ crmTab(key, label string, count int) {
+	<button
+		type="button"
+		data-on:click={ fmt.Sprintf("$_crmTab = '%s'", key) }
+		data-class={ crmTabClasses(key) }
+		class="px-3 py-1.5 text-xs font-medium rounded-md border transition-colors flex items-center gap-1.5"
+	>
+		{ label }
+		if count > 0 {
+			<span
+				data-class={ crmTabBadgeClasses(key) }
+				class="text-[10px] px-1.5 py-0.5 rounded-full min-w-[18px] text-center leading-tight"
+			>
+				{ fmt.Sprintf("%d", count) }
+			</span>
+		}
+	</button>
+}
+
 templ CustomerNotesFeed(notes []queries.NoteReadModel) {
 	<div id="customer-notes" class="flex flex-col gap-2">
 		if len(notes) == 0 {
-			<p class="text-xs text-slate-600 py-2">No notes yet.</p>
+			<p class="text-xs text-neutral-600 py-2">No notes yet.</p>
 		}
 		for _, n := range notes {
-			<div class="bg-slate-800/50 border border-slate-800 rounded p-3">
-				<p class="text-sm text-slate-200 whitespace-pre-wrap">{ n.Body }</p>
-				<p class="text-xs text-slate-600 mt-1">{ n.CreatedAt.Format("Jan 02, 2006 15:04") }</p>
+			<div class="bg-neutral-800/50 border border-neutral-800 rounded p-3">
+				<p class="text-sm text-neutral-200 whitespace-pre-wrap">{ n.Body }</p>
+				<p class="text-xs text-neutral-600 mt-1">{ n.CreatedAt.Format("Jan 02, 2006 15:04") }</p>
 			</div>
 		}
 	</div>
@@ -382,11 +455,11 @@ templ CustomerNotesFeed(notes []queries.NoteReadModel) {
 
 templ detailField(label string, value string) {
 	<div>
-		<p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">{ label }</p>
+		<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1">{ label }</p>
 		if value != "" {
-			<p class="text-slate-200 text-sm">{ value }</p>
+			<p class="text-neutral-200 text-sm">{ value }</p>
 		} else {
-			<p class="text-slate-700 text-sm">—</p>
+			<p class="text-neutral-700 text-sm">—</p>
 		}
 	</div>
 }
