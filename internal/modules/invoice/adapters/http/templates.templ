@@ -472,7 +472,7 @@ templ CreateInvoicePage(defaultVATRate int) {
 			</div>
 
 			<div
-				data-signals={ fmt.Sprintf("{customerID: '', customerName: '', customerCode: '', customerSearch: '', issueDate: '%s', dueDate: '%s', notes: '', lineProduct1: '', lineDescription1: '', lineQty1: '1', linePrice1: '', lineVATRate1: '%d'}", time.Now().Format("2006-01-02"), time.Now().AddDate(0, 0, 30).Format("2006-01-02"), defaultVATRate) }
+				data-signals={ fmt.Sprintf("{customerID: '', customerName: '', customerCode: '', customerSearch: '', _showCustomerResults: false, issueDate: '%s', dueDate: '%s', notes: '', lineProduct1: '', lineDescription1: '', lineQty1: '1', linePrice1: '', lineVATRate1: '%d'}", time.Now().Format("2006-01-02"), time.Now().AddDate(0, 0, 30).Format("2006-01-02"), defaultVATRate) }
 			>
 				<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6 flex flex-col gap-5">
 					<!-- Customer search -->
@@ -481,8 +481,8 @@ templ CreateInvoicePage(defaultVATRate int) {
 						<input
 							type="text"
 							data-bind:customer-search
-							data-on:input__debounce.300ms="$customerSearch.length >= 2 && @get('/sse/invoices/customers/search')"
-							data-on:focus="$customerSearch.length >= 2 && @get('/sse/invoices/customers/search')"
+							data-on:input__debounce.300ms="$customerSearch.length >= 2 && ($_showCustomerResults = true, @get('/sse/invoices/customers/search'))"
+							data-on:focus="$customerSearch.length >= 2 && ($_showCustomerResults = true, @get('/sse/invoices/customers/search'))"
 							placeholder="Search by name or code..."
 							class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
 						/>
@@ -492,11 +492,11 @@ templ CreateInvoicePage(defaultVATRate int) {
 							<span class="text-xs text-neutral-200" data-text="$customerName"></span>
 							<button
 								type="button"
-								data-on:click="$customerID = ''; $customerName = ''; $customerCode = ''; $customerSearch = ''"
+								data-on:click="$customerID = ''; $customerName = ''; $customerCode = ''; $customerSearch = ''; $_showCustomerResults = false"
 								class="text-xs text-red-400 hover:text-red-300 ml-1"
 							>clear</button>
 						</div>
-						<div id="customer-search-results"></div>
+						<div id="customer-search-results" data-show="$_showCustomerResults" style="display:none"></div>
 					</div>
 
 					<!-- Dates -->
@@ -585,7 +585,7 @@ templ customerSearchResults(results []CustomerSearchResult) {
 				for _, c := range results {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$customerID = '%s'; $customerName = '%s'; $customerCode = '%s'; $customerSearch = '%s'", c.ID, escapeJS(c.CompanyName), escapeJS(c.Code), escapeJS(c.CompanyName)) }
+						data-on:click={ fmt.Sprintf("$customerID = '%s'; $customerName = '%s'; $customerCode = '%s'; $customerSearch = '%s'; $_showCustomerResults = false", c.ID, escapeJS(c.CompanyName), escapeJS(c.Code), escapeJS(c.CompanyName)) }
 						class="w-full text-left px-3 py-2 hover:bg-neutral-700 transition-colors flex items-center gap-2 text-sm"
 					>
 						<span class="text-amber-400 font-mono text-xs">{ c.Code }</span>
