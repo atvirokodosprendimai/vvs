@@ -1,0 +1,7 @@
+.git
+.github
+bin
+data
+memory
+cover.out
+*.db

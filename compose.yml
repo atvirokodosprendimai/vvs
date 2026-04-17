@@ -1,0 +1,14 @@
+services:
+  vvs:
+    image: ghcr.io/atvirokodosprendimai/vvs:latest
+    container_name: vvs
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      VVS_DB_PATH: /app/data/vvs.db
+      VVS_ADDR: :8080
+      VVS_ADMIN_USER: admin
+      VVS_ADMIN_PASSWORD: changeme
+    volumes:
+      - ./data:/app/data
