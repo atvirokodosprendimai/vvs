@@ -1,6 +1,6 @@
 ---
 tldr: Clicking deal/ticket/task title in global index opens customer detail at the matching CRM tab
-status: active
+status: completed
 ---
 
 # Plan: Deal/Ticket/Task Rows Link to Customer Tab
@@ -13,19 +13,19 @@ status: active
 
 ## Phases
 
-### Phase 1 — Update row links — status: active
+### Phase 1 — Update row links — status: completed
 
-1. [ ] Fix `dealPageRow` in `internal/modules/deal/adapters/http/templates.templ`
-   - Deal title `<a>`: `/customers/{id}` → `/customers/{id}?tab=deals`
-   - Customer name link stays as `/customers/{id}` (no tab — keeps it as a general link)
+1. [x] Fix `dealPageRow` in `internal/modules/deal/adapters/http/templates.templ`
+   - => deal title: `/customers/{id}` → `/customers/{id}?tab=deals`
+   - => customer name column stays `/customers/{id}` (general link)
 
-2. [ ] Fix `AllTicketList` in `internal/modules/ticket/adapters/http/templates.templ`
-   - Subject `<a>`: currently `/tickets/{id}` → `/customers/{id}?tab=tickets` when `tk.CustomerID != ""`
-   - Keep `/tickets/{id}` fallback when no customer
+2. [x] Fix `AllTicketList` in `internal/modules/ticket/adapters/http/templates.templ`
+   - => subject: `/tickets/{id}` → `/customers/{id}?tab=tickets` when `CustomerID != ""`
+   - => fallback to `/tickets/{id}` when no customer
 
-3. [ ] Fix `globalTaskRow` in `internal/modules/task/adapters/http/templates.templ`
-   - Title `<td>`: currently plain text → add `<a>` to `/customers/{id}?tab=tasks` when `t.CustomerID != ""`
-   - Customer column link: `/customers/{id}` → `/customers/{id}?tab=tasks`
+3. [x] Fix `globalTaskRow` in `internal/modules/task/adapters/http/templates.templ`
+   - => title: plain text → `<a>` to `/customers/{id}?tab=tasks` when `CustomerID != ""`
+   - => customer column: `/customers/{id}` → `/customers/{id}?tab=tasks`
 
 ## Verification
 
@@ -36,4 +36,4 @@ status: active
 
 ## Progress Log
 
-<!-- Updated after every action -->
+- **2604180106** — All 3 rows updated. Pure template change, no backend needed.

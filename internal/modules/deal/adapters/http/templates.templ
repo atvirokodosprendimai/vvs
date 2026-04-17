@@ -378,7 +378,7 @@ templ dealFilterTab(stage, label string) {
 templ dealPageRow(d DealPageItem) {
 	<tr class="hover:bg-neutral-800/40 transition-colors">
 		<td class="px-4 py-3">
-			<a href={ templ.SafeURL(fmt.Sprintf("/customers/%s", d.CustomerID)) } class="text-sm font-medium text-neutral-100 hover:text-amber-400 transition-colors">
+			<a href={ templ.SafeURL(fmt.Sprintf("/customers/%s?tab=deals", d.CustomerID)) } class="text-sm font-medium text-neutral-100 hover:text-amber-400 transition-colors">
 				{ d.Title }
 			</a>
 			if d.Notes != "" {

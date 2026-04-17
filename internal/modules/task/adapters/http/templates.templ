@@ -366,10 +366,16 @@ templ TasksTable(tasks []queries.TaskReadModel) {
 
 templ globalTaskRow(t queries.TaskReadModel) {
 	<tr class="hover:bg-neutral-800/40 transition-colors" id={ fmt.Sprintf("task-%s", t.ID) }>
-		<td class="px-4 py-3 font-medium text-neutral-100 text-sm">{ t.Title }</td>
+		<td class="px-4 py-3 font-medium text-neutral-100 text-sm">
+		if t.CustomerID != "" {
+			<a href={ templ.SafeURL(fmt.Sprintf("/customers/%s?tab=tasks", t.CustomerID)) } class="hover:text-amber-400 transition-colors">{ t.Title }</a>
+		} else {
+			{ t.Title }
+		}
+	</td>
 		<td class="px-4 py-3 text-neutral-400 text-sm font-mono">
 			if t.CustomerID != "" {
-				<a href={ templ.SafeURL(fmt.Sprintf("/customers/%s", t.CustomerID)) } class="text-amber-400 hover:underline">{ t.CustomerID[:8] }…</a>
+				<a href={ templ.SafeURL(fmt.Sprintf("/customers/%s?tab=tasks", t.CustomerID)) } class="text-amber-400 hover:underline">{ t.CustomerID[:8] }…</a>
 			} else {
 				<span class="text-neutral-600">—</span>
 			}
