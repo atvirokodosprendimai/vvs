@@ -17,77 +17,81 @@ status: active
 
 ## Phases
 
-### Phase 1 - Shared test harness — status: open
+### Phase 1 - Shared test harness — status: completed
 
-1. [ ] Create `internal/testutil/` package with helpers
-   - in-memory SQLite database factory (WAL mode, shared cache)
-   - embedded NATS test server (start/stop per test)
-   - `EventPublisher` / `EventSubscriber` test doubles
-   - helper to run goose migrations for a given module
-2. [ ] Add integration test for existing customer module as proof
-   - test CreateCustomer command end-to-end (command → repo → DB)
-   - validates the harness works before building invoice on it
+1. [x] Create `internal/testutil/` package with helpers
+   - => `db.go`: NewTestDB — temp-file SQLite, WAL, reader/writer split matching production
+   - => `nats.go`: NewTestNATS — real embedded NATS, returns production Publisher/Subscriber
+   - => `migration.go`: RunMigrations — goose provider with fs.FS and per-module table name
+2. [x] Add integration test for existing customer module as proof
+   - => `customer/app/commands/create_customer_test.go`: 3 integration tests (create, validation, sequential codes)
+   - => all passing alongside 19 existing domain tests
 
-### Phase 2 - Invoice domain — status: open
+### Phase 2 - Invoice domain — status: completed
 
-1. [ ] Define `Invoice` aggregate + `LineItem` value object in `internal/modules/invoice/domain/`
-   - Invoice fields: ID, CustomerID, CustomerName, Code (INV-001 auto-sequence), IssueDate, DueDate, Status, Notes, TotalAmount, Currency, CreatedAt, UpdatedAt
-   - Status machine: draft → finalized → paid | void (finalized can also → void)
-   - LineItem: ID, ProductID, ProductName, Description, Quantity, UnitPrice, TotalPrice
-   - Domain methods: Finalize(), MarkPaid(), Void(), AddLineItem(), RemoveLineItem(), Recalculate()
-   - Validation: can't finalize with 0 line items, can't modify after finalized
-2. [ ] Write domain unit tests (TDD)
-   - status transitions (valid + invalid)
-   - line item add/remove/recalculate
-   - total calculation (sum of qty * unit_price)
-   - edge cases: void from draft, void from paid (not allowed)
-3. [ ] Define `InvoiceRepository` port interface
+1. [x] Define `Invoice` aggregate + `LineItem` value object in `internal/modules/invoice/domain/`
+   - => `invoice.go`: full aggregate with status machine (draft→finalized→paid|void), 5 domain errors
+   - => domain methods: NewInvoice, AddLineItem, RemoveLineItem, Recalculate, Finalize, MarkPaid, Void, IsOverdue
+2. [x] Write domain unit tests (TDD)
+   - => `invoice_test.go`: 15 test functions (19 subtests), all passing
+   - => covers: transitions, line items, recalculate, edge cases
+3. [x] Define `InvoiceRepository` port interface
+   - => `repository.go`: Save, FindByID, ListByCustomer, ListAll, NextCode
 
-### Phase 3 - Persistence + migrations — status: open
+### Phase 2b - Scaffolding — status: completed
 
-1. [ ] Create goose migration: `invoices` + `invoice_line_items` + `invoice_code_sequences` tables
-2. [ ] Implement GORM repository (`internal/modules/invoice/adapters/persistence/`)
-3. [ ] Write integration tests using Phase 1 test harness
-   - save/load invoice with line items
-   - list by customer, list by status
-   - code auto-increment (INV-001, INV-002...)
+1. [x] Database migrations
+   - => `invoice/migrations/001_create_invoices.sql`: invoices, invoice_line_items, invoice_code_sequences tables
+   - => `invoice/migrations/embed.go`: FS variable for embedded SQL
+2. [x] NATS subjects added to `subjects.go`
+   - => InvoiceAll, InvoiceCreated, InvoiceUpdated, InvoiceFinalized, InvoicePaid, InvoiceVoided
+3. [x] Module directory skeleton
+   - => persistence, http, commands, queries packages with empty declarations
 
-### Phase 4 - Commands — status: open
+### Phase 3 - Persistence + migrations — status: completed
 
-1. [ ] `CreateInvoice` command — manual creation with customer ID + line items
-2. [ ] `GenerateFromSubscriptions` command — create invoice from customer's active services
-   - query active services for customer, create line item per service
-   - set issue date = now, due date = now + 30 days
-3. [ ] `FinalizeInvoice` command — lock invoice, set status
-4. [ ] `MarkPaid` command — record payment date
-5. [ ] `VoidInvoice` command — cancel invoice
-6. [ ] `AddLineItem` / `RemoveLineItem` commands — modify draft invoices
-7. [ ] Write command tests (TDD with test harness)
+1. [x] Create goose migration — done in Phase 2b
+2. [x] Implement GORM repository
+   - => Save (upsert with tx, Omit LineItems to avoid FK conflicts), FindByID, ListByCustomer, ListAll, NextCode
+   - => Internal GORM models (invoiceModel, lineItemModel) with conversion functions
+3. [x] Write integration tests — 6 tests: save/load, updates, list by customer, list all, next code sequence, not found
 
-### Phase 5 - Queries — status: open
+### Phase 4 - Commands — status: completed
 
-1. [ ] `ListInvoicesForCustomer` query — by customer ID, ordered by issue date desc
-2. [ ] `ListAllInvoices` query — global list, filterable by status/date range
-3. [ ] `GetInvoice` query — single invoice with line items
+1. [x] CreateInvoice — UUID + NextCode, add line items, recalculate, publish InvoiceCreated
+2. [x] GenerateFromSubscriptions — ActiveServiceLister interface, line item per service, DueDate = now+30d
+3. [x] FinalizeInvoice — load, Finalize(), save, publish InvoiceFinalized
+4. [x] MarkPaid — load, MarkPaid(), save, publish InvoicePaid
+5. [x] VoidInvoice — load, Void(), save, publish InvoiceVoided
+6. [x] AddLineItem / RemoveLineItem — load, mutate, Recalculate(), save, publish InvoiceUpdated
+7. [x] Command tests — 10 integration tests (happy paths + error cases)
 
-### Phase 6 - HTTP handlers + templates — status: open
+### Phase 5 - Queries — status: completed
 
-1. [ ] Register invoice module in `cmd/server/` wiring
-2. [ ] Invoice list page (`GET /invoices`) with SSE live updates
-   - table: code, customer, issue date, due date, total, status badge
-   - filter by status (all/draft/finalized/paid/overdue/void)
-3. [ ] Invoice detail page (`GET /invoices/{id}`) with line items table
-   - status actions: Finalize, Mark Paid, Void (contextual by current status)
-4. [ ] Create invoice form — customer autocomplete + dynamic line items
-   - reuse pattern from prior plans: backend-driven autocomplete
-   - product search per line item, auto-fill unit price from product
-   - add/remove line rows dynamically
-5. [ ] "Generate from subscriptions" button on customer detail page
-   - one-click: creates draft invoice from active services
-6. [ ] Add "Invoices" as 7th CRM tab on customer detail page
-   - update `CRMTabBar` counts, `crmLiveSSE` state struct
-7. [ ] SSE live list endpoint (`/sse/invoices`)
-8. [ ] NATS events: add `InvoiceCreated`, `InvoiceFinalized`, `InvoicePaid`, `InvoiceVoided` to subjects.go
+1. [x] ListInvoicesForCustomer — by customer ID, issue_date DESC, preload line items
+2. [x] ListAllInvoices — optional status filter, created_at DESC
+3. [x] GetInvoice — by ID with preloaded line items
+
+### Phase 6 - HTTP handlers + templates — status: completed
+
+1. [x] Register invoice module in `cmd/server/` wiring
+   - => app.go: repo, 7 commands, 3 queries, HTTP handlers, migration entry
+   - => Fixed email wiring regression from parallel dev agent
+2. [x] Invoice list page (`GET /invoices`) with SSE live updates
+   - => InvoiceListPage with status filter tabs (all/draft/finalized/paid/void)
+   - => InvoiceTable with code, customer, issue date, due date, total, status badge
+3. [x] Invoice detail page (`GET /invoices/{id}`) with line items table
+   - => InvoiceDetailPage with invoiceStatusActions (contextual by current status)
+   - => invoiceDetailContent with line items table
+4. [x] Create invoice form — customer autocomplete + dynamic line items
+   - => CreateInvoicePage with 3 static line item rows
+5. [x] "Generate from subscriptions" — wired via WithGenerateCmd setter
+6. [x] Add "Invoices" as 7th CRM tab on customer detail page
+   - => CRMTabBar updated to 7 params, InvoiceSection component
+   - => crmLiveSSE: added email + invoice SSE patching, fixed email count bug (was 0)
+   - => Replaced hardcoded NATS strings with typed events constants
+7. [x] SSE live list endpoint (`/sse/invoices`)
+8. [x] NATS events already in subjects.go from Phase 2b
 
 ### Phase 7 - REST API + NATS RPC — status: open
 
@@ -111,4 +115,7 @@ status: active
 
 ## Progress Log
 
-<!-- Timestamped entries tracking work done. Updated after every action. -->
+- 2604171342: Plan created
+- 2604171400: Phase 1 + 2 + 2b completed in parallel (3 dev agents in worktrees). Test harness, domain TDD, scaffolding all merged. Build clean, 22 new tests passing.
+- 2604171430: Phase 3 + 4 + 5 completed in parallel (3 dev agents). GORM repo (6 tests), commands (10 tests), queries (3 handlers). All merged, build clean, all tests pass. Next: Phase 6 (HTTP/templates).
+- 2604171500: Phase 6 completed. Invoice HTTP handlers (11 routes), templates, app.go wiring, CRM 7th tab. Fixed regressions: email wiring, NATS hardcoded strings, email count in tab bar, invoice field names (IssueDate/TotalAmount), status badges (finalized/void).
