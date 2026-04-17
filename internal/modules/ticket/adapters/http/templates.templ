@@ -12,26 +12,26 @@ import (
 // TicketsPage is the standalone tickets list page at /tickets.
 templ TicketsPage() {
 	@templates.Layout("Tickets") {
-		@templates.PageHeader("Tickets", "All tickets across customers")
+		@templates.PageHeaderRow("Tickets", "All tickets across customers") {
+			<input
+				type="text"
+				data-bind:ticket-search
+				data-on:input__debounce.300ms="@get('/sse/tickets')"
+				placeholder="Search tickets..."
+				class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-64 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+			/>
+			<button
+				type="button"
+				data-on:click="$_newTicketOpen = true"
+				class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+			>+ New Ticket</button>
+		}
 		<div
 			id="tickets-page"
 			data-signals="{ticketSearch: '', commentBody: '', ticketAction: '', _newTicketOpen: false, newTicketCustomerID: '', newTicketCustomerName: '', newTicketCustomerSearch: '', _showTicketCustResults: false, newTicketSubject: '', newTicketBody: '', newTicketPriority: 'normal'}"
 			data-init="@get('/sse/tickets')"
 		>
-			<div class="mb-4 flex items-center gap-3">
-				<input
-					type="text"
-					data-bind:ticket-search
-					data-on:input__debounce.300ms="@get('/sse/tickets')"
-					placeholder="Search tickets..."
-					class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm flex-1 max-w-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
-				/>
-				<button
-					type="button"
-					data-on:click="$_newTicketOpen = true"
-					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-				>+ New Ticket</button>
-			</div>
+
 
 			<!-- New ticket modal -->
 			<div

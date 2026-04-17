@@ -293,19 +293,35 @@ type DealPageItem struct {
 
 templ DealsPage() {
 	@templates.Layout("Deals") {
-		@templates.PageHeader("Deals", "All sales opportunities")
-		<div
-			id="deals-page-content"
-			data-signals="{dealSearch: '', dealStageFilter: 'all'}"
-			data-init="@get('/sse/deals', {openWhenHidden: false})"
-		>
-			<!-- Skeleton -->
-			<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5 animate-pulse">
-				<div class="h-6 w-48 bg-neutral-800 rounded mb-4"></div>
-				<div class="flex flex-col gap-3">
-					for i := 0; i < 5; i++ {
-						<div class="h-10 w-full bg-neutral-800/50 rounded"></div>
-					}
+		<div data-signals="{dealSearch: '', dealStageFilter: 'all'}">
+			@templates.PageHeaderRow("Deals", "All sales opportunities") {
+				<!-- Stage filter tabs -->
+				@dealFilterTab("all", "All")
+				@dealFilterTab("new", "New")
+				@dealFilterTab("qualified", "Qualified")
+				@dealFilterTab("proposal", "Proposal")
+				@dealFilterTab("negotiation", "Negotiation")
+				@dealFilterTab("won", "Won")
+				@dealFilterTab("lost", "Lost")
+				<input
+					type="text"
+					data-bind:deal-search
+					data-on:input__debounce.300ms="@get('/sse/deals', {openWhenHidden: false})"
+					placeholder="Search deals..."
+					class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600 w-40"
+				/>
+			}
+			<div
+				id="deals-page-content"
+				data-init="@get('/sse/deals', {openWhenHidden: false})"
+			>
+				<!-- Skeleton -->
+				<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5 animate-pulse">
+					<div class="flex flex-col gap-3">
+						for i := 0; i < 5; i++ {
+							<div class="h-10 w-full bg-neutral-800/50 rounded"></div>
+						}
+					</div>
 				</div>
 			</div>
 		</div>
@@ -313,38 +329,7 @@ templ DealsPage() {
 }
 
 templ DealsPageContent(deals []DealPageItem, stageFilter string) {
-	<div id="deals-page-content" data-signals={ fmt.Sprintf("{dealSearch: '', dealStageFilter: '%s'}", stageFilter) }>
-		<!-- Filters row -->
-		<div class="flex items-center justify-between mb-4">
-			<div class="flex items-center gap-2">
-				<!-- Stage filter tabs -->
-				<button
-					data-on:click="$dealStageFilter = 'all'; @get('/sse/deals', {openWhenHidden: false})"
-					class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
-					data-class:bg-amber-600="$dealStageFilter == 'all'"
-					data-class:text-white="$dealStageFilter == 'all'"
-					data-class:border-amber-600="$dealStageFilter == 'all'"
-					data-class:bg-neutral-800="$dealStageFilter != 'all'"
-					data-class:text-neutral-400="$dealStageFilter != 'all'"
-					data-class:border-neutral-700="$dealStageFilter != 'all'"
-				>All</button>
-				@dealFilterTab("new", "New")
-				@dealFilterTab("qualified", "Qualified")
-				@dealFilterTab("proposal", "Proposal")
-				@dealFilterTab("negotiation", "Negotiation")
-				@dealFilterTab("won", "Won")
-				@dealFilterTab("lost", "Lost")
-			</div>
-			<div class="flex items-center gap-2">
-				<input
-					type="text"
-					data-bind:deal-search
-					data-on:input__debounce.300ms="@get('/sse/deals', {openWhenHidden: false})"
-					placeholder="Search deals..."
-					class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600 w-48"
-				/>
-			</div>
-		</div>
+	<div id="deals-page-content">
 
 		<!-- Deals table -->
 		<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">

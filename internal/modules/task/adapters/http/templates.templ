@@ -229,22 +229,20 @@ templ taskRow(t queries.TaskReadModel) {
 // TasksPage is the standalone global tasks page at /tasks.
 templ TasksPage(tasks []queries.TaskReadModel) {
 	@templates.Layout("Tasks") {
-		@templates.PageHeader("Tasks", "All tasks across the system")
+		@templates.PageHeaderRow("Tasks", "All tasks across the system") {
+			<button
+				type="button"
+				data-on:click="$_taskModalOpen = true; $taskTitle = ''; $taskDescription = ''; $taskPriority = 'normal'; $taskDueDate = ''"
+				class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+			>
+				+ New Task
+			</button>
+		}
 		<div
 			id="tasks-content"
 			data-signals="{_taskModalOpen: false, taskTitle: '', taskDescription: '', taskPriority: 'normal', taskDueDate: ''}"
 			data-init="@get('/api/tasks', {openWhenHidden: false})"
 		>
-			<div class="flex items-center justify-between mb-4">
-				<div></div>
-				<button
-					type="button"
-					data-on:click="$_taskModalOpen = true; $taskTitle = ''; $taskDescription = ''; $taskPriority = 'normal'; $taskDueDate = ''"
-					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-				>
-					+ New Task
-				</button>
-			</div>
 
 			<div id="tasks-table">
 				<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>

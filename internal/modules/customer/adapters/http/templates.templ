@@ -24,27 +24,26 @@ import (
 
 templ CustomerListPage() {
 	@templates.Layout("Customers") {
-		@templates.PageHeader("Customers", "Manage your customer base")
+		@templates.PageHeaderRow("Customers", "Manage your customer base") {
+			<input
+				type="text"
+				data-bind:search
+				data-on:input__debounce.500ms="($page = 1) && @get('/api/customers')"
+				placeholder="Search customers..."
+				class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-72 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+			/>
+			<a
+				href="/customers/new"
+				class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+			>
+				+ New Customer
+			</a>
+		}
 		<div
 			id="customer-content"
 			data-signals="{search: '', page: 1, pageSize: 25}"
 			data-init="@get('/api/customers')"
 		>
-			<div class="flex items-center justify-between mb-4">
-				<input
-					type="text"
-					data-bind:search
-					data-on:input__debounce.500ms="($page = 1) && @get('/api/customers')"
-					placeholder="Search customers..."
-					class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-72 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
-				/>
-				<a
-					href="/customers/new"
-					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-				>
-					+ New Customer
-				</a>
-			</div>
 			<div id="customer-table">
 				<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
 			</div>
