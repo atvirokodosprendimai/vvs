@@ -11,6 +11,22 @@ templ PageHeader(title string, subtitle string) {
 	</div>
 }
 
+// PageHeaderRow renders title+subtitle on the left and accepts filters/buttons as children on the right.
+// Use this on list pages instead of PageHeader + a separate action row.
+templ PageHeaderRow(title string, subtitle string) {
+	<div class="flex items-center justify-between mb-6">
+		<div>
+			<h1 class="text-xl font-semibold text-neutral-100 tracking-tight">{ title }</h1>
+			if subtitle != "" {
+				<p class="text-neutral-500 text-sm mt-0.5">{ subtitle }</p>
+			}
+		</div>
+		<div class="flex items-center gap-3">
+			{ children... }
+		</div>
+	</div>
+}
+
 templ Card() {
 	<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5">
 		{ children... }
