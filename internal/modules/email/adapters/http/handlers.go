@@ -458,6 +458,17 @@ func (h *Handlers) replySSE(w http.ResponseWriter, r *http.Request) {
 // toggleStarSSE toggles the "starred" system tag on a thread.
 func (h *Handlers) toggleStarSSE(w http.ResponseWriter, r *http.Request) {
 	threadID := chi.URLParam(r, "threadID")
+	// ReadSignals must happen before NewSSE (NewSSE writes headers, closing the body).
+	var signals struct {
+		AccountID    string `json:"emailAccountID"`
+		TagFilter    string `json:"emailTagFilter"`
+		Search       string `json:"emailSearch"`
+		FolderFilter string `json:"emailFolder"`
+		Page         int    `json:"emailPage"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("email: toggleStarSSE ReadSignals: %v", err)
+	}
 	sse := datastar.NewSSE(w, r)
 	if h.starToggle == nil {
 		sse.PatchSignals([]byte(`{"emailError":"star toggle not configured"}`))
@@ -469,16 +480,6 @@ func (h *Handlers) toggleStarSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Refresh the thread list so star state updates.
-	var signals struct {
-		AccountID    string `json:"emailAccountID"`
-		TagFilter    string `json:"emailTagFilter"`
-		Search       string `json:"emailSearch"`
-		FolderFilter string `json:"emailFolder"`
-		Page         int    `json:"emailPage"`
-	}
-	if err := datastar.ReadSignals(r, &signals); err != nil {
-		log.Printf("email: toggleStarSSE ReadSignals: %v", err)
-	}
 	result, err := h.listThreads.Handle(r.Context(), emailqueries.ListThreadsQuery{
 		AccountID:    signals.AccountID,
 		TagFilter:    signals.TagFilter,
