@@ -459,6 +459,7 @@ func New(cfg Config) (*App, error) {
 	markPaidCmd := invoicecommands.NewMarkPaidHandler(invoiceRepo, publisher)
 	voidInvoiceCmd := invoicecommands.NewVoidInvoiceHandler(invoiceRepo, publisher)
 	addLineItemCmd := invoicecommands.NewAddLineItemHandler(invoiceRepo, publisher)
+	updateLineItemCmd := invoicecommands.NewUpdateLineItemHandler(invoiceRepo, publisher)
 	removeLineItemCmd := invoicecommands.NewRemoveLineItemHandler(invoiceRepo, publisher)
 	generateInvoiceCmd := invoicecommands.NewGenerateFromSubscriptionsHandler(
 		invoiceRepo, publisher, &activeServiceBridge{repo: serviceRepo},
@@ -470,7 +471,7 @@ func New(cfg Config) (*App, error) {
 
 	invoiceRoutes := invoicehttp.NewHandlers(
 		createInvoiceCmd, finalizeInvoiceCmd, markPaidCmd, voidInvoiceCmd,
-		addLineItemCmd, removeLineItemCmd,
+		addLineItemCmd, updateLineItemCmd, removeLineItemCmd,
 		listAllInvoicesQuery, getInvoiceQuery, listInvoicesForCustomerQuery,
 		subscriber,
 	)

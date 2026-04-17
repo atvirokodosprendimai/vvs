@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
@@ -128,7 +129,7 @@ templ InvoiceDetailPage(inv queries.InvoiceReadModel) {
 	@templates.Layout("Invoice " + inv.Code) {
 		<div
 			class="max-w-4xl mx-auto"
-			data-signals="{lineProductName: '', lineDescription: '', lineQuantity: '1', lineUnitPrice: ''}"
+			data-signals="{lineProductName: '', lineDescription: '', lineQuantity: '1', lineUnitPrice: '', _editOpen: false, _editLineID: '', editProductName: '', editDescription: '', editQuantity: '1', editUnitPrice: ''}"
 			data-init={ fmt.Sprintf("@get('/sse/invoices/%s', {openWhenHidden: false})", inv.ID) }
 		>
 			<!-- Header with back button -->
@@ -158,6 +159,66 @@ templ InvoiceDetailPage(inv queries.InvoiceReadModel) {
 			@invoiceStatusActions(inv)
 
 			@invoiceDetailContent(inv)
+
+			<!-- Edit line item modal -->
+			if inv.Status == string(domain.StatusDraft) {
+				<div
+					data-show="$_editOpen"
+					style="display:none"
+					class="fixed inset-0 z-50 flex items-center justify-center"
+				>
+					<div
+						class="absolute inset-0 bg-black/60"
+						data-on:click="$_editOpen = false"
+					></div>
+					<div class="relative bg-neutral-900 border border-neutral-700 rounded-lg p-6 w-full max-w-md shadow-xl">
+						<div class="flex items-center justify-between mb-4">
+							<h3 class="text-sm font-semibold text-neutral-200">Edit Line Item</h3>
+							<button
+								type="button"
+								data-on:click="$_editOpen = false"
+								class="text-neutral-500 hover:text-neutral-300 transition-colors"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+									<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+								</svg>
+							</button>
+						</div>
+						<div class="flex flex-col gap-3">
+							<div class="flex flex-col gap-1">
+								<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Product</label>
+								<input type="text" data-bind:edit-product-name class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
+							</div>
+							<div class="flex flex-col gap-1">
+								<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Description</label>
+								<input type="text" data-bind:edit-description class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
+							</div>
+							<div class="grid grid-cols-2 gap-3">
+								<div class="flex flex-col gap-1">
+									<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Quantity</label>
+									<input type="number" min="1" data-bind:edit-quantity class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"/>
+								</div>
+								<div class="flex flex-col gap-1">
+									<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Unit Price</label>
+									<input type="number" step="0.01" min="0" data-bind:edit-unit-price class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"/>
+								</div>
+							</div>
+							<div class="flex gap-2 pt-2">
+								<button
+									type="button"
+									data-on:click={ fmt.Sprintf("@put('/api/invoices/%s/lines/' + $_editLineID); $_editOpen = false", inv.ID) }
+									class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors flex-1"
+								>Save</button>
+								<button
+									type="button"
+									data-on:click="$_editOpen = false"
+									class="bg-neutral-800 hover:bg-neutral-700 text-neutral-400 px-4 py-2 rounded text-sm font-medium transition-colors border border-neutral-700"
+								>Cancel</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			}
 		</div>
 	}
 }
@@ -258,22 +319,33 @@ templ invoiceDetailContent(inv queries.InvoiceReadModel) {
 					</thead>
 					<tbody class="divide-y divide-neutral-800">
 						for _, li := range inv.LineItems {
-							<tr class="hover:bg-neutral-800/40 transition-colors">
-								<td class="px-4 py-3 text-sm text-neutral-200">{ li.ProductName }</td>
-								<td class="px-4 py-3 text-sm text-neutral-400">{ li.Description }</td>
-								<td class="px-4 py-3 text-sm text-neutral-300 text-right tabular-nums">{ fmt.Sprintf("%d", li.Quantity) }</td>
-								<td class="px-4 py-3 text-sm text-neutral-300 text-right font-mono tabular-nums">{ formatCentsPlain(li.UnitPrice) }</td>
-								<td class="px-4 py-3 text-sm text-neutral-100 text-right font-mono tabular-nums">{ formatCentsPlain(li.TotalPrice) }</td>
-								if inv.Status == string(domain.StatusDraft) {
+							if inv.Status == string(domain.StatusDraft) {
+								<tr
+									class="hover:bg-neutral-800/40 transition-colors cursor-pointer"
+									data-on:click={ fmt.Sprintf("$_editLineID = '%s'; $editProductName = '%s'; $editDescription = '%s'; $editQuantity = '%d'; $editUnitPrice = '%s'; $_editOpen = true", li.ID, escapeJS(li.ProductName), escapeJS(li.Description), li.Quantity, formatCentsPlain(li.UnitPrice)) }
+								>
+									<td class="px-4 py-3 text-sm text-neutral-200">{ li.ProductName }</td>
+									<td class="px-4 py-3 text-sm text-neutral-400">{ li.Description }</td>
+									<td class="px-4 py-3 text-sm text-neutral-300 text-right tabular-nums">{ fmt.Sprintf("%d", li.Quantity) }</td>
+									<td class="px-4 py-3 text-sm text-neutral-300 text-right font-mono tabular-nums">{ formatCentsPlain(li.UnitPrice) }</td>
+									<td class="px-4 py-3 text-sm text-neutral-100 text-right font-mono tabular-nums">{ formatCentsPlain(li.TotalPrice) }</td>
 									<td class="px-4 py-3 text-right">
 										<button
 											type="button"
-											data-on:click={ fmt.Sprintf("@delete('/api/invoices/%s/lines/%s')", inv.ID, li.ID) }
+											data-on:click__stop={ fmt.Sprintf("@delete('/api/invoices/%s/lines/%s')", inv.ID, li.ID) }
 											class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs font-medium transition-colors border border-red-500/20"
 										>Remove</button>
 									</td>
-								}
-							</tr>
+								</tr>
+							} else {
+								<tr class="hover:bg-neutral-800/40 transition-colors">
+									<td class="px-4 py-3 text-sm text-neutral-200">{ li.ProductName }</td>
+									<td class="px-4 py-3 text-sm text-neutral-400">{ li.Description }</td>
+									<td class="px-4 py-3 text-sm text-neutral-300 text-right tabular-nums">{ fmt.Sprintf("%d", li.Quantity) }</td>
+									<td class="px-4 py-3 text-sm text-neutral-300 text-right font-mono tabular-nums">{ formatCentsPlain(li.UnitPrice) }</td>
+									<td class="px-4 py-3 text-sm text-neutral-100 text-right font-mono tabular-nums">{ formatCentsPlain(li.TotalPrice) }</td>
+								</tr>
+							}
 						}
 					</tbody>
 					<tfoot>
@@ -356,7 +428,7 @@ templ CreateInvoicePage() {
 			</div>
 
 			<div
-				data-signals={ fmt.Sprintf("{customerID: '', customerName: '', issueDate: '%s', dueDate: '%s', notes: '', lineProduct1: '', lineDescription1: '', lineQty1: '1', linePrice1: '', lineProduct2: '', lineDescription2: '', lineQty2: '1', linePrice2: '', lineProduct3: '', lineDescription3: '', lineQty3: '1', linePrice3: ''}", time.Now().Format("2006-01-02"), time.Now().AddDate(0, 0, 30).Format("2006-01-02")) }
+				data-signals={ fmt.Sprintf("{customerID: '', customerName: '', issueDate: '%s', dueDate: '%s', notes: '', lineProduct1: '', lineDescription1: '', lineQty1: '1', linePrice1: ''}", time.Now().Format("2006-01-02"), time.Now().AddDate(0, 0, 30).Format("2006-01-02")) }
 			>
 				<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6 flex flex-col gap-5">
 					<!-- Customer -->
@@ -412,12 +484,11 @@ templ CreateInvoicePage() {
 						></textarea>
 					</div>
 
-					<!-- Line items -->
+					<!-- First line item -->
 					<div>
-						<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">Line Items</h3>
-
-						<!-- Row 1 -->
-						<div class="flex gap-2 items-end mb-2">
+						<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-3">First Line Item</h3>
+						<p class="text-xs text-neutral-600 mb-3">Add more line items after creating the invoice.</p>
+						<div class="flex gap-2 items-end">
 							<div class="flex flex-col gap-1 flex-1">
 								<label class="text-xs text-neutral-500">Product</label>
 								<input type="text" data-bind:line-product1 placeholder="Product name" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
@@ -433,38 +504,6 @@ templ CreateInvoicePage() {
 							<div class="flex flex-col gap-1 w-28">
 								<label class="text-xs text-neutral-500">Unit Price</label>
 								<input type="number" step="0.01" min="0" data-bind:line-price1 placeholder="0.00" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
-							</div>
-						</div>
-
-						<!-- Row 2 -->
-						<div class="flex gap-2 items-end mb-2">
-							<div class="flex flex-col gap-1 flex-1">
-								<input type="text" data-bind:line-product2 placeholder="Product name" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
-							</div>
-							<div class="flex flex-col gap-1 flex-1">
-								<input type="text" data-bind:line-description2 placeholder="Description" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
-							</div>
-							<div class="flex flex-col gap-1 w-20">
-								<input type="number" min="1" data-bind:line-qty2 class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"/>
-							</div>
-							<div class="flex flex-col gap-1 w-28">
-								<input type="number" step="0.01" min="0" data-bind:line-price2 placeholder="0.00" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
-							</div>
-						</div>
-
-						<!-- Row 3 -->
-						<div class="flex gap-2 items-end mb-2">
-							<div class="flex flex-col gap-1 flex-1">
-								<input type="text" data-bind:line-product3 placeholder="Product name" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
-							</div>
-							<div class="flex flex-col gap-1 flex-1">
-								<input type="text" data-bind:line-description3 placeholder="Description" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
-							</div>
-							<div class="flex flex-col gap-1 w-20">
-								<input type="number" min="1" data-bind:line-qty3 class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"/>
-							</div>
-							<div class="flex flex-col gap-1 w-28">
-								<input type="number" step="0.01" min="0" data-bind:line-price3 placeholder="0.00" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
 							</div>
 						</div>
 					</div>
@@ -543,4 +582,9 @@ func currencySymbol(currency string) string {
 // isOverdue returns true if the invoice is finalized and past its due date.
 func isOverdue(inv queries.InvoiceReadModel) bool {
 	return inv.Status == string(domain.StatusFinalized) && time.Now().After(inv.DueDate)
+}
+
+// escapeJS escapes single quotes for safe embedding in JS string literals.
+func escapeJS(s string) string {
+	return strings.ReplaceAll(s, "'", "\\'")
 }

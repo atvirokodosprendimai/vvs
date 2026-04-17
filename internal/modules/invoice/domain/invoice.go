@@ -80,6 +80,24 @@ func (inv *Invoice) AddLineItem(item LineItem) error {
 	return nil
 }
 
+// UpdateLineItem updates a line item's fields by ID. Only allowed in draft status.
+func (inv *Invoice) UpdateLineItem(itemID, productName, description string, quantity int, unitPrice int64) error {
+	if inv.Status != StatusDraft {
+		return ErrInvoiceNotDraft
+	}
+	for i, li := range inv.LineItems {
+		if li.ID == itemID {
+			inv.LineItems[i].ProductName = productName
+			inv.LineItems[i].Description = description
+			inv.LineItems[i].Quantity = quantity
+			inv.LineItems[i].UnitPrice = unitPrice
+			inv.UpdatedAt = time.Now().UTC()
+			return nil
+		}
+	}
+	return ErrLineItemNotFound
+}
+
 // RemoveLineItem removes a line item by ID. Only allowed in draft status.
 func (inv *Invoice) RemoveLineItem(itemID string) error {
 	if inv.Status != StatusDraft {

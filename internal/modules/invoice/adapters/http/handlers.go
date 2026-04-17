@@ -16,17 +16,18 @@ import (
 )
 
 type Handlers struct {
-	createCmd     *commands.CreateInvoiceHandler
-	finalizeCmd   *commands.FinalizeInvoiceHandler
-	markPaidCmd   *commands.MarkPaidHandler
-	voidCmd       *commands.VoidInvoiceHandler
-	addLineCmd    *commands.AddLineItemHandler
-	removeLineCmd *commands.RemoveLineItemHandler
-	generateCmd   *commands.GenerateFromSubscriptionsHandler
-	listAllQuery  *queries.ListAllInvoicesHandler
-	getQuery      *queries.GetInvoiceHandler
-	listForCustQ  *queries.ListInvoicesForCustomerHandler
-	subscriber    events.EventSubscriber
+	createCmd      *commands.CreateInvoiceHandler
+	finalizeCmd    *commands.FinalizeInvoiceHandler
+	markPaidCmd    *commands.MarkPaidHandler
+	voidCmd        *commands.VoidInvoiceHandler
+	addLineCmd     *commands.AddLineItemHandler
+	updateLineCmd  *commands.UpdateLineItemHandler
+	removeLineCmd  *commands.RemoveLineItemHandler
+	generateCmd    *commands.GenerateFromSubscriptionsHandler
+	listAllQuery   *queries.ListAllInvoicesHandler
+	getQuery       *queries.GetInvoiceHandler
+	listForCustQ   *queries.ListInvoicesForCustomerHandler
+	subscriber     events.EventSubscriber
 }
 
 func NewHandlers(
@@ -35,6 +36,7 @@ func NewHandlers(
 	markPaidCmd *commands.MarkPaidHandler,
 	voidCmd *commands.VoidInvoiceHandler,
 	addLineCmd *commands.AddLineItemHandler,
+	updateLineCmd *commands.UpdateLineItemHandler,
 	removeLineCmd *commands.RemoveLineItemHandler,
 	listAllQuery *queries.ListAllInvoicesHandler,
 	getQuery *queries.GetInvoiceHandler,
@@ -42,14 +44,15 @@ func NewHandlers(
 	subscriber events.EventSubscriber,
 ) *Handlers {
 	return &Handlers{
-		createCmd:     createCmd,
-		finalizeCmd:   finalizeCmd,
-		markPaidCmd:   markPaidCmd,
-		voidCmd:       voidCmd,
-		addLineCmd:    addLineCmd,
-		removeLineCmd: removeLineCmd,
-		listAllQuery:  listAllQuery,
-		getQuery:      getQuery,
+		createCmd:      createCmd,
+		finalizeCmd:    finalizeCmd,
+		markPaidCmd:    markPaidCmd,
+		voidCmd:        voidCmd,
+		addLineCmd:     addLineCmd,
+		updateLineCmd:  updateLineCmd,
+		removeLineCmd:  removeLineCmd,
+		listAllQuery:   listAllQuery,
+		getQuery:       getQuery,
 		listForCustQ:  listForCustQ,
 		subscriber:    subscriber,
 	}
@@ -74,6 +77,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Put("/api/invoices/{id}/pay", h.markPaid)
 	r.Put("/api/invoices/{id}/void", h.voidInvoice)
 	r.Post("/api/invoices/{id}/lines", h.addLine)
+	r.Put("/api/invoices/{id}/lines/{lineID}", h.updateLine)
 	r.Delete("/api/invoices/{id}/lines/{lineID}", h.removeLine)
 }
 
@@ -190,24 +194,15 @@ func (h *Handlers) detailSSE(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) create(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
-		CustomerID   string `json:"customerID"`
-		CustomerName string `json:"customerName"`
-		IssueDate    string `json:"issueDate"`
-		DueDate      string `json:"dueDate"`
-		Notes        string `json:"notes"`
-		// Line items — simple static rows
+		CustomerID       string `json:"customerID"`
+		CustomerName     string `json:"customerName"`
+		IssueDate        string `json:"issueDate"`
+		DueDate          string `json:"dueDate"`
+		Notes            string `json:"notes"`
 		LineProduct1     string `json:"lineProduct1"`
 		LineDescription1 string `json:"lineDescription1"`
 		LineQty1         string `json:"lineQty1"`
 		LinePrice1       string `json:"linePrice1"`
-		LineProduct2     string `json:"lineProduct2"`
-		LineDescription2 string `json:"lineDescription2"`
-		LineQty2         string `json:"lineQty2"`
-		LinePrice2       string `json:"linePrice2"`
-		LineProduct3     string `json:"lineProduct3"`
-		LineDescription3 string `json:"lineDescription3"`
-		LineQty3         string `json:"lineQty3"`
-		LinePrice3       string `json:"linePrice3"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		log.Printf("invoice handler: create ReadSignals: %v", err)
@@ -231,33 +226,17 @@ func (h *Handlers) create(w http.ResponseWriter, r *http.Request) {
 		dueDate = issueDate.AddDate(0, 0, 30)
 	}
 
-	// Collect line items from static rows
 	var lineItems []commands.LineItemInput
-	type lineRow struct {
-		product     string
-		description string
-		qty         string
-		price       string
-	}
-	rows := []lineRow{
-		{signals.LineProduct1, signals.LineDescription1, signals.LineQty1, signals.LinePrice1},
-		{signals.LineProduct2, signals.LineDescription2, signals.LineQty2, signals.LinePrice2},
-		{signals.LineProduct3, signals.LineDescription3, signals.LineQty3, signals.LinePrice3},
-	}
-	for _, row := range rows {
-		if row.description == "" && row.product == "" {
-			continue
-		}
-		qty, _ := strconv.Atoi(row.qty)
+	if signals.LineProduct1 != "" || signals.LineDescription1 != "" {
+		qty, _ := strconv.Atoi(signals.LineQty1)
 		if qty <= 0 {
 			qty = 1
 		}
-		price := parseValueCents(row.price)
 		lineItems = append(lineItems, commands.LineItemInput{
-			ProductName: row.product,
-			Description: row.description,
+			ProductName: signals.LineProduct1,
+			Description: signals.LineDescription1,
 			Quantity:    qty,
-			UnitPrice:   price,
+			UnitPrice:   parseValueCents(signals.LinePrice1),
 		})
 	}
 
@@ -371,6 +350,51 @@ func (h *Handlers) addLine(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("invoice handler: addLine: %v", err)
+		sse.PatchElementTempl(invoiceFormError(err.Error()))
+		return
+	}
+
+	sse.Redirect("/invoices/" + id)
+}
+
+func (h *Handlers) updateLine(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	lineID := chi.URLParam(r, "lineID")
+	if id == "" || lineID == "" {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	var signals struct {
+		ProductName string `json:"editProductName"`
+		Description string `json:"editDescription"`
+		Quantity    string `json:"editQuantity"`
+		UnitPrice   string `json:"editUnitPrice"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("invoice handler: updateLine ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+
+	qty, _ := strconv.Atoi(signals.Quantity)
+	if qty <= 0 {
+		qty = 1
+	}
+	price := parseValueCents(signals.UnitPrice)
+
+	_, err := h.updateLineCmd.Handle(r.Context(), commands.UpdateLineItemCommand{
+		InvoiceID:   id,
+		LineItemID:  lineID,
+		ProductName: signals.ProductName,
+		Description: signals.Description,
+		Quantity:    qty,
+		UnitPrice:   price,
+	})
+	if err != nil {
+		log.Printf("invoice handler: updateLine: %v", err)
 		sse.PatchElementTempl(invoiceFormError(err.Error()))
 		return
 	}
