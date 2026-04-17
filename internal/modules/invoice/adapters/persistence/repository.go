@@ -16,10 +16,13 @@ type invoiceModel struct {
 	ID           string     `gorm:"primaryKey;type:text"`
 	CustomerID   string     `gorm:"column:customer_id;type:text;not null"`
 	CustomerName string     `gorm:"column:customer_name;type:text;not null;default:''"`
+	CustomerCode string     `gorm:"column:customer_code;type:text;not null;default:''"`
 	Code         string     `gorm:"uniqueIndex;type:text;not null"`
 	Status       string     `gorm:"type:text;not null;default:'draft'"`
 	IssueDate    time.Time  `gorm:"column:issue_date"`
 	DueDate      time.Time  `gorm:"column:due_date"`
+	SubTotal     int64      `gorm:"column:sub_total;not null;default:0"`
+	VATTotal     int64      `gorm:"column:vat_total;not null;default:0"`
 	TotalAmount  int64      `gorm:"column:total_amount;not null;default:0"`
 	Currency     string     `gorm:"type:text;not null;default:'EUR'"`
 	Notes        string     `gorm:"type:text;not null;default:''"`
@@ -33,14 +36,18 @@ type invoiceModel struct {
 func (invoiceModel) TableName() string { return "invoices" }
 
 type lineItemModel struct {
-	ID          string `gorm:"primaryKey;type:text"`
-	InvoiceID   string `gorm:"column:invoice_id;type:text;not null"`
-	ProductID   string `gorm:"column:product_id;type:text;not null;default:''"`
-	ProductName string `gorm:"column:product_name;type:text;not null;default:''"`
-	Description string `gorm:"type:text;not null;default:''"`
-	Quantity    int    `gorm:"not null;default:1"`
-	UnitPrice   int64  `gorm:"column:unit_price;not null;default:0"`
-	TotalPrice  int64  `gorm:"column:total_price;not null;default:0"`
+	ID             string `gorm:"primaryKey;type:text"`
+	InvoiceID      string `gorm:"column:invoice_id;type:text;not null"`
+	ProductID      string `gorm:"column:product_id;type:text;not null;default:''"`
+	ProductName    string `gorm:"column:product_name;type:text;not null;default:''"`
+	Description    string `gorm:"type:text;not null;default:''"`
+	Quantity       int    `gorm:"not null;default:1"`
+	UnitPriceGross int64  `gorm:"column:unit_price_gross;not null;default:0"`
+	UnitPrice      int64  `gorm:"column:unit_price;not null;default:0"`
+	VATRate        int    `gorm:"column:vat_rate;not null;default:21"`
+	TotalPrice     int64  `gorm:"column:total_price;not null;default:0"`
+	TotalVAT       int64  `gorm:"column:total_vat;not null;default:0"`
+	TotalGross     int64  `gorm:"column:total_gross;not null;default:0"`
 }
 
 func (lineItemModel) TableName() string { return "invoice_line_items" }
@@ -156,24 +163,31 @@ func toModel(inv *domain.Invoice) *invoiceModel {
 	items := make([]lineItemModel, len(inv.LineItems))
 	for i, li := range inv.LineItems {
 		items[i] = lineItemModel{
-			ID:          li.ID,
-			InvoiceID:   inv.ID,
-			ProductID:   li.ProductID,
-			ProductName: li.ProductName,
-			Description: li.Description,
-			Quantity:    li.Quantity,
-			UnitPrice:   li.UnitPrice,
-			TotalPrice:  li.TotalPrice,
+			ID:             li.ID,
+			InvoiceID:      inv.ID,
+			ProductID:      li.ProductID,
+			ProductName:    li.ProductName,
+			Description:    li.Description,
+			Quantity:       li.Quantity,
+			UnitPriceGross: li.UnitPriceGross,
+			UnitPrice:      li.UnitPrice,
+			VATRate:        li.VATRate,
+			TotalPrice:     li.TotalPrice,
+			TotalVAT:       li.TotalVAT,
+			TotalGross:     li.TotalGross,
 		}
 	}
 	return &invoiceModel{
 		ID:           inv.ID,
 		CustomerID:   inv.CustomerID,
 		CustomerName: inv.CustomerName,
+		CustomerCode: inv.CustomerCode,
 		Code:         inv.Code,
 		Status:       string(inv.Status),
 		IssueDate:    inv.IssueDate,
 		DueDate:      inv.DueDate,
+		SubTotal:     inv.SubTotal,
+		VATTotal:     inv.VATTotal,
 		TotalAmount:  inv.TotalAmount,
 		Currency:     inv.Currency,
 		Notes:        inv.Notes,
@@ -188,24 +202,31 @@ func toDomain(m *invoiceModel) *domain.Invoice {
 	items := make([]domain.LineItem, len(m.LineItems))
 	for i, li := range m.LineItems {
 		items[i] = domain.LineItem{
-			ID:          li.ID,
-			ProductID:   li.ProductID,
-			ProductName: li.ProductName,
-			Description: li.Description,
-			Quantity:    li.Quantity,
-			UnitPrice:   li.UnitPrice,
-			TotalPrice:  li.TotalPrice,
+			ID:             li.ID,
+			ProductID:      li.ProductID,
+			ProductName:    li.ProductName,
+			Description:    li.Description,
+			Quantity:       li.Quantity,
+			UnitPriceGross: li.UnitPriceGross,
+			UnitPrice:      li.UnitPrice,
+			VATRate:        li.VATRate,
+			TotalPrice:     li.TotalPrice,
+			TotalVAT:       li.TotalVAT,
+			TotalGross:     li.TotalGross,
 		}
 	}
 	return &domain.Invoice{
 		ID:           m.ID,
 		CustomerID:   m.CustomerID,
 		CustomerName: m.CustomerName,
+		CustomerCode: m.CustomerCode,
 		Code:         m.Code,
 		Status:       domain.InvoiceStatus(m.Status),
 		IssueDate:    m.IssueDate,
 		DueDate:      m.DueDate,
 		LineItems:    items,
+		SubTotal:     m.SubTotal,
+		VATTotal:     m.VATTotal,
 		TotalAmount:  m.TotalAmount,
 		Currency:     m.Currency,
 		Notes:        m.Notes,

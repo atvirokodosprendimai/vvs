@@ -39,7 +39,7 @@ func createDraftInvoice(t *testing.T, repo *persistence.InvoiceRepository, handl
 				ProductName: "Internet 100Mbps",
 				Description: "Monthly subscription",
 				Quantity:    1,
-				UnitPrice:   2999,
+				UnitPriceGross:   2999,
 			},
 		},
 	}
@@ -64,14 +64,14 @@ func TestCreateInvoiceHandler(t *testing.T) {
 				ProductName: "Internet 100Mbps",
 				Description: "Monthly",
 				Quantity:    1,
-				UnitPrice:   2999,
+				UnitPriceGross:   2999,
 			},
 			{
 				ProductID:   "prod-2",
 				ProductName: "Static IP",
 				Description: "Extra IP address",
 				Quantity:    2,
-				UnitPrice:   500,
+				UnitPriceGross:   500,
 			},
 		},
 	}
@@ -211,7 +211,7 @@ func TestAddLineItemHandler(t *testing.T) {
 		ProductName: "Static IP",
 		Description: "Extra IP address",
 		Quantity:    3,
-		UnitPrice:   500,
+		UnitPriceGross:   500,
 	})
 	require.NoError(t, err)
 	assert.Len(t, updated.LineItems, 2)
@@ -239,8 +239,8 @@ func TestRemoveLineItemHandler(t *testing.T) {
 		IssueDate:    now,
 		DueDate:      now.AddDate(0, 0, 30),
 		LineItems: []commands.LineItemInput{
-			{ProductID: "prod-1", ProductName: "Internet", Quantity: 1, UnitPrice: 2999},
-			{ProductID: "prod-2", ProductName: "Static IP", Quantity: 1, UnitPrice: 500},
+			{ProductID: "prod-1", ProductName: "Internet", Quantity: 1, UnitPriceGross: 2999},
+			{ProductID: "prod-2", ProductName: "Static IP", Quantity: 1, UnitPriceGross: 500},
 		},
 	})
 	require.NoError(t, err)

@@ -24,6 +24,7 @@ func makeInvoice(id, customerID, customerName, code string) *domain.Invoice {
 		ID:           id,
 		CustomerID:   customerID,
 		CustomerName: customerName,
+		CustomerCode: "TST-00001",
 		Code:         code,
 		Status:       domain.StatusDraft,
 		IssueDate:    now,
@@ -44,25 +45,35 @@ func TestSaveAndFindByID(t *testing.T) {
 	inv := makeInvoice("inv-1", "cust-1", "Acme Corp", "INV-00001")
 	inv.LineItems = []domain.LineItem{
 		{
-			ID:          "li-1",
-			ProductID:   "prod-1",
-			ProductName: "Internet 100Mbps",
-			Description: "Monthly subscription",
-			Quantity:    1,
-			UnitPrice:   2999,
-			TotalPrice:  2999,
+			ID:             "li-1",
+			ProductID:      "prod-1",
+			ProductName:    "Internet 100Mbps",
+			Description:    "Monthly subscription",
+			Quantity:       1,
+			UnitPriceGross: 3629,
+			UnitPrice:      2999,
+			VATRate:        21,
+			TotalPrice:     2999,
+			TotalVAT:       630,
+			TotalGross:     3629,
 		},
 		{
-			ID:          "li-2",
-			ProductID:   "prod-2",
-			ProductName: "Router rental",
-			Description: "Mikrotik hAP",
-			Quantity:    1,
-			UnitPrice:   500,
-			TotalPrice:  500,
+			ID:             "li-2",
+			ProductID:      "prod-2",
+			ProductName:    "Router rental",
+			Description:    "Mikrotik hAP",
+			Quantity:       1,
+			UnitPriceGross: 500,
+			UnitPrice:      500,
+			VATRate:        0,
+			TotalPrice:     500,
+			TotalVAT:       0,
+			TotalGross:     500,
 		},
 	}
-	inv.TotalAmount = 3499
+	inv.SubTotal = 3499
+	inv.VATTotal = 630
+	inv.TotalAmount = 4129
 
 	if err := repo.Save(ctx, inv); err != nil {
 		t.Fatalf("Save: %v", err)
@@ -89,8 +100,17 @@ func TestSaveAndFindByID(t *testing.T) {
 	if got.Status != inv.Status {
 		t.Errorf("Status = %q, want %q", got.Status, inv.Status)
 	}
+	if got.CustomerCode != inv.CustomerCode {
+		t.Errorf("CustomerCode = %q, want %q", got.CustomerCode, inv.CustomerCode)
+	}
 	if got.TotalAmount != inv.TotalAmount {
 		t.Errorf("TotalAmount = %d, want %d", got.TotalAmount, inv.TotalAmount)
+	}
+	if got.SubTotal != inv.SubTotal {
+		t.Errorf("SubTotal = %d, want %d", got.SubTotal, inv.SubTotal)
+	}
+	if got.VATTotal != inv.VATTotal {
+		t.Errorf("VATTotal = %d, want %d", got.VATTotal, inv.VATTotal)
 	}
 	if got.Currency != inv.Currency {
 		t.Errorf("Currency = %q, want %q", got.Currency, inv.Currency)
@@ -117,8 +137,14 @@ func TestSaveAndFindByID(t *testing.T) {
 	if li1.Quantity != 1 {
 		t.Errorf("li-1 Quantity = %d, want 1", li1.Quantity)
 	}
+	if li1.UnitPriceGross != 3629 {
+		t.Errorf("li-1 UnitPriceGross = %d, want 3629", li1.UnitPriceGross)
+	}
 	if li1.UnitPrice != 2999 {
 		t.Errorf("li-1 UnitPrice = %d, want 2999", li1.UnitPrice)
+	}
+	if li1.VATRate != 21 {
+		t.Errorf("li-1 VATRate = %d, want 21", li1.VATRate)
 	}
 	if li1.TotalPrice != 2999 {
 		t.Errorf("li-1 TotalPrice = %d, want 2999", li1.TotalPrice)
@@ -136,7 +162,7 @@ func TestSaveUpdates(t *testing.T) {
 
 	inv := makeInvoice("inv-1", "cust-1", "Acme Corp", "INV-00001")
 	inv.LineItems = []domain.LineItem{
-		{ID: "li-1", ProductName: "Old product", Quantity: 1, UnitPrice: 1000, TotalPrice: 1000},
+		{ID: "li-1", ProductName: "Old product", Quantity: 1, UnitPriceGross: 1000, UnitPrice: 1000, VATRate: 0, TotalPrice: 1000, TotalGross: 1000},
 	}
 	inv.TotalAmount = 1000
 
@@ -147,7 +173,7 @@ func TestSaveUpdates(t *testing.T) {
 	// Update: change notes, replace line items
 	inv.Notes = "updated notes"
 	inv.LineItems = []domain.LineItem{
-		{ID: "li-3", ProductName: "New product", Quantity: 2, UnitPrice: 500, TotalPrice: 1000},
+		{ID: "li-3", ProductName: "New product", Quantity: 2, UnitPriceGross: 500, UnitPrice: 500, VATRate: 0, TotalPrice: 1000, TotalGross: 1000},
 	}
 	inv.TotalAmount = 1000
 	inv.UpdatedAt = time.Now().UTC().Truncate(time.Second)

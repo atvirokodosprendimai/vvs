@@ -11,12 +11,13 @@ import (
 )
 
 type AddLineItemCommand struct {
-	InvoiceID   string
-	ProductID   string
-	ProductName string
-	Description string
-	Quantity    int
-	UnitPrice   int64
+	InvoiceID      string
+	ProductID      string
+	ProductName    string
+	Description    string
+	Quantity       int
+	UnitPriceGross int64
+	VATRate        int
 }
 
 type AddLineItemHandler struct {
@@ -35,12 +36,13 @@ func (h *AddLineItemHandler) Handle(ctx context.Context, cmd AddLineItemCommand)
 	}
 
 	item := domain.LineItem{
-		ID:          uuid.Must(uuid.NewV7()).String(),
-		ProductID:   cmd.ProductID,
-		ProductName: cmd.ProductName,
-		Description: cmd.Description,
-		Quantity:    cmd.Quantity,
-		UnitPrice:   cmd.UnitPrice,
+		ID:             uuid.Must(uuid.NewV7()).String(),
+		ProductID:      cmd.ProductID,
+		ProductName:    cmd.ProductName,
+		Description:    cmd.Description,
+		Quantity:       cmd.Quantity,
+		UnitPriceGross: cmd.UnitPriceGross,
+		VATRate:        cmd.VATRate,
 	}
 
 	if err := inv.AddLineItem(item); err != nil {

@@ -11,12 +11,13 @@ import (
 )
 
 type UpdateLineItemCommand struct {
-	InvoiceID   string
-	LineItemID  string
-	ProductName string
-	Description string
-	Quantity    int
-	UnitPrice   int64
+	InvoiceID      string
+	LineItemID     string
+	ProductName    string
+	Description    string
+	Quantity       int
+	UnitPriceGross int64
+	VATRate        int
 }
 
 type UpdateLineItemHandler struct {
@@ -34,7 +35,7 @@ func (h *UpdateLineItemHandler) Handle(ctx context.Context, cmd UpdateLineItemCo
 		return nil, err
 	}
 
-	if err := inv.UpdateLineItem(cmd.LineItemID, cmd.ProductName, cmd.Description, cmd.Quantity, cmd.UnitPrice); err != nil {
+	if err := inv.UpdateLineItem(cmd.LineItemID, cmd.ProductName, cmd.Description, cmd.Quantity, cmd.UnitPriceGross, cmd.VATRate); err != nil {
 		return nil, err
 	}
 	inv.Recalculate()

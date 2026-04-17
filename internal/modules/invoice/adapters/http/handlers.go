@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"reflect"
@@ -15,6 +16,18 @@ import (
 	"github.com/vvs/isp/internal/shared/events"
 )
 
+// CustomerSearchResult is returned by CustomerSearcher for the autocomplete dropdown.
+type CustomerSearchResult struct {
+	ID          string
+	Code        string
+	CompanyName string
+}
+
+// CustomerSearcher is a port for searching customers from the invoice module.
+type CustomerSearcher interface {
+	SearchCustomers(ctx context.Context, query string, limit int) ([]CustomerSearchResult, error)
+}
+
 type Handlers struct {
 	createCmd      *commands.CreateInvoiceHandler
 	finalizeCmd    *commands.FinalizeInvoiceHandler
@@ -28,6 +41,8 @@ type Handlers struct {
 	getQuery       *queries.GetInvoiceHandler
 	listForCustQ   *queries.ListInvoicesForCustomerHandler
 	subscriber     events.EventSubscriber
+	custSearch     CustomerSearcher
+	defaultVATRate int
 }
 
 func NewHandlers(
@@ -64,6 +79,18 @@ func (h *Handlers) WithGenerateCmd(cmd *commands.GenerateFromSubscriptionsHandle
 	return h
 }
 
+// WithCustomerSearch adds the customer search capability.
+func (h *Handlers) WithCustomerSearch(cs CustomerSearcher) *Handlers {
+	h.custSearch = cs
+	return h
+}
+
+// WithDefaultVATRate sets the default VAT rate for new line items.
+func (h *Handlers) WithDefaultVATRate(rate int) *Handlers {
+	h.defaultVATRate = rate
+	return h
+}
+
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/invoices", h.listPage)
 	r.Get("/invoices/new", h.createPage)
@@ -71,6 +98,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 
 	r.Get("/sse/invoices", h.listSSE)
 	r.Get("/sse/invoices/{id}", h.detailSSE)
+	r.Get("/sse/invoices/customers/search", h.customerSearch)
 
 	r.Post("/api/invoices", h.create)
 	r.Put("/api/invoices/{id}/finalize", h.finalize)
@@ -103,7 +131,11 @@ func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) createPage(w http.ResponseWriter, r *http.Request) {
-	CreateInvoicePage().Render(r.Context(), w)
+	vatRate := h.defaultVATRate
+	if vatRate <= 0 {
+		vatRate = 21
+	}
+	CreateInvoicePage(vatRate).Render(r.Context(), w)
 }
 
 // --- SSE handlers ---
@@ -115,7 +147,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	var signals struct {
-		StatusFilter string `json:"_statusFilter"`
+		StatusFilter string `json:"statusFilter"`
 	}
 	_ = datastar.ReadSignals(r, &signals)
 	statusFilter := strings.TrimSpace(signals.StatusFilter)
@@ -196,6 +228,7 @@ func (h *Handlers) create(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
 		CustomerID       string `json:"customerID"`
 		CustomerName     string `json:"customerName"`
+		CustomerCode     string `json:"customerCode"`
 		IssueDate        string `json:"issueDate"`
 		DueDate          string `json:"dueDate"`
 		Notes            string `json:"notes"`
@@ -203,6 +236,7 @@ func (h *Handlers) create(w http.ResponseWriter, r *http.Request) {
 		LineDescription1 string `json:"lineDescription1"`
 		LineQty1         string `json:"lineQty1"`
 		LinePrice1       string `json:"linePrice1"`
+		LineVATRate1     string `json:"lineVATRate1"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		log.Printf("invoice handler: create ReadSignals: %v", err)
@@ -232,17 +266,20 @@ func (h *Handlers) create(w http.ResponseWriter, r *http.Request) {
 		if qty <= 0 {
 			qty = 1
 		}
+		vatRate := parseVATRate(signals.LineVATRate1, h.defaultVATRate)
 		lineItems = append(lineItems, commands.LineItemInput{
-			ProductName: signals.LineProduct1,
-			Description: signals.LineDescription1,
-			Quantity:    qty,
-			UnitPrice:   parseValueCents(signals.LinePrice1),
+			ProductName:    signals.LineProduct1,
+			Description:    signals.LineDescription1,
+			Quantity:       qty,
+			UnitPriceGross: parseValueCents(signals.LinePrice1),
+			VATRate:        vatRate,
 		})
 	}
 
 	inv, err := h.createCmd.Handle(r.Context(), commands.CreateInvoiceCommand{
 		CustomerID:   signals.CustomerID,
 		CustomerName: signals.CustomerName,
+		CustomerCode: signals.CustomerCode,
 		IssueDate:    issueDate,
 		DueDate:      dueDate,
 		Notes:        signals.Notes,
@@ -326,6 +363,7 @@ func (h *Handlers) addLine(w http.ResponseWriter, r *http.Request) {
 		Description string `json:"lineDescription"`
 		Quantity    string `json:"lineQuantity"`
 		UnitPrice   string `json:"lineUnitPrice"`
+		VATRate     string `json:"lineVATRate"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		log.Printf("invoice handler: addLine ReadSignals: %v", err)
@@ -340,13 +378,15 @@ func (h *Handlers) addLine(w http.ResponseWriter, r *http.Request) {
 		qty = 1
 	}
 	price := parseValueCents(signals.UnitPrice)
+	vatRate := parseVATRate(signals.VATRate, h.defaultVATRate)
 
 	_, err := h.addLineCmd.Handle(r.Context(), commands.AddLineItemCommand{
-		InvoiceID:   id,
-		ProductName: signals.ProductName,
-		Description: signals.Description,
-		Quantity:    qty,
-		UnitPrice:   price,
+		InvoiceID:      id,
+		ProductName:    signals.ProductName,
+		Description:    signals.Description,
+		Quantity:       qty,
+		UnitPriceGross: price,
+		VATRate:        vatRate,
 	})
 	if err != nil {
 		log.Printf("invoice handler: addLine: %v", err)
@@ -370,6 +410,7 @@ func (h *Handlers) updateLine(w http.ResponseWriter, r *http.Request) {
 		Description string `json:"editDescription"`
 		Quantity    string `json:"editQuantity"`
 		UnitPrice   string `json:"editUnitPrice"`
+		VATRate     string `json:"editVATRate"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		log.Printf("invoice handler: updateLine ReadSignals: %v", err)
@@ -384,14 +425,16 @@ func (h *Handlers) updateLine(w http.ResponseWriter, r *http.Request) {
 		qty = 1
 	}
 	price := parseValueCents(signals.UnitPrice)
+	vatRate := parseVATRate(signals.VATRate, h.defaultVATRate)
 
 	_, err := h.updateLineCmd.Handle(r.Context(), commands.UpdateLineItemCommand{
-		InvoiceID:   id,
-		LineItemID:  lineID,
-		ProductName: signals.ProductName,
-		Description: signals.Description,
-		Quantity:    qty,
-		UnitPrice:   price,
+		InvoiceID:      id,
+		LineItemID:     lineID,
+		ProductName:    signals.ProductName,
+		Description:    signals.Description,
+		Quantity:       qty,
+		UnitPriceGross: price,
+		VATRate:        vatRate,
 	})
 	if err != nil {
 		log.Printf("invoice handler: updateLine: %v", err)
@@ -435,4 +478,46 @@ func parseValueCents(s string) int64 {
 		return 0
 	}
 	return int64(f * 100)
+}
+
+// parseVATRate parses a VAT rate string. Returns defaultRate if empty/invalid.
+func parseVATRate(s string, defaultRate int) int {
+	if s == "" {
+		return defaultRate
+	}
+	rate, err := strconv.Atoi(s)
+	if err != nil {
+		return defaultRate
+	}
+	return rate
+}
+
+// customerSearch returns customer search results as SSE HTML fragments.
+func (h *Handlers) customerSearch(w http.ResponseWriter, r *http.Request) {
+	if h.custSearch == nil {
+		http.Error(w, "not configured", http.StatusNotImplemented)
+		return
+	}
+
+	var signals struct {
+		Search string `json:"customerSearch"`
+	}
+	_ = datastar.ReadSignals(r, &signals)
+	query := strings.TrimSpace(signals.Search)
+
+	sse := datastar.NewSSE(w, r)
+
+	if len(query) < 2 {
+		sse.PatchElementTempl(customerSearchResults(nil))
+		return
+	}
+
+	results, err := h.custSearch.SearchCustomers(r.Context(), query, 10)
+	if err != nil {
+		log.Printf("invoice handler: customerSearch: %v", err)
+		sse.PatchElementTempl(customerSearchResults(nil))
+		return
+	}
+
+	sse.PatchElementTempl(customerSearchResults(results))
 }

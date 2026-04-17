@@ -31,6 +31,9 @@ type Config struct {
 	// EmailPageSize is the number of email threads per page (default 50).
 	EmailPageSize int // VVS_EMAIL_PAGE_SIZE env var
 
+	// DefaultVATRate is the default VAT percentage for new invoice line items (default 21).
+	DefaultVATRate int // VVS_DEFAULT_VAT_RATE env var
+
 	// Debug enables verbose debug logging (slog DEBUG level).
 	Debug bool
 }

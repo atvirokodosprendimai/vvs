@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"math"
 	"time"
 )
 
@@ -24,13 +25,17 @@ const (
 
 // LineItem is a value object representing a single line on an invoice.
 type LineItem struct {
-	ID          string
-	ProductID   string
-	ProductName string
-	Description string
-	Quantity    int
-	UnitPrice   int64 // cents
-	TotalPrice  int64 // quantity * unit_price
+	ID             string
+	ProductID      string
+	ProductName    string
+	Description    string
+	Quantity       int
+	UnitPriceGross int64 // cents, price entered by user (includes VAT)
+	UnitPrice      int64 // cents, net price (calculated: gross * 100 / (100 + VATRate))
+	VATRate        int   // percentage: 0, 5, 9, 21
+	TotalPrice     int64 // net total = qty * UnitPrice
+	TotalVAT       int64 // VAT amount for line
+	TotalGross     int64 // gross total = qty * UnitPriceGross
 }
 
 // Invoice is the aggregate root for the invoicing bounded context.
@@ -38,12 +43,15 @@ type Invoice struct {
 	ID           string
 	CustomerID   string
 	CustomerName string
+	CustomerCode string        // cloned at creation, immutable snapshot
 	Code         string        // auto-generated: INV-001, INV-002...
 	Status       InvoiceStatus // draft, finalized, paid, void
 	IssueDate    time.Time
 	DueDate      time.Time
 	LineItems    []LineItem
-	TotalAmount  int64  // cents
+	SubTotal     int64  // cents, sum of net line totals
+	VATTotal     int64  // cents, sum of VAT amounts
+	TotalAmount  int64  // cents, grand total (SubTotal + VATTotal)
 	Currency     string // default "EUR"
 	Notes        string
 	PaidAt       *time.Time
@@ -52,12 +60,13 @@ type Invoice struct {
 }
 
 // NewInvoice creates a new invoice in draft status.
-func NewInvoice(id, customerID, customerName, code string) *Invoice {
+func NewInvoice(id, customerID, customerName, customerCode, code string) *Invoice {
 	now := time.Now().UTC()
 	return &Invoice{
 		ID:           id,
 		CustomerID:   customerID,
 		CustomerName: customerName,
+		CustomerCode: customerCode,
 		Code:         code,
 		Status:       StatusDraft,
 		IssueDate:    now,
@@ -81,7 +90,7 @@ func (inv *Invoice) AddLineItem(item LineItem) error {
 }
 
 // UpdateLineItem updates a line item's fields by ID. Only allowed in draft status.
-func (inv *Invoice) UpdateLineItem(itemID, productName, description string, quantity int, unitPrice int64) error {
+func (inv *Invoice) UpdateLineItem(itemID, productName, description string, quantity int, unitPriceGross int64, vatRate int) error {
 	if inv.Status != StatusDraft {
 		return ErrInvoiceNotDraft
 	}
@@ -90,7 +99,8 @@ func (inv *Invoice) UpdateLineItem(itemID, productName, description string, quan
 			inv.LineItems[i].ProductName = productName
 			inv.LineItems[i].Description = description
 			inv.LineItems[i].Quantity = quantity
-			inv.LineItems[i].UnitPrice = unitPrice
+			inv.LineItems[i].UnitPriceGross = unitPriceGross
+			inv.LineItems[i].VATRate = vatRate
 			inv.UpdatedAt = time.Now().UTC()
 			return nil
 		}
@@ -113,15 +123,32 @@ func (inv *Invoice) RemoveLineItem(itemID string) error {
 	return ErrLineItemNotFound
 }
 
-// Recalculate recomputes each line item's TotalPrice and the invoice TotalAmount.
+// Recalculate recomputes each line item's prices (net from gross + VAT) and invoice totals.
 func (inv *Invoice) Recalculate() {
-	var total int64
+	var subTotal, vatTotal, grandTotal int64
 	for i := range inv.LineItems {
-		inv.LineItems[i].TotalPrice = int64(inv.LineItems[i].Quantity) * inv.LineItems[i].UnitPrice
-		total += inv.LineItems[i].TotalPrice
+		li := &inv.LineItems[i]
+		li.TotalGross = int64(li.Quantity) * li.UnitPriceGross
+		li.UnitPrice = netFromGross(li.UnitPriceGross, li.VATRate)
+		li.TotalPrice = int64(li.Quantity) * li.UnitPrice
+		li.TotalVAT = li.TotalGross - li.TotalPrice
+		subTotal += li.TotalPrice
+		vatTotal += li.TotalVAT
+		grandTotal += li.TotalGross
 	}
-	inv.TotalAmount = total
+	inv.SubTotal = subTotal
+	inv.VATTotal = vatTotal
+	inv.TotalAmount = grandTotal
 	inv.UpdatedAt = time.Now().UTC()
+}
+
+// netFromGross calculates the net price from a gross price and VAT percentage.
+// Example: gross=1210, vatRate=21 → net=1000
+func netFromGross(grossCents int64, vatRate int) int64 {
+	if vatRate <= 0 {
+		return grossCents
+	}
+	return int64(math.Round(float64(grossCents) * 100 / float64(100+vatRate)))
 }
 
 // Finalize transitions the invoice from draft to finalized.

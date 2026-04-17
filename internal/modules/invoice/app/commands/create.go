@@ -13,6 +13,7 @@ import (
 type CreateInvoiceCommand struct {
 	CustomerID   string
 	CustomerName string
+	CustomerCode string
 	IssueDate    time.Time
 	DueDate      time.Time
 	Notes        string
@@ -20,11 +21,12 @@ type CreateInvoiceCommand struct {
 }
 
 type LineItemInput struct {
-	ProductID   string
-	ProductName string
-	Description string
-	Quantity    int
-	UnitPrice   int64
+	ProductID      string
+	ProductName    string
+	Description    string
+	Quantity       int
+	UnitPriceGross int64 // gross price per unit (includes VAT)
+	VATRate        int   // percentage: 0, 5, 9, 21
 }
 
 type CreateInvoiceHandler struct {
@@ -43,19 +45,20 @@ func (h *CreateInvoiceHandler) Handle(ctx context.Context, cmd CreateInvoiceComm
 	}
 
 	id := uuid.Must(uuid.NewV7()).String()
-	inv := domain.NewInvoice(id, cmd.CustomerID, cmd.CustomerName, code)
+	inv := domain.NewInvoice(id, cmd.CustomerID, cmd.CustomerName, cmd.CustomerCode, code)
 	inv.IssueDate = cmd.IssueDate
 	inv.DueDate = cmd.DueDate
 	inv.Notes = cmd.Notes
 
 	for _, li := range cmd.LineItems {
 		item := domain.LineItem{
-			ID:          uuid.Must(uuid.NewV7()).String(),
-			ProductID:   li.ProductID,
-			ProductName: li.ProductName,
-			Description: li.Description,
-			Quantity:    li.Quantity,
-			UnitPrice:   li.UnitPrice,
+			ID:             uuid.Must(uuid.NewV7()).String(),
+			ProductID:      li.ProductID,
+			ProductName:    li.ProductName,
+			Description:    li.Description,
+			Quantity:       li.Quantity,
+			UnitPriceGross: li.UnitPriceGross,
+			VATRate:        li.VATRate,
 		}
 		if err := inv.AddLineItem(item); err != nil {
 			return nil, err

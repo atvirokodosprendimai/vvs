@@ -26,6 +26,8 @@ type ActiveServiceLister interface {
 type GenerateFromSubscriptionsCommand struct {
 	CustomerID   string
 	CustomerName string
+	CustomerCode string
+	DefaultVATRate int
 }
 
 type GenerateFromSubscriptionsHandler struct {
@@ -55,18 +57,23 @@ func (h *GenerateFromSubscriptionsHandler) Handle(ctx context.Context, cmd Gener
 
 	now := time.Now().UTC()
 	id := uuid.Must(uuid.NewV7()).String()
-	inv := domain.NewInvoice(id, cmd.CustomerID, cmd.CustomerName, code)
+	inv := domain.NewInvoice(id, cmd.CustomerID, cmd.CustomerName, cmd.CustomerCode, code)
 	inv.IssueDate = now
 	inv.DueDate = now.AddDate(0, 0, 30)
 
+	vatRate := cmd.DefaultVATRate
+	if vatRate <= 0 {
+		vatRate = 21
+	}
 	for _, svc := range active {
 		item := domain.LineItem{
-			ID:          uuid.Must(uuid.NewV7()).String(),
-			ProductID:   svc.ProductID,
-			ProductName: svc.ProductName,
-			Description: svc.ProductName,
-			Quantity:    1,
-			UnitPrice:   svc.PriceAmount,
+			ID:             uuid.Must(uuid.NewV7()).String(),
+			ProductID:      svc.ProductID,
+			ProductName:    svc.ProductName,
+			Description:    svc.ProductName,
+			Quantity:       1,
+			UnitPriceGross: svc.PriceAmount,
+			VATRate:        vatRate,
 		}
 		if err := inv.AddLineItem(item); err != nil {
 			return nil, err

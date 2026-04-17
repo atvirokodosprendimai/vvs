@@ -476,6 +476,12 @@ func New(cfg Config) (*App, error) {
 		subscriber,
 	)
 	invoiceRoutes.WithGenerateCmd(generateInvoiceCmd)
+	invoiceRoutes.WithCustomerSearch(&customerSearchBridge{handler: listCustomersQuery})
+	vatRate := cfg.DefaultVATRate
+	if vatRate <= 0 {
+		vatRate = 21
+	}
+	invoiceRoutes.WithDefaultVATRate(vatRate)
 	moduleRoutes = append(moduleRoutes, invoiceRoutes)
 	if customerRoutes != nil {
 		// TODO(dev3): WithInvoicesQuery is being added by Dev 3
@@ -675,6 +681,33 @@ func (b *activeServiceBridge) ListActiveForCustomer(ctx context.Context, custome
 		})
 	}
 	return active, nil
+}
+
+// customerSearchBridge adapts the customer query handler to the invoice module's
+// CustomerSearcher interface. Lives here (composition root) so invoice
+// module does not import the customer domain package.
+type customerSearchBridge struct {
+	handler *customerqueries.ListCustomersHandler
+}
+
+func (b *customerSearchBridge) SearchCustomers(ctx context.Context, query string, limit int) ([]invoicehttp.CustomerSearchResult, error) {
+	result, err := b.handler.Handle(ctx, customerqueries.ListCustomersQuery{
+		Search:   query,
+		PageSize: limit,
+		Page:     1,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]invoicehttp.CustomerSearchResult, len(result.Customers))
+	for i, c := range result.Customers {
+		out[i] = invoicehttp.CustomerSearchResult{
+			ID:          c.ID,
+			Code:        c.Code.String(),
+			CompanyName: c.CompanyName,
+		}
+	}
+	return out, nil
 }
 
 // provisionerDispatcher picks the right RouterProvisioner based on conn.RouterType.
