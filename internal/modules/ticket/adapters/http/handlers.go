@@ -358,7 +358,7 @@ func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	var signals struct {
-		TicketSearch string `json:"_ticketSearch"`
+		TicketSearch string `json:"ticketSearch"`
 	}
 	_ = datastar.ReadSignals(r, &signals)
 	search := strings.TrimSpace(strings.ToLower(signals.TicketSearch))

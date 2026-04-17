@@ -54,7 +54,7 @@ func TicketsPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"tickets-page\" data-signals=\"{_ticketSearch: '', commentBody: '', ticketAction: ''}\" data-init=\"@get('/sse/tickets')\"><div class=\"mb-4\"><input type=\"text\" data-bind:_ticket-search data-on:input__debounce.300ms=\"@get('/sse/tickets')\" placeholder=\"Search tickets...\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div><div id=\"all-tickets\"><div class=\"text-neutral-600 text-sm py-10 text-center\">Loading...</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"tickets-page\" data-signals=\"{ticketSearch: '', commentBody: '', ticketAction: ''}\" data-init=\"@get('/sse/tickets')\"><div class=\"mb-4\"><input type=\"text\" data-bind:ticket-search data-on:input__debounce.300ms=\"@get('/sse/tickets')\" placeholder=\"Search tickets...\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div><div id=\"all-tickets\"><div class=\"text-neutral-600 text-sm py-10 text-center\">Loading...</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

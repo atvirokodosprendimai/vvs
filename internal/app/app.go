@@ -348,12 +348,18 @@ func New(cfg Config) (*App, error) {
 	listTicketsQuery := ticketqueries.NewListTicketsForCustomerHandler(ticketRepo)
 	listCommentsQuery := ticketqueries.NewListCommentsHandler(ticketRepo)
 
+	ticketNameResolver := &ticketCustomerNameBridge{repo: customerRepo}
+	listAllTicketsQuery := ticketqueries.NewListAllTicketsHandler(ticketRepo, ticketNameResolver)
+	getTicketQuery := ticketqueries.NewGetTicketHandler(ticketRepo, ticketNameResolver)
+
 	ticketRoutes := tickethttp.NewHandlers(
 		openTicketCmd, updateTicketCmd, deleteTicketCmd,
 		changeTicketStatusCmd, addCommentCmd,
 		listTicketsQuery, listCommentsQuery,
 		subscriber, publisher,
 	)
+	ticketRoutes.WithListAll(listAllTicketsQuery)
+	ticketRoutes.WithGetTicket(getTicketQuery)
 	moduleRoutes = append(moduleRoutes, ticketRoutes)
 	if customerRoutes != nil {
 		customerRoutes.WithTicketsQuery(listTicketsQuery)
@@ -708,6 +714,21 @@ func (b *customerSearchBridge) SearchCustomers(ctx context.Context, query string
 		}
 	}
 	return out, nil
+}
+
+// ticketCustomerNameBridge resolves customer names for the ticket module's
+// standalone pages. Lives here (composition root) so the ticket module
+// does not import the customer domain package.
+type ticketCustomerNameBridge struct {
+	repo customerdomain.CustomerRepository
+}
+
+func (b *ticketCustomerNameBridge) CustomerName(ctx context.Context, id string) string {
+	c, err := b.repo.FindByID(ctx, id)
+	if err != nil {
+		return ""
+	}
+	return c.CompanyName
 }
 
 // provisionerDispatcher picks the right RouterProvisioner based on conn.RouterType.
