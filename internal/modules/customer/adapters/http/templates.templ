@@ -365,7 +365,11 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 				</div>
 			</div>
 			<!-- Right column: Tabbed CRM -->
-			<div class="lg:col-span-2" data-signals="{_crmTab: 'tickets'}">
+			<div
+				class="lg:col-span-2"
+				data-signals="{_crmTab: new URLSearchParams(window.location.search).get('tab') || 'tickets'}"
+				data-effect="window.history.replaceState({}, '', window.location.pathname + '?tab=' + $_crmTab)"
+			>
 				@CRMTabBar(len(services), len(contacts), len(deals), len(tickets), len(tasks), len(emailThreads))
 				<div data-init={ fmt.Sprintf("@get('/sse/customers/%s/crm', {openWhenHidden: false})", c.ID) }></div>
 				<div data-show="$_crmTab === 'services'" style="display:none">
