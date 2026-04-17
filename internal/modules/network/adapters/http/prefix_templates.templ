@@ -8,19 +8,17 @@ import (
 
 templ PrefixListPage(prefixes []*domain.NetBoxPrefix) {
 	@templates.Layout("IP Prefixes") {
-		@templates.PageHeader("IP Prefixes", "NetBox prefix pool for automatic IP allocation")
 		<div
 			data-signals="{_prefixAddOpen:false,prefixNetboxId:'',prefixCidr:'',prefixLocation:'',prefixPriority:'0'}"
 		>
-			<div class="flex items-center justify-between mb-4">
-				<div></div>
+			@templates.PageHeaderRow("IP Prefixes", "NetBox prefix pool for automatic IP allocation") {
 				<button
 					data-on:click="$_prefixAddOpen=true"
 					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
 				>
 					+ Add Prefix
 				</button>
-			</div>
+			}
 
 			<!-- Add modal -->
 			<div

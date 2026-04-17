@@ -70,19 +70,18 @@ templ loginError(msg string) {
 
 templ UserListPage() {
 	@templates.Layout("User Management") {
-		@templates.PageHeader("Users", "Manage system users")
-		<div class="flex justify-end mb-4">
+		<div
+			data-signals="{showCreate:false,newUsername:'',newPassword:'',newRole:'operator'}"
+			data-init="@get('/api/users', {openWhenHidden: false})"
+		>
+		@templates.PageHeaderRow("Users", "Manage system users") {
 			<button
 				data-on:click="$showCreate=true"
 				class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
 			>
 				+ Add User
 			</button>
-		</div>
-		<div
-			data-signals="{showCreate:false,newUsername:'',newPassword:'',newRole:'operator'}"
-			data-init="@get('/api/users', {openWhenHidden: false})"
-		>
+		}
 			<div id="user-table"></div>
 			<div data-show="$showCreate" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
 				<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6 w-full max-w-sm">

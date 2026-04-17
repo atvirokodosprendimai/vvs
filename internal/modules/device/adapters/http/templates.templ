@@ -12,28 +12,24 @@ import (
 
 templ DeviceListPage(devices []queries.DeviceReadModel, statusFilter string) {
 	@templates.Layout("Devices") {
-		@templates.PageHeader("Devices", "Hardware inventory")
 		<div
 			data-signals="{_registerOpen: false, name: '', deviceType: 'other', serialNumber: '', notes: ''}"
 		>
-			<!-- Toolbar -->
-			<div class="flex items-center justify-between mb-4">
+			@templates.PageHeaderRow("Devices", "Hardware inventory") {
 				<!-- Status filter tabs -->
-				<div class="flex gap-2">
-					for _, s := range []struct{ label, value string }{
-						{"All", ""},
-						{"In Stock", "in_stock"},
-						{"Deployed", "deployed"},
-						{"Decommissioned", "decommissioned"},
-					} {
-						<a
-							href={ templ.SafeURL(fmt.Sprintf("/devices?status=%s", s.value)) }
-							class={ "px-3 py-1.5 rounded text-xs font-medium transition-colors " + tabClass(statusFilter, s.value) }
-						>
-							{ s.label }
-						</a>
-					}
-				</div>
+				for _, s := range []struct{ label, value string }{
+					{"All", ""},
+					{"In Stock", "in_stock"},
+					{"Deployed", "deployed"},
+					{"Decommissioned", "decommissioned"},
+				} {
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/devices?status=%s", s.value)) }
+						class={ "px-3 py-1.5 rounded text-xs font-medium transition-colors " + tabClass(statusFilter, s.value) }
+					>
+						{ s.label }
+					</a>
+				}
 				<button
 					type="button"
 					data-on:click="$_registerOpen = true"
@@ -41,7 +37,7 @@ templ DeviceListPage(devices []queries.DeviceReadModel, statusFilter string) {
 				>
 					+ Register Device
 				</button>
-			</div>
+			}
 
 			<!-- Live table -->
 			<div

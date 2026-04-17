@@ -10,20 +10,18 @@ import (
 
 templ RouterListPage() {
 	@templates.Layout("Routers") {
-		@templates.PageHeader("Routers", "Manage network routers")
+		@templates.PageHeaderRow("Routers", "Manage network routers") {
+			<a
+				href="/routers/new"
+				class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+			>
+				+ New Router
+			</a>
+		}
 		<div
 			id="router-content"
 			data-init="@get('/api/routers', {openWhenHidden: false})"
 		>
-			<div class="flex items-center justify-between mb-4">
-				<div></div>
-				<a
-					href="/routers/new"
-					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-				>
-					+ New Router
-				</a>
-			</div>
 			<div id="router-table">
 				<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
 			</div>
