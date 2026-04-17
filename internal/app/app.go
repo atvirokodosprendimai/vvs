@@ -56,6 +56,7 @@ import (
 	servicepersistence "github.com/vvs/isp/internal/modules/service/adapters/persistence"
 	servicecommands "github.com/vvs/isp/internal/modules/service/app/commands"
 	servicequeries "github.com/vvs/isp/internal/modules/service/app/queries"
+	servicedomain "github.com/vvs/isp/internal/modules/service/domain"
 	servicemigrations "github.com/vvs/isp/internal/modules/service/migrations"
 
 	contacthttp "github.com/vvs/isp/internal/modules/contact/adapters/http"
@@ -87,13 +88,19 @@ import (
 	"github.com/google/uuid"
 
 	emailhttp "github.com/vvs/isp/internal/modules/email/adapters/http"
-	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
 	emailpersistence "github.com/vvs/isp/internal/modules/email/adapters/persistence"
 	smtpAdapter "github.com/vvs/isp/internal/modules/email/adapters/smtp"
 	emailcommands "github.com/vvs/isp/internal/modules/email/app/commands"
 	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
 	emailmigrations "github.com/vvs/isp/internal/modules/email/migrations"
 	"github.com/vvs/isp/internal/modules/email/worker"
+	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
+
+	invoicehttp "github.com/vvs/isp/internal/modules/invoice/adapters/http"
+	invoicepersistence "github.com/vvs/isp/internal/modules/invoice/adapters/persistence"
+	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
+	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
+	invoicemigrations "github.com/vvs/isp/internal/modules/invoice/migrations"
 
 	devicehttp "github.com/vvs/isp/internal/modules/device/adapters/http"
 	devicepersistence "github.com/vvs/isp/internal/modules/device/adapters/persistence"
@@ -146,6 +153,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "ticket", FS: ticketmigrations.FS, TableName: "goose_ticket"},
 		{Name: "task", FS: taskmigrations.FS, TableName: "goose_task"},
 		{Name: "email", FS: emailmigrations.FS, TableName: "goose_email"},
+		{Name: "invoice", FS: invoicemigrations.FS, TableName: "goose_invoice"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -339,16 +347,13 @@ func New(cfg Config) (*App, error) {
 	addCommentCmd := ticketcommands.NewAddCommentHandler(ticketRepo, publisher)
 	listTicketsQuery := ticketqueries.NewListTicketsForCustomerHandler(ticketRepo)
 	listCommentsQuery := ticketqueries.NewListCommentsHandler(ticketRepo)
-	customerNameResolver := &customerNameAdapter{q: getCustomerQuery}
-	listAllTicketsQuery := ticketqueries.NewListAllTicketsHandler(ticketRepo, customerNameResolver)
-	getTicketQuery := ticketqueries.NewGetTicketHandler(ticketRepo, customerNameResolver)
 
 	ticketRoutes := tickethttp.NewHandlers(
 		openTicketCmd, updateTicketCmd, deleteTicketCmd,
 		changeTicketStatusCmd, addCommentCmd,
 		listTicketsQuery, listCommentsQuery,
 		subscriber, publisher,
-	).WithListAll(listAllTicketsQuery).WithGetTicket(getTicketQuery)
+	)
 	moduleRoutes = append(moduleRoutes, ticketRoutes)
 	if customerRoutes != nil {
 		customerRoutes.WithTicketsQuery(listTicketsQuery)
@@ -377,11 +382,11 @@ func New(cfg Config) (*App, error) {
 
 	// Email module
 	emailAccountRepo := emailpersistence.NewGormEmailAccountRepository(gdb)
-	emailFolderRepo := emailpersistence.NewGormEmailFolderRepository(gdb)
 	emailThreadRepo := emailpersistence.NewGormEmailThreadRepository(gdb)
 	emailMessageRepo := emailpersistence.NewGormEmailMessageRepository(gdb)
 	emailAttachmentRepo := emailpersistence.NewGormEmailAttachmentRepository(gdb)
 	emailTagRepo := emailpersistence.NewGormEmailTagRepository(gdb)
+	emailFolderRepo := emailpersistence.NewGormEmailFolderRepository(gdb)
 
 	emailEncKey := []byte(cfg.EmailEncKey) // 32-byte AES key from config; empty = dev mode (no encryption)
 
@@ -435,7 +440,7 @@ func New(cfg Config) (*App, error) {
 		listEmailAccountsQuery, listFoldersQuery, emailFolderRepo, discoverFn,
 		emailAttachmentRepo,
 		subscriber, publisher,
-	).WithPageSize(cfg.EmailPageSize).WithSearchAttachments(searchAttachmentsQuery).WithComposeCmd(composeEmailCmd).WithCustomerSearch(&customerSearchAdapter{q: listCustomersQuery}).WithAutoLinker(&autoLinkAdapter{db: gdb}).WithTicketOpener(&ticketOpenerAdapter{cmd: openTicketCmd})
+	).WithPageSize(cfg.EmailPageSize).WithSearchAttachments(searchAttachmentsQuery).WithComposeCmd(composeEmailCmd)
 	moduleRoutes = append(moduleRoutes, emailRoutes)
 	if customerRoutes != nil {
 		customerRoutes.WithEmailThreadsQuery(listEmailForCustomerQuery)
@@ -445,6 +450,37 @@ func New(cfg Config) (*App, error) {
 	emailWorker := worker.NewSyncWorker(emailRepos, publisher, subscriber, emailSyncInterval)
 	emailWorker.Start()
 	log.Printf("module wired: email")
+
+	// Invoice module
+	invoiceRepo := invoicepersistence.NewInvoiceRepository(gdb)
+
+	createInvoiceCmd := invoicecommands.NewCreateInvoiceHandler(invoiceRepo, publisher)
+	finalizeInvoiceCmd := invoicecommands.NewFinalizeInvoiceHandler(invoiceRepo, publisher)
+	markPaidCmd := invoicecommands.NewMarkPaidHandler(invoiceRepo, publisher)
+	voidInvoiceCmd := invoicecommands.NewVoidInvoiceHandler(invoiceRepo, publisher)
+	addLineItemCmd := invoicecommands.NewAddLineItemHandler(invoiceRepo, publisher)
+	removeLineItemCmd := invoicecommands.NewRemoveLineItemHandler(invoiceRepo, publisher)
+	generateInvoiceCmd := invoicecommands.NewGenerateFromSubscriptionsHandler(
+		invoiceRepo, publisher, &activeServiceBridge{repo: serviceRepo},
+	)
+
+	listAllInvoicesQuery := invoicequeries.NewListAllInvoicesHandler(gdb)
+	getInvoiceQuery := invoicequeries.NewGetInvoiceHandler(gdb)
+	listInvoicesForCustomerQuery := invoicequeries.NewListInvoicesForCustomerHandler(gdb)
+
+	invoiceRoutes := invoicehttp.NewHandlers(
+		createInvoiceCmd, finalizeInvoiceCmd, markPaidCmd, voidInvoiceCmd,
+		addLineItemCmd, removeLineItemCmd,
+		listAllInvoicesQuery, getInvoiceQuery, listInvoicesForCustomerQuery,
+		subscriber,
+	)
+	invoiceRoutes.WithGenerateCmd(generateInvoiceCmd)
+	moduleRoutes = append(moduleRoutes, invoiceRoutes)
+	if customerRoutes != nil {
+		// TODO(dev3): WithInvoicesQuery is being added by Dev 3
+		customerRoutes.WithInvoicesQuery(listInvoicesForCustomerQuery)
+	}
+	log.Printf("module wired: invoice")
 
 	// 10. Service module — commands + route registration
 	assignServiceCmd := servicecommands.NewAssignServiceHandler(serviceRepo, publisher)
@@ -613,6 +649,33 @@ func (b *customerARPBridge) UpdateNetworkInfo(ctx context.Context, id, routerID,
 	return b.repo.Save(ctx, c)
 }
 
+// activeServiceBridge adapts the service repository to the invoice module's
+// ActiveServiceLister interface. Lives here (composition root) so the invoice
+// module does not import the service domain package.
+type activeServiceBridge struct {
+	repo servicedomain.ServiceRepository
+}
+
+func (b *activeServiceBridge) ListActiveForCustomer(ctx context.Context, customerID string) ([]invoicecommands.ServiceInfo, error) {
+	svcs, err := b.repo.ListForCustomer(ctx, customerID)
+	if err != nil {
+		return nil, err
+	}
+	var active []invoicecommands.ServiceInfo
+	for _, s := range svcs {
+		if s.Status != servicedomain.StatusActive {
+			continue
+		}
+		active = append(active, invoicecommands.ServiceInfo{
+			ID:          s.ID,
+			ProductID:   s.ProductID,
+			ProductName: s.ProductName,
+			PriceAmount: s.PriceAmount,
+		})
+	}
+	return active, nil
+}
+
 // provisionerDispatcher picks the right RouterProvisioner based on conn.RouterType.
 // Lives here (composition root) so neither infrastructure package imports the other.
 type provisionerDispatcher struct {
@@ -669,72 +732,4 @@ func seedAdmin(ctx context.Context, users domain.UserRepository, username, passw
 		return err
 	}
 	return users.Save(ctx, u)
-}
-
-// autoLinkAdapter wraps gormsqlite.DB to implement the email module's autoLinker interface.
-type autoLinkAdapter struct {
-	db *gormsqlite.DB
-}
-
-func (a *autoLinkAdapter) AutoLink(ctx context.Context) (int64, error) {
-	return emailpersistence.AutoLinkCustomers(ctx, a.db)
-}
-
-// ticketOpenerAdapter adapts the ticket OpenTicketHandler to the email module's ticketOpener interface.
-type ticketOpenerAdapter struct {
-	cmd *ticketcommands.OpenTicketHandler
-}
-
-func (a *ticketOpenerAdapter) Open(ctx context.Context, customerID, subject, body, priority string) (string, error) {
-	tk, err := a.cmd.Handle(ctx, ticketcommands.OpenTicketCommand{
-		CustomerID: customerID,
-		Subject:    subject,
-		Body:       body,
-		Priority:   priority,
-	})
-	if err != nil {
-		return "", err
-	}
-	return tk.ID, nil
-}
-
-// customerSearchAdapter adapts the customer ListCustomersHandler to the email module's customerSearcher interface.
-type customerSearchAdapter struct {
-	q *customerqueries.ListCustomersHandler
-}
-
-func (a *customerSearchAdapter) Search(ctx context.Context, query string, limit int) ([]emailhttp.CustomerSearchResult, error) {
-	result, err := a.q.Handle(ctx, customerqueries.ListCustomersQuery{
-		Search:   query,
-		Page:     1,
-		PageSize: limit,
-	})
-	if err != nil {
-		return nil, err
-	}
-	out := make([]emailhttp.CustomerSearchResult, len(result.Customers))
-	for i, c := range result.Customers {
-		out[i] = emailhttp.CustomerSearchResult{
-			ID:          c.ID,
-			Code:        c.Code.String(),
-			CompanyName: c.CompanyName,
-		}
-	}
-	return out, nil
-}
-
-// customerNameAdapter resolves customer names for the ticket module.
-type customerNameAdapter struct {
-	q *customerqueries.GetCustomerHandler
-}
-
-func (a *customerNameAdapter) CustomerName(ctx context.Context, id string) string {
-	if id == "" {
-		return ""
-	}
-	c, err := a.q.Handle(ctx, customerqueries.GetCustomerQuery{ID: id})
-	if err != nil {
-		return ""
-	}
-	return c.CompanyName
 }
