@@ -1,6 +1,6 @@
 ---
 tldr: Sidebar nav category open/close state persists across page loads via localStorage — data-init restores, data-effect saves
-status: active
+status: completed
 ---
 
 # Plan: Persist Sidebar Nav State Across Page Loads
@@ -30,12 +30,13 @@ No backend changes. No new routes. One template edit.
 
 ## Phases
 
-### Phase 1 — Implement localStorage persistence — status: active
+### Phase 1 — Implement localStorage persistence — status: completed
 
-1. [ ] Add `data-init` + `data-effect` to `Sidebar` in `layout.templ`
-   - `data-init` restores signals from stored JSON (falls back to defaults if absent)
-   - `data-effect` saves current state on every signal change
-   - Key: `'navState'`, value: `{crm, finance, network, system}` booleans
+1. [x] Add `data-init` + `data-effect` to `Sidebar` in `layout.templ`
+   - => `data-init` placed before `data-effect` (Datastar eval order)
+   - => try/catch in init guards against malformed localStorage data
+   - => `??` operator falls back to current signal value if key absent
+   - => key `navState`, shape `{crm, finance, network, system}` booleans
 
 ---
 
@@ -48,4 +49,4 @@ No backend changes. No new routes. One template edit.
 
 ## Progress Log
 
-<!-- entries added after each action -->
+- **2604172330** — Phase 1 done. Commit 0904d29. Two attributes on `<nav>` in `layout.templ`, no backend changes.
