@@ -1,6 +1,6 @@
 ---
 tldr: Email inbox UX — 3-pane inline reading, customer context (name/code + email-match suggestion), tag filter active state, reply form position, post-send clearing, unread counts
-status: active
+status: completed
 ---
 
 # Plan: Improve Email Module UX
@@ -73,75 +73,71 @@ status: active
    - => `ThreadDetail` now passes `customerBadgeLabel(thread.CustomerName, thread.CustomerCode)` as label
    - => renders as `CLI-001 · Acme Corp` linked to customer page
 
-### Phase 2 - 3-pane inline reading — status: open
+### Phase 2 - 3-pane inline reading — status: completed
 
 Goal: clicking a thread shows detail in a right panel inside the inbox, without opening a new tab.
 
-1. [ ] Add thread detail panel to inbox layout
-   - In `EmailPage`: add `$emailThreadID: ''` signal to inbox `data-signals`
-   - Add panel slot: `<div id="email-thread-panel" data-show="$emailThreadID != ''" style="display:none" class="...">`
-   - Panel width: `w-[520px] flex-shrink-0` or `flex-1` — pick visually
-   - Show close button `×` that sets `$emailThreadID = ''`
-   - Add `id="email-thread-panel-content"` inner div that receives SSE patches
+1. [x] Add thread detail panel to inbox layout
+   - => `emailThreadID: ''` signal added to `EmailPage` `data-signals`
+   - => panel slot with `data-show="$emailThreadID != ''"` and flex-1 inside inbox
+   - => thread list uses `data-style:flex` to shrink to 360px when panel open
+   - => close button sets `$emailThreadID = ''`
+   - => `#email-thread-detail` div inside panel receives SSE patches from `threadSSE`
 
-2. [ ] Thread rows trigger inline panel instead of new tab
-   - Remove `target="_blank"` from `threadRow`
-   - Change `<a href=...>` to `<button>` or `<a>` with `data-on:click`
-   - On click: `$emailThreadID = '{id}'; @get('/sse/emails/{id}', {openWhenHidden: false})`
-   - Use `data-on:click={ fmt.Sprintf(...) }` pattern
+2. [x] Thread rows trigger inline panel instead of new tab
+   - => removed `target="_blank"`, added `data-on:click__prevent`
+   - => on click: `$emailThreadID = '{id}'; @get('/sse/emails/{id}', {openWhenHidden: false})`
 
-3. [ ] `threadSSE` patches panel content instead of full page
-   - Currently `threadSSE` patches `#email-thread-detail` (which is inside `ThreadDetail` component)
-   - `ThreadDetail` root `id` is `email-thread-detail` — this already works for panel patching
-   - Wrap panel content in `<div id="email-thread-panel-content">` and patch into that
+3. [x] threadSSE patches panel content
+   - => `ThreadDetail` renders `<div id="email-thread-detail">` — morpher patches by ID
 
-4. [ ] Auto-mark read when thread opens in panel
-   - In `threadSSE`: after patching thread detail, also fire `markReadCmd.Handle(ctx, threadID)`
-   - Saves the separate manual "Mark read" click
+4. [x] Auto-mark read when thread opens in panel
+   - => already in `threadSSE` from Phase 1
 
-5. [ ] Auto-suggest customer from participant email match
-   - Add `SuggestedCustomerID`, `SuggestedCustomerName`, `SuggestedCustomerCode` to `ThreadDetailReadModel`
-   - New port: `type contactEmailLookup interface { FindCustomerByContactEmail(ctx, email string) (id, name, code string, err error) }`
-   - In `GetThreadHandler` (or in `threadSSE` handler): when `CustomerID == ""`, iterate participant addresses, call lookup for each, first match → suggestion
-   - Template: show "Suggested: [CustomerName]" pill (neutral/yellow tone) below `customerLinkBadge`, with "Link" button calling existing `/api/email-threads/{id}/link`
-   - One-click accept: on click → `@post('/api/email-threads/{id}/link')` with `customerID` signal pre-set to suggestion ID
+5. [x] Auto-suggest customer from participant email match
+   - => `SuggestedCustomerID/Name/Code` added to `ThreadDetailReadModel`
+   - => `contactEmailLookup` port + `enrichSuggestion` helper in handlers.go
+   - => `emailContactLookupBridge` in app.go queries contacts/customers JOIN directly
+   - => suggestion pill in `ThreadDetail` header with one-click Link button
 
-6. [ ] Keep full-page route working
-   - `/emails/threads/{threadID}` stays as-is for direct links / bookmarks
-   - No changes needed to `threadPage` handler
+6. [x] Keep full-page route working
+   - => `/emails/threads/{threadID}` unchanged
 
-### Phase 3 - Polish — status: open
+### Phase 3 - Polish — status: completed
 
-1. [ ] Keyboard navigation
-   - `data-on:keydown__window`: `j` → next thread, `k` → prev thread, `Esc` → close panel, `r` → focus reply
-   - Thread rows need stable IDs or data attributes for j/k traversal
-   - Consider `data-on:keydown__window` on inbox container
+1. [x] Keyboard navigation (partial)
+   - => `Esc` closes panel via `data-on:keydown__window` on inbox container
+   - => `r` focuses inline reply textarea when panel open and focus not in input
+   - => j/k thread nav NOT implemented (deferred — low value vs complexity)
 
-2. [ ] Star toggle from thread row
-   - Thread row: show star icon (⭐ / ☆) that calls `@post('/api/email-threads/{id}/tags')` with tag=starred
-   - Or `@delete(...)` to unstar
-   - Update row reactively after star toggle
+2. [x] Star toggle from thread row
+   - => `★`/`☆` icon on each row, `data-on:click__stop__prevent` prevents row open
+   - => PUT /api/email-threads/{id}/star → `toggleStarSSE` → `ToggleStarHandler`
+   - => refreshes thread list after toggle
 
 ---
 
 ## Verification
 
-- [ ] Click thread in inbox → detail panel opens inline, no new tab
-- [ ] Thread row shows customer name + code badge when linked
-- [ ] Thread detail header shows "Acme Corp (CLI-001)" linked to customer page
-- [ ] Thread with unlinked but matching participant email → shows "Suggested: Acme Corp" pill with Link button
-- [ ] Accept suggestion → thread linked, suggested pill replaced by proper badge
-- [ ] Tag filter "unread" → button highlights amber, threads filtered
-- [ ] Send reply → reply body clears, thread refreshes showing new message
-- [ ] Compose send → modal closes, all fields cleared
-- [ ] Thread opens → auto-marked read (unread dot disappears)
-- [ ] Esc key closes thread panel
-- [ ] `/emails/threads/{threadID}` direct URL still works
+- [x] Click thread in inbox → detail panel opens inline, no new tab
+- [x] Thread row shows customer name + code badge when linked
+- [x] Thread detail header shows "Acme Corp (CLI-001)" linked to customer page
+- [x] Thread with unlinked but matching participant email → shows "Suggested: Acme Corp" pill with Link button
+- [x] Accept suggestion → thread linked, suggested pill replaced by proper badge
+- [x] Tag filter "unread" → button highlights amber, threads filtered
+- [x] Send reply → reply body clears, thread refreshes showing new message
+- [x] Compose send → modal closes, all fields cleared
+- [x] Thread opens → auto-marked read (unread dot disappears)
+- [x] Esc key closes thread panel
+- [x] `/emails/threads/{threadID}` direct URL still works
+- [ ] Unread count badge on account sidebar (deferred — requires domain repo change)
+- [ ] j/k keyboard thread navigation (deferred — low value)
 
 ## Adjustments
 
-<!-- document plan changes with timestamps -->
+- **2604172106** — j/k thread nav dropped from Phase 3: requires stable DOM IDs on thread rows + non-trivial signal wiring; deferred as low value vs complexity.
 
 ## Progress Log
 
-- **2604172106** — Phase 1 complete (actions 1–4, 6–8). Action 5 (unread count) deferred — requires domain repo interface change. Actions 3+4 were already done in existing code.
+- **2604172106** — Phase 1 complete (actions 1–4, 6–8). Action 5 (unread count) deferred. Actions 3+4 already done.
+- **2604172106** — Phase 2 + 3 complete. Commit c6b18a4. Star toggle, 3-pane panel, customer auto-suggest, Esc/r keyboard shortcuts all shipped.
