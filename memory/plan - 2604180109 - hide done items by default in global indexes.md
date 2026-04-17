@@ -1,6 +1,6 @@
 ---
 tldr: Global task/ticket/deal indexes default to active items; tab to reveal done/closed; tasks gains search
-status: active
+status: completed
 ---
 
 # Plan: Hide Done Items by Default in Global Indexes
@@ -27,32 +27,26 @@ Signal name drives both the tab UI and backend filter — changing tab re-opens 
 
 ## Phases
 
-### Phase 1 — Tasks: search + status filter — status: open
+### Phase 1 — Tasks: search + status filter — status: completed
 
-1. [ ] Backend: `listAllSSE` reads `taskSearch` + `taskStatusFilter` signals; filter: active = exclude done/cancelled, done = only done/cancelled
-   - file: `internal/modules/task/adapters/http/handlers.go`
-   - signal names: `taskSearch` (string), `taskStatusFilter` ("active" | "done")
-   - also update `listPage` to pass empty initial tasks so page renders immediately
+1. [x] Backend: `listAllSSE` reads `taskSearch` + `taskStatusFilter` signals; `filterTasks` helper added
+   - => `listPage` no longer pre-fetches tasks; `TasksPage()` takes no args
+   - => `filterTasks`: active = exclude done/cancelled, done = only done/cancelled
 
-2. [ ] Frontend: `TasksPage` — add `taskStatusFilter: 'active'` + `taskSearch: ''` signals; add search input + Active/Done tabs in PageHeaderRow; tabs call `@get('/api/tasks', ...)`
-   - file: `internal/modules/task/adapters/http/templates.templ`
+2. [x] Frontend: `TasksPage()` — Active/Done tabs + search input + signals in PageHeaderRow
 
-### Phase 2 — Tickets: status filter tab — status: open
+### Phase 2 — Tickets: status filter tab — status: completed
 
-3. [ ] Backend: `listAllSSE` reads `ticketStatusFilter` signal; update `filterTickets` signature; active = exclude resolved/closed, closed = only resolved/closed
-   - file: `internal/modules/ticket/adapters/http/handlers.go`
-   - signal name: `ticketStatusFilter` ("active" | "closed")
+3. [x] Backend: `filterTickets` updated to accept statusFilter; `domain` import added
+   - => active = exclude resolved/closed, closed = only resolved/closed
 
-4. [ ] Frontend: `TicketsPage` — add `ticketStatusFilter: 'active'` signal; add Active/Closed tabs next to search in PageHeaderRow; tabs call `@get('/sse/tickets')`
-   - file: `internal/modules/ticket/adapters/http/templates.templ`
+4. [x] Frontend: `TicketsPage` — `ticketStatusFilter: 'active'` signal + Active/Closed tabs; search width reduced to w-48
 
-### Phase 3 — Deals: change default + Active tab — status: open
+### Phase 3 — Deals: change default + Active tab — status: completed
 
-5. [ ] Backend: `filterDeals` — handle `stageFilter = "active"` (exclude won/lost)
-   - file: `internal/modules/deal/adapters/http/handlers.go`
+5. [x] Backend: `filterDeals` — `"active"` excludes won/lost; `""` and `"all"` show everything
 
-6. [ ] Frontend: `DealsPage` — change default `dealStageFilter: 'active'`; replace "All" tab with "Active" tab; keep individual stage tabs + Won/Lost
-   - file: `internal/modules/deal/adapters/http/templates.templ`
+6. [x] Frontend: `DealsPage` — default `dealStageFilter: 'active'`; "All" tab → "Active" tab
 
 ## Verification
 
@@ -62,4 +56,4 @@ Signal name drives both the tab UI and backend filter — changing tab re-opens 
 
 ## Progress Log
 
-<!-- Updated after every action -->
+- **2604180109** — All 3 modules done in one pass. 6 files changed (3 handlers + 3 templates).

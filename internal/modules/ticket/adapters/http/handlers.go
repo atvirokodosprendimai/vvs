@@ -12,6 +12,7 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 	"github.com/vvs/isp/internal/modules/ticket/app/commands"
 	"github.com/vvs/isp/internal/modules/ticket/app/queries"
+	"github.com/vvs/isp/internal/modules/ticket/domain"
 	"github.com/vvs/isp/internal/shared/events"
 )
 
@@ -380,9 +381,13 @@ func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	var signals struct {
-		TicketSearch string `json:"ticketSearch"`
+		TicketSearch       string `json:"ticketSearch"`
+		TicketStatusFilter string `json:"ticketStatusFilter"`
 	}
 	_ = datastar.ReadSignals(r, &signals)
+	if signals.TicketStatusFilter == "" {
+		signals.TicketStatusFilter = "active"
+	}
 	search := strings.TrimSpace(strings.ToLower(signals.TicketSearch))
 
 	all, err := h.listAllQuery.Handle(r.Context())
@@ -390,7 +395,7 @@ func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
 		log.Printf("ticket handler: listAllSSE: %v", err)
 		return
 	}
-	current := filterTickets(all, search)
+	current := filterTickets(all, signals.TicketStatusFilter, search)
 	sse.PatchElementTempl(AllTicketList(current))
 
 	for {
@@ -404,7 +409,7 @@ func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
 				log.Printf("ticket handler: listAllSSE refresh: %v", err)
 				continue
 			}
-			next := filterTickets(all, search)
+			next := filterTickets(all, signals.TicketStatusFilter, search)
 			if !reflect.DeepEqual(current, next) {
 				sse.PatchElementTempl(AllTicketList(next))
 				current = next
@@ -460,18 +465,29 @@ func (h *Handlers) detailSSE(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func filterTickets(tickets []queries.TicketReadModel, search string) []queries.TicketReadModel {
-	if search == "" {
-		return tickets
-	}
+func filterTickets(tickets []queries.TicketReadModel, statusFilter, search string) []queries.TicketReadModel {
 	var out []queries.TicketReadModel
 	for _, tk := range tickets {
-		if strings.Contains(strings.ToLower(tk.Subject), search) ||
-			strings.Contains(strings.ToLower(tk.CustomerName), search) ||
-			strings.Contains(strings.ToLower(tk.Status), search) ||
-			strings.Contains(strings.ToLower(tk.Priority), search) {
-			out = append(out, tk)
+		terminal := tk.Status == domain.StatusResolved || tk.Status == domain.StatusClosed
+		switch statusFilter {
+		case "closed":
+			if !terminal {
+				continue
+			}
+		default: // "active"
+			if terminal {
+				continue
+			}
 		}
+		if search != "" {
+			if !strings.Contains(strings.ToLower(tk.Subject), search) &&
+				!strings.Contains(strings.ToLower(tk.CustomerName), search) &&
+				!strings.Contains(strings.ToLower(tk.Status), search) &&
+				!strings.Contains(strings.ToLower(tk.Priority), search) {
+				continue
+			}
+		}
+		out = append(out, tk)
 	}
 	return out
 }

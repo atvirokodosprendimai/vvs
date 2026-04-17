@@ -227,9 +227,37 @@ templ taskRow(t queries.TaskReadModel) {
 }
 
 // TasksPage is the standalone global tasks page at /tasks.
-templ TasksPage(tasks []queries.TaskReadModel) {
+templ TasksPage() {
 	@templates.Layout("Tasks") {
 		@templates.PageHeaderRow("Tasks", "All tasks across the system") {
+			<!-- Status filter tabs -->
+			<button
+				data-on:click="$taskStatusFilter = 'active'; @get('/api/tasks', {openWhenHidden: false})"
+				class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
+				data-class:bg-amber-600={ "$taskStatusFilter === 'active'" }
+				data-class:text-white={ "$taskStatusFilter === 'active'" }
+				data-class:border-amber-600={ "$taskStatusFilter === 'active'" }
+				data-class:bg-neutral-800={ "$taskStatusFilter !== 'active'" }
+				data-class:text-neutral-400={ "$taskStatusFilter !== 'active'" }
+				data-class:border-neutral-700={ "$taskStatusFilter !== 'active'" }
+			>Active</button>
+			<button
+				data-on:click="$taskStatusFilter = 'done'; @get('/api/tasks', {openWhenHidden: false})"
+				class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
+				data-class:bg-amber-600={ "$taskStatusFilter === 'done'" }
+				data-class:text-white={ "$taskStatusFilter === 'done'" }
+				data-class:border-amber-600={ "$taskStatusFilter === 'done'" }
+				data-class:bg-neutral-800={ "$taskStatusFilter !== 'done'" }
+				data-class:text-neutral-400={ "$taskStatusFilter !== 'done'" }
+				data-class:border-neutral-700={ "$taskStatusFilter !== 'done'" }
+			>Done</button>
+			<input
+				type="text"
+				data-bind:task-search
+				data-on:input__debounce.300ms="@get('/api/tasks', {openWhenHidden: false})"
+				placeholder="Search tasks..."
+				class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-1.5 text-sm w-48 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+			/>
 			<button
 				type="button"
 				data-on:click="$_taskModalOpen = true; $taskTitle = ''; $taskDescription = ''; $taskPriority = 'normal'; $taskDueDate = ''"
@@ -240,7 +268,7 @@ templ TasksPage(tasks []queries.TaskReadModel) {
 		}
 		<div
 			id="tasks-content"
-			data-signals="{_taskModalOpen: false, taskTitle: '', taskDescription: '', taskPriority: 'normal', taskDueDate: ''}"
+			data-signals="{_taskModalOpen: false, taskTitle: '', taskDescription: '', taskPriority: 'normal', taskDueDate: '', taskStatusFilter: 'active', taskSearch: ''}"
 			data-init="@get('/api/tasks', {openWhenHidden: false})"
 		>
 

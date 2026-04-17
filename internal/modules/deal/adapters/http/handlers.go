@@ -351,8 +351,18 @@ func (h *Handlers) filterDeals(ctx context.Context, all []queries.DealReadModel,
 
 	for _, d := range all {
 		// Stage filter
-		if stageFilter != "" && stageFilter != "all" && d.Stage != stageFilter {
-			continue
+		terminal := d.Stage == "won" || d.Stage == "lost"
+		switch stageFilter {
+		case "active":
+			if terminal {
+				continue
+			}
+		case "", "all":
+			// show everything
+		default:
+			if d.Stage != stageFilter {
+				continue
+			}
 		}
 
 		custName := ""

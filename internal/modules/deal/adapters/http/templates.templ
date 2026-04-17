@@ -293,10 +293,10 @@ type DealPageItem struct {
 
 templ DealsPage() {
 	@templates.Layout("Deals") {
-		<div data-signals="{dealSearch: '', dealStageFilter: 'all'}">
+		<div data-signals="{dealSearch: '', dealStageFilter: 'active'}">
 			@templates.PageHeaderRow("Deals", "All sales opportunities") {
 				<!-- Stage filter tabs -->
-				@dealFilterTab("all", "All")
+				@dealFilterTab("active", "Active")
 				@dealFilterTab("new", "New")
 				@dealFilterTab("qualified", "Qualified")
 				@dealFilterTab("proposal", "Proposal")
