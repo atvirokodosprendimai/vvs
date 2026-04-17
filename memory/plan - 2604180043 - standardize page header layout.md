@@ -1,6 +1,6 @@
 ---
 tldr: New PageHeaderRow component — title left, filters+buttons right at same height — migrated across all main list pages
-status: active
+status: completed
 ---
 
 # Plan: Standardize Page Header Layout
@@ -57,44 +57,44 @@ templ PageHeaderRow(title, subtitle string) {
 
 ## Phases
 
-### Phase 1 — Add `PageHeaderRow` component — status: active
+### Phase 1 — Add `PageHeaderRow` component — status: completed
 
-1. [ ] Add `PageHeaderRow(title, subtitle string)` to `components.templ`
-   - Left: title + subtitle (same markup as existing `PageHeader`)
-   - Right: `{ children... }` slot in `flex items-center gap-3`
-   - Full row: `flex items-center justify-between mb-6`
+1. [x] Add `PageHeaderRow(title, subtitle string)` to `components.templ`
+   - => `flex items-center justify-between mb-6` row
+   - => right side: `flex items-center gap-3` with `{ children... }` slot
 
-### Phase 2 — Migrate CRM modules — status: open
+### Phase 2 — Migrate CRM modules — status: completed
 
-2. [ ] Migrate `/customers` list page
-   - Replace `PageHeader` + separate filter row with `PageHeaderRow { search + New Customer }`
+2. [x] Migrate `/customers` list page
+   - => search input + New Customer link in PageHeaderRow; signals on data-init div
 
-3. [ ] Migrate `/tickets` and `/tasks` standalone pages
-   - Tickets: search + New Ticket
-   - Tasks: search + status filter + New Task
+3. [x] Migrate `/tickets` and `/tasks` standalone pages
+   - => tickets: search + New Ticket button in header
+   - => tasks: New Task button only (no search filter)
 
-4. [ ] Migrate `/deals` standalone page
-   - Filter tabs + New Deal (or modal trigger)
+4. [x] Migrate `/deals` standalone page
+   - => stage tabs + search moved to PageHeaderRow in DealsPage
+   - => signals on outer wrapper; DealsPageContent is now table-only
 
-### Phase 3 — Migrate Finance + Product modules — status: open
+### Phase 3 — Migrate Finance + Product modules — status: completed
 
-5. [ ] Migrate `/invoices` list page
-   - Status tab filter buttons + New Invoice
+5. [x] Migrate `/invoices` list page
+   - => 5 status tabs + New Invoice link in header; consolidated data-class to object form
 
-6. [ ] Migrate `/products` list page
-   - Search + type dropdown + New Product
+6. [x] Migrate `/products` list page
+   - => search + type dropdown + New Product link in header
 
-### Phase 4 — Migrate Network + System modules — status: open
+### Phase 4 — Migrate Network + System modules — status: completed
 
-7. [ ] Migrate `/routers`, `/prefixes`, `/devices` pages
-   - Routers: New Router
-   - Prefixes: New Prefix
-   - Devices: New Device (check template for actual button)
+7. [x] Migrate `/routers`, `/prefixes`, `/devices` pages
+   - => routers: New Router link
+   - => prefixes: Add Prefix button; signals on outer wrapper
+   - => devices: status tab links + Register Device button; signals on outer wrapper
 
-8. [ ] Migrate `/users`, `/cron`, `/attachments`
-   - Users: New User
-   - Cron: New Job
-   - Attachments: search only (no primary action)
+8. [x] Migrate `/users`, `/cron`
+   - => users: Add User button; signals moved before PageHeaderRow
+   - => cron: Add Job button; signals on outer wrapper
+   - => attachments: sidebar layout (like email inbox) — kept PageHeader, skip
 
 ---
 
@@ -109,6 +109,10 @@ templ PageHeaderRow(title, subtitle string) {
 
 <!-- document plan changes here -->
 
+## Adjustments
+
+- **2604180043** — Attachments page kept with `PageHeader` — it has a 2-column sidebar+content layout where the search lives in the content column, not the page top. Forcing it into PageHeaderRow would be visually wrong.
+
 ## Progress Log
 
-<!-- entries added after each action -->
+- **2604180043** — All 4 phases complete. 11 pages migrated. Commits: 9c26242 (component), 4d4bc3e (CRM), 5ab2b76 (Finance/Product), 840d2bc (Network/System).
