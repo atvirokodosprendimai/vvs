@@ -125,31 +125,10 @@ templ TicketDetailPage(tk queries.TicketReadModel) {
 	@templates.Layout("Ticket — " + tk.Subject) {
 		<div
 			class="max-w-4xl mx-auto"
-			data-signals="{commentBody: '', ticketAction: ''}"
+			data-signals={ fmt.Sprintf("{commentBody: '', ticketAction: '', _ticketEditOpen: false, ticketSubject: %q, ticketBody: %q, ticketPriority: %q}", tk.Subject, tk.Body, tk.Priority) }
 			data-init={ fmt.Sprintf("@get('/sse/tickets/%s/detail', {openWhenHidden: false})", tk.ID) }
 		>
-			<!-- Header -->
-			<div class="flex items-center gap-3 mb-6">
-				<a href="/tickets" class="text-neutral-500 hover:text-neutral-300 transition-colors">
-					<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
-					</svg>
-				</a>
-				<div class="flex-1">
-					<h1 class="text-lg font-semibold text-neutral-100">{ tk.Subject }</h1>
-					<div class="flex items-center gap-3 mt-1">
-						@ticketPriorityBadge(tk.Priority)
-						@ticketStatusInline(tk.Status)
-						if tk.CustomerName != "" {
-							<a
-								href={ templ.SafeURL(fmt.Sprintf("/customers/%s", tk.CustomerID)) }
-								class="text-amber-400 hover:text-amber-300 text-sm"
-							>{ tk.CustomerName }</a>
-						}
-						<span class="text-neutral-600 text-xs">{ tk.CreatedAt.Format("Jan 2, 2006 15:04") }</span>
-					</div>
-				</div>
-			</div>
+			@ticketDetailHeader(tk)
 
 			@ticketStatusActions(tk)
 
@@ -199,8 +178,114 @@ templ TicketDetailPage(tk queries.TicketReadModel) {
 					</div>
 				</div>
 			</div>
+
+			@ticketEditModal(tk.ID)
 		</div>
 	}
+}
+
+// ticketDetailHeader renders the patchable header for ticket detail page.
+templ ticketDetailHeader(tk queries.TicketReadModel) {
+	<div id="ticket-detail-header" class="flex items-center gap-3 mb-6">
+		<a href="/tickets" class="text-neutral-500 hover:text-neutral-300 transition-colors">
+			<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+			</svg>
+		</a>
+		<div class="flex-1">
+			<div class="flex items-center gap-2">
+				<h1 class="text-lg font-semibold text-neutral-100">{ tk.Subject }</h1>
+				<button
+					type="button"
+					data-on:click={ fmt.Sprintf("$ticketSubject = %q; $ticketBody = %q; $ticketPriority = %q; $_ticketEditOpen = true", tk.Subject, tk.Body, tk.Priority) }
+					class="text-neutral-500 hover:text-amber-400 transition-colors"
+					title="Edit ticket"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"/>
+					</svg>
+				</button>
+			</div>
+			<div class="flex items-center gap-3 mt-1">
+				@ticketPriorityBadge(tk.Priority)
+				@ticketStatusInline(tk.Status)
+				if tk.CustomerName != "" {
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/customers/%s", tk.CustomerID)) }
+						class="text-amber-400 hover:text-amber-300 text-sm"
+					>{ tk.CustomerName }</a>
+				}
+				<span class="text-neutral-600 text-xs">{ tk.CreatedAt.Format("Jan 2, 2006 15:04") }</span>
+			</div>
+		</div>
+	</div>
+}
+
+// ticketEditModal renders the edit modal for ticket detail page.
+templ ticketEditModal(ticketID string) {
+	<div
+		data-show="$_ticketEditOpen"
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+		style="display:none"
+	>
+		<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-lg p-6 flex flex-col gap-4">
+			<div class="flex items-center justify-between">
+				<h3 class="text-sm font-semibold text-neutral-200">Edit Ticket</h3>
+				<button
+					type="button"
+					data-on:click="$_ticketEditOpen = false"
+					class="text-neutral-500 hover:text-neutral-300 transition-colors"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+					</svg>
+				</button>
+			</div>
+			<div class="flex flex-col gap-3">
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Subject *</label>
+					<input
+						type="text"
+						data-bind:ticket-subject
+						class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+					/>
+				</div>
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Details</label>
+					<textarea
+						rows="6"
+						data-bind:ticket-body
+						class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600 resize-none"
+					></textarea>
+				</div>
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Priority</label>
+					<select
+						data-bind:ticket-priority
+						class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+					>
+						<option value="low">Low</option>
+						<option value="normal">Normal</option>
+						<option value="high">High</option>
+						<option value="urgent">Urgent</option>
+					</select>
+				</div>
+				<div id="ticket-form-errors"></div>
+			</div>
+			<div class="flex items-center gap-2 pt-1">
+				<button
+					type="button"
+					data-on:click={ fmt.Sprintf("@put('/api/tickets/%s')", ticketID) }
+					class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
+				>Save</button>
+				<button
+					type="button"
+					data-on:click="$_ticketEditOpen = false"
+					class="bg-neutral-800 hover:bg-neutral-700 text-neutral-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-neutral-700"
+				>Cancel</button>
+			</div>
+		</div>
+	</div>
 }
 
 // ticketStatusActions renders the patchable action buttons for a ticket detail page.

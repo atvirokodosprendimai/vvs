@@ -195,7 +195,7 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cleared, _ := json.Marshal(map[string]any{"_ticketModalOpen": false, "ticketSubject": "", "ticketBody": ""})
+	cleared, _ := json.Marshal(map[string]any{"_ticketModalOpen": false, "_ticketEditOpen": false, "ticketSubject": "", "ticketBody": ""})
 	sse.PatchSignals(cleared)
 }
 
@@ -411,6 +411,7 @@ func (h *Handlers) detailSSE(w http.ResponseWriter, r *http.Request) {
 		log.Printf("ticket handler: detailSSE: %v", err)
 		return
 	}
+	sse.PatchElementTempl(ticketDetailHeader(*tk))
 	sse.PatchElementTempl(ticketStatusActions(*tk))
 	sse.PatchElementTempl(ticketStatusInline(tk.Status))
 
@@ -425,7 +426,8 @@ func (h *Handlers) detailSSE(w http.ResponseWriter, r *http.Request) {
 				log.Printf("ticket handler: detailSSE refresh: %v", err)
 				continue
 			}
-			if next.Status != tk.Status {
+			if !reflect.DeepEqual(tk, next) {
+				sse.PatchElementTempl(ticketDetailHeader(*next))
 				sse.PatchElementTempl(ticketStatusActions(*next))
 				sse.PatchElementTempl(ticketStatusInline(next.Status))
 				tk = next
