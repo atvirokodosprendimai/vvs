@@ -117,6 +117,21 @@ func (r *GormTicketRepository) FindByID(ctx context.Context, id string) (*domain
 	return model.toDomain(), nil
 }
 
+func (r *GormTicketRepository) ListAll(ctx context.Context) ([]*domain.Ticket, error) {
+	var models []TicketModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Order("created_at DESC").Find(&models).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*domain.Ticket, len(models))
+	for i := range models {
+		result[i] = models[i].toDomain()
+	}
+	return result, nil
+}
+
 func (r *GormTicketRepository) ListForCustomer(ctx context.Context, customerID string) ([]*domain.Ticket, error) {
 	var models []TicketModel
 	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {

@@ -339,13 +339,16 @@ func New(cfg Config) (*App, error) {
 	addCommentCmd := ticketcommands.NewAddCommentHandler(ticketRepo, publisher)
 	listTicketsQuery := ticketqueries.NewListTicketsForCustomerHandler(ticketRepo)
 	listCommentsQuery := ticketqueries.NewListCommentsHandler(ticketRepo)
+	customerNameResolver := &customerNameAdapter{q: getCustomerQuery}
+	listAllTicketsQuery := ticketqueries.NewListAllTicketsHandler(ticketRepo, customerNameResolver)
+	getTicketQuery := ticketqueries.NewGetTicketHandler(ticketRepo, customerNameResolver)
 
 	ticketRoutes := tickethttp.NewHandlers(
 		openTicketCmd, updateTicketCmd, deleteTicketCmd,
 		changeTicketStatusCmd, addCommentCmd,
 		listTicketsQuery, listCommentsQuery,
 		subscriber, publisher,
-	)
+	).WithListAll(listAllTicketsQuery).WithGetTicket(getTicketQuery)
 	moduleRoutes = append(moduleRoutes, ticketRoutes)
 	if customerRoutes != nil {
 		customerRoutes.WithTicketsQuery(listTicketsQuery)
@@ -432,7 +435,7 @@ func New(cfg Config) (*App, error) {
 		listEmailAccountsQuery, listFoldersQuery, emailFolderRepo, discoverFn,
 		emailAttachmentRepo,
 		subscriber, publisher,
-	).WithPageSize(cfg.EmailPageSize).WithSearchAttachments(searchAttachmentsQuery).WithComposeCmd(composeEmailCmd)
+	).WithPageSize(cfg.EmailPageSize).WithSearchAttachments(searchAttachmentsQuery).WithComposeCmd(composeEmailCmd).WithCustomerSearch(&customerSearchAdapter{q: listCustomersQuery}).WithAutoLinker(&autoLinkAdapter{db: gdb}).WithTicketOpener(&ticketOpenerAdapter{cmd: openTicketCmd})
 	moduleRoutes = append(moduleRoutes, emailRoutes)
 	if customerRoutes != nil {
 		customerRoutes.WithEmailThreadsQuery(listEmailForCustomerQuery)
@@ -666,4 +669,72 @@ func seedAdmin(ctx context.Context, users domain.UserRepository, username, passw
 		return err
 	}
 	return users.Save(ctx, u)
+}
+
+// autoLinkAdapter wraps gormsqlite.DB to implement the email module's autoLinker interface.
+type autoLinkAdapter struct {
+	db *gormsqlite.DB
+}
+
+func (a *autoLinkAdapter) AutoLink(ctx context.Context) (int64, error) {
+	return emailpersistence.AutoLinkCustomers(ctx, a.db)
+}
+
+// ticketOpenerAdapter adapts the ticket OpenTicketHandler to the email module's ticketOpener interface.
+type ticketOpenerAdapter struct {
+	cmd *ticketcommands.OpenTicketHandler
+}
+
+func (a *ticketOpenerAdapter) Open(ctx context.Context, customerID, subject, body, priority string) (string, error) {
+	tk, err := a.cmd.Handle(ctx, ticketcommands.OpenTicketCommand{
+		CustomerID: customerID,
+		Subject:    subject,
+		Body:       body,
+		Priority:   priority,
+	})
+	if err != nil {
+		return "", err
+	}
+	return tk.ID, nil
+}
+
+// customerSearchAdapter adapts the customer ListCustomersHandler to the email module's customerSearcher interface.
+type customerSearchAdapter struct {
+	q *customerqueries.ListCustomersHandler
+}
+
+func (a *customerSearchAdapter) Search(ctx context.Context, query string, limit int) ([]emailhttp.CustomerSearchResult, error) {
+	result, err := a.q.Handle(ctx, customerqueries.ListCustomersQuery{
+		Search:   query,
+		Page:     1,
+		PageSize: limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]emailhttp.CustomerSearchResult, len(result.Customers))
+	for i, c := range result.Customers {
+		out[i] = emailhttp.CustomerSearchResult{
+			ID:          c.ID,
+			Code:        c.Code.String(),
+			CompanyName: c.CompanyName,
+		}
+	}
+	return out, nil
+}
+
+// customerNameAdapter resolves customer names for the ticket module.
+type customerNameAdapter struct {
+	q *customerqueries.GetCustomerHandler
+}
+
+func (a *customerNameAdapter) CustomerName(ctx context.Context, id string) string {
+	if id == "" {
+		return ""
+	}
+	c, err := a.q.Handle(ctx, customerqueries.GetCustomerQuery{ID: id})
+	if err != nil {
+		return ""
+	}
+	return c.CompanyName
 }

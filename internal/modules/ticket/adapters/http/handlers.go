@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
@@ -21,6 +22,8 @@ type Handlers struct {
 	changeStatusCmd *commands.ChangeTicketStatusHandler
 	addCommentCmd   *commands.AddCommentHandler
 	listQuery       *queries.ListTicketsForCustomerHandler
+	listAllQuery    *queries.ListAllTicketsHandler
+	getTicketQuery  *queries.GetTicketHandler
 	listComments    *queries.ListCommentsHandler
 	subscriber      events.EventSubscriber
 	publisher       events.EventPublisher
@@ -50,7 +53,20 @@ func NewHandlers(
 	}
 }
 
+// WithListAll adds the list-all-tickets query handler for the standalone page.
+func (h *Handlers) WithListAll(q *queries.ListAllTicketsHandler) *Handlers {
+	h.listAllQuery = q
+	return h
+}
+
+// WithGetTicket adds the get-ticket query handler for the detail page.
+func (h *Handlers) WithGetTicket(q *queries.GetTicketHandler) *Handlers {
+	h.getTicketQuery = q
+	return h
+}
+
 func (h *Handlers) RegisterRoutes(r chi.Router) {
+	// Customer-scoped routes (existing)
 	r.Get("/sse/customers/{id}/tickets", h.listSSE)
 	r.Post("/api/customers/{id}/tickets", h.openSSE)
 	r.Put("/api/tickets/{ticketID}", h.updateSSE)
@@ -58,6 +74,11 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Delete("/api/tickets/{ticketID}", h.deleteSSE)
 	r.Post("/api/tickets/{ticketID}/comments", h.addCommentSSE)
 	r.Get("/sse/tickets/{ticketID}/comments", h.listCommentsSSE)
+
+	// Standalone ticket pages
+	r.Get("/tickets", h.ticketsPage)
+	r.Get("/tickets/{ticketID}", h.ticketDetailPage)
+	r.Get("/sse/tickets", h.listAllSSE)
 }
 
 // listSSE streams the ticket table for a customer, refreshing on any isp.ticket.* event.
@@ -300,4 +321,89 @@ func (h *Handlers) listCommentsSSE(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+}
+
+// --- Standalone ticket pages ---
+
+func (h *Handlers) ticketsPage(w http.ResponseWriter, r *http.Request) {
+	TicketsPage().Render(r.Context(), w)
+}
+
+func (h *Handlers) ticketDetailPage(w http.ResponseWriter, r *http.Request) {
+	ticketID := chi.URLParam(r, "ticketID")
+	if ticketID == "" || h.getTicketQuery == nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	tk, err := h.getTicketQuery.Handle(r.Context(), queries.GetTicketQuery{ID: ticketID})
+	if err != nil {
+		log.Printf("ticket handler: ticketDetailPage: %v", err)
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	TicketDetailPage(*tk).Render(r.Context(), w)
+}
+
+// listAllSSE streams the all-tickets table, refreshing on any isp.ticket.* event.
+func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
+	if h.listAllQuery == nil {
+		http.Error(w, "not configured", http.StatusInternalServerError)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+
+	ch, cancel := h.subscriber.ChanSubscription("isp.ticket.*")
+	defer cancel()
+
+	var signals struct {
+		TicketSearch string `json:"_ticketSearch"`
+	}
+	_ = datastar.ReadSignals(r, &signals)
+	search := strings.TrimSpace(strings.ToLower(signals.TicketSearch))
+
+	all, err := h.listAllQuery.Handle(r.Context())
+	if err != nil {
+		log.Printf("ticket handler: listAllSSE: %v", err)
+		return
+	}
+	current := filterTickets(all, search)
+	sse.PatchElementTempl(AllTicketList(current))
+
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				return
+			}
+			all, err := h.listAllQuery.Handle(r.Context())
+			if err != nil {
+				log.Printf("ticket handler: listAllSSE refresh: %v", err)
+				continue
+			}
+			next := filterTickets(all, search)
+			if !reflect.DeepEqual(current, next) {
+				sse.PatchElementTempl(AllTicketList(next))
+				current = next
+			}
+		case <-r.Context().Done():
+			return
+		}
+	}
+}
+
+func filterTickets(tickets []queries.TicketReadModel, search string) []queries.TicketReadModel {
+	if search == "" {
+		return tickets
+	}
+	var out []queries.TicketReadModel
+	for _, tk := range tickets {
+		if strings.Contains(strings.ToLower(tk.Subject), search) ||
+			strings.Contains(strings.ToLower(tk.CustomerName), search) ||
+			strings.Contains(strings.ToLower(tk.Status), search) ||
+			strings.Contains(strings.ToLower(tk.Priority), search) {
+			out = append(out, tk)
+		}
+	}
+	return out
 }
