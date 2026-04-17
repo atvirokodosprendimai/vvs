@@ -364,7 +364,7 @@ templ DealsPageContent(deals []DealPageItem, stageFilter string) {
 
 templ dealFilterTab(stage, label string) {
 	<button
-		data-on:click={ fmt.Sprintf("$dealStageFilter = '%s'; @get('/sse/deals', {openWhenHidden: false})", stage) }
+		data-on:click={ fmt.Sprintf("($dealStageFilter = '%s') && @get('/sse/deals', {openWhenHidden: false})", stage) }
 		class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 		data-class:bg-amber-600={ fmt.Sprintf("$dealStageFilter == '%s'", stage) }
 		data-class:text-white={ fmt.Sprintf("$dealStageFilter == '%s'", stage) }

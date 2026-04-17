@@ -232,7 +232,7 @@ templ TasksPage() {
 		@templates.PageHeaderRow("Tasks", "All tasks across the system") {
 			<!-- Status filter tabs -->
 			<button
-				data-on:click="$taskStatusFilter = 'active'; @get('/api/tasks', {openWhenHidden: false})"
+				data-on:click="($taskStatusFilter = 'active') && @get('/api/tasks', {openWhenHidden: false})"
 				class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 				data-class:bg-amber-600={ "$taskStatusFilter === 'active'" }
 				data-class:text-white={ "$taskStatusFilter === 'active'" }
@@ -242,7 +242,7 @@ templ TasksPage() {
 				data-class:border-neutral-700={ "$taskStatusFilter !== 'active'" }
 			>Active</button>
 			<button
-				data-on:click="$taskStatusFilter = 'done'; @get('/api/tasks', {openWhenHidden: false})"
+				data-on:click="($taskStatusFilter = 'done') && @get('/api/tasks', {openWhenHidden: false})"
 				class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 				data-class:bg-amber-600={ "$taskStatusFilter === 'done'" }
 				data-class:text-white={ "$taskStatusFilter === 'done'" }
