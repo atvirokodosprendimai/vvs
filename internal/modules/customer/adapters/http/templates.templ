@@ -86,7 +86,7 @@ templ CustomerTable(result queries.ListCustomersResult) {
 templ CustomerRow(c *domain.Customer) {
 	<tr class="hover:bg-neutral-800/40 transition-colors" id={ fmt.Sprintf("customer-%s", c.ID) }>
 		<td class="px-4 py-3">
-			<span class="text-amber-400 font-mono text-sm">{ c.Code.String() }</span>
+			<a href={ templ.SafeURL(fmt.Sprintf("/customers/%s", c.ID)) } class="text-amber-400 hover:text-amber-300 font-mono text-sm transition-colors">{ c.Code.String() }</a>
 		</td>
 		<td class="px-4 py-3 font-medium text-neutral-100">{ c.CompanyName }</td>
 		<td class="px-4 py-3 text-neutral-400">{ c.ContactName }</td>
