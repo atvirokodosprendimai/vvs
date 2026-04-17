@@ -36,7 +36,7 @@ func ContactSection(customerID string, contacts []queries.ContactReadModel) temp
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div data-signals=\"{_contactModalOpen: false, _contactId: '', contactFirstName: '', contactLastName: '', contactEmail: '', contactPhone: '', contactRole: '', contactNotes: ''}\" class=\"mt-4 bg-slate-900 border border-slate-800 rounded-lg overflow-hidden\"><div class=\"flex items-center justify-between px-4 py-3 border-b border-slate-800\"><h2 class=\"text-xs font-semibold text-slate-400 uppercase tracking-wider\">Contacts</h2><button type=\"button\" data-on:click=\"$_contactId = ''; $_contactModalOpen = true\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors\">+ Add</button></div><div id=\"customer-contacts\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div data-signals=\"{_contactModalOpen: false, _contactId: '', contactFirstName: '', contactLastName: '', contactEmail: '', contactPhone: '', contactRole: '', contactNotes: ''}\" class=\"mt-4 bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden\"><div class=\"flex items-center justify-between px-4 py-3 border-b border-neutral-800\"><h2 class=\"text-xs font-semibold text-neutral-400 uppercase tracking-wider\">Contacts</h2><button type=\"button\" data-on:click=\"$_contactId = ''; $_contactModalOpen = true\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors\">+ Add</button></div><div id=\"customer-contacts\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -44,7 +44,7 @@ func ContactSection(customerID string, contacts []queries.ContactReadModel) temp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><!-- Add / Edit modal --><div data-show=\"$_contactModalOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-slate-200\" data-text=\"$_contactId == '' ? 'Add Contact' : 'Edit Contact'\"></h3><button type=\"button\" data-on:click=\"$_contactModalOpen = false\" class=\"text-slate-500 hover:text-slate-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><div class=\"grid grid-cols-2 gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">First Name *</label> <input type=\"text\" data-bind:contact-first-name placeholder=\"Jane\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Last Name</label> <input type=\"text\" data-bind:contact-last-name placeholder=\"Doe\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"></div></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Email</label> <input type=\"email\" data-bind:contact-email placeholder=\"jane@example.com\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"></div><div class=\"grid grid-cols-2 gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Phone</label> <input type=\"text\" data-bind:contact-phone placeholder=\"+370...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Role</label> <input type=\"text\" data-bind:contact-role placeholder=\"CEO, Tech lead...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"></div></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Notes</label> <textarea data-bind:contact-notes rows=\"2\" placeholder=\"Optional notes...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600 resize-none\"></textarea></div><div id=\"contact-form-error\"></div></div><div class=\"flex items-center gap-2 pt-1\"><button type=\"button\" data-on:click=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><!-- Add / Edit modal --><div data-show=\"$_contactModalOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-neutral-200\" data-text=\"$_contactId == '' ? 'Add Contact' : 'Edit Contact'\"></h3><button type=\"button\" data-on:click=\"$_contactModalOpen = false\" class=\"text-neutral-500 hover:text-neutral-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><div class=\"grid grid-cols-2 gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">First Name *</label> <input type=\"text\" data-bind:contact-first-name placeholder=\"Jane\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Last Name</label> <input type=\"text\" data-bind:contact-last-name placeholder=\"Doe\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Email</label> <input type=\"email\" data-bind:contact-email placeholder=\"jane@example.com\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div><div class=\"grid grid-cols-2 gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Phone</label> <input type=\"text\" data-bind:contact-phone placeholder=\"+370...\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Role</label> <input type=\"text\" data-bind:contact-role placeholder=\"CEO, Tech lead...\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Notes</label> <textarea data-bind:contact-notes rows=\"2\" placeholder=\"Optional notes...\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600 resize-none\"></textarea></div><div id=\"contact-form-error\"></div></div><div class=\"flex items-center gap-2 pt-1\"><button type=\"button\" data-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -57,7 +57,7 @@ func ContactSection(customerID string, contacts []queries.ContactReadModel) temp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Save</button> <button type=\"button\" data-on:click=\"$_contactModalOpen = false\" class=\"bg-slate-800 hover:bg-slate-700 text-slate-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-slate-700\">Cancel</button></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Save</button> <button type=\"button\" data-on:click=\"$_contactModalOpen = false\" class=\"bg-neutral-800 hover:bg-neutral-700 text-neutral-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-neutral-700\">Cancel</button></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -92,12 +92,12 @@ func ContactList(customerID string, contacts []queries.ContactReadModel) templ.C
 			return templ_7745c5c3_Err
 		}
 		if len(contacts) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"flex flex-col items-center justify-center py-10 text-slate-600\"><p class=\"text-sm\">No contacts yet.</p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"flex flex-col items-center justify-center py-10 text-neutral-600\"><p class=\"text-sm\">No contacts yet.</p></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<table class=\"w-full\"><thead><tr class=\"border-b border-slate-800\"><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Name</th><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Role</th><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Email</th><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Phone</th><th class=\"text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Actions</th></tr></thead> <tbody class=\"divide-y divide-slate-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<table class=\"w-full\"><thead><tr class=\"border-b border-neutral-800\"><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Name</th><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Role</th><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Email</th><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Phone</th><th class=\"text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Actions</th></tr></thead> <tbody class=\"divide-y divide-neutral-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -141,66 +141,66 @@ func contactRow(c queries.ContactReadModel) templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<tr class=\"hover:bg-slate-800/40 transition-colors\" id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<tr class=\"hover:bg-neutral-800/40 transition-colors\" id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("contact-%s", c.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 168, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 168, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><td class=\"px-4 py-3 font-medium text-slate-100 text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><td class=\"px-4 py-3 font-medium text-neutral-100 text-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(c.FullName())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 169, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 169, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</td><td class=\"px-4 py-3 text-slate-400 text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</td><td class=\"px-4 py-3 text-neutral-400 text-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(c.Role)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 170, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 170, Col: 57}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</td><td class=\"px-4 py-3 text-slate-300 text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</td><td class=\"px-4 py-3 text-neutral-300 text-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(c.Email)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 171, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 171, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</td><td class=\"px-4 py-3 text-slate-300 text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</td><td class=\"px-4 py-3 text-neutral-300 text-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(c.Phone)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 172, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 172, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -219,7 +219,7 @@ func contactRow(c queries.ContactReadModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" class=\"bg-slate-700/50 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-slate-700\">Edit</button> <button type=\"button\" data-on:click=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" class=\"bg-neutral-700/50 hover:bg-neutral-700 text-neutral-300 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-neutral-700\">Edit</button> <button type=\"button\" data-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

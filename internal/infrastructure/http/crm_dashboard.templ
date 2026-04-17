@@ -16,22 +16,22 @@ templ CRMDashboardPage() {
 		</div>
 		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 			<!-- Pipeline by stage -->
-			<div id="crm-pipeline" data-init="@get('/api/crm/pipeline', {openWhenHidden: false})" class="bg-slate-900 border border-slate-800 rounded-lg p-4">
-				<p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Pipeline</p>
-				<div class="text-slate-500 text-sm">Loading...</div>
+			<div id="crm-pipeline" data-init="@get('/api/crm/pipeline', {openWhenHidden: false})" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
+				<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Pipeline</p>
+				<div class="text-neutral-500 text-sm">Loading...</div>
 			</div>
 			<!-- Open Tickets -->
-			<div id="crm-tickets" data-init="@get('/api/crm/tickets', {openWhenHidden: false})" class="bg-slate-900 border border-slate-800 rounded-lg p-4">
-				<p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Open Tickets</p>
-				<div class="text-slate-500 text-sm">Loading...</div>
+			<div id="crm-tickets" data-init="@get('/api/crm/tickets', {openWhenHidden: false})" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
+				<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Open Tickets</p>
+				<div class="text-neutral-500 text-sm">Loading...</div>
 			</div>
 			<!-- Tasks -->
-			<div id="crm-tasks" data-init="@get('/api/crm/tasks', {openWhenHidden: false})" class="bg-slate-900 border border-slate-800 rounded-lg p-4 lg:col-span-2">
+			<div id="crm-tasks" data-init="@get('/api/crm/tasks', {openWhenHidden: false})" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4 lg:col-span-2">
 				<div class="flex items-center justify-between mb-3">
-					<p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Tasks</p>
-					<a href="/tasks" class="text-xs text-cyan-500 hover:text-cyan-400 transition-colors">View all →</a>
+					<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Tasks</p>
+					<a href="/tasks" class="text-xs text-amber-500 hover:text-amber-400 transition-colors">View all →</a>
 				</div>
-				<div class="text-slate-500 text-sm">Loading...</div>
+				<div class="text-neutral-500 text-sm">Loading...</div>
 			</div>
 		</div>
 	}
@@ -56,16 +56,16 @@ templ CRMStats(deals, tickets, tasks, contacts string) {
 }
 
 templ CRMPipeline(stages []CRMStageCount) {
-	<div id="crm-pipeline" class="bg-slate-900 border border-slate-800 rounded-lg p-4">
-		<p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Pipeline</p>
+	<div id="crm-pipeline" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
+		<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Pipeline</p>
 		if len(stages) == 0 {
-			<p class="text-sm text-slate-600">No active deals.</p>
+			<p class="text-sm text-neutral-600">No active deals.</p>
 		} else {
 			<div class="flex flex-col gap-2">
 				for _, s := range stages {
 					<div class="flex items-center justify-between">
-						<span class="text-sm text-slate-300 capitalize">{ s.Stage }</span>
-						<span class="text-sm font-mono text-cyan-400">{ s.Count }</span>
+						<span class="text-sm text-neutral-300 capitalize">{ s.Stage }</span>
+						<span class="text-sm font-mono text-amber-400">{ s.Count }</span>
 					</div>
 				}
 			</div>
@@ -74,15 +74,15 @@ templ CRMPipeline(stages []CRMStageCount) {
 }
 
 templ CRMOpenTickets(tickets []CRMTicketRow) {
-	<div id="crm-tickets" class="bg-slate-900 border border-slate-800 rounded-lg p-4">
-		<p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3">Open Tickets</p>
+	<div id="crm-tickets" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
+		<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Open Tickets</p>
 		if len(tickets) == 0 {
-			<p class="text-sm text-slate-600">No open tickets.</p>
+			<p class="text-sm text-neutral-600">No open tickets.</p>
 		} else {
 			<div class="flex flex-col gap-2">
 				for _, t := range tickets {
 					<div class="flex items-center justify-between">
-						<a href={ templ.SafeURL("/customers/" + t.CustomerID) } class="text-sm text-slate-300 hover:text-cyan-400 transition-colors truncate max-w-xs">{ t.Subject }</a>
+						<a href={ templ.SafeURL("/customers/" + t.CustomerID) } class="text-sm text-neutral-300 hover:text-amber-400 transition-colors truncate max-w-xs">{ t.Subject }</a>
 						<span class={ "text-xs px-1.5 py-0.5 rounded " + ticketPriorityClass(t.Priority) }>{ t.Priority }</span>
 					</div>
 				}
@@ -92,20 +92,20 @@ templ CRMOpenTickets(tickets []CRMTicketRow) {
 }
 
 templ CRMPendingTasks(tasks []CRMTaskRow) {
-	<div id="crm-tasks" class="bg-slate-900 border border-slate-800 rounded-lg p-4 lg:col-span-2">
+	<div id="crm-tasks" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4 lg:col-span-2">
 		<div class="flex items-center justify-between mb-3">
-			<p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Tasks</p>
-			<a href="/tasks" class="text-xs text-cyan-500 hover:text-cyan-400 transition-colors">View all →</a>
+			<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Tasks</p>
+			<a href="/tasks" class="text-xs text-amber-500 hover:text-amber-400 transition-colors">View all →</a>
 		</div>
 		if len(tasks) == 0 {
-			<p class="text-sm text-slate-600">No pending tasks.</p>
+			<p class="text-sm text-neutral-600">No pending tasks.</p>
 		} else {
 			<table class="w-full">
-				<tbody class="divide-y divide-slate-800">
+				<tbody class="divide-y divide-neutral-800">
 					for _, t := range tasks {
-						<tr class="hover:bg-slate-800/40 transition-colors">
-							<td class="py-2 text-sm text-slate-200">{ t.Title }</td>
-							<td class="py-2 text-xs text-slate-500 text-right">{ t.Status }</td>
+						<tr class="hover:bg-neutral-800/40 transition-colors">
+							<td class="py-2 text-sm text-neutral-200">{ t.Title }</td>
+							<td class="py-2 text-xs text-neutral-500 text-right">{ t.Status }</td>
 						</tr>
 					}
 				</tbody>
@@ -139,7 +139,7 @@ func ticketPriorityClass(p string) string {
 	case "normal":
 		return "bg-blue-500/10 text-blue-400 border border-blue-500/20"
 	default:
-		return "bg-slate-700/50 text-slate-400 border border-slate-700"
+		return "bg-neutral-700/50 text-neutral-400 border border-neutral-700"
 	}
 }
 

@@ -57,7 +57,7 @@ func CRMDashboardPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"grid grid-cols-1 lg:grid-cols-2 gap-4\"><!-- Pipeline by stage --><div id=\"crm-pipeline\" data-init=\"@get('/api/crm/pipeline', {openWhenHidden: false})\" class=\"bg-slate-900 border border-slate-800 rounded-lg p-4\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider mb-3\">Pipeline</p><div class=\"text-slate-500 text-sm\">Loading...</div></div><!-- Open Tickets --><div id=\"crm-tickets\" data-init=\"@get('/api/crm/tickets', {openWhenHidden: false})\" class=\"bg-slate-900 border border-slate-800 rounded-lg p-4\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider mb-3\">Open Tickets</p><div class=\"text-slate-500 text-sm\">Loading...</div></div><!-- Tasks --><div id=\"crm-tasks\" data-init=\"@get('/api/crm/tasks', {openWhenHidden: false})\" class=\"bg-slate-900 border border-slate-800 rounded-lg p-4 lg:col-span-2\"><div class=\"flex items-center justify-between mb-3\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider\">Tasks</p><a href=\"/tasks\" class=\"text-xs text-cyan-500 hover:text-cyan-400 transition-colors\">View all →</a></div><div class=\"text-slate-500 text-sm\">Loading...</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"grid grid-cols-1 lg:grid-cols-2 gap-4\"><!-- Pipeline by stage --><div id=\"crm-pipeline\" data-init=\"@get('/api/crm/pipeline', {openWhenHidden: false})\" class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-4\"><p class=\"text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3\">Pipeline</p><div class=\"text-neutral-500 text-sm\">Loading...</div></div><!-- Open Tickets --><div id=\"crm-tickets\" data-init=\"@get('/api/crm/tickets', {openWhenHidden: false})\" class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-4\"><p class=\"text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3\">Open Tickets</p><div class=\"text-neutral-500 text-sm\">Loading...</div></div><!-- Tasks --><div id=\"crm-tasks\" data-init=\"@get('/api/crm/tasks', {openWhenHidden: false})\" class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-4 lg:col-span-2\"><div class=\"flex items-center justify-between mb-3\"><p class=\"text-xs font-medium text-neutral-500 uppercase tracking-wider\">Tasks</p><a href=\"/tasks\" class=\"text-xs text-amber-500 hover:text-amber-400 transition-colors\">View all →</a></div><div class=\"text-neutral-500 text-sm\">Loading...</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -190,12 +190,12 @@ func CRMPipeline(stages []CRMStageCount) templ.Component {
 			templ_7745c5c3_Var5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div id=\"crm-pipeline\" class=\"bg-slate-900 border border-slate-800 rounded-lg p-4\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider mb-3\">Pipeline</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div id=\"crm-pipeline\" class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-4\"><p class=\"text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3\">Pipeline</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(stages) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<p class=\"text-sm text-slate-600\">No active deals.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<p class=\"text-sm text-neutral-600\">No active deals.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -205,27 +205,27 @@ func CRMPipeline(stages []CRMStageCount) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			for _, s := range stages {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"flex items-center justify-between\"><span class=\"text-sm text-slate-300 capitalize\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"flex items-center justify-between\"><span class=\"text-sm text-neutral-300 capitalize\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(s.Stage)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/crm_dashboard.templ`, Line: 67, Col: 63}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/crm_dashboard.templ`, Line: 67, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</span> <span class=\"text-sm font-mono text-cyan-400\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</span> <span class=\"text-sm font-mono text-amber-400\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(s.Count)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/crm_dashboard.templ`, Line: 68, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/crm_dashboard.templ`, Line: 68, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -270,12 +270,12 @@ func CRMOpenTickets(tickets []CRMTicketRow) templ.Component {
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div id=\"crm-tickets\" class=\"bg-slate-900 border border-slate-800 rounded-lg p-4\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider mb-3\">Open Tickets</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div id=\"crm-tickets\" class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-4\"><p class=\"text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3\">Open Tickets</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(tickets) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<p class=\"text-sm text-slate-600\">No open tickets.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<p class=\"text-sm text-neutral-600\">No open tickets.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -298,14 +298,14 @@ func CRMOpenTickets(tickets []CRMTicketRow) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" class=\"text-sm text-slate-300 hover:text-cyan-400 transition-colors truncate max-w-xs\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" class=\"text-sm text-neutral-300 hover:text-amber-400 transition-colors truncate max-w-xs\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(t.Subject)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/crm_dashboard.templ`, Line: 85, Col: 160}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/crm_dashboard.templ`, Line: 85, Col: 163}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -385,42 +385,42 @@ func CRMPendingTasks(tasks []CRMTaskRow) templ.Component {
 			templ_7745c5c3_Var14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div id=\"crm-tasks\" class=\"bg-slate-900 border border-slate-800 rounded-lg p-4 lg:col-span-2\"><div class=\"flex items-center justify-between mb-3\"><p class=\"text-xs font-medium text-slate-500 uppercase tracking-wider\">Tasks</p><a href=\"/tasks\" class=\"text-xs text-cyan-500 hover:text-cyan-400 transition-colors\">View all →</a></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div id=\"crm-tasks\" class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-4 lg:col-span-2\"><div class=\"flex items-center justify-between mb-3\"><p class=\"text-xs font-medium text-neutral-500 uppercase tracking-wider\">Tasks</p><a href=\"/tasks\" class=\"text-xs text-amber-500 hover:text-amber-400 transition-colors\">View all →</a></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(tasks) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<p class=\"text-sm text-slate-600\">No pending tasks.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<p class=\"text-sm text-neutral-600\">No pending tasks.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<table class=\"w-full\"><tbody class=\"divide-y divide-slate-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<table class=\"w-full\"><tbody class=\"divide-y divide-neutral-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, t := range tasks {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<tr class=\"hover:bg-slate-800/40 transition-colors\"><td class=\"py-2 text-sm text-slate-200\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<tr class=\"hover:bg-neutral-800/40 transition-colors\"><td class=\"py-2 text-sm text-neutral-200\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(t.Title)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/crm_dashboard.templ`, Line: 107, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/crm_dashboard.templ`, Line: 107, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</td><td class=\"py-2 text-xs text-slate-500 text-right\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</td><td class=\"py-2 text-xs text-neutral-500 text-right\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(t.Status)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/crm_dashboard.templ`, Line: 108, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/crm_dashboard.templ`, Line: 108, Col: 70}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -469,7 +469,7 @@ func ticketPriorityClass(p string) string {
 	case "normal":
 		return "bg-blue-500/10 text-blue-400 border border-blue-500/20"
 	default:
-		return "bg-slate-700/50 text-slate-400 border border-slate-700"
+		return "bg-neutral-700/50 text-neutral-400 border border-neutral-700"
 	}
 }
 

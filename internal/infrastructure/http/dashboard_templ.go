@@ -77,7 +77,7 @@ func DashboardPage() templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<h2 class=\"text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4\">Recent Customers</h2><div id=\"recent-customers\" class=\"text-slate-500 text-sm\">Loading...</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<h2 class=\"text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4\">Recent Customers</h2><div id=\"recent-customers\" class=\"text-neutral-500 text-sm\">Loading...</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

@@ -134,7 +134,7 @@ func DeviceListPage(devices []queries.DeviceReadModel, statusFilter string) temp
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><!-- Register modal --><div data-show=\"$_registerOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-slate-200\">Register Device</h3><button type=\"button\" data-on:click=\"$_registerOpen = false\" class=\"text-slate-500 hover:text-slate-300\"><svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Name *</label> <input type=\"text\" data-bind:name placeholder=\"e.g. TP-Link EX220 #12\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Type</label> <select data-bind:device-type class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"><option value=\"modem\">Modem</option> <option value=\"router\">Router</option> <option value=\"ont\">ONT</option> <option value=\"switch\">Switch</option> <option value=\"sensor\">Sensor</option> <option value=\"other\">Other</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Serial Number</label> <input type=\"text\" data-bind:serial-number placeholder=\"optional\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Notes</label> <input type=\"text\" data-bind:notes class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><div id=\"device-form-errors\"></div></div><div class=\"flex gap-2 pt-1\"><button type=\"button\" data-on:click=\"@post('/api/devices')\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Register</button> <button type=\"button\" data-on:click=\"$_registerOpen = false\" class=\"text-slate-400 hover:text-slate-200 px-4 py-2 rounded text-sm transition-colors\">Cancel</button></div></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</div><!-- Register modal --><div data-show=\"$_registerOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-neutral-200\">Register Device</h3><button type=\"button\" data-on:click=\"$_registerOpen = false\" class=\"text-neutral-500 hover:text-neutral-300\"><svg class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\" stroke-width=\"1.5\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Name *</label> <input type=\"text\" data-bind:name placeholder=\"e.g. TP-Link EX220 #12\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Type</label> <select data-bind:device-type class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"><option value=\"modem\">Modem</option> <option value=\"router\">Router</option> <option value=\"ont\">ONT</option> <option value=\"switch\">Switch</option> <option value=\"sensor\">Sensor</option> <option value=\"other\">Other</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Serial Number</label> <input type=\"text\" data-bind:serial-number placeholder=\"optional\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Notes</label> <input type=\"text\" data-bind:notes class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><div id=\"device-form-errors\"></div></div><div class=\"flex gap-2 pt-1\"><button type=\"button\" data-on:click=\"@post('/api/devices')\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Register</button> <button type=\"button\" data-on:click=\"$_registerOpen = false\" class=\"text-neutral-400 hover:text-neutral-200 px-4 py-2 rounded text-sm transition-colors\">Cancel</button></div></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -180,12 +180,12 @@ func DeviceTable(devices []queries.DeviceReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"overflow-x-auto rounded-lg border border-slate-800\"><table class=\"w-full text-sm\"><thead><tr class=\"border-b border-slate-800 text-xs font-medium text-slate-400 uppercase tracking-wider\"><th class=\"text-left px-4 py-3\">Name</th><th class=\"text-left px-4 py-3\">Type</th><th class=\"text-left px-4 py-3\">Serial</th><th class=\"text-left px-4 py-3\">Status</th><th class=\"text-left px-4 py-3\">Customer</th><th class=\"text-left px-4 py-3\">Warranty</th></tr></thead> <tbody class=\"divide-y divide-slate-800/50\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"overflow-x-auto rounded-lg border border-neutral-800\"><table class=\"w-full text-sm\"><thead><tr class=\"border-b border-neutral-800 text-xs font-medium text-neutral-400 uppercase tracking-wider\"><th class=\"text-left px-4 py-3\">Name</th><th class=\"text-left px-4 py-3\">Type</th><th class=\"text-left px-4 py-3\">Serial</th><th class=\"text-left px-4 py-3\">Status</th><th class=\"text-left px-4 py-3\">Customer</th><th class=\"text-left px-4 py-3\">Warranty</th></tr></thead> <tbody class=\"divide-y divide-neutral-800/50\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, d := range devices {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<tr class=\"hover:bg-slate-800/30 transition-colors\"><td class=\"px-4 py-3\"><a href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<tr class=\"hover:bg-neutral-800/30 transition-colors\"><td class=\"px-4 py-3\"><a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -211,20 +211,20 @@ func DeviceTable(devices []queries.DeviceReadModel) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</a></td><td class=\"px-4 py-3 text-slate-400\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</a></td><td class=\"px-4 py-3 text-neutral-400\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(d.DeviceType)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 135, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 135, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</td><td class=\"px-4 py-3 text-slate-400 font-mono text-xs\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</td><td class=\"px-4 py-3 text-neutral-400 font-mono text-xs\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -239,7 +239,7 @@ func DeviceTable(devices []queries.DeviceReadModel) templ.Component {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span class=\"text-slate-600\">—</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span class=\"text-neutral-600\">—</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -252,7 +252,7 @@ func DeviceTable(devices []queries.DeviceReadModel) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</td><td class=\"px-4 py-3 text-slate-400\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</td><td class=\"px-4 py-3 text-neutral-400\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -270,7 +270,7 @@ func DeviceTable(devices []queries.DeviceReadModel) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" class=\"text-slate-300 hover:text-orange-400\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" class=\"text-neutral-300 hover:text-orange-400\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -288,12 +288,12 @@ func DeviceTable(devices []queries.DeviceReadModel) templ.Component {
 						return templ_7745c5c3_Err
 					}
 				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<span class=\"text-slate-600\">—</span>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<span class=\"text-neutral-600\">—</span>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</td><td class=\"px-4 py-3 text-slate-400 text-xs\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</td><td class=\"px-4 py-3 text-neutral-400 text-xs\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -353,27 +353,27 @@ func DeviceDetailPage(d *queries.DeviceReadModel) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"flex items-center gap-2 mb-6\"><a href=\"/devices\" class=\"text-xs text-slate-500 hover:text-slate-300 transition-colors\">← Devices</a></div><div class=\"grid grid-cols-1 md:grid-cols-3 gap-6\"><!-- Device info card --><div class=\"md:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col gap-4\"><div class=\"flex items-start justify-between\"><div><h1 class=\"text-lg font-semibold text-slate-100\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"flex items-center gap-2 mb-6\"><a href=\"/devices\" class=\"text-xs text-neutral-500 hover:text-neutral-300 transition-colors\">← Devices</a></div><div class=\"grid grid-cols-1 md:grid-cols-3 gap-6\"><!-- Device info card --><div class=\"md:col-span-2 bg-neutral-900 border border-neutral-800 rounded-xl p-6 flex flex-col gap-4\"><div class=\"flex items-start justify-between\"><div><h1 class=\"text-lg font-semibold text-neutral-100\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(d.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 180, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 180, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</h1><p class=\"text-xs text-slate-500 mt-0.5 font-mono\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</h1><p class=\"text-xs text-neutral-500 mt-0.5 font-mono\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(d.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 181, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 181, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -408,7 +408,7 @@ func DeviceDetailPage(d *queries.DeviceReadModel) templ.Component {
 				}
 			}
 			if d.CustomerID != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<div class=\"flex flex-col gap-0.5\"><span class=\"text-xs text-slate-500 uppercase tracking-wider\">Customer</span> <a href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<div class=\"flex flex-col gap-0.5\"><span class=\"text-xs text-neutral-500 uppercase tracking-wider\">Customer</span> <a href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -456,14 +456,14 @@ func DeviceDetailPage(d *queries.DeviceReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if d.Notes != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<p class=\"text-sm text-slate-400 border-t border-slate-800 pt-3\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<p class=\"text-sm text-neutral-400 border-t border-neutral-800 pt-3\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var21 string
 				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(d.Notes)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 211, Col: 79}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 211, Col: 83}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 				if templ_7745c5c3_Err != nil {
@@ -487,7 +487,7 @@ func DeviceDetailPage(d *queries.DeviceReadModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\" class=\"flex flex-wrap gap-2 border-t border-slate-800 pt-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\" class=\"flex flex-wrap gap-2 border-t border-neutral-800 pt-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -511,7 +511,7 @@ func DeviceDetailPage(d *queries.DeviceReadModel) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\" class=\"bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded text-xs font-medium transition-colors\">Return to Stock</button> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\" class=\"bg-neutral-700 hover:bg-neutral-600 text-neutral-200 px-3 py-1.5 rounded text-xs font-medium transition-colors\">Return to Stock</button> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -535,7 +535,7 @@ func DeviceDetailPage(d *queries.DeviceReadModel) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<!-- Deploy modal --><div data-show=\"$_deployOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><h3 class=\"text-sm font-semibold text-slate-200\">Deploy Device</h3><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Customer ID</label> <input type=\"text\" data-bind:customer-id class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Location</label> <input type=\"text\" data-bind:location placeholder=\"address or warehouse bin\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div></div><div class=\"flex gap-2\"><button type=\"button\" data-on:click=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<!-- Deploy modal --><div data-show=\"$_deployOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><h3 class=\"text-sm font-semibold text-neutral-200\">Deploy Device</h3><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Customer ID</label> <input type=\"text\" data-bind:customer-id class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Location</label> <input type=\"text\" data-bind:location placeholder=\"address or warehouse bin\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500\"></div></div><div class=\"flex gap-2\"><button type=\"button\" data-on:click=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -548,7 +548,7 @@ func DeviceDetailPage(d *queries.DeviceReadModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Deploy</button> <button type=\"button\" data-on:click=\"$_deployOpen = false\" class=\"text-slate-400 hover:text-slate-200 px-4 py-2 rounded text-sm transition-colors\">Cancel</button></div></div></div></div></div><!-- QR code panel --><div class=\"bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col items-center gap-3\"><p class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">QR Code</p><img src=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "\" class=\"bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Deploy</button> <button type=\"button\" data-on:click=\"$_deployOpen = false\" class=\"text-neutral-400 hover:text-neutral-200 px-4 py-2 rounded text-sm transition-colors\">Cancel</button></div></div></div></div></div><!-- QR code panel --><div class=\"bg-neutral-900 border border-neutral-800 rounded-xl p-6 flex flex-col items-center gap-3\"><p class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">QR Code</p><img src=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -561,14 +561,14 @@ func DeviceDetailPage(d *queries.DeviceReadModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "\" alt=\"QR code\" class=\"w-40 h-40 rounded bg-white p-1\"><p class=\"text-xs text-slate-500 text-center break-all font-mono\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "\" alt=\"QR code\" class=\"w-40 h-40 rounded bg-white p-1\"><p class=\"text-xs text-neutral-500 text-center break-all font-mono\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(d.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 292, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 292, Col: 78}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -612,7 +612,7 @@ func statusBadge(status string) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		switch status {
 		case "in_stock":
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-700 text-slate-300\">In Stock</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-700 text-neutral-300\">In Stock</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -627,14 +627,14 @@ func statusBadge(status string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		default:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-700 text-slate-400\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<span class=\"inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-700 text-neutral-400\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var29 string
 			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 309, Col: 117}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 309, Col: 121}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
@@ -670,27 +670,27 @@ func detailRow(label, value string) templ.Component {
 			templ_7745c5c3_Var30 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<div class=\"flex flex-col gap-0.5\"><span class=\"text-xs text-slate-500 uppercase tracking-wider\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<div class=\"flex flex-col gap-0.5\"><span class=\"text-xs text-neutral-500 uppercase tracking-wider\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 315, Col: 71}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 315, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</span> <span class=\"text-slate-200\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</span> <span class=\"text-neutral-200\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 316, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/device/adapters/http/templates.templ`, Line: 316, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -726,7 +726,7 @@ func warrantyCell(t *time.Time) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if t == nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<span class=\"text-slate-600\">—</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<span class=\"text-neutral-600\">—</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -775,7 +775,7 @@ func tabClass(current, value string) string {
 	if current == value {
 		return "bg-orange-600 text-white"
 	}
-	return "bg-slate-800 text-slate-400 hover:text-slate-200"
+	return "bg-neutral-800 text-neutral-400 hover:text-neutral-200"
 }
 
 var _ = templruntime.GeneratedTemplate

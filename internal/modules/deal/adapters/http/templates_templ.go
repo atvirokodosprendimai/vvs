@@ -39,7 +39,7 @@ func DealSection(customerID string, deals []queries.DealReadModel) templ.Compone
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div data-signals=\"{_dealModalOpen: false, _dealId: '', dealTitle: '', dealValue: '', dealCurrency: 'EUR', dealStage: 'new', dealNotes: '', dealAdvanceAction: ''}\" class=\"mt-4 bg-slate-900 border border-slate-800 rounded-lg overflow-hidden\"><!-- Section header --><div class=\"flex items-center justify-between px-4 py-3 border-b border-slate-800\"><h2 class=\"text-xs font-semibold text-slate-400 uppercase tracking-wider\">Deals</h2><button type=\"button\" data-on:click=\"$_dealId = ''; $dealTitle = ''; $dealValue = ''; $dealCurrency = 'EUR'; $dealNotes = ''; $_dealModalOpen = true\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors\">+ Add</button></div><div id=\"customer-deals\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div data-signals=\"{_dealModalOpen: false, _dealId: '', dealTitle: '', dealValue: '', dealCurrency: 'EUR', dealStage: 'new', dealNotes: '', dealAdvanceAction: ''}\" class=\"mt-4 bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden\"><!-- Section header --><div class=\"flex items-center justify-between px-4 py-3 border-b border-neutral-800\"><h2 class=\"text-xs font-semibold text-neutral-400 uppercase tracking-wider\">Deals</h2><button type=\"button\" data-on:click=\"$_dealId = ''; $dealTitle = ''; $dealValue = ''; $dealCurrency = 'EUR'; $dealNotes = ''; $_dealModalOpen = true\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors\">+ Add</button></div><div id=\"customer-deals\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -47,7 +47,7 @@ func DealSection(customerID string, deals []queries.DealReadModel) templ.Compone
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><!-- Add / Edit modal --><div data-show=\"$_dealModalOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-slate-200\">Deal</h3><button type=\"button\" data-on:click=\"$_dealModalOpen = false\" class=\"text-slate-500 hover:text-slate-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><!-- Title --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Title *</label> <input type=\"text\" data-bind:deal-title placeholder=\"e.g. Enterprise Fiber Upgrade\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"></div><!-- Value + Currency row --><div class=\"grid grid-cols-2 gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Value</label> <input type=\"number\" step=\"0.01\" min=\"0\" data-bind:deal-value placeholder=\"1000.00\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Currency</label> <select data-bind:deal-currency class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"EUR\">EUR</option> <option value=\"USD\">USD</option> <option value=\"GBP\">GBP</option></select></div></div><!-- Notes --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Notes</label> <textarea data-bind:deal-notes rows=\"3\" placeholder=\"Optional notes...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600 resize-none\"></textarea></div><div id=\"deal-form-errors\"></div></div><div class=\"flex items-center gap-2 pt-1\"><button type=\"button\" data-on:click=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><!-- Add / Edit modal --><div data-show=\"$_dealModalOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-neutral-200\">Deal</h3><button type=\"button\" data-on:click=\"$_dealModalOpen = false\" class=\"text-neutral-500 hover:text-neutral-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><!-- Title --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Title *</label> <input type=\"text\" data-bind:deal-title placeholder=\"e.g. Enterprise Fiber Upgrade\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div><!-- Value + Currency row --><div class=\"grid grid-cols-2 gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Value</label> <input type=\"number\" step=\"0.01\" min=\"0\" data-bind:deal-value placeholder=\"1000.00\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Currency</label> <select data-bind:deal-currency class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500\"><option value=\"EUR\">EUR</option> <option value=\"USD\">USD</option> <option value=\"GBP\">GBP</option></select></div></div><!-- Notes --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Notes</label> <textarea data-bind:deal-notes rows=\"3\" placeholder=\"Optional notes...\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600 resize-none\"></textarea></div><div id=\"deal-form-errors\"></div></div><div class=\"flex items-center gap-2 pt-1\"><button type=\"button\" data-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -60,7 +60,7 @@ func DealSection(customerID string, deals []queries.DealReadModel) templ.Compone
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Save</button> <button type=\"button\" data-on:click=\"$_dealModalOpen = false\" class=\"bg-slate-800 hover:bg-slate-700 text-slate-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-slate-700\">Cancel</button></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Save</button> <button type=\"button\" data-on:click=\"$_dealModalOpen = false\" class=\"bg-neutral-800 hover:bg-neutral-700 text-neutral-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-neutral-700\">Cancel</button></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -95,12 +95,12 @@ func DealList(customerID string, deals []queries.DealReadModel) templ.Component 
 			return templ_7745c5c3_Err
 		}
 		if len(deals) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"flex flex-col items-center justify-center py-10 text-slate-600\"><p class=\"text-sm\">No deals yet.</p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"flex flex-col items-center justify-center py-10 text-neutral-600\"><p class=\"text-sm\">No deals yet.</p></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<table class=\"w-full\"><thead><tr class=\"border-b border-slate-800\"><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Title</th><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Value</th><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Stage</th><th class=\"text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Actions</th></tr></thead> <tbody class=\"divide-y divide-slate-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<table class=\"w-full\"><thead><tr class=\"border-b border-neutral-800\"><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Title</th><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Value</th><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Stage</th><th class=\"text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Actions</th></tr></thead> <tbody class=\"divide-y divide-neutral-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -144,40 +144,40 @@ func dealRow(customerID string, d queries.DealReadModel) templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<tr class=\"hover:bg-slate-800/40 transition-colors\" id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<tr class=\"hover:bg-neutral-800/40 transition-colors\" id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("deal-%s", d.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 157, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 157, Col: 88}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><td class=\"px-4 py-3 font-medium text-slate-100 text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><td class=\"px-4 py-3 font-medium text-neutral-100 text-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(d.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 158, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 158, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</td><td class=\"px-4 py-3 text-slate-300 text-sm font-mono\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</td><td class=\"px-4 py-3 text-neutral-300 text-sm font-mono\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(formatDealValue(d.Value, d.Currency))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 159, Col: 95}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 159, Col: 97}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -228,7 +228,7 @@ func dealRow(customerID string, d queries.DealReadModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" class=\"bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-cyan-500/20\">Propose</button> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" class=\"bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-amber-500/20\">Propose</button> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -310,7 +310,7 @@ func dealRow(customerID string, d queries.DealReadModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" class=\"bg-slate-700/40 hover:bg-red-500/20 text-slate-400 hover:text-red-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-slate-700\">Delete</button></div></td></tr>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" class=\"bg-neutral-700/40 hover:bg-red-500/20 text-neutral-400 hover:text-red-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-neutral-700\">Delete</button></div></td></tr>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -341,7 +341,7 @@ func dealStageBadge(stage string) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		switch stage {
 		case domain.StageNew:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<span class=\"px-2 py-0.5 text-xs font-medium rounded bg-slate-700/50 text-slate-300 border border-slate-700\">new</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<span class=\"px-2 py-0.5 text-xs font-medium rounded bg-neutral-700/50 text-neutral-300 border border-neutral-700\">new</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -351,7 +351,7 @@ func dealStageBadge(stage string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		case domain.StageProposal:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"px-2 py-0.5 text-xs font-medium rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20\">proposal</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"px-2 py-0.5 text-xs font-medium rounded bg-amber-500/10 text-amber-400 border border-amber-500/20\">proposal</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -371,14 +371,14 @@ func dealStageBadge(stage string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		default:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span class=\"px-2 py-0.5 text-xs font-medium rounded bg-slate-700/50 text-slate-400 border border-slate-700\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span class=\"px-2 py-0.5 text-xs font-medium rounded bg-neutral-700/50 text-neutral-400 border border-neutral-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(stage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 245, Col: 119}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/deal/adapters/http/templates.templ`, Line: 245, Col: 125}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {

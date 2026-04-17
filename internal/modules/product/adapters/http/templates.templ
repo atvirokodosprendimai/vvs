@@ -24,12 +24,12 @@ templ ProductListPage() {
 						data-bind:search
 						data-on:input__debounce.500ms="($page = 1) && @get('/api/products', {openWhenHidden: false})"
 						placeholder="Search products..."
-						class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm w-60 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
+						class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-60 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
 					/>
 					<select
 						data-bind:filter-type
 						data-on:change="($page = 1) && @get('/api/products', {openWhenHidden: false})"
-						class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+						class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
 					>
 						<option value="">All Types</option>
 						<option value="internet">Internet</option>
@@ -40,13 +40,13 @@ templ ProductListPage() {
 				</div>
 				<a
 					href="/products/new"
-					class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
 				>
 					+ New Product
 				</a>
 			</div>
 			<div id="product-table">
-				<div class="text-slate-600 py-8 text-center text-sm">Loading...</div>
+				<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
 			</div>
 		</div>
 	}
@@ -57,19 +57,19 @@ templ ProductTable(result queries.ListProductsResult) {
 		if len(result.Products) == 0 {
 			@templates.EmptyState("No products found")
 		} else {
-			<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
 				<table class="w-full">
 					<thead>
-						<tr class="border-b border-slate-800">
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Name</th>
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Type</th>
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Price</th>
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Billing</th>
-							<th class="text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Status</th>
-							<th class="text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3">Actions</th>
+						<tr class="border-b border-neutral-800">
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Name</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Type</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Price</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Billing</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Status</th>
+							<th class="text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Actions</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-slate-800">
+					<tbody class="divide-y divide-neutral-800">
 						for _, p := range result.Products {
 							@ProductRow(p)
 						}
@@ -84,12 +84,12 @@ templ ProductTable(result queries.ListProductsResult) {
 }
 
 templ ProductRow(p *domain.Product) {
-	<tr class="hover:bg-slate-800/40 transition-colors" id={ fmt.Sprintf("product-%s", p.ID) }>
+	<tr class="hover:bg-neutral-800/40 transition-colors" id={ fmt.Sprintf("product-%s", p.ID) }>
 		<td class="px-4 py-3">
 			<div>
-				<span class="font-medium text-slate-100">{ p.Name }</span>
+				<span class="font-medium text-neutral-100">{ p.Name }</span>
 				if p.Description != "" {
-					<p class="text-xs text-slate-600 mt-0.5">{ truncate(p.Description, 60) }</p>
+					<p class="text-xs text-neutral-600 mt-0.5">{ truncate(p.Description, 60) }</p>
 				}
 			</div>
 		</td>
@@ -97,9 +97,9 @@ templ ProductRow(p *domain.Product) {
 			@productTypeBadge(p.Type)
 		</td>
 		<td class="px-4 py-3">
-			<span class="text-cyan-400 font-mono text-sm">{ p.Price.Display() }</span>
+			<span class="text-amber-400 font-mono text-sm">{ p.Price.Display() }</span>
 		</td>
-		<td class="px-4 py-3 text-slate-400 text-sm">{ billingLabel(p.BillingPeriod) }</td>
+		<td class="px-4 py-3 text-neutral-400 text-sm">{ billingLabel(p.BillingPeriod) }</td>
 		<td class="px-4 py-3">
 			@productStatusBadge(p.IsActive)
 		</td>
@@ -107,13 +107,13 @@ templ ProductRow(p *domain.Product) {
 			<div class="flex items-center justify-end gap-3">
 				<a
 					href={ templ.SafeURL(fmt.Sprintf("/products/%s", p.ID)) }
-					class="text-slate-500 hover:text-cyan-400 text-xs transition-colors"
+					class="text-neutral-500 hover:text-amber-400 text-xs transition-colors"
 				>
 					View
 				</a>
 				<a
 					href={ templ.SafeURL(fmt.Sprintf("/products/%s/edit", p.ID)) }
-					class="text-slate-500 hover:text-cyan-400 text-xs transition-colors"
+					class="text-neutral-500 hover:text-amber-400 text-xs transition-colors"
 				>
 					Edit
 				</a>
@@ -154,21 +154,21 @@ templ ProductFormPage(product *domain.Product) {
 				>
 					@templates.DataInput("name", "Product Name *", "text", "Enter product name", "name")
 					<div class="flex flex-col gap-1">
-						<label for="description" class="text-xs font-medium text-slate-400 uppercase tracking-wider">Description</label>
+						<label for="description" class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Description</label>
 						<textarea
 							id="description"
 							data-bind:description
 							rows="2"
 							placeholder="Enter product description..."
-							class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
+							class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
 						></textarea>
 					</div>
 					<div class="flex flex-col gap-1">
-						<label for="productType" class="text-xs font-medium text-slate-400 uppercase tracking-wider">Type *</label>
+						<label for="productType" class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Type *</label>
 						<select
 							id="productType"
 							data-bind:product-type
-							class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+							class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
 						>
 							<option value="internet">Internet</option>
 							<option value="voip">VoIP</option>
@@ -179,11 +179,11 @@ templ ProductFormPage(product *domain.Product) {
 					<div class="grid grid-cols-2 gap-3">
 						@templates.DataInput("priceAmount", "Price *", "text", "e.g. 29.99", "priceAmount")
 						<div class="flex flex-col gap-1">
-							<label for="priceCurrency" class="text-xs font-medium text-slate-400 uppercase tracking-wider">Currency</label>
+							<label for="priceCurrency" class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Currency</label>
 							<select
 								id="priceCurrency"
 								data-bind:price-currency
-								class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+								class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
 							>
 								<option value="EUR">EUR</option>
 								<option value="USD">USD</option>
@@ -192,11 +192,11 @@ templ ProductFormPage(product *domain.Product) {
 						</div>
 					</div>
 					<div class="flex flex-col gap-1">
-						<label for="billingPeriod" class="text-xs font-medium text-slate-400 uppercase tracking-wider">Billing Period *</label>
+						<label for="billingPeriod" class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Billing Period *</label>
 						<select
 							id="billingPeriod"
 							data-bind:billing-period
-							class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+							class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
 						>
 							<option value="monthly">Monthly</option>
 							<option value="quarterly">Quarterly</option>
@@ -208,13 +208,13 @@ templ ProductFormPage(product *domain.Product) {
 						<button
 							type="button"
 							data-on:click={ prodFormAction(product) }
-							class="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
+							class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors"
 						>
 							{ prodFormButtonText(product) }
 						</button>
 						<a
 							href="/products"
-							class="bg-slate-800 hover:bg-slate-700 text-slate-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-slate-700"
+							class="bg-neutral-800 hover:bg-neutral-700 text-neutral-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-neutral-700"
 						>
 							Cancel
 						</a>
@@ -234,7 +234,7 @@ templ ProductDetailPage(p *domain.Product) {
 				@productTypeBadge(p.Type)
 				<a
 					href={ templ.SafeURL(fmt.Sprintf("/products/%s/edit", p.ID)) }
-					class="bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+					class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
 				>
 					Edit
 				</a>
@@ -254,7 +254,7 @@ templ ProductDetailPage(p *domain.Product) {
 					@prodDetailField("Status", activeLabel(p.IsActive))
 				</div>
 				if p.Description != "" {
-					<div class="mt-5 pt-5 border-t border-slate-800">
+					<div class="mt-5 pt-5 border-t border-neutral-800">
 						@prodDetailField("Description", p.Description)
 					</div>
 				}
@@ -265,11 +265,11 @@ templ ProductDetailPage(p *domain.Product) {
 
 templ prodDetailField(label string, value string) {
 	<div>
-		<p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">{ label }</p>
+		<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1">{ label }</p>
 		if value != "" {
-			<p class="text-slate-200 text-sm">{ value }</p>
+			<p class="text-neutral-200 text-sm">{ value }</p>
 		} else {
-			<p class="text-slate-700 text-sm">—</p>
+			<p class="text-neutral-700 text-sm">—</p>
 		}
 	</div>
 }

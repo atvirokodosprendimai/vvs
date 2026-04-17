@@ -38,7 +38,7 @@ func LoginPage(errMsg string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" class=\"dark\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Login | VVS ISP Manager</title><script src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></script><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0/bundles/datastar.js\"></script></head><body class=\"bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center\"><div class=\"w-full max-w-xs\" data-signals=\"{username:'',password:''}\"><div class=\"bg-slate-900 border border-slate-800 rounded-lg p-8\"><div class=\"text-cyan-400 font-bold text-lg tracking-widest uppercase text-center mb-8\">VVS ISP</div><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Username</label> <input type=\"text\" data-bind:username autocomplete=\"username\" class=\"bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Password</label> <input type=\"password\" data-bind:password autocomplete=\"current-password\" class=\"bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" class=\"dark\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Login | VVS ISP Manager</title><script src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></script><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0/bundles/datastar.js\"></script></head><body class=\"bg-neutral-950 text-neutral-100 min-h-screen flex items-center justify-center\"><div class=\"w-full max-w-xs\" data-signals=\"{username:'',password:''}\"><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-8\"><div class=\"text-amber-400 font-bold text-lg tracking-widest uppercase text-center mb-8\">VVS ISP</div><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Username</label> <input type=\"text\" data-bind:username autocomplete=\"username\" class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Password</label> <input type=\"password\" data-bind:password autocomplete=\"current-password\" class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -66,7 +66,7 @@ func LoginPage(errMsg string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<button type=\"button\" data-on:click=\"@post('/api/login')\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium py-2 rounded transition-colors mt-1\">Sign in</button></div></div></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<button type=\"button\" data-on:click=\"@post('/api/login')\" class=\"bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 rounded transition-colors mt-1\">Sign in</button></div></div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -153,7 +153,7 @@ func UserListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " <div class=\"flex justify-end mb-4\"><button data-on:click=\"$showCreate=true\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ Add User</button></div><div data-signals=\"{showCreate:false,newUsername:'',newPassword:'',newRole:'operator'}\" data-init=\"@get('/api/users', {openWhenHidden: false})\"><div id=\"user-table\"></div><div data-show=\"$showCreate\" class=\"fixed inset-0 bg-black/70 flex items-center justify-center z-50\"><div class=\"bg-slate-900 border border-slate-800 rounded-lg p-6 w-full max-w-sm\"><h2 class=\"text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4\">New User</h2><div class=\"flex flex-col gap-3\"><input type=\"text\" placeholder=\"Username\" data-bind:new-username class=\"bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"> <input type=\"password\" placeholder=\"Password\" data-bind:new-password class=\"bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"> <select data-bind:new-role class=\"bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"operator\">Operator</option> <option value=\"admin\">Admin</option></select><div id=\"create-user-error\"></div><div class=\"flex gap-2 mt-1\"><button type=\"button\" data-on:click=\"$showCreate=false\" class=\"flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded text-sm transition-colors border border-slate-700\">Cancel</button> <button type=\"button\" data-on:click=\"@post('/api/users')\" class=\"flex-1 bg-cyan-600 hover:bg-cyan-700 text-white py-2 rounded text-sm font-medium transition-colors\">Create</button></div></div></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " <div class=\"flex justify-end mb-4\"><button data-on:click=\"$showCreate=true\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ Add User</button></div><div data-signals=\"{showCreate:false,newUsername:'',newPassword:'',newRole:'operator'}\" data-init=\"@get('/api/users', {openWhenHidden: false})\"><div id=\"user-table\"></div><div data-show=\"$showCreate\" class=\"fixed inset-0 bg-black/70 flex items-center justify-center z-50\"><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-6 w-full max-w-sm\"><h2 class=\"text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4\">New User</h2><div class=\"flex flex-col gap-3\"><input type=\"text\" placeholder=\"Username\" data-bind:new-username class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"> <input type=\"password\" placeholder=\"Password\" data-bind:new-password class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"> <select data-bind:new-role class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500\"><option value=\"operator\">Operator</option> <option value=\"admin\">Admin</option></select><div id=\"create-user-error\"></div><div class=\"flex gap-2 mt-1\"><button type=\"button\" data-on:click=\"$showCreate=false\" class=\"flex-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 py-2 rounded text-sm transition-colors border border-neutral-700\">Cancel</button> <button type=\"button\" data-on:click=\"@post('/api/users')\" class=\"flex-1 bg-amber-600 hover:bg-amber-700 text-white py-2 rounded text-sm font-medium transition-colors\">Create</button></div></div></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -188,17 +188,17 @@ func UserTable(rows []queries.UserRow, currentUserID string) templ.Component {
 			templ_7745c5c3_Var7 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div id=\"user-table\" class=\"bg-slate-900 border border-slate-800 rounded-lg overflow-hidden\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div id=\"user-table\" class=\"bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(rows) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"p-8 text-center text-slate-600 text-sm\">No users found.</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"p-8 text-center text-neutral-600 text-sm\">No users found.</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<table class=\"w-full text-sm\"><thead class=\"border-b border-slate-800\"><tr><th class=\"text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider\">Username</th><th class=\"text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider\">Role</th><th class=\"text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider\">Created</th><th class=\"px-4 py-3\"></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<table class=\"w-full text-sm\"><thead class=\"border-b border-neutral-800\"><tr><th class=\"text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider\">Username</th><th class=\"text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider\">Role</th><th class=\"text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider\">Created</th><th class=\"px-4 py-3\"></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -242,14 +242,14 @@ func userRow(row queries.UserRow, currentUserID string) templ.Component {
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<tr class=\"border-b border-slate-800 last:border-0 hover:bg-slate-800/40 transition-colors\"><td class=\"px-4 py-3 font-medium text-slate-100\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<tr class=\"border-b border-neutral-800 last:border-0 hover:bg-neutral-800/40 transition-colors\"><td class=\"px-4 py-3 font-medium text-neutral-100\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(row.Username)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 160, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 160, Col: 67}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -263,14 +263,14 @@ func userRow(row queries.UserRow, currentUserID string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</td><td class=\"px-4 py-3 text-slate-500\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</td><td class=\"px-4 py-3 text-neutral-500\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(formatDate(row.CreatedAt))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 164, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 164, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -294,7 +294,7 @@ func userRow(row queries.UserRow, currentUserID string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" data-on:click=\"@post('/api/chat/threads/direct')\" class=\"text-cyan-500 hover:text-cyan-400 text-xs transition-colors\" title=\"Message\">Message</button> <button data-on:click=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" data-on:click=\"@post('/api/chat/threads/direct')\" class=\"text-amber-500 hover:text-amber-400 text-xs transition-colors\" title=\"Message\">Message</button> <button data-on:click=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -312,7 +312,7 @@ func userRow(row queries.UserRow, currentUserID string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<span class=\"text-slate-700 text-xs\">you</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<span class=\"text-neutral-700 text-xs\">you</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -347,12 +347,12 @@ func roleBadge(role domain.Role) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if role == domain.RoleAdmin {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<span class=\"bg-cyan-500/10 text-cyan-400 text-xs px-2 py-0.5 rounded border border-cyan-500/20\">admin</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<span class=\"bg-amber-500/10 text-amber-400 text-xs px-2 py-0.5 rounded border border-amber-500/20\">admin</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<span class=\"bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded border border-slate-700\">operator</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<span class=\"bg-neutral-800 text-neutral-400 text-xs px-2 py-0.5 rounded border border-neutral-700\">operator</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

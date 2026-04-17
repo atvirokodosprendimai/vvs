@@ -63,7 +63,7 @@ func ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThreadI
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" data-init=\"@get('/sse/chat-page', {openWhenHidden: false})\"><!-- Thread sidebar — patched by /sse/chat-page --><div id=\"chat-threads\" class=\"w-64 border-r border-slate-800 flex flex-col flex-shrink-0 min-h-0 overflow-y-auto\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" data-init=\"@get('/sse/chat-page', {openWhenHidden: false})\"><!-- Thread sidebar — patched by /sse/chat-page --><div id=\"chat-threads\" class=\"w-64 border-r border-neutral-800 flex flex-col flex-shrink-0 min-h-0 overflow-y-auto\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -79,7 +79,7 @@ func ChatPage(threads []chat.ThreadSummary, currentUserID string, initialThreadI
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></div></div><!-- New DM modal --> <div data-show=\"$_newdm\" class=\"fixed inset-0 bg-black/60 flex items-center justify-center z-50\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl p-6 w-80 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><span class=\"text-sm font-medium text-slate-200\">New Direct Message</span> <button data-on:click=\"$_newdm=false\" class=\"text-slate-500 hover:text-slate-300\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><input type=\"text\" data-bind:newdmtarget placeholder=\"User ID…\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500\"> <button data-on:click=\"@post('/api/chat/threads/direct') && ($_newdm=false)\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm\">Start conversation</button></div></div><!-- New Channel modal --> <div data-show=\"$_newchannel\" class=\"fixed inset-0 bg-black/60 flex items-center justify-center z-50\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl p-6 w-80 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><span class=\"text-sm font-medium text-slate-200\">New Channel</span> <button data-on:click=\"$_newchannel=false\" class=\"text-slate-500 hover:text-slate-300\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><input type=\"text\" data-bind:channelname placeholder=\"channel-name\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500\"> <label class=\"flex items-center gap-2 text-sm text-slate-400 cursor-pointer\"><input type=\"checkbox\" data-bind:isprivate class=\"accent-cyan-500\"> Private channel</label> <button data-on:click=\"@post('/api/chat/threads/channel') && ($_newchannel=false)\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm\">Create channel</button></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></div></div><!-- New DM modal --> <div data-show=\"$_newdm\" class=\"fixed inset-0 bg-black/60 flex items-center justify-center z-50\" style=\"display:none\"><div class=\"bg-neutral-900 border border-neutral-700 rounded-xl p-6 w-80 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><span class=\"text-sm font-medium text-neutral-200\">New Direct Message</span> <button data-on:click=\"$_newdm=false\" class=\"text-neutral-500 hover:text-neutral-300\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><input type=\"text\" data-bind:newdmtarget placeholder=\"User ID…\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500\"> <button data-on:click=\"@post('/api/chat/threads/direct') && ($_newdm=false)\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm\">Start conversation</button></div></div><!-- New Channel modal --> <div data-show=\"$_newchannel\" class=\"fixed inset-0 bg-black/60 flex items-center justify-center z-50\" style=\"display:none\"><div class=\"bg-neutral-900 border border-neutral-700 rounded-xl p-6 w-80 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><span class=\"text-sm font-medium text-neutral-200\">New Channel</span> <button data-on:click=\"$_newchannel=false\" class=\"text-neutral-500 hover:text-neutral-300\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><input type=\"text\" data-bind:channelname placeholder=\"channel-name\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500\"> <label class=\"flex items-center gap-2 text-sm text-neutral-400 cursor-pointer\"><input type=\"checkbox\" data-bind:isprivate class=\"accent-amber-500\"> Private channel</label> <button data-on:click=\"@post('/api/chat/threads/channel') && ($_newchannel=false)\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm\">Create channel</button></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -115,7 +115,7 @@ func ChatThreadList(threads []chat.ThreadSummary, currentUserID string) templ.Co
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div id=\"chat-thread-list\" class=\"flex flex-col\"><div class=\"px-3 py-3 border-b border-slate-800 flex flex-col gap-2\"><div class=\"flex items-center justify-between\"><span class=\"text-xs font-semibold text-slate-500 uppercase tracking-wider\">Channels</span> <button data-on:click=\"$_newchannel=true\" class=\"text-slate-500 hover:text-cyan-400 transition-colors\" title=\"New channel\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-3.5 h-3.5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"2\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 4.5v15m7.5-7.5h-15\"></path></svg></button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div id=\"chat-thread-list\" class=\"flex flex-col\"><div class=\"px-3 py-3 border-b border-neutral-800 flex flex-col gap-2\"><div class=\"flex items-center justify-between\"><span class=\"text-xs font-semibold text-neutral-500 uppercase tracking-wider\">Channels</span> <button data-on:click=\"$_newchannel=true\" class=\"text-neutral-500 hover:text-amber-400 transition-colors\" title=\"New channel\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-3.5 h-3.5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"2\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 4.5v15m7.5-7.5h-15\"></path></svg></button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -127,7 +127,7 @@ func ChatThreadList(threads []chat.ThreadSummary, currentUserID string) templ.Co
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><div class=\"px-3 py-3 flex flex-col gap-1 flex-1\"><div class=\"flex items-center justify-between mb-1\"><span class=\"text-xs font-semibold text-slate-500 uppercase tracking-wider\">Direct Messages</span> <button data-on:click=\"$_newdm=true\" class=\"text-slate-500 hover:text-cyan-400 transition-colors\" title=\"New DM\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-3.5 h-3.5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"2\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 4.5v15m7.5-7.5h-15\"></path></svg></button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><div class=\"px-3 py-3 flex flex-col gap-1 flex-1\"><div class=\"flex items-center justify-between mb-1\"><span class=\"text-xs font-semibold text-neutral-500 uppercase tracking-wider\">Direct Messages</span> <button data-on:click=\"$_newdm=true\" class=\"text-neutral-500 hover:text-amber-400 transition-colors\" title=\"New DM\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-3.5 h-3.5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"2\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 4.5v15m7.5-7.5h-15\"></path></svg></button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -182,7 +182,7 @@ func ChatThreadRow(t chat.ThreadSummary, currentUserID string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" class=\"w-full flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-slate-800 transition-colors group\"><span class=\"flex-1 min-w-0\"><span class=\"text-sm text-slate-300 group-hover:text-slate-100 truncate block\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" class=\"w-full flex items-center gap-2 px-2 py-1.5 rounded text-left hover:bg-neutral-800 transition-colors group\"><span class=\"flex-1 min-w-0\"><span class=\"text-sm text-neutral-300 group-hover:text-neutral-100 truncate block\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -200,14 +200,14 @@ func ChatThreadRow(t chat.ThreadSummary, currentUserID string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if t.LastMessage != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<span class=\"text-[11px] text-slate-600 truncate block\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<span class=\"text-[11px] text-neutral-600 truncate block\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(t.LastMessage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/chat.templ`, Line: 145, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/chat.templ`, Line: 145, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -223,7 +223,7 @@ func ChatThreadRow(t chat.ThreadSummary, currentUserID string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if t.UnreadCount > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span class=\"bg-cyan-600 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 flex-shrink-0\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span class=\"bg-amber-600 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 flex-shrink-0\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -271,7 +271,7 @@ func ChatPanelEmpty() templ.Component {
 			templ_7745c5c3_Var10 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<div class=\"flex-1 flex items-center justify-center text-slate-600 text-sm\">Select a conversation</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<div class=\"flex-1 flex items-center justify-center text-neutral-600 text-sm\">Select a conversation</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -306,7 +306,7 @@ func ChatWidgetMessages(msgs []chat.Message, currentUserID string) templ.Compone
 			return templ_7745c5c3_Err
 		}
 		if len(msgs) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"text-xs text-slate-600 text-center py-4\">No messages yet.</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<div class=\"text-xs text-neutral-600 text-center py-4\">No messages yet.</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -353,7 +353,7 @@ func ChatMessages(msgs []chat.Message, currentUserID string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if len(msgs) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"text-xs text-slate-600 text-center py-4\">No messages yet. Say hello!</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"text-xs text-neutral-600 text-center py-4\">No messages yet. Say hello!</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -365,7 +365,7 @@ func ChatMessages(msgs []chat.Message, currentUserID string) templ.Component {
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div data-init=\"el.scrollIntoView()\"></div></div><div class=\"border-t border-slate-800 px-4 py-3 flex gap-2 items-end\"><textarea data-bind:chatmsg placeholder=\"Message…\" rows=\"1\" data-on:keydown=\"evt.key==='Enter' && !evt.shiftKey && !evt.preventDefault() && @post('/api/chat/send') && ($chatmsg='')\" class=\"flex-1 bg-slate-800 text-slate-100 border border-slate-700 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"></textarea> <button data-on:click=\"@post('/api/chat/send') && ($chatmsg='')\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white p-2 rounded-lg transition-colors flex-shrink-0\" title=\"Send\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5\"></path></svg></button></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div data-init=\"el.scrollIntoView()\"></div></div><div class=\"border-t border-neutral-800 px-4 py-3 flex gap-2 items-end\"><textarea data-bind:chatmsg placeholder=\"Message…\" rows=\"1\" data-on:keydown=\"evt.key==='Enter' && !evt.shiftKey && !evt.preventDefault() && @post('/api/chat/send') && ($chatmsg='')\" class=\"flex-1 bg-neutral-800 text-neutral-100 border border-neutral-700 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></textarea> <button data-on:click=\"@post('/api/chat/send') && ($chatmsg='')\" class=\"bg-amber-600 hover:bg-amber-700 text-white p-2 rounded-lg transition-colors flex-shrink-0\" title=\"Send\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5\"></path></svg></button></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -396,7 +396,7 @@ func ChatMessageItem(msg chat.Message, currentUserID string) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if msg.UserID == currentUserID {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"flex flex-col items-end gap-0.5\"><div class=\"max-w-[85%] bg-orange-600/20 border border-orange-500/30 text-slate-100 text-sm px-3 py-2 rounded-2xl rounded-br-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"flex flex-col items-end gap-0.5\"><div class=\"max-w-[85%] bg-orange-600/20 border border-orange-500/30 text-neutral-100 text-sm px-3 py-2 rounded-2xl rounded-br-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -409,14 +409,14 @@ func ChatMessageItem(msg chat.Message, currentUserID string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div><span class=\"text-[10px] text-slate-600\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div><span class=\"text-[10px] text-neutral-600\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(chatAge(msg.CreatedAt))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/chat.templ`, Line: 215, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/chat.templ`, Line: 215, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -427,20 +427,20 @@ func ChatMessageItem(msg chat.Message, currentUserID string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<div class=\"flex flex-col items-start gap-0.5\"><span class=\"text-[10px] text-slate-500 px-1\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<div class=\"flex flex-col items-start gap-0.5\"><span class=\"text-[10px] text-neutral-500 px-1\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(msg.Username)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/chat.templ`, Line: 219, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/chat.templ`, Line: 219, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</span><div class=\"max-w-[85%] bg-slate-800 border border-slate-700 text-slate-200 text-sm px-3 py-2 rounded-2xl rounded-bl-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</span><div class=\"max-w-[85%] bg-neutral-800 border border-neutral-700 text-neutral-200 text-sm px-3 py-2 rounded-2xl rounded-bl-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -453,14 +453,14 @@ func ChatMessageItem(msg chat.Message, currentUserID string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</div><span class=\"text-[10px] text-slate-600 px-1\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</div><span class=\"text-[10px] text-neutral-600 px-1\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(chatAge(msg.CreatedAt))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/chat.templ`, Line: 223, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/chat.templ`, Line: 223, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {

@@ -57,10 +57,10 @@ templ DeviceListPage(devices []queries.DeviceReadModel, statusFilter string) {
 				class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
 				style="display:none"
 			>
-				<div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
+				<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
 					<div class="flex items-center justify-between">
-						<h3 class="text-sm font-semibold text-slate-200">Register Device</h3>
-						<button type="button" data-on:click="$_registerOpen = false" class="text-slate-500 hover:text-slate-300">
+						<h3 class="text-sm font-semibold text-neutral-200">Register Device</h3>
+						<button type="button" data-on:click="$_registerOpen = false" class="text-neutral-500 hover:text-neutral-300">
 							<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
 								<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
 							</svg>
@@ -68,12 +68,12 @@ templ DeviceListPage(devices []queries.DeviceReadModel, statusFilter string) {
 					</div>
 					<div class="flex flex-col gap-3">
 						<div class="flex flex-col gap-1">
-							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Name *</label>
-							<input type="text" data-bind:name placeholder="e.g. TP-Link EX220 #12" class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
+							<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Name *</label>
+							<input type="text" data-bind:name placeholder="e.g. TP-Link EX220 #12" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
 						</div>
 						<div class="flex flex-col gap-1">
-							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Type</label>
-							<select data-bind:device-type class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500">
+							<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Type</label>
+							<select data-bind:device-type class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500">
 								<option value="modem">Modem</option>
 								<option value="router">Router</option>
 								<option value="ont">ONT</option>
@@ -83,12 +83,12 @@ templ DeviceListPage(devices []queries.DeviceReadModel, statusFilter string) {
 							</select>
 						</div>
 						<div class="flex flex-col gap-1">
-							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Serial Number</label>
-							<input type="text" data-bind:serial-number placeholder="optional" class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
+							<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Serial Number</label>
+							<input type="text" data-bind:serial-number placeholder="optional" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
 						</div>
 						<div class="flex flex-col gap-1">
-							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Notes</label>
-							<input type="text" data-bind:notes class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
+							<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Notes</label>
+							<input type="text" data-bind:notes class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
 						</div>
 						<div id="device-form-errors"></div>
 					</div>
@@ -96,7 +96,7 @@ templ DeviceListPage(devices []queries.DeviceReadModel, statusFilter string) {
 						<button type="button" data-on:click="@post('/api/devices')" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors">
 							Register
 						</button>
-						<button type="button" data-on:click="$_registerOpen = false" class="text-slate-400 hover:text-slate-200 px-4 py-2 rounded text-sm transition-colors">
+						<button type="button" data-on:click="$_registerOpen = false" class="text-neutral-400 hover:text-neutral-200 px-4 py-2 rounded text-sm transition-colors">
 							Cancel
 						</button>
 					</div>
@@ -112,10 +112,10 @@ templ DeviceTable(devices []queries.DeviceReadModel) {
 		if len(devices) == 0 {
 			@templates.EmptyState("No devices found.")
 		} else {
-			<div class="overflow-x-auto rounded-lg border border-slate-800">
+			<div class="overflow-x-auto rounded-lg border border-neutral-800">
 				<table class="w-full text-sm">
 					<thead>
-						<tr class="border-b border-slate-800 text-xs font-medium text-slate-400 uppercase tracking-wider">
+						<tr class="border-b border-neutral-800 text-xs font-medium text-neutral-400 uppercase tracking-wider">
 							<th class="text-left px-4 py-3">Name</th>
 							<th class="text-left px-4 py-3">Type</th>
 							<th class="text-left px-4 py-3">Serial</th>
@@ -124,35 +124,35 @@ templ DeviceTable(devices []queries.DeviceReadModel) {
 							<th class="text-left px-4 py-3">Warranty</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-slate-800/50">
+					<tbody class="divide-y divide-neutral-800/50">
 						for _, d := range devices {
-							<tr class="hover:bg-slate-800/30 transition-colors">
+							<tr class="hover:bg-neutral-800/30 transition-colors">
 								<td class="px-4 py-3">
 									<a href={ templ.SafeURL("/devices/" + d.ID) } class="text-orange-400 hover:text-orange-300 font-medium">
 										{ d.Name }
 									</a>
 								</td>
-								<td class="px-4 py-3 text-slate-400">{ d.DeviceType }</td>
-								<td class="px-4 py-3 text-slate-400 font-mono text-xs">
+								<td class="px-4 py-3 text-neutral-400">{ d.DeviceType }</td>
+								<td class="px-4 py-3 text-neutral-400 font-mono text-xs">
 									if d.SerialNumber != "" {
 										{ d.SerialNumber }
 									} else {
-										<span class="text-slate-600">—</span>
+										<span class="text-neutral-600">—</span>
 									}
 								</td>
 								<td class="px-4 py-3">
 									@statusBadge(d.Status)
 								</td>
-								<td class="px-4 py-3 text-slate-400">
+								<td class="px-4 py-3 text-neutral-400">
 									if d.CustomerID != "" {
-										<a href={ templ.SafeURL("/customers/" + d.CustomerID) } class="text-slate-300 hover:text-orange-400">
+										<a href={ templ.SafeURL("/customers/" + d.CustomerID) } class="text-neutral-300 hover:text-orange-400">
 											{ d.CustomerID }
 										</a>
 									} else {
-										<span class="text-slate-600">—</span>
+										<span class="text-neutral-600">—</span>
 									}
 								</td>
-								<td class="px-4 py-3 text-slate-400 text-xs">
+								<td class="px-4 py-3 text-neutral-400 text-xs">
 									@warrantyCell(d.WarrantyExpiry)
 								</td>
 							</tr>
@@ -169,16 +169,16 @@ templ DeviceTable(devices []queries.DeviceReadModel) {
 templ DeviceDetailPage(d *queries.DeviceReadModel) {
 	@templates.Layout(d.Name) {
 		<div class="flex items-center gap-2 mb-6">
-			<a href="/devices" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">← Devices</a>
+			<a href="/devices" class="text-xs text-neutral-500 hover:text-neutral-300 transition-colors">← Devices</a>
 		</div>
 
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 			<!-- Device info card -->
-			<div class="md:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col gap-4">
+			<div class="md:col-span-2 bg-neutral-900 border border-neutral-800 rounded-xl p-6 flex flex-col gap-4">
 				<div class="flex items-start justify-between">
 					<div>
-						<h1 class="text-lg font-semibold text-slate-100">{ d.Name }</h1>
-						<p class="text-xs text-slate-500 mt-0.5 font-mono">{ d.ID }</p>
+						<h1 class="text-lg font-semibold text-neutral-100">{ d.Name }</h1>
+						<p class="text-xs text-neutral-500 mt-0.5 font-mono">{ d.ID }</p>
 					</div>
 					@statusBadge(d.Status)
 				</div>
@@ -193,7 +193,7 @@ templ DeviceDetailPage(d *queries.DeviceReadModel) {
 					}
 					if d.CustomerID != "" {
 						<div class="flex flex-col gap-0.5">
-							<span class="text-xs text-slate-500 uppercase tracking-wider">Customer</span>
+							<span class="text-xs text-neutral-500 uppercase tracking-wider">Customer</span>
 							<a href={ templ.SafeURL("/customers/" + d.CustomerID) } class="text-orange-400 hover:text-orange-300">
 								{ d.CustomerID }
 							</a>
@@ -208,7 +208,7 @@ templ DeviceDetailPage(d *queries.DeviceReadModel) {
 				</div>
 
 				if d.Notes != "" {
-					<p class="text-sm text-slate-400 border-t border-slate-800 pt-3">{ d.Notes }</p>
+					<p class="text-sm text-neutral-400 border-t border-neutral-800 pt-3">{ d.Notes }</p>
 				}
 
 				<div id="device-action-errors"></div>
@@ -216,7 +216,7 @@ templ DeviceDetailPage(d *queries.DeviceReadModel) {
 				<!-- Action buttons -->
 				<div
 					data-signals={ fmt.Sprintf("{_deployOpen: false, customerId: '%s', location: '%s'}", d.CustomerID, d.Location) }
-					class="flex flex-wrap gap-2 border-t border-slate-800 pt-4"
+					class="flex flex-wrap gap-2 border-t border-neutral-800 pt-4"
 				>
 					if d.Status == "in_stock" {
 						<button
@@ -231,7 +231,7 @@ templ DeviceDetailPage(d *queries.DeviceReadModel) {
 						<button
 							type="button"
 							data-on:click={ fmt.Sprintf("@post('/api/devices/%s/return')", d.ID) }
-							class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+							class="bg-neutral-700 hover:bg-neutral-600 text-neutral-200 px-3 py-1.5 rounded text-xs font-medium transition-colors"
 						>
 							Return to Stock
 						</button>
@@ -252,16 +252,16 @@ templ DeviceDetailPage(d *queries.DeviceReadModel) {
 						class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
 						style="display:none"
 					>
-						<div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
-							<h3 class="text-sm font-semibold text-slate-200">Deploy Device</h3>
+						<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4">
+							<h3 class="text-sm font-semibold text-neutral-200">Deploy Device</h3>
 							<div class="flex flex-col gap-3">
 								<div class="flex flex-col gap-1">
-									<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Customer ID</label>
-									<input type="text" data-bind:customer-id class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
+									<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Customer ID</label>
+									<input type="text" data-bind:customer-id class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
 								</div>
 								<div class="flex flex-col gap-1">
-									<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Location</label>
-									<input type="text" data-bind:location placeholder="address or warehouse bin" class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
+									<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Location</label>
+									<input type="text" data-bind:location placeholder="address or warehouse bin" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500"/>
 								</div>
 							</div>
 							<div class="flex gap-2">
@@ -272,7 +272,7 @@ templ DeviceDetailPage(d *queries.DeviceReadModel) {
 								>
 									Deploy
 								</button>
-								<button type="button" data-on:click="$_deployOpen = false" class="text-slate-400 hover:text-slate-200 px-4 py-2 rounded text-sm transition-colors">
+								<button type="button" data-on:click="$_deployOpen = false" class="text-neutral-400 hover:text-neutral-200 px-4 py-2 rounded text-sm transition-colors">
 									Cancel
 								</button>
 							</div>
@@ -282,14 +282,14 @@ templ DeviceDetailPage(d *queries.DeviceReadModel) {
 			</div>
 
 			<!-- QR code panel -->
-			<div class="bg-slate-900 border border-slate-800 rounded-xl p-6 flex flex-col items-center gap-3">
-				<p class="text-xs font-medium text-slate-400 uppercase tracking-wider">QR Code</p>
+			<div class="bg-neutral-900 border border-neutral-800 rounded-xl p-6 flex flex-col items-center gap-3">
+				<p class="text-xs font-medium text-neutral-400 uppercase tracking-wider">QR Code</p>
 				<img
 					src={ fmt.Sprintf("/devices/%s/qr.png", d.ID) }
 					alt="QR code"
 					class="w-40 h-40 rounded bg-white p-1"
 				/>
-				<p class="text-xs text-slate-500 text-center break-all font-mono">{ d.ID }</p>
+				<p class="text-xs text-neutral-500 text-center break-all font-mono">{ d.ID }</p>
 			</div>
 		</div>
 	}
@@ -300,26 +300,26 @@ templ DeviceDetailPage(d *queries.DeviceReadModel) {
 templ statusBadge(status string) {
 	switch status {
 	case "in_stock":
-		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-700 text-slate-300">In Stock</span>
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-700 text-neutral-300">In Stock</span>
 	case "deployed":
 		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-900/50 text-orange-300">Deployed</span>
 	case "decommissioned":
 		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-900/30 text-red-400">Decommissioned</span>
 	default:
-		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-700 text-slate-400">{ status }</span>
+		<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-700 text-neutral-400">{ status }</span>
 	}
 }
 
 templ detailRow(label, value string) {
 	<div class="flex flex-col gap-0.5">
-		<span class="text-xs text-slate-500 uppercase tracking-wider">{ label }</span>
-		<span class="text-slate-200">{ value }</span>
+		<span class="text-xs text-neutral-500 uppercase tracking-wider">{ label }</span>
+		<span class="text-neutral-200">{ value }</span>
 	</div>
 }
 
 templ warrantyCell(t *time.Time) {
 	if t == nil {
-		<span class="text-slate-600">—</span>
+		<span class="text-neutral-600">—</span>
 	} else if t.Before(time.Now()) {
 		<span class="text-red-400">{ t.Format("2006-01-02") } expired</span>
 	} else {
@@ -331,5 +331,5 @@ func tabClass(current, value string) string {
 	if current == value {
 		return "bg-orange-600 text-white"
 	}
-	return "bg-slate-800 text-slate-400 hover:text-slate-200"
+	return "bg-neutral-800 text-neutral-400 hover:text-neutral-200"
 }

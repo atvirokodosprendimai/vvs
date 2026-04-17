@@ -16,7 +16,7 @@ templ PrefixListPage(prefixes []*domain.NetBoxPrefix) {
 				<div></div>
 				<button
 					data-on:click="$_prefixAddOpen=true"
-					class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
 				>
 					+ Add Prefix
 				</button>
@@ -28,7 +28,7 @@ templ PrefixListPage(prefixes []*domain.NetBoxPrefix) {
 				class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
 				style="display:none"
 			>
-				<div class="bg-slate-900 rounded-lg p-6 w-full max-w-md border border-slate-700">
+				<div class="bg-neutral-900 rounded-lg p-6 w-full max-w-md border border-neutral-700">
 					<h2 class="text-white font-semibold text-lg mb-4">Add NetBox Prefix</h2>
 					<div class="flex flex-col gap-3">
 						@templates.DataInput("prefixNetboxId", "NetBox Prefix ID *", "number", "e.g. 42", "prefixNetboxId")
@@ -39,11 +39,11 @@ templ PrefixListPage(prefixes []*domain.NetBoxPrefix) {
 						<div class="flex gap-2 pt-1">
 							<button
 								data-on:click="@post('/api/prefixes')"
-								class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium flex-1"
+								class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium flex-1"
 							>Save</button>
 							<button
 								data-on:click="$_prefixAddOpen=false"
-								class="bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded text-sm font-medium"
+								class="bg-neutral-700 hover:bg-neutral-600 text-neutral-200 px-4 py-2 rounded text-sm font-medium"
 							>Cancel</button>
 						</div>
 					</div>
@@ -61,11 +61,11 @@ templ PrefixListPage(prefixes []*domain.NetBoxPrefix) {
 templ PrefixTable(prefixes []*domain.NetBoxPrefix) {
 	<div id="prefix-table">
 		if len(prefixes) == 0 {
-			<div class="text-slate-500 text-sm py-8 text-center">No prefixes configured. Add one to enable automatic IP allocation.</div>
+			<div class="text-neutral-500 text-sm py-8 text-center">No prefixes configured. Add one to enable automatic IP allocation.</div>
 		} else {
 			<table class="w-full text-sm">
 				<thead>
-					<tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider">
+					<tr class="border-b border-neutral-800 text-neutral-400 text-xs uppercase tracking-wider">
 						<th class="text-left py-2 px-3">NetBox ID</th>
 						<th class="text-left py-2 px-3">CIDR</th>
 						<th class="text-left py-2 px-3">Location</th>
@@ -75,11 +75,11 @@ templ PrefixTable(prefixes []*domain.NetBoxPrefix) {
 				</thead>
 				<tbody>
 					for _, p := range prefixes {
-						<tr class="border-b border-slate-800/50 hover:bg-slate-800/30">
-							<td class="py-2 px-3 text-slate-300 font-mono">{ fmt.Sprintf("%d", p.NetBoxID) }</td>
-							<td class="py-2 px-3 text-slate-300 font-mono">{ p.CIDR }</td>
-							<td class="py-2 px-3 text-slate-100">{ p.Location }</td>
-							<td class="py-2 px-3 text-slate-400">{ fmt.Sprintf("%d", p.Priority) }</td>
+						<tr class="border-b border-neutral-800/50 hover:bg-neutral-800/30">
+							<td class="py-2 px-3 text-neutral-300 font-mono">{ fmt.Sprintf("%d", p.NetBoxID) }</td>
+							<td class="py-2 px-3 text-neutral-300 font-mono">{ p.CIDR }</td>
+							<td class="py-2 px-3 text-neutral-100">{ p.Location }</td>
+							<td class="py-2 px-3 text-neutral-400">{ fmt.Sprintf("%d", p.Priority) }</td>
 							<td class="py-2 px-3 text-right">
 								<button
 									data-on:click={ fmt.Sprintf("@delete('/api/prefixes/%s')", p.ID) }

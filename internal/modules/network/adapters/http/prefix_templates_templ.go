@@ -51,7 +51,7 @@ func PrefixListPage(prefixes []*domain.NetBoxPrefix) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div data-signals=\"{_prefixAddOpen:false,prefixNetboxId:'',prefixCidr:'',prefixLocation:'',prefixPriority:'0'}\"><div class=\"flex items-center justify-between mb-4\"><div></div><button data-on:click=\"$_prefixAddOpen=true\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ Add Prefix</button></div><!-- Add modal --><div data-show=\"$_prefixAddOpen\" class=\"fixed inset-0 bg-black/60 flex items-center justify-center z-50\" style=\"display:none\"><div class=\"bg-slate-900 rounded-lg p-6 w-full max-w-md border border-slate-700\"><h2 class=\"text-white font-semibold text-lg mb-4\">Add NetBox Prefix</h2><div class=\"flex flex-col gap-3\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div data-signals=\"{_prefixAddOpen:false,prefixNetboxId:'',prefixCidr:'',prefixLocation:'',prefixPriority:'0'}\"><div class=\"flex items-center justify-between mb-4\"><div></div><button data-on:click=\"$_prefixAddOpen=true\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ Add Prefix</button></div><!-- Add modal --><div data-show=\"$_prefixAddOpen\" class=\"fixed inset-0 bg-black/60 flex items-center justify-center z-50\" style=\"display:none\"><div class=\"bg-neutral-900 rounded-lg p-6 w-full max-w-md border border-neutral-700\"><h2 class=\"text-white font-semibold text-lg mb-4\">Add NetBox Prefix</h2><div class=\"flex flex-col gap-3\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -71,7 +71,7 @@ func PrefixListPage(prefixes []*domain.NetBoxPrefix) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div id=\"prefix-form-errors\"></div><div class=\"flex gap-2 pt-1\"><button data-on:click=\"@post('/api/prefixes')\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium flex-1\">Save</button> <button data-on:click=\"$_prefixAddOpen=false\" class=\"bg-slate-700 hover:bg-slate-600 text-slate-200 px-4 py-2 rounded text-sm font-medium\">Cancel</button></div></div></div></div><!-- Table --><div id=\"prefix-table\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div id=\"prefix-form-errors\"></div><div class=\"flex gap-2 pt-1\"><button data-on:click=\"@post('/api/prefixes')\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium flex-1\">Save</button> <button data-on:click=\"$_prefixAddOpen=false\" class=\"bg-neutral-700 hover:bg-neutral-600 text-neutral-200 px-4 py-2 rounded text-sm font-medium\">Cancel</button></div></div></div></div><!-- Table --><div id=\"prefix-table\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -119,63 +119,63 @@ func PrefixTable(prefixes []*domain.NetBoxPrefix) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if len(prefixes) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"text-slate-500 text-sm py-8 text-center\">No prefixes configured. Add one to enable automatic IP allocation.</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"text-neutral-500 text-sm py-8 text-center\">No prefixes configured. Add one to enable automatic IP allocation.</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<table class=\"w-full text-sm\"><thead><tr class=\"border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider\"><th class=\"text-left py-2 px-3\">NetBox ID</th><th class=\"text-left py-2 px-3\">CIDR</th><th class=\"text-left py-2 px-3\">Location</th><th class=\"text-left py-2 px-3\">Priority</th><th class=\"py-2 px-3\"></th></tr></thead> <tbody>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<table class=\"w-full text-sm\"><thead><tr class=\"border-b border-neutral-800 text-neutral-400 text-xs uppercase tracking-wider\"><th class=\"text-left py-2 px-3\">NetBox ID</th><th class=\"text-left py-2 px-3\">CIDR</th><th class=\"text-left py-2 px-3\">Location</th><th class=\"text-left py-2 px-3\">Priority</th><th class=\"py-2 px-3\"></th></tr></thead> <tbody>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, p := range prefixes {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<tr class=\"border-b border-slate-800/50 hover:bg-slate-800/30\"><td class=\"py-2 px-3 text-slate-300 font-mono\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<tr class=\"border-b border-neutral-800/50 hover:bg-neutral-800/30\"><td class=\"py-2 px-3 text-neutral-300 font-mono\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", p.NetBoxID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/prefix_templates.templ`, Line: 79, Col: 85}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/prefix_templates.templ`, Line: 79, Col: 87}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</td><td class=\"py-2 px-3 text-slate-300 font-mono\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</td><td class=\"py-2 px-3 text-neutral-300 font-mono\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(p.CIDR)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/prefix_templates.templ`, Line: 80, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/prefix_templates.templ`, Line: 80, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</td><td class=\"py-2 px-3 text-slate-100\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</td><td class=\"py-2 px-3 text-neutral-100\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(p.Location)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/prefix_templates.templ`, Line: 81, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/prefix_templates.templ`, Line: 81, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</td><td class=\"py-2 px-3 text-slate-400\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</td><td class=\"py-2 px-3 text-neutral-400\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", p.Priority))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/prefix_templates.templ`, Line: 82, Col: 75}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/network/adapters/http/prefix_templates.templ`, Line: 82, Col: 77}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {

@@ -41,7 +41,7 @@ func TaskSection(customerID string, tasks []queries.TaskReadModel) templ.Compone
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div data-signals=\"{_taskModalOpen: false, _taskId: '', taskTitle: '', taskDescription: '', taskPriority: 'normal', taskDueDate: ''}\" class=\"mt-4 bg-slate-900 border border-slate-800 rounded-lg overflow-hidden\"><!-- Section header --><div class=\"flex items-center justify-between px-4 py-3 border-b border-slate-800\"><h2 class=\"text-xs font-semibold text-slate-400 uppercase tracking-wider\">Tasks</h2><button type=\"button\" data-on:click=\"$_taskModalOpen = true; $_taskId = ''; $taskTitle = ''; $taskDescription = ''; $taskPriority = 'normal'; $taskDueDate = ''\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors\">+ New</button></div><div id=\"customer-tasks\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div data-signals=\"{_taskModalOpen: false, _taskId: '', taskTitle: '', taskDescription: '', taskPriority: 'normal', taskDueDate: ''}\" class=\"mt-4 bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden\"><!-- Section header --><div class=\"flex items-center justify-between px-4 py-3 border-b border-neutral-800\"><h2 class=\"text-xs font-semibold text-neutral-400 uppercase tracking-wider\">Tasks</h2><button type=\"button\" data-on:click=\"$_taskModalOpen = true; $_taskId = ''; $taskTitle = ''; $taskDescription = ''; $taskPriority = 'normal'; $taskDueDate = ''\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors\">+ New</button></div><div id=\"customer-tasks\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -49,7 +49,7 @@ func TaskSection(customerID string, tasks []queries.TaskReadModel) templ.Compone
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><!-- Create/Edit modal --><div data-show=\"$_taskModalOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-slate-200\">Task</h3><button type=\"button\" data-on:click=\"$_taskModalOpen = false\" class=\"text-slate-500 hover:text-slate-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><!-- Title --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Title *</label> <input type=\"text\" data-bind:task-title placeholder=\"Task title\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"></div><!-- Description --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Description</label> <textarea data-bind:task-description rows=\"2\" placeholder=\"Optional description...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600 resize-none\"></textarea></div><!-- Priority + Due Date --><div class=\"grid grid-cols-2 gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Priority</label> <select data-bind:task-priority class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"low\">Low</option> <option value=\"normal\">Normal</option> <option value=\"high\">High</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Due Date</label> <input type=\"date\" data-bind:task-due-date class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"></div></div><div id=\"customer-task-error\"></div></div><div class=\"flex items-center gap-2 pt-1\"><button type=\"button\" data-on:click=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><!-- Create/Edit modal --><div data-show=\"$_taskModalOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-neutral-200\">Task</h3><button type=\"button\" data-on:click=\"$_taskModalOpen = false\" class=\"text-neutral-500 hover:text-neutral-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><!-- Title --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Title *</label> <input type=\"text\" data-bind:task-title placeholder=\"Task title\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div><!-- Description --><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Description</label> <textarea data-bind:task-description rows=\"2\" placeholder=\"Optional description...\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600 resize-none\"></textarea></div><!-- Priority + Due Date --><div class=\"grid grid-cols-2 gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Priority</label> <select data-bind:task-priority class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500\"><option value=\"low\">Low</option> <option value=\"normal\">Normal</option> <option value=\"high\">High</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Due Date</label> <input type=\"date\" data-bind:task-due-date class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500\"></div></div><div id=\"customer-task-error\"></div></div><div class=\"flex items-center gap-2 pt-1\"><button type=\"button\" data-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -62,7 +62,7 @@ func TaskSection(customerID string, tasks []queries.TaskReadModel) templ.Compone
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Save</button> <button type=\"button\" data-on:click=\"$_taskModalOpen = false\" class=\"bg-slate-800 hover:bg-slate-700 text-slate-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-slate-700\">Cancel</button></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Save</button> <button type=\"button\" data-on:click=\"$_taskModalOpen = false\" class=\"bg-neutral-800 hover:bg-neutral-700 text-neutral-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-neutral-700\">Cancel</button></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -97,12 +97,12 @@ func TaskList(customerID string, tasks []queries.TaskReadModel) templ.Component 
 			return templ_7745c5c3_Err
 		}
 		if len(tasks) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"flex flex-col items-center justify-center py-10 text-slate-600\"><p class=\"text-sm\">No tasks yet.</p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div class=\"flex flex-col items-center justify-center py-10 text-neutral-600\"><p class=\"text-sm\">No tasks yet.</p></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<table class=\"w-full\"><thead><tr class=\"border-b border-slate-800\"><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Title</th><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Priority</th><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Status</th><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Due Date</th><th class=\"text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Actions</th></tr></thead> <tbody class=\"divide-y divide-slate-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<table class=\"w-full\"><thead><tr class=\"border-b border-neutral-800\"><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Title</th><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Priority</th><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Status</th><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Due Date</th><th class=\"text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Actions</th></tr></thead> <tbody class=\"divide-y divide-neutral-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -146,27 +146,27 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<tr class=\"hover:bg-slate-800/40 transition-colors\" id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<tr class=\"hover:bg-neutral-800/40 transition-colors\" id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("task-%s", t.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 157, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 157, Col: 88}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><td class=\"px-4 py-3 font-medium text-slate-100 text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><td class=\"px-4 py-3 font-medium text-neutral-100 text-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(t.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 158, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 158, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -188,7 +188,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</td><td class=\"px-4 py-3 text-slate-400 text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</td><td class=\"px-4 py-3 text-neutral-400 text-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -257,7 +257,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" data-signals=\"{taskAction: 'reopen'}\" class=\"bg-slate-700/50 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-slate-700\">Reopen</button> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" data-signals=\"{taskAction: 'reopen'}\" class=\"bg-neutral-700/50 hover:bg-neutral-700 text-neutral-300 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-neutral-700\">Reopen</button> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -294,7 +294,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" class=\"text-slate-500 hover:text-cyan-400 text-xs transition-colors px-2 py-1\">Edit</button> <button type=\"button\" data-on:click=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" class=\"text-neutral-500 hover:text-amber-400 text-xs transition-colors px-2 py-1\">Edit</button> <button type=\"button\" data-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -307,7 +307,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" class=\"text-slate-600 hover:text-red-400 text-xs transition-colors px-2 py-1\">Del</button></div></td></tr>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" class=\"text-neutral-600 hover:text-red-400 text-xs transition-colors px-2 py-1\">Del</button></div></td></tr>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -353,7 +353,7 @@ func TasksPage(tasks []queries.TaskReadModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, " <div id=\"tasks-content\" data-signals=\"{_taskModalOpen: false, taskTitle: '', taskDescription: '', taskPriority: 'normal', taskDueDate: ''}\" data-init=\"@get('/api/tasks', {openWhenHidden: false})\"><div class=\"flex items-center justify-between mb-4\"><div></div><button type=\"button\" data-on:click=\"$_taskModalOpen = true; $taskTitle = ''; $taskDescription = ''; $taskPriority = 'normal'; $taskDueDate = ''\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ New Task</button></div><div id=\"tasks-table\"><div class=\"text-slate-600 py-8 text-center text-sm\">Loading...</div></div></div><!-- Create modal for standalone tasks --> <div data-show=\"$_taskModalOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-slate-200\">New Task</h3><button type=\"button\" data-on:click=\"$_taskModalOpen = false\" class=\"text-slate-500 hover:text-slate-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Title *</label> <input type=\"text\" data-bind:task-title placeholder=\"Task title\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Description</label> <textarea data-bind:task-description rows=\"2\" placeholder=\"Optional description...\" class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600 resize-none\"></textarea></div><div class=\"grid grid-cols-2 gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Priority</label> <select data-bind:task-priority class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"><option value=\"low\">Low</option> <option value=\"normal\">Normal</option> <option value=\"high\">High</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-slate-400 uppercase tracking-wider\">Due Date</label> <input type=\"date\" data-bind:task-due-date class=\"bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500\"></div></div><div id=\"tasks-error\"></div></div><div class=\"flex items-center gap-2 pt-1\"><button type=\"button\" data-on:click=\"@post('/api/tasks')\" class=\"bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Create</button> <button type=\"button\" data-on:click=\"$_taskModalOpen = false\" class=\"bg-slate-800 hover:bg-slate-700 text-slate-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-slate-700\">Cancel</button></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, " <div id=\"tasks-content\" data-signals=\"{_taskModalOpen: false, taskTitle: '', taskDescription: '', taskPriority: 'normal', taskDueDate: ''}\" data-init=\"@get('/api/tasks', {openWhenHidden: false})\"><div class=\"flex items-center justify-between mb-4\"><div></div><button type=\"button\" data-on:click=\"$_taskModalOpen = true; $taskTitle = ''; $taskDescription = ''; $taskPriority = 'normal'; $taskDueDate = ''\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">+ New Task</button></div><div id=\"tasks-table\"><div class=\"text-neutral-600 py-8 text-center text-sm\">Loading...</div></div></div><!-- Create modal for standalone tasks --> <div data-show=\"$_taskModalOpen\" class=\"fixed inset-0 z-50 flex items-center justify-center bg-black/60\" style=\"display:none\"><div class=\"bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-sm p-6 flex flex-col gap-4\"><div class=\"flex items-center justify-between\"><h3 class=\"text-sm font-semibold text-neutral-200\">New Task</h3><button type=\"button\" data-on:click=\"$_taskModalOpen = false\" class=\"text-neutral-500 hover:text-neutral-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Title *</label> <input type=\"text\" data-bind:task-title placeholder=\"Task title\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Description</label> <textarea data-bind:task-description rows=\"2\" placeholder=\"Optional description...\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600 resize-none\"></textarea></div><div class=\"grid grid-cols-2 gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Priority</label> <select data-bind:task-priority class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500\"><option value=\"low\">Low</option> <option value=\"normal\">Normal</option> <option value=\"high\">High</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Due Date</label> <input type=\"date\" data-bind:task-due-date class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500\"></div></div><div id=\"tasks-error\"></div></div><div class=\"flex items-center gap-2 pt-1\"><button type=\"button\" data-on:click=\"@post('/api/tasks')\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded text-sm font-medium transition-colors\">Create</button> <button type=\"button\" data-on:click=\"$_taskModalOpen = false\" class=\"bg-neutral-800 hover:bg-neutral-700 text-neutral-400 px-5 py-2 rounded text-sm font-medium transition-colors border border-neutral-700\">Cancel</button></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -394,12 +394,12 @@ func TasksTable(tasks []queries.TaskReadModel) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if len(tasks) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div class=\"flex flex-col items-center justify-center py-12 text-slate-600 bg-slate-900 border border-slate-800 rounded-lg\"><p class=\"text-sm\">No tasks found.</p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div class=\"flex flex-col items-center justify-center py-12 text-neutral-600 bg-neutral-900 border border-neutral-800 rounded-lg\"><p class=\"text-sm\">No tasks found.</p></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div class=\"bg-slate-900 border border-slate-800 rounded-lg overflow-hidden\"><table class=\"w-full\"><thead><tr class=\"border-b border-slate-800\"><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Title</th><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Customer</th><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Priority</th><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Status</th><th class=\"text-left text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Due Date</th><th class=\"text-right text-xs font-medium text-slate-500 uppercase tracking-wider px-4 py-3\">Actions</th></tr></thead> <tbody class=\"divide-y divide-slate-800\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<div class=\"bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden\"><table class=\"w-full\"><thead><tr class=\"border-b border-neutral-800\"><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Title</th><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Customer</th><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Priority</th><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Status</th><th class=\"text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Due Date</th><th class=\"text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3\">Actions</th></tr></thead> <tbody class=\"divide-y divide-neutral-800\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -443,33 +443,33 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			templ_7745c5c3_Var17 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<tr class=\"hover:bg-slate-800/40 transition-colors\" id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<tr class=\"hover:bg-neutral-800/40 transition-colors\" id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("task-%s", t.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 370, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 370, Col: 88}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"><td class=\"px-4 py-3 font-medium text-slate-100 text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"><td class=\"px-4 py-3 font-medium text-neutral-100 text-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(t.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 371, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 371, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</td><td class=\"px-4 py-3 text-slate-400 text-sm font-mono\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</td><td class=\"px-4 py-3 text-neutral-400 text-sm font-mono\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -487,14 +487,14 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" class=\"text-cyan-400 hover:underline\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" class=\"text-amber-400 hover:underline\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(t.CustomerID[:8])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 374, Col: 130}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 374, Col: 131}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -505,7 +505,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<span class=\"text-slate-600\">—</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<span class=\"text-neutral-600\">—</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -526,7 +526,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</td><td class=\"px-4 py-3 text-slate-400 text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</td><td class=\"px-4 py-3 text-neutral-400 text-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -595,7 +595,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "\" data-signals=\"{taskAction: 'reopen'}\" class=\"bg-slate-700/50 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-slate-700\">Reopen</button> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "\" data-signals=\"{taskAction: 'reopen'}\" class=\"bg-neutral-700/50 hover:bg-neutral-700 text-neutral-300 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-neutral-700\">Reopen</button> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -632,7 +632,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "\" class=\"text-slate-600 hover:text-red-400 text-xs transition-colors px-2 py-1\">Del</button></div></td></tr>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "\" class=\"text-neutral-600 hover:text-red-400 text-xs transition-colors px-2 py-1\">Del</button></div></td></tr>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -663,7 +663,7 @@ func taskPriorityBadge(priority string) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		switch priority {
 		case domain.PriorityLow:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<span class=\"px-2 py-0.5 text-xs font-medium rounded bg-slate-700/50 text-slate-400 border border-slate-700\">low</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<span class=\"px-2 py-0.5 text-xs font-medium rounded bg-neutral-700/50 text-neutral-400 border border-neutral-700\">low</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -705,7 +705,7 @@ func taskStatusBadge(status string) templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		switch status {
 		case domain.StatusTodo:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<span class=\"px-2 py-0.5 text-xs font-medium rounded bg-slate-700/50 text-slate-400 border border-slate-700\">todo</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<span class=\"px-2 py-0.5 text-xs font-medium rounded bg-neutral-700/50 text-neutral-400 border border-neutral-700\">todo</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -725,14 +725,14 @@ func taskStatusBadge(status string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		default:
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<span class=\"px-2 py-0.5 text-xs font-medium rounded bg-slate-700/50 text-slate-400 border border-slate-700\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<span class=\"px-2 py-0.5 text-xs font-medium rounded bg-neutral-700/50 text-neutral-400 border border-neutral-700\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 464, Col: 120}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 464, Col: 126}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
