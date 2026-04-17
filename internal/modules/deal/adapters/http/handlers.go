@@ -1,12 +1,14 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
@@ -16,13 +18,20 @@ import (
 	"github.com/vvs/isp/internal/shared/events"
 )
 
+// CustomerNameResolver resolves customer ID → name.
+type CustomerNameResolver interface {
+	ResolveCustomerName(ctx context.Context, id string) string
+}
+
 type Handlers struct {
-	addCmd     *commands.AddDealHandler
-	updateCmd  *commands.UpdateDealHandler
-	deleteCmd  *commands.DeleteDealHandler
-	advanceCmd *commands.AdvanceDealHandler
-	listQuery  *queries.ListDealsForCustomerHandler
-	subscriber events.EventSubscriber
+	addCmd       *commands.AddDealHandler
+	updateCmd    *commands.UpdateDealHandler
+	deleteCmd    *commands.DeleteDealHandler
+	advanceCmd   *commands.AdvanceDealHandler
+	listQuery    *queries.ListDealsForCustomerHandler
+	listAllQuery *queries.ListAllDealsHandler
+	subscriber   events.EventSubscriber
+	custNames    CustomerNameResolver
 }
 
 func NewHandlers(
@@ -43,12 +52,25 @@ func NewHandlers(
 	}
 }
 
+// WithListAll sets the list-all query handler for the standalone /deals page.
+func (h *Handlers) WithListAll(q *queries.ListAllDealsHandler) { h.listAllQuery = q }
+
+// WithCustomerNames sets the customer name resolver.
+func (h *Handlers) WithCustomerNames(r CustomerNameResolver) { h.custNames = r }
+
 func (h *Handlers) RegisterRoutes(r chi.Router) {
+	// Customer-scoped deal routes
 	r.Get("/sse/customers/{id}/deals", h.listSSE)
 	r.Post("/api/customers/{id}/deals", h.addSSE)
 	r.Put("/api/deals/{dealID}", h.updateSSE)
 	r.Put("/api/deals/{dealID}/advance", h.advanceSSE)
 	r.Delete("/api/deals/{dealID}", h.deleteSSE)
+
+	// Standalone deals page
+	r.Get("/deals", func(w http.ResponseWriter, r *http.Request) {
+		DealsPage().Render(r.Context(), w)
+	})
+	r.Get("/sse/deals", h.listAllSSE)
 }
 
 func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
@@ -276,6 +298,91 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
+	if h.listAllQuery == nil {
+		http.Error(w, "not configured", http.StatusInternalServerError)
+		return
+	}
+
+	var signals struct {
+		Search      string `json:"dealSearch"`
+		StageFilter string `json:"dealStageFilter"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("deal handler: listAllSSE ReadSignals: %v", err)
+	}
+
+	sse := datastar.NewSSE(w, r)
+
+	ch, cancel := h.subscriber.ChanSubscription(events.DealAll.String())
+	defer cancel()
+
+	render := func() {
+		all, err := h.listAllQuery.Handle(r.Context(), queries.ListAllDealsQuery{})
+		if err != nil {
+			log.Printf("deal handler: listAllSSE: %v", err)
+			return
+		}
+
+		items := h.filterDeals(r.Context(), all, signals.Search, signals.StageFilter)
+		sse.PatchElementTempl(DealsPageContent(items, signals.StageFilter))
+	}
+
+	render()
+
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				return
+			}
+			render()
+		case <-r.Context().Done():
+			return
+		}
+	}
+}
+
+func (h *Handlers) filterDeals(ctx context.Context, all []queries.DealReadModel, search, stageFilter string) []DealPageItem {
+	var items []DealPageItem
+	search = strings.ToLower(strings.TrimSpace(search))
+
+	for _, d := range all {
+		// Stage filter
+		if stageFilter != "" && stageFilter != "all" && d.Stage != stageFilter {
+			continue
+		}
+
+		custName := ""
+		if h.custNames != nil {
+			custName = h.custNames.ResolveCustomerName(ctx, d.CustomerID)
+		}
+
+		// Search filter
+		if search != "" {
+			match := strings.Contains(strings.ToLower(d.Title), search) ||
+				strings.Contains(strings.ToLower(custName), search) ||
+				strings.Contains(strings.ToLower(d.Notes), search)
+			if !match {
+				continue
+			}
+		}
+
+		items = append(items, DealPageItem{
+			ID:           d.ID,
+			Title:        d.Title,
+			Value:        d.Value,
+			Currency:     d.Currency,
+			Stage:        d.Stage,
+			CustomerID:   d.CustomerID,
+			CustomerName: custName,
+			Notes:        d.Notes,
+			CreatedAt:    d.CreatedAt.Format("2006-01-02"),
+		})
+	}
+	return items
 }
 
 func parseValueCents(s string) (int64, error) {

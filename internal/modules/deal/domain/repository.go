@@ -7,5 +7,6 @@ type DealRepository interface {
 	Save(ctx context.Context, deal *Deal) error
 	FindByID(ctx context.Context, id string) (*Deal, error)
 	ListForCustomer(ctx context.Context, customerID string) ([]*Deal, error)
+	ListAll(ctx context.Context) ([]*Deal, error)
 	Delete(ctx context.Context, id string) error
 }

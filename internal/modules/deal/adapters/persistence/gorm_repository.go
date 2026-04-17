@@ -69,6 +69,21 @@ func (r *GormDealRepository) ListForCustomer(ctx context.Context, customerID str
 	return result, nil
 }
 
+func (r *GormDealRepository) ListAll(ctx context.Context) ([]*domain.Deal, error) {
+	var models []DealModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Order("created_at DESC").Find(&models).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*domain.Deal, len(models))
+	for i := range models {
+		result[i] = toDomain(&models[i])
+	}
+	return result, nil
+}
+
 func (r *GormDealRepository) Delete(ctx context.Context, id string) error {
 	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
 		return tx.Where("id = ?", id).Delete(&DealModel{}).Error

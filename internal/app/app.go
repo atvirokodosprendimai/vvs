@@ -331,7 +331,10 @@ func New(cfg Config) (*App, error) {
 	advanceDealCmd := dealcommands.NewAdvanceDealHandler(dealRepo, publisher)
 	listDealsQuery := dealqueries.NewListDealsForCustomerHandler(dealRepo)
 
+	listAllDealsQuery := dealqueries.NewListAllDealsHandler(dealRepo)
 	dealRoutes := dealhttp.NewHandlers(addDealCmd, updateDealCmd, deleteDealCmd, advanceDealCmd, listDealsQuery, subscriber)
+	dealRoutes.WithListAll(listAllDealsQuery)
+	dealRoutes.WithCustomerNames(&dealCustomerNameBridge{repo: customerRepo})
 	moduleRoutes = append(moduleRoutes, dealRoutes)
 	if customerRoutes != nil {
 		customerRoutes.WithDealsQuery(listDealsQuery)
@@ -756,6 +759,19 @@ func (b *ticketCustomerSearchBridge) SearchCustomers(ctx context.Context, query 
 		}
 	}
 	return out, nil
+}
+
+// dealCustomerNameBridge adapts the customer repo to the deal module's CustomerNameResolver.
+type dealCustomerNameBridge struct {
+	repo customerdomain.CustomerRepository
+}
+
+func (b *dealCustomerNameBridge) ResolveCustomerName(ctx context.Context, id string) string {
+	c, err := b.repo.FindByID(ctx, id)
+	if err != nil {
+		return ""
+	}
+	return c.CompanyName
 }
 
 // provisionerDispatcher picks the right RouterProvisioner based on conn.RouterType.
