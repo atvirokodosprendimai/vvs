@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
 )
 
@@ -8,64 +9,102 @@ templ CRMDashboardPage() {
 	@templates.Layout("CRM") {
 		@templates.PageHeader("CRM", "Sales pipeline, tickets, and tasks")
 		<div
-			id="crm-stats"
+			id="crm-content"
 			data-init="@get('/api/crm/stats', {openWhenHidden: false})"
-			class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"
 		>
-			@crmStatPlaceholders()
-		</div>
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-			<!-- Pipeline by stage -->
-			<div id="crm-pipeline" data-init="@get('/api/crm/pipeline', {openWhenHidden: false})" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
-				<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Pipeline</p>
-				<div class="text-neutral-500 text-sm">Loading...</div>
+			<!-- Stat cards skeleton -->
+			<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+				for i := 0; i < 6; i++ {
+					<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-4 animate-pulse">
+						<div class="h-3 w-16 bg-neutral-800 rounded mb-3"></div>
+						<div class="h-7 w-10 bg-neutral-800 rounded"></div>
+					</div>
+				}
 			</div>
-			<!-- Open Tickets -->
-			<div id="crm-tickets" data-init="@get('/api/crm/tickets', {openWhenHidden: false})" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
-				<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Open Tickets</p>
-				<div class="text-neutral-500 text-sm">Loading...</div>
-			</div>
-			<!-- Tasks -->
-			<div id="crm-tasks" data-init="@get('/api/crm/tasks', {openWhenHidden: false})" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4 lg:col-span-2">
-				<div class="flex items-center justify-between mb-3">
-					<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Tasks</p>
-					<a href="/tasks" class="text-xs text-amber-500 hover:text-amber-400 transition-colors">View all →</a>
-				</div>
-				<div class="text-neutral-500 text-sm">Loading...</div>
+			<!-- Content skeleton -->
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+				for i := 0; i < 4; i++ {
+					<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5 h-48 animate-pulse">
+						<div class="h-3 w-24 bg-neutral-800 rounded mb-4"></div>
+						<div class="h-32 w-full bg-neutral-800/50 rounded"></div>
+					</div>
+				}
 			</div>
 		</div>
 	}
 }
 
-templ crmStatPlaceholders() {
-	<div id="crm-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-		@templates.StatCard("Active Deals", "...", dealIcon())
-		@templates.StatCard("Open Tickets", "...", ticketIcon())
-		@templates.StatCard("Pending Tasks", "...", taskIcon())
-		@templates.StatCard("Contacts", "...", contactIcon())
+templ CRMContent(d CRMData) {
+	<div id="crm-content">
+		<!-- Stat Cards -->
+		<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+			@crmStatCard("Active Deals", fmt.Sprintf("%d", d.ActiveDeals), "cyan", dealIcon())
+			@crmStatCard("Pipeline Value", FormatMoney(d.PipelineValue)+" €", "amber", pipelineValueIcon())
+			@crmStatCard("Won Deals", FormatMoney(d.WonDealsValue)+" €", "lime", wonIcon())
+			@crmStatCard("Open Tickets", fmt.Sprintf("%d", d.OpenTickets), crmTicketColor(d.OpenTickets), ticketIcon())
+			@crmStatCard("Pending Tasks", fmt.Sprintf("%d", d.PendingTasks), "amber", taskIcon())
+			@crmStatCard("Contacts", fmt.Sprintf("%d", d.ContactCount), "cyan", contactIcon())
+		</div>
+
+		<!-- Pipeline + Deals Row -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+			@crmPipelineChart(d.PipelineStages)
+			@crmDealsList(d.RecentDeals)
+		</div>
+
+		<!-- Tickets + Tasks Row -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+			@crmTicketsList(d.OpenTicketList)
+			@crmTasksList(d.PendingTaskList)
+		</div>
+
+		<!-- Contacts -->
+		if d.ContactCount > 0 {
+			@crmContactsList(d.Contacts)
+		}
 	</div>
 }
 
-templ CRMStats(deals, tickets, tasks, contacts string) {
-	<div id="crm-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-		@templates.StatCard("Active Deals", deals, dealIcon())
-		@templates.StatCard("Open Tickets", tickets, ticketIcon())
-		@templates.StatCard("Pending Tasks", tasks, taskIcon())
-		@templates.StatCard("Contacts", contacts, contactIcon())
+templ crmStatCard(label, value, color, icon string) {
+	<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
+		<div class="flex items-center justify-between">
+			<div>
+				<p class="text-neutral-500 text-xs uppercase tracking-wider">{ label }</p>
+				<p class="text-2xl font-bold text-neutral-100 mt-1 tabular-nums">{ value }</p>
+			</div>
+			<div class={ fmt.Sprintf("w-9 h-9 rounded bg-%s-500/10 flex items-center justify-center text-%s-400", color, color) }>
+				@templ.Raw(icon)
+			</div>
+		</div>
 	</div>
 }
 
-templ CRMPipeline(stages []CRMStageCount) {
-	<div id="crm-pipeline" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
-		<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Pipeline</p>
+// Pipeline funnel — horizontal stacked bar chart
+templ crmPipelineChart(stages []PipelineStage) {
+	<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5">
+		<div class="flex items-center justify-between mb-4">
+			<h3 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider">Pipeline</h3>
+			<a href="/customers" class="text-xs text-amber-500 hover:text-amber-400 transition-colors">All deals →</a>
+		</div>
 		if len(stages) == 0 {
-			<p class="text-sm text-neutral-600">No active deals.</p>
+			<div class="flex items-center justify-center h-32 text-neutral-600 text-sm">No deals</div>
 		} else {
+			<!-- Funnel bars -->
 			<div class="flex flex-col gap-2">
 				for _, s := range stages {
-					<div class="flex items-center justify-between">
-						<span class="text-sm text-neutral-300 capitalize">{ s.Stage }</span>
-						<span class="text-sm font-mono text-amber-400">{ s.Count }</span>
+					<div class="group">
+						<div class="flex items-center justify-between mb-1">
+							<span class="text-xs text-neutral-400 capitalize">{ s.Stage }</span>
+							<span class="text-xs text-neutral-500 tabular-nums">
+								{ fmt.Sprintf("%d", s.Count) } · { FormatMoney(s.Value) } €
+							</span>
+						</div>
+						<div class="h-6 bg-neutral-800 rounded overflow-hidden">
+							<div
+								class={ fmt.Sprintf("h-full rounded %s transition-all", pipelineBarColor(s.Stage)) }
+								style={ fmt.Sprintf("width: %s", pipelineBarWidth(s, stages)) }
+							></div>
+						</div>
 					</div>
 				}
 			</div>
@@ -73,17 +112,31 @@ templ CRMPipeline(stages []CRMStageCount) {
 	</div>
 }
 
-templ CRMOpenTickets(tickets []CRMTicketRow) {
-	<div id="crm-tickets" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
-		<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Open Tickets</p>
-		if len(tickets) == 0 {
-			<p class="text-sm text-neutral-600">No open tickets.</p>
+// Recent deals list
+templ crmDealsList(deals []CRMDeal) {
+	<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5">
+		<div class="flex items-center justify-between mb-4">
+			<h3 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider">Recent Deals</h3>
+		</div>
+		if len(deals) == 0 {
+			<div class="flex items-center justify-center h-32 text-neutral-600 text-sm">No deals</div>
 		} else {
-			<div class="flex flex-col gap-2">
-				for _, t := range tickets {
-					<div class="flex items-center justify-between">
-						<a href={ templ.SafeURL("/customers/" + t.CustomerID) } class="text-sm text-neutral-300 hover:text-amber-400 transition-colors truncate max-w-xs">{ t.Subject }</a>
-						<span class={ "text-xs px-1.5 py-0.5 rounded " + ticketPriorityClass(t.Priority) }>{ t.Priority }</span>
+			<div class="flex flex-col gap-1">
+				for _, deal := range deals {
+					<div class="flex items-center justify-between py-2 px-2 rounded hover:bg-neutral-800/50 transition-colors">
+						<div class="flex items-center gap-2 min-w-0">
+							@dealStageDot(deal.Stage)
+							<div class="min-w-0">
+								<span class="text-sm text-neutral-300 truncate block">{ truncate(deal.Title, 28) }</span>
+								if deal.CustomerName != "" {
+									<span class="text-xs text-neutral-600">{ truncate(deal.CustomerName, 24) }</span>
+								}
+							</div>
+						</div>
+						<div class="text-right flex-shrink-0 ml-2">
+							<span class="text-sm text-amber-400 font-medium tabular-nums">{ FormatMoney(deal.Value) } €</span>
+							<span class={ fmt.Sprintf("block text-[10px] capitalize %s", dealStageTextColor(deal.Stage)) }>{ deal.Stage }</span>
+						</div>
 					</div>
 				}
 			</div>
@@ -91,60 +144,239 @@ templ CRMOpenTickets(tickets []CRMTicketRow) {
 	</div>
 }
 
-templ CRMPendingTasks(tasks []CRMTaskRow) {
-	<div id="crm-tasks" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4 lg:col-span-2">
-		<div class="flex items-center justify-between mb-3">
-			<p class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Tasks</p>
-			<a href="/tasks" class="text-xs text-amber-500 hover:text-amber-400 transition-colors">View all →</a>
+// Open tickets list
+templ crmTicketsList(tickets []CRMTicket) {
+	<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5">
+		<div class="flex items-center justify-between mb-4">
+			<h3 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider">Open Tickets</h3>
+			<a href="/tickets" class="text-xs text-amber-500 hover:text-amber-400 transition-colors">All tickets →</a>
+		</div>
+		if len(tickets) == 0 {
+			<div class="flex items-center justify-center h-24 text-neutral-600 text-sm">No open tickets</div>
+		} else {
+			<div class="flex flex-col gap-1">
+				for _, t := range tickets {
+					<a href={ templ.SafeURL(fmt.Sprintf("/tickets/%s", t.ID)) } class="flex items-center justify-between py-2 px-2 rounded hover:bg-neutral-800/50 transition-colors group">
+						<div class="flex items-center gap-2 min-w-0">
+							@ticketStatusDot(t.Status)
+							<div class="min-w-0">
+								<span class="text-sm text-neutral-300 truncate block group-hover:text-amber-400 transition-colors">{ truncate(t.Subject, 30) }</span>
+								if t.CustomerName != "" {
+									<span class="text-xs text-neutral-600">{ truncate(t.CustomerName, 24) }</span>
+								}
+							</div>
+						</div>
+						@priorityBadge(t.Priority)
+					</a>
+				}
+			</div>
+		}
+	</div>
+}
+
+// Pending tasks list
+templ crmTasksList(tasks []CRMTask) {
+	<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5">
+		<div class="flex items-center justify-between mb-4">
+			<h3 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider">Tasks</h3>
+			<a href="/tasks" class="text-xs text-amber-500 hover:text-amber-400 transition-colors">All tasks →</a>
 		</div>
 		if len(tasks) == 0 {
-			<p class="text-sm text-neutral-600">No pending tasks.</p>
+			<div class="flex items-center justify-center h-24 text-neutral-600 text-sm">No pending tasks</div>
 		} else {
-			<table class="w-full">
-				<tbody class="divide-y divide-neutral-800">
-					for _, t := range tasks {
-						<tr class="hover:bg-neutral-800/40 transition-colors">
-							<td class="py-2 text-sm text-neutral-200">{ t.Title }</td>
-							<td class="py-2 text-xs text-neutral-500 text-right">{ t.Status }</td>
-						</tr>
-					}
-				</tbody>
-			</table>
+			<div class="flex flex-col gap-1">
+				for _, t := range tasks {
+					<div class="flex items-center justify-between py-2 px-2 rounded hover:bg-neutral-800/50 transition-colors">
+						<div class="flex items-center gap-2 min-w-0">
+							@taskStatusDot(t.Status)
+							<span class="text-sm text-neutral-300 truncate">{ truncate(t.Title, 40) }</span>
+						</div>
+						<span class={ fmt.Sprintf("text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded %s", taskStatusClass(t.Status)) }>{ t.Status }</span>
+					</div>
+				}
+			</div>
 		}
 	</div>
 }
 
-type CRMStageCount struct {
-	Stage string
-	Count string
+// Contacts list
+templ crmContactsList(contacts []CRMContact) {
+	<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5 mb-4">
+		<div class="flex items-center justify-between mb-4">
+			<h3 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider">Contacts</h3>
+		</div>
+		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+			for _, c := range contacts {
+				<div class="bg-neutral-800/40 border border-neutral-800 rounded-lg p-3">
+					<div class="flex items-center gap-3">
+						<!-- Avatar circle -->
+						<div class="w-8 h-8 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400 text-xs font-medium flex-shrink-0">
+							{ contactInitials(c.FirstName, c.LastName) }
+						</div>
+						<div class="min-w-0">
+							<p class="text-sm text-neutral-200 font-medium truncate">{ c.FirstName } { c.LastName }</p>
+							if c.Role != "" {
+								<p class="text-[10px] text-neutral-500 uppercase tracking-wider">{ c.Role }</p>
+							}
+						</div>
+					</div>
+					<div class="mt-2 flex flex-col gap-0.5">
+						if c.Email != "" {
+							<span class="text-xs text-neutral-500 truncate">{ c.Email }</span>
+						}
+						if c.Phone != "" {
+							<span class="text-xs text-neutral-500">{ c.Phone }</span>
+						}
+						if c.CustomerName != "" {
+							<span class="text-[10px] text-neutral-600">{ c.CustomerName }</span>
+						}
+					</div>
+				</div>
+			}
+		</div>
+	</div>
 }
 
-type CRMTicketRow struct {
-	CustomerID string
-	Subject    string
-	Priority   string
+// --- Dot indicators ---
+
+templ dealStageDot(stage string) {
+	switch stage {
+		case "new":
+			<span class="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0"></span>
+		case "qualified":
+			<span class="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></span>
+		case "proposal":
+			<span class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>
+		case "negotiation":
+			<span class="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></span>
+		case "won":
+			<span class="w-2 h-2 rounded-full bg-lime-400 flex-shrink-0"></span>
+		case "lost":
+			<span class="w-2 h-2 rounded-full bg-red-400 flex-shrink-0"></span>
+		default:
+			<span class="w-2 h-2 rounded-full bg-neutral-500 flex-shrink-0"></span>
+	}
 }
 
-type CRMTaskRow struct {
-	Title  string
-	Status string
+templ taskStatusDot(status string) {
+	switch status {
+		case "in_progress":
+			<span class="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0"></span>
+		case "todo":
+			<span class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"></span>
+		case "done":
+			<span class="w-2 h-2 rounded-full bg-lime-400 flex-shrink-0"></span>
+		default:
+			<span class="w-2 h-2 rounded-full bg-neutral-500 flex-shrink-0"></span>
+	}
 }
 
-func ticketPriorityClass(p string) string {
-	switch p {
-	case "urgent":
-		return "bg-red-500/10 text-red-400 border border-red-500/20"
-	case "high":
-		return "bg-orange-500/10 text-orange-400 border border-orange-500/20"
-	case "normal":
-		return "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+// --- Helpers ---
+
+func crmTicketColor(count int64) string {
+	if count > 5 {
+		return "red"
+	}
+	if count > 0 {
+		return "amber"
+	}
+	return "lime"
+}
+
+func pipelineBarColor(stage string) string {
+	switch stage {
+	case "new":
+		return "bg-cyan-500"
+	case "qualified":
+		return "bg-blue-500"
+	case "proposal":
+		return "bg-amber-500"
+	case "negotiation":
+		return "bg-orange-500"
+	case "won":
+		return "bg-lime-500"
+	case "lost":
+		return "bg-red-500/60"
+	default:
+		return "bg-neutral-600"
+	}
+}
+
+func pipelineBarWidth(s PipelineStage, all []PipelineStage) string {
+	var maxCount int64
+	for _, stage := range all {
+		if stage.Count > maxCount {
+			maxCount = stage.Count
+		}
+	}
+	if maxCount == 0 {
+		return "0%"
+	}
+	pct := float64(s.Count) / float64(maxCount) * 100
+	if pct > 0 && pct < 8 {
+		pct = 8 // minimum visible
+	}
+	return fmt.Sprintf("%.0f%%", pct)
+}
+
+func dealStageTextColor(stage string) string {
+	switch stage {
+	case "new":
+		return "text-cyan-500"
+	case "qualified":
+		return "text-blue-500"
+	case "proposal":
+		return "text-amber-500"
+	case "negotiation":
+		return "text-orange-500"
+	case "won":
+		return "text-lime-500"
+	case "lost":
+		return "text-red-500"
+	default:
+		return "text-neutral-500"
+	}
+}
+
+func taskStatusClass(status string) string {
+	switch status {
+	case "in_progress":
+		return "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+	case "todo":
+		return "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+	case "done":
+		return "bg-lime-500/10 text-lime-400 border border-lime-500/20"
 	default:
 		return "bg-neutral-700/50 text-neutral-400 border border-neutral-700"
 	}
 }
 
+func contactInitials(first, last string) string {
+	initials := ""
+	if len(first) > 0 {
+		initials += string([]rune(first)[0])
+	}
+	if len(last) > 0 {
+		initials += string([]rune(last)[0])
+	}
+	if initials == "" {
+		return "?"
+	}
+	return initials
+}
+
+// --- Icons ---
+
 func dealIcon() string {
 	return `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"/></svg>`
+}
+
+func pipelineValueIcon() string {
+	return `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>`
+}
+
+func wonIcon() string {
+	return `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0016.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.023 6.023 0 01-2.77.853 6.023 6.023 0 01-2.77-.853"/></svg>`
 }
 
 func ticketIcon() string {
