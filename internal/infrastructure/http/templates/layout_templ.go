@@ -129,7 +129,7 @@ func Sidebar() templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<nav class=\"w-56 bg-neutral-900 border-r border-neutral-800 p-3 flex flex-col justify-between h-full\" data-signals=\"{_notifOpen:false, _navCrm:true, _navFinance:true, _navNetwork:true, _navSystem:false}\"><div class=\"flex flex-col gap-0.5 overflow-y-auto min-h-0 flex-1\"><div class=\"flex items-center justify-between mb-4 px-2 pt-1\"><span class=\"text-amber-400 font-bold text-base tracking-widest uppercase\">VVS ISP</span><!-- Notification bell --><div id=\"notif-container\" class=\"relative\"><button data-on:click=\"($_notifOpen = !$_notifOpen) && @post('/api/notifications/read')\" class=\"relative p-1 text-neutral-500 hover:text-neutral-300 transition-colors\" title=\"Notifications\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0\"></path></svg> <span id=\"notif-badge\"></span></button></div></div><!-- Main -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<nav class=\"w-56 bg-neutral-900 border-r border-neutral-800 p-3 flex flex-col justify-between h-full\" data-signals=\"{_notifOpen:false, _navCrm:true, _navFinance:true, _navNetwork:true, _navSystem:false}\" data-init=\"(function(){try{var p=JSON.parse(localStorage.getItem('navState')||'{}');$_navCrm=p.crm??$_navCrm;$_navFinance=p.finance??$_navFinance;$_navNetwork=p.network??$_navNetwork;$_navSystem=p.system??$_navSystem}catch(e){}})()\" data-effect=\"localStorage.setItem('navState',JSON.stringify({crm:$_navCrm,finance:$_navFinance,network:$_navNetwork,system:$_navSystem}))\"><div class=\"flex flex-col gap-0.5 overflow-y-auto min-h-0 flex-1\"><div class=\"flex items-center justify-between mb-4 px-2 pt-1\"><span class=\"text-amber-400 font-bold text-base tracking-widest uppercase\">VVS ISP</span><!-- Notification bell --><div id=\"notif-container\" class=\"relative\"><button data-on:click=\"($_notifOpen = !$_notifOpen) && @post('/api/notifications/read')\" class=\"relative p-1 text-neutral-500 hover:text-neutral-300 transition-colors\" title=\"Notifications\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0\"></path></svg> <span id=\"notif-badge\"></span></button></div></div><!-- Main -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -289,7 +289,7 @@ func NavGroup(label string, signal string, icon string) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs("$" + signal + " = !$" + signal)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 205, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 207, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -310,7 +310,7 @@ func NavGroup(label string, signal string, icon string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 212, Col: 10}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 214, Col: 10}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -323,7 +323,7 @@ func NavGroup(label string, signal string, icon string) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("$" + signal)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 217, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 219, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -365,7 +365,7 @@ func NavItem(href string, label string, icon string) templ.Component {
 		var templ_7745c5c3_Var10 templ.SafeURL
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 227, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 229, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -386,7 +386,7 @@ func NavItem(href string, label string, icon string) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 233, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 235, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
