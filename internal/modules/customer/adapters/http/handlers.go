@@ -26,8 +26,9 @@ import (
 	dealhttp "github.com/vvs/isp/internal/modules/deal/adapters/http"
 	tickethttp "github.com/vvs/isp/internal/modules/ticket/adapters/http"
 	taskhttp "github.com/vvs/isp/internal/modules/task/adapters/http"
-	emailQueries "github.com/vvs/isp/internal/modules/email/app/queries"
 	emailhttp "github.com/vvs/isp/internal/modules/email/adapters/http"
+	emailQueries "github.com/vvs/isp/internal/modules/email/app/queries"
+	invoiceQueries "github.com/vvs/isp/internal/modules/invoice/app/queries"
 	"github.com/vvs/isp/internal/shared/events"
 )
 
@@ -57,6 +58,7 @@ type Handlers struct {
 	listTicketsQuery     *ticketQueries.ListTicketsForCustomerHandler
 	listTasksQuery       *taskQueries.ListTasksForCustomerHandler
 	listEmailQuery       *emailQueries.ListThreadsForCustomerHandler
+	listInvoicesQuery    *invoiceQueries.ListInvoicesForCustomerHandler
 }
 
 func NewHandlers(
@@ -122,6 +124,12 @@ func (h *Handlers) WithTasksQuery(q *taskQueries.ListTasksForCustomerHandler) *H
 // WithEmailThreadsQuery injects the email threads query for the customer detail page.
 func (h *Handlers) WithEmailThreadsQuery(q *emailQueries.ListThreadsForCustomerHandler) *Handlers {
 	h.listEmailQuery = q
+	return h
+}
+
+// WithInvoicesQuery injects the invoice list query for the customer detail page.
+func (h *Handlers) WithInvoicesQuery(q *invoiceQueries.ListInvoicesForCustomerHandler) *Handlers {
+	h.listInvoicesQuery = q
 	return h
 }
 
@@ -207,12 +215,20 @@ func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
 			emailThreads = nil
 		}
 	}
+	var invoices []invoiceQueries.InvoiceReadModel
+	if h.listInvoicesQuery != nil {
+		invoices, err = h.listInvoicesQuery.Handle(r.Context(), invoiceQueries.ListInvoicesForCustomerQuery{CustomerID: id})
+		if err != nil {
+			log.Printf("detailPage: list invoices: %v", err)
+			invoices = nil
+		}
+	}
 	routerName := h.loadRouterName(r.Context(), customer)
 	var notes []queries.NoteReadModel
 	if h.listNotesQuery != nil {
 		notes, _ = h.listNotesQuery.Handle(r.Context(), id)
 	}
-	CustomerDetailPage(customer, services, routerName, notes, contacts, deals, tickets, tasks, emailThreads).Render(r.Context(), w)
+	CustomerDetailPage(customer, services, routerName, notes, contacts, deals, tickets, tasks, emailThreads, invoices).Render(r.Context(), w)
 }
 
 func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
@@ -426,8 +442,8 @@ func (h *Handlers) changeStatusSSE(w http.ResponseWriter, r *http.Request) {
 	sse.Redirect("/customers/" + id)
 }
 
-// crmLiveSSE is a single combined SSE stream for all 5 CRM sections on the
-// customer detail page. Using one stream instead of 5 keeps us under the
+// crmLiveSSE is a single combined SSE stream for all CRM sections on the
+// customer detail page. Using one stream instead of many keeps us under the
 // browser HTTP/1.1 per-domain connection limit of 6.
 func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 	customerID := chi.URLParam(r, "id")
@@ -444,6 +460,7 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 		tickets  []ticketQueries.TicketReadModel
 		tasks    []taskQueries.TaskReadModel
 		emails   []emailQueries.ThreadReadModel
+		invoices []invoiceQueries.InvoiceReadModel
 	}
 
 	queryAll := func() state {
@@ -466,21 +483,25 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 		if h.listEmailQuery != nil {
 			s.emails, _ = h.listEmailQuery.Handle(r.Context(), customerID)
 		}
+		if h.listInvoicesQuery != nil {
+			s.invoices, _ = h.listInvoicesQuery.Handle(r.Context(), invoiceQueries.ListInvoicesForCustomerQuery{CustomerID: customerID})
+		}
 		return s
 	}
 
 	patchTabBar := func(s state) {
-		sse.PatchElementTempl(CRMTabBar(len(s.services), len(s.contacts), len(s.deals), len(s.tickets), len(s.tasks), len(s.emails)))
+		sse.PatchElementTempl(CRMTabBar(len(s.services), len(s.contacts), len(s.deals), len(s.tickets), len(s.tasks), len(s.emails), len(s.invoices)))
 	}
 
 	cur := queryAll()
-	patchTabBar(cur)
 	sse.PatchElementTempl(servicehttp.ServiceTable(customerID, cur.services))
 	sse.PatchElementTempl(contacthttp.ContactList(customerID, cur.contacts))
 	sse.PatchElementTempl(dealhttp.DealList(customerID, cur.deals))
 	sse.PatchElementTempl(tickethttp.TicketList(customerID, cur.tickets))
 	sse.PatchElementTempl(taskhttp.TaskList(customerID, cur.tasks))
 	sse.PatchElementTempl(emailhttp.EmailThreadsSection(customerID, cur.emails))
+	sse.PatchElementTempl(InvoiceSection(customerID, cur.invoices))
+	patchTabBar(cur)
 
 	for {
 		select {
@@ -489,26 +510,36 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			next := queryAll()
+			changed := false
 			if !reflect.DeepEqual(cur.services, next.services) {
 				sse.PatchElementTempl(servicehttp.ServiceTable(customerID, next.services))
+				changed = true
 			}
 			if !reflect.DeepEqual(cur.contacts, next.contacts) {
 				sse.PatchElementTempl(contacthttp.ContactList(customerID, next.contacts))
+				changed = true
 			}
 			if !reflect.DeepEqual(cur.deals, next.deals) {
 				sse.PatchElementTempl(dealhttp.DealList(customerID, next.deals))
+				changed = true
 			}
 			if !reflect.DeepEqual(cur.tickets, next.tickets) {
 				sse.PatchElementTempl(tickethttp.TicketList(customerID, next.tickets))
+				changed = true
 			}
 			if !reflect.DeepEqual(cur.tasks, next.tasks) {
 				sse.PatchElementTempl(taskhttp.TaskList(customerID, next.tasks))
+				changed = true
 			}
 			if !reflect.DeepEqual(cur.emails, next.emails) {
 				sse.PatchElementTempl(emailhttp.EmailThreadsSection(customerID, next.emails))
+				changed = true
 			}
-			// Update tab bar counts if anything changed.
-			if !reflect.DeepEqual(cur, next) {
+			if !reflect.DeepEqual(cur.invoices, next.invoices) {
+				sse.PatchElementTempl(InvoiceSection(customerID, next.invoices))
+				changed = true
+			}
+			if changed {
 				patchTabBar(next)
 			}
 			cur = next
