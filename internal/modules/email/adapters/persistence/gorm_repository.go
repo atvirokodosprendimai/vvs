@@ -641,3 +641,43 @@ func AddParticipant(ctx context.Context, db *gormsqlite.DB, threadID, addr strin
 
 // NowUTC is a testable time source.
 var NowUTC = func() time.Time { return time.Now().UTC() }
+
+// AutoLinkCustomers links unlinked email threads to customers by matching
+// participant email addresses against the customers.email column.
+// Returns the number of threads linked.
+func AutoLinkCustomers(ctx context.Context, db *gormsqlite.DB) (int64, error) {
+	var affected int64
+	err := db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
+		// Match exact email addresses using delimiter-aware LIKE.
+		// participant_addresses is comma-separated, so we check:
+		//   starts with email, OR contains ,email, OR equals email exactly.
+		result := tx.Exec(`
+			UPDATE email_threads
+			SET customer_id = (
+				SELECT c.id FROM customers c
+				WHERE c.email != ''
+				AND (
+					email_threads.participant_addresses = c.email
+					OR email_threads.participant_addresses LIKE c.email || ',%'
+					OR email_threads.participant_addresses LIKE '%,' || c.email || ',%'
+					OR email_threads.participant_addresses LIKE '%,' || c.email
+				)
+				LIMIT 1
+			)
+			WHERE customer_id = ''
+			AND EXISTS (
+				SELECT 1 FROM customers c
+				WHERE c.email != ''
+				AND (
+					email_threads.participant_addresses = c.email
+					OR email_threads.participant_addresses LIKE c.email || ',%'
+					OR email_threads.participant_addresses LIKE '%,' || c.email || ',%'
+					OR email_threads.participant_addresses LIKE '%,' || c.email
+				)
+			)
+		`)
+		affected = result.RowsAffected
+		return result.Error
+	})
+	return affected, err
+}

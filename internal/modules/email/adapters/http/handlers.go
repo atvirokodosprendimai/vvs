@@ -2,12 +2,14 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 
 	"strconv"
 
@@ -28,6 +30,28 @@ type attachmentFinder interface {
 // emailComposer is the port for composing and sending new emails.
 type emailComposer interface {
 	Handle(ctx context.Context, cmd emailcommands.ComposeEmailCommand) error
+}
+
+// CustomerSearchResult is a minimal customer record for the picker dropdown.
+type CustomerSearchResult struct {
+	ID          string
+	Code        string
+	CompanyName string
+}
+
+// customerSearcher searches customers by text for the link-customer picker.
+type customerSearcher interface {
+	Search(ctx context.Context, query string, limit int) ([]CustomerSearchResult, error)
+}
+
+// autoLinker runs the auto-link pass matching thread participants to customer emails.
+type autoLinker interface {
+	AutoLink(ctx context.Context) (int64, error)
+}
+
+// ticketOpener creates a ticket from an email thread.
+type ticketOpener interface {
+	Open(ctx context.Context, customerID, subject, body, priority string) (ticketID string, err error)
 }
 
 // folderToggler is the minimal interface for folder enable/disable.
@@ -59,6 +83,9 @@ type Handlers struct {
 	attachments        attachmentFinder
 	searchAttachments  *emailqueries.SearchAttachmentsHandler
 	composeCmd         emailComposer
+	customerSearch     customerSearcher
+	autoLinker         autoLinker
+	ticketOpener       ticketOpener
 	subscriber         events.EventSubscriber
 	publisher          events.EventPublisher
 	pageSize           int // threads per inbox page; 0 → DefaultPageSize
@@ -126,6 +153,24 @@ func (h *Handlers) WithComposeCmd(c emailComposer) *Handlers {
 	return h
 }
 
+// WithCustomerSearch injects the customer search for the link-customer picker.
+func (h *Handlers) WithCustomerSearch(cs customerSearcher) *Handlers {
+	h.customerSearch = cs
+	return h
+}
+
+// WithAutoLinker injects the auto-link capability.
+func (h *Handlers) WithAutoLinker(al autoLinker) *Handlers {
+	h.autoLinker = al
+	return h
+}
+
+// WithTicketOpener injects the ticket creation capability.
+func (h *Handlers) WithTicketOpener(to ticketOpener) *Handlers {
+	h.ticketOpener = to
+	return h
+}
+
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/emails", h.emailPage)
 	r.Get("/emails/threads/{threadID}", h.threadPage)
@@ -144,10 +189,13 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/email-threads/{threadID}/read", h.markReadSSE)
 	r.Post("/api/email-threads/{threadID}/reply", h.replySSE)
 	r.Post("/api/email-threads/{threadID}/link", h.linkCustomerSSE)
+	r.Post("/api/email-threads/{threadID}/to-ticket", h.convertToTicketSSE)
+	r.Get("/sse/email-customer-picker/{threadID}", h.customerPickerSSE)
 	r.Get("/attachments", h.attachmentsPage)
 	r.Get("/sse/attachments", h.attachmentSearchSSE)
 	r.Get("/api/email-attachments/{id}", h.downloadAttachment)
 	r.Post("/api/emails/compose", h.composeSSE)
+	r.Post("/api/emails/auto-link", h.autoLinkSSE)
 	r.Post("/api/email-accounts/{id}/discover-folders", h.discoverFoldersSSE)
 	r.Put("/api/email-folders/{folderID}/toggle", h.toggleFolderSSE)
 	r.Get("/sse/email-folders/{accountID}", h.folderListSSE)
@@ -441,7 +489,144 @@ func (h *Handlers) linkCustomerSSE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+
+	sse := datastar.NewSSE(w, r)
+
+	// Look up customer name for display
+	label := ""
+	if signals.CustomerID != "" && h.customerSearch != nil {
+		results, err := h.customerSearch.Search(r.Context(), signals.CustomerID, 1)
+		if err == nil && len(results) > 0 {
+			label = results[0].Code + " — " + results[0].CompanyName
+		}
+	}
+	sse.PatchElementTempl(customerLinkBadge(threadID, signals.CustomerID, label))
+}
+
+func (h *Handlers) customerPickerSSE(w http.ResponseWriter, r *http.Request) {
+	threadID := chi.URLParam(r, "threadID")
+	if h.customerSearch == nil {
+		http.Error(w, "customer search not configured", http.StatusNotImplemented)
+		return
+	}
+
+	var signals struct {
+		LinkSearch string `json:"linkSearch"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	search := strings.TrimSpace(signals.LinkSearch)
+	if search == "" {
+		sse := datastar.NewSSE(w, r)
+		sse.PatchElementTempl(customerPickerResults(threadID, nil))
+		return
+	}
+
+	results, err := h.customerSearch.Search(r.Context(), search, 8)
+	if err != nil {
+		log.Printf("email: customerPickerSSE: %v", err)
+		http.Error(w, "search failed", http.StatusInternalServerError)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElementTempl(customerPickerResults(threadID, results))
+}
+
+func (h *Handlers) convertToTicketSSE(w http.ResponseWriter, r *http.Request) {
+	threadID := chi.URLParam(r, "threadID")
+	if h.ticketOpener == nil {
+		http.Error(w, "ticket creation not configured", http.StatusNotImplemented)
+		return
+	}
+
+	thread, err := h.getThread.Handle(r.Context(), threadID)
+	if err != nil {
+		log.Printf("email: convertToTicket getThread: %v", err)
+		http.Error(w, "thread not found", http.StatusNotFound)
+		return
+	}
+
+	if thread.CustomerID == "" {
+		sse := datastar.NewSSE(w, r)
+		signalData, _ := json.Marshal(map[string]any{
+			"toastMessage": "Link a customer first before converting to ticket",
+			"toastType":    "warning",
+			"toastVisible": true,
+		})
+		sse.PatchSignals(signalData)
+		return
+	}
+
+	// Build ticket body from thread messages (newest first, max 5)
+	var body strings.Builder
+	count := len(thread.Messages)
+	if count > 5 {
+		count = 5
+	}
+	for i := 0; i < count; i++ {
+		m := thread.Messages[i]
+		body.WriteString(fmt.Sprintf("From: %s\nDate: %s\n\n%s\n\n---\n\n",
+			m.FromAddr, m.ReceivedAt.Format("2006-01-02 15:04"), m.TextBody))
+	}
+
+	ticketID, err := h.ticketOpener.Open(r.Context(), thread.CustomerID, thread.Subject, body.String(), "normal")
+	if err != nil {
+		log.Printf("email: convertToTicket open: %v", err)
+		sse := datastar.NewSSE(w, r)
+		signalData, _ := json.Marshal(map[string]any{
+			"toastMessage": "Failed to create ticket",
+			"toastType":    "error",
+			"toastVisible": true,
+		})
+		sse.PatchSignals(signalData)
+		return
+	}
+
+	_ = ticketID
+	sse := datastar.NewSSE(w, r)
+	signalData, _ := json.Marshal(map[string]any{
+		"toastMessage": "Ticket created from email thread",
+		"toastType":    "info",
+		"toastVisible": true,
+	})
+	sse.PatchSignals(signalData)
+}
+
+func (h *Handlers) autoLinkSSE(w http.ResponseWriter, r *http.Request) {
+	if h.autoLinker == nil {
+		http.Error(w, "auto-link not configured", http.StatusNotImplemented)
+		return
+	}
+
+	linked, err := h.autoLinker.AutoLink(r.Context())
+	if err != nil {
+		log.Printf("email: autoLinkSSE: %v", err)
+		http.Error(w, "auto-link failed", http.StatusInternalServerError)
+		return
+	}
+
+	if linked > 0 {
+		h.publisher.Publish(r.Context(), "isp.email.customer_linked", events.DomainEvent{
+			Type:       "email.customers_auto_linked",
+			OccurredAt: time.Now().UTC(),
+		})
+	}
+
+	sse := datastar.NewSSE(w, r)
+	msg := fmt.Sprintf("Linked %d threads to customers", linked)
+	if linked == 0 {
+		msg = "No new threads to link"
+	}
+	signalData, _ := json.Marshal(map[string]any{
+		"toastMessage": msg,
+		"toastType":    "info",
+		"toastVisible": true,
+	})
+	sse.PatchSignals(signalData)
 }
 
 // settingsPage renders the IMAP account settings page.

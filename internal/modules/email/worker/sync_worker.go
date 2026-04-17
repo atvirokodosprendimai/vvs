@@ -115,6 +115,20 @@ func (w *SyncWorker) syncAll() {
 	for _, account := range accounts {
 		w.syncAccount(ctx, account)
 	}
+
+	// Auto-link unlinked threads to customers by matching participant emails.
+	if linked, err := persistence.AutoLinkCustomers(ctx, w.repos.DB); err != nil {
+		slog.Error("email sync: auto-link customers", "err", err)
+	} else if linked > 0 {
+		slog.Info("email sync: auto-linked threads to customers", "count", linked)
+		if w.pub != nil {
+			w.pub.Publish(ctx, "isp.email.customer_linked", events.DomainEvent{
+				Type:       "email.customers_auto_linked",
+				OccurredAt: time.Now().UTC(),
+			})
+		}
+	}
+
 	slog.Info("email sync: done")
 }
 

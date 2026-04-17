@@ -20,16 +20,16 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, folders []emailqueries
 		>
 			<!-- Sidebar: accounts + tags + folders -->
 			<div class="w-56 flex-shrink-0 flex flex-col gap-3">
-				<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-					<div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
-						<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Accounts</h3>
-						<a href="/emails/settings" class="text-xs text-cyan-500 hover:text-cyan-400">Settings</a>
+				<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+					<div class="px-4 py-3 border-b border-neutral-800 flex items-center justify-between">
+						<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Accounts</h3>
+						<a href="/emails/settings" class="text-xs text-amber-500 hover:text-amber-400">Settings</a>
 					</div>
-					<div class="divide-y divide-slate-800">
+					<div class="divide-y divide-neutral-800">
 						for _, a := range accounts {
 							<a
 								href={ templ.SafeURL(fmt.Sprintf("/emails?account=%s", a.ID)) }
-								class={ "block px-4 py-2.5 text-sm hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-2 no-underline " + accountActiveClass(a.ID, selected) }
+								class={ "block px-4 py-2.5 text-sm hover:bg-neutral-800/60 transition-colors flex items-center justify-between gap-2 no-underline " + accountActiveClass(a.ID, selected) }
 							>
 								<span class="truncate">{ a.Name }</span>
 								@accountStatusDot(a.Status)
@@ -39,11 +39,11 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, folders []emailqueries
 				</div>
 
 				<!-- System tags -->
-				<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-					<div class="px-4 py-3 border-b border-slate-800">
-						<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tags</h3>
+				<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+					<div class="px-4 py-3 border-b border-neutral-800">
+						<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Tags</h3>
 					</div>
-					<div class="divide-y divide-slate-800">
+					<div class="divide-y divide-neutral-800">
 						@tagFilterButton("unread", "#3b82f6", "Unread")
 						@tagFilterButton("starred", "#f59e0b", "Starred")
 						@tagFilterButton("archived", "#6b7280", "Archived")
@@ -65,13 +65,13 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, folders []emailqueries
 						data-bind:emailSearch
 						data-on:input__debounce.300ms="$emailPage = 0; @get('/sse/emails', {openWhenHidden: false})"
 						placeholder="Search subject or address…"
-						class="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-300 placeholder-slate-600 focus:outline-none focus:border-cyan-500"
+						class="flex-1 bg-neutral-900 border border-neutral-800 rounded-lg px-4 py-2 text-sm text-neutral-300 placeholder-neutral-600 focus:outline-none focus:border-amber-500"
 					/>
 					if selected != "" {
 						<button
 							type="button"
 							data-on:click="$composeOpen=true"
-							class="flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0"
+							class="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex-shrink-0"
 						>
 							<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>
 							Compose
@@ -82,7 +82,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, folders []emailqueries
 					id="email-thread-list"
 					data-init="@get('/sse/emails', {openWhenHidden: false})"
 				>
-					<div class="text-slate-600 py-8 text-center text-sm">Loading...</div>
+					<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
 				</div>
 			</div>
 
@@ -92,39 +92,39 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, folders []emailqueries
 				class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
 				style="display:none"
 			>
-				<div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-lg p-6 flex flex-col gap-4">
+				<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-lg p-6 flex flex-col gap-4">
 					<div class="flex items-center justify-between">
-						<h3 class="text-sm font-semibold text-slate-200">New Email</h3>
-						<button type="button" data-on:click="$composeOpen=false; $composeError=''" class="text-slate-500 hover:text-slate-300">
+						<h3 class="text-sm font-semibold text-neutral-200">New Email</h3>
+						<button type="button" data-on:click="$composeOpen=false; $composeError=''" class="text-neutral-500 hover:text-neutral-300">
 							<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
 						</button>
 					</div>
 					<div class="flex flex-col gap-3">
 						<div class="flex flex-col gap-1">
-							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">To</label>
+							<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">To</label>
 							<input
 								type="email"
 								data-bind:composeTo
 								placeholder="recipient@example.com"
-								class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
+								class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
 							/>
 						</div>
 						<div class="flex flex-col gap-1">
-							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Subject</label>
+							<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Subject</label>
 							<input
 								type="text"
 								data-bind:composeSubject
 								placeholder="Subject"
-								class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
+								class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
 							/>
 						</div>
 						<div class="flex flex-col gap-1">
-							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Message</label>
+							<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Message</label>
 							<textarea
 								data-bind:composeBody
 								rows="8"
 								placeholder="Write your message…"
-								class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600 resize-none"
+								class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600 resize-none"
 							></textarea>
 						</div>
 						<div
@@ -139,7 +139,7 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, folders []emailqueries
 							data-indicator:compose-sending
 							data-class:opacity-50="$composeSending"
 							data-on:click={ fmt.Sprintf("!$composeSending && @post('/api/emails/compose?account=%s')", selected) }
-							class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
+							class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
 						>
 							<span data-show="!$composeSending">Send</span>
 							<span data-show="$composeSending" style="display:none">Sending…</span>
@@ -155,7 +155,7 @@ templ tagFilterButton(name, color, label string) {
 	<button
 		type="button"
 		data-on:click={ fmt.Sprintf("$emailTagFilter = $emailTagFilter == %q ? '' : %q; $emailPage = 0; @get('/sse/emails', {openWhenHidden: false})", name, name) }
-		class="w-full text-left px-4 py-2 text-sm text-slate-400 hover:bg-slate-800/60 transition-colors flex items-center gap-2"
+		class="w-full text-left px-4 py-2 text-sm text-neutral-400 hover:bg-neutral-800/60 transition-colors flex items-center gap-2"
 	>
 		<span class="w-2 h-2 rounded-full flex-shrink-0" style={ fmt.Sprintf("background-color:%s", color) }></span>
 		{ label }
@@ -169,7 +169,7 @@ templ accountStatusDot(status string) {
 		case "error":
 			<span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
 		default:
-			<span class="w-1.5 h-1.5 rounded-full bg-slate-600 flex-shrink-0"></span>
+			<span class="w-1.5 h-1.5 rounded-full bg-neutral-600 flex-shrink-0"></span>
 	}
 }
 
@@ -177,11 +177,11 @@ templ accountStatusDot(status string) {
 templ ThreadList(result emailqueries.ThreadListResult) {
 	<div id="email-thread-list">
 		if len(result.Threads) == 0 {
-			<div class="bg-slate-900 border border-slate-800 rounded-lg flex flex-col items-center justify-center py-14 text-slate-600">
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg flex flex-col items-center justify-center py-14 text-neutral-600">
 				<p class="text-sm">No emails.</p>
 			</div>
 		} else {
-			<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden divide-y divide-slate-800">
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden divide-y divide-neutral-800">
 				for _, t := range result.Threads {
 					@threadRow(t)
 				}
@@ -192,19 +192,19 @@ templ ThreadList(result emailqueries.ThreadListResult) {
 						<button
 							type="button"
 							data-on:click="$emailPage--; @get('/sse/emails', {openWhenHidden: false})"
-							class="text-xs text-cyan-500 hover:text-cyan-400 px-3 py-1.5 rounded hover:bg-slate-800 transition-colors"
+							class="text-xs text-amber-500 hover:text-amber-400 px-3 py-1.5 rounded hover:bg-neutral-800 transition-colors"
 						>← Previous</button>
 					} else {
 						<div></div>
 					}
-					<span class="text-xs text-slate-500">
+					<span class="text-xs text-neutral-500">
 						{ fmt.Sprintf("%d–%d of %d", result.Page*result.PageSize+1, pageEnd(result), result.Total) }
 					</span>
 					if (result.Page+1)*result.PageSize < result.Total {
 						<button
 							type="button"
 							data-on:click="$emailPage++; @get('/sse/emails', {openWhenHidden: false})"
-							class="text-xs text-cyan-500 hover:text-cyan-400 px-3 py-1.5 rounded hover:bg-slate-800 transition-colors"
+							class="text-xs text-amber-500 hover:text-amber-400 px-3 py-1.5 rounded hover:bg-neutral-800 transition-colors"
 						>Next →</button>
 					} else {
 						<div></div>
@@ -220,16 +220,16 @@ templ threadRow(t emailqueries.ThreadReadModel) {
 		href={ templ.SafeURL(fmt.Sprintf("/emails/threads/%s", t.ID)) }
 		target="_blank"
 		rel="noopener noreferrer"
-		class="block w-full text-left px-4 py-3 hover:bg-slate-800/60 transition-colors flex flex-col gap-0.5 no-underline"
+		class="block w-full text-left px-4 py-3 hover:bg-neutral-800/60 transition-colors flex flex-col gap-0.5 no-underline"
 	>
 		<div class="flex items-center justify-between gap-2">
-			<span class={ "text-sm font-medium truncate", templ.KV("text-white", t.Unread), templ.KV("text-slate-400", !t.Unread) }>
+			<span class={ "text-sm font-medium truncate", templ.KV("text-white", t.Unread), templ.KV("text-neutral-400", !t.Unread) }>
 				{ t.Subject }
 			</span>
-			<span class="text-xs text-slate-500 flex-shrink-0">{ formatRelTime(t.LastMessageAt) }</span>
+			<span class="text-xs text-neutral-500 flex-shrink-0">{ formatRelTime(t.LastMessageAt) }</span>
 		</div>
 		<div class="flex items-center gap-2 justify-between">
-			<span class="text-xs text-slate-500 truncate">{ firstParticipant(t.ParticipantAddresses) }</span>
+			<span class="text-xs text-neutral-500 truncate">{ firstParticipant(t.ParticipantAddresses) }</span>
 			<div class="flex items-center gap-1">
 				if t.Unread {
 					<span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
@@ -250,7 +250,7 @@ templ EmailThreadPage(thread emailqueries.ThreadDetailReadModel) {
 	@templates.Layout(thread.Subject) {
 		@templates.PageHeader(thread.Subject, "")
 		<div class="mb-4">
-			<a href="/emails" class="inline-flex items-center gap-1.5 text-sm text-cyan-500 hover:text-cyan-400">
+			<a href="/emails" class="inline-flex items-center gap-1.5 text-sm text-amber-500 hover:text-amber-400">
 				<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
 					<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
 				</svg>
@@ -265,15 +265,15 @@ templ EmailThreadPage(thread emailqueries.ThreadDetailReadModel) {
 templ replyForm(threadID string) {
 	<div
 		id="email-reply-form"
-		class="mt-4 bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col gap-3"
+		class="mt-4 bg-neutral-900 border border-neutral-800 rounded-lg p-4 flex flex-col gap-3"
 		data-signals="{emailReplyBody:'',emailReplyError:''}"
 	>
-		<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Reply</h3>
+		<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Reply</h3>
 		<textarea
 			data-bind:email-reply-body
 			placeholder="Write your reply..."
 			rows="5"
-			class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 resize-y placeholder-slate-600"
+			class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 resize-y placeholder-neutral-600"
 		></textarea>
 		<div
 			data-show="$emailReplyError != ''"
@@ -287,30 +287,40 @@ templ replyForm(threadID string) {
 				data-on:click={ fmt.Sprintf("!$emailSending && @post('/api/email-threads/%s/reply')", threadID) }
 				data-indicator:email-sending
 				data-class:opacity-50="$emailSending"
-				class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+				class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
 			>Send Reply</button>
-			<span data-show="$emailSending" class="text-xs text-slate-500" style="display:none">Sending...</span>
+			<span data-show="$emailSending" class="text-xs text-neutral-500" style="display:none">Sending...</span>
 		</div>
 	</div>
 }
 
 // ThreadDetail renders the full thread (messages + attachments).
 templ ThreadDetail(thread emailqueries.ThreadDetailReadModel) {
-	<div id="email-thread-detail" class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+	<div id="email-thread-detail" class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
 		<!-- Header -->
-		<div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+		<div class="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
 			<div class="flex items-center gap-3 min-w-0">
-				<h3 class="text-sm font-semibold text-slate-200 truncate">{ thread.Subject }</h3>
-				<span class="text-xs text-slate-600 flex-shrink-0">{ fmt.Sprintf("%d msg", len(thread.Messages)) }</span>
+				<h3 class="text-sm font-semibold text-neutral-200 truncate">{ thread.Subject }</h3>
+				<span class="text-xs text-neutral-600 flex-shrink-0">{ fmt.Sprintf("%d msg", len(thread.Messages)) }</span>
 			</div>
-			<button
-				type="button"
-				data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/read')", thread.ID) }
-				class="text-xs text-slate-500 hover:text-slate-300 flex-shrink-0"
-			>Mark read</button>
+			<div class="flex items-center gap-3 flex-shrink-0">
+				@customerLinkBadge(thread.ID, thread.CustomerID, "")
+				if thread.CustomerID != "" {
+					<button
+						type="button"
+						data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/to-ticket')", thread.ID) }
+						class="text-xs text-amber-500 hover:text-amber-400 transition-colors"
+					>Create Ticket</button>
+				}
+				<button
+					type="button"
+					data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/read')", thread.ID) }
+					class="text-xs text-neutral-500 hover:text-neutral-300"
+				>Mark read</button>
+			</div>
 		</div>
 		<!-- Messages -->
-		<div class="divide-y divide-slate-800">
+		<div class="divide-y divide-neutral-800">
 			for _, m := range thread.Messages {
 				@messageItem(m)
 			}
@@ -318,29 +328,102 @@ templ ThreadDetail(thread emailqueries.ThreadDetailReadModel) {
 	</div>
 }
 
+// customerLinkBadge shows linked customer or "Link" button with searchable picker.
+templ customerLinkBadge(threadID string, customerID string, customerLabel string) {
+	<div
+		id="email-customer-link"
+		data-signals="{_linkOpen: false, linkSearch: '', customerID: ''}"
+		class="relative"
+	>
+		if customerID != "" {
+			<div class="flex items-center gap-2">
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/customers/%s", customerID)) }
+					class="text-xs text-amber-400 hover:text-amber-300 transition-colors"
+				>
+					if customerLabel != "" {
+						{ customerLabel }
+					} else {
+						Linked
+					}
+				</a>
+				<button
+					type="button"
+					data-on:click={ fmt.Sprintf("$customerID = ''; @post('/api/email-threads/%s/link')", threadID) }
+					class="text-xs text-neutral-600 hover:text-red-400 transition-colors"
+					title="Unlink customer"
+				>&times;</button>
+			</div>
+		} else {
+			<button
+				type="button"
+				data-on:click="$_linkOpen = !$_linkOpen"
+				class="text-xs text-neutral-500 hover:text-amber-400 transition-colors"
+			>Link Customer</button>
+		}
+		<!-- Searchable dropdown -->
+		<div
+			data-show="$_linkOpen"
+			class="absolute right-0 top-8 z-50 w-72 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl overflow-hidden"
+			style="display:none"
+		>
+			<input
+				type="text"
+				data-bind="linkSearch"
+				data-on:input__debounce.300ms={ fmt.Sprintf("$linkSearch.length >= 1 && @get('/sse/email-customer-picker/%s')", threadID) }
+				placeholder="Search customers..."
+				class="w-full bg-neutral-800 text-neutral-100 border-b border-neutral-700 px-3 py-2 text-sm focus:outline-none placeholder-neutral-500"
+			/>
+			<div id="email-customer-picker" class="max-h-48 overflow-y-auto">
+				<div class="px-3 py-4 text-xs text-neutral-500 text-center">Type to search</div>
+			</div>
+		</div>
+	</div>
+}
+
+// customerPickerResults renders the dropdown options from a customer search.
+templ customerPickerResults(threadID string, results []CustomerSearchResult) {
+	<div id="email-customer-picker" class="max-h-48 overflow-y-auto">
+		if len(results) == 0 {
+			<div class="px-3 py-4 text-xs text-neutral-500 text-center">No customers found</div>
+		} else {
+			for _, c := range results {
+				<button
+					type="button"
+					data-on:click={ fmt.Sprintf("$customerID = '%s'; @post('/api/email-threads/%s/link'); $_linkOpen = false; $linkSearch = ''", c.ID, threadID) }
+					class="w-full text-left px-3 py-2 hover:bg-neutral-700 transition-colors flex items-center justify-between gap-2"
+				>
+					<span class="text-sm text-neutral-200 truncate">{ c.CompanyName }</span>
+					<span class="text-xs text-amber-400 font-mono flex-shrink-0">{ c.Code }</span>
+				</button>
+			}
+		}
+	</div>
+}
+
 templ messageItem(m emailqueries.MessageReadModel) {
 	<div class="px-4 py-3 flex flex-col gap-2">
 		<div class="flex items-center justify-between">
 			<div class="flex flex-col">
-				<span class="text-xs font-medium text-slate-300">
+				<span class="text-xs font-medium text-neutral-300">
 					if m.FromName != "" {
 						{ m.FromName } &lt;{ m.FromAddr }&gt;
 					} else {
 						{ m.FromAddr }
 					}
 				</span>
-				<span class="text-xs text-slate-500">To: { m.ToAddrs }</span>
+				<span class="text-xs text-neutral-500">To: { m.ToAddrs }</span>
 			</div>
-			<span class="text-xs text-slate-500 flex-shrink-0">{ m.ReceivedAt.Format("Jan 2, 15:04") }</span>
+			<span class="text-xs text-neutral-500 flex-shrink-0">{ m.ReceivedAt.Format("Jan 2, 15:04") }</span>
 		</div>
-		<div class="text-sm text-slate-300 whitespace-pre-wrap break-words">{ m.TextBody }</div>
+		<div class="text-sm text-neutral-300 whitespace-pre-wrap break-words">{ m.TextBody }</div>
 		if len(m.Attachments) > 0 {
 			<div class="flex flex-wrap gap-2 mt-1">
 				for _, a := range m.Attachments {
 					<a
 						href={ templ.SafeURL(fmt.Sprintf("/api/email-attachments/%s", a.ID)) }
 						download={ a.Filename }
-						class="flex items-center gap-1.5 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+						class="flex items-center gap-1.5 bg-neutral-800 border border-neutral-700 rounded px-2 py-1 text-xs text-neutral-300 hover:text-white hover:bg-neutral-700 transition-colors"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13"/>
@@ -360,13 +443,13 @@ templ AccountForm() {
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
 		style="display:none"
 	>
-		<div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
+		<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
 			<div class="flex items-center justify-between">
-				<h3 class="text-sm font-semibold text-slate-200">Add IMAP Account</h3>
+				<h3 class="text-sm font-semibold text-neutral-200">Add IMAP Account</h3>
 				<button
 					type="button"
 					data-on:click="$_emailAccountID = 'none'"
-					class="text-slate-500 hover:text-slate-300"
+					class="text-neutral-500 hover:text-neutral-300"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
@@ -380,8 +463,8 @@ templ AccountForm() {
 				@emailField("emailUser", "Username", "user@example.com", "email")
 				@emailField("emailPass", "Password", "", "password")
 				<div class="flex flex-col gap-1">
-					<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">TLS</label>
-					<select data-bind:email-t-l-s class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
+					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">TLS</label>
+					<select data-bind:email-t-l-s class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
 						<option value="tls">TLS (implicit, port 993)</option>
 						<option value="starttls">STARTTLS (port 587)</option>
 						<option value="none">None (insecure)</option>
@@ -391,7 +474,7 @@ templ AccountForm() {
 				<button
 					type="button"
 					data-on:click="@post('/api/email-accounts')"
-					class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
+					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
 				>Save Account</button>
 			</div>
 		</div>
@@ -400,12 +483,12 @@ templ AccountForm() {
 
 templ emailField(signal, label, placeholder, inputType string) {
 	<div class="flex flex-col gap-1">
-		<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">{ label }</label>
+		<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">{ label }</label>
 		<input
 			type={ inputType }
 			data-bind={ signal }
 			placeholder={ placeholder }
-			class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
+			class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
 		/>
 	</div>
 }
@@ -421,11 +504,15 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 		>
 			<!-- Header row -->
 			<div class="flex items-center justify-between mb-4">
-				<div></div>
+				<button
+					type="button"
+					data-on:click="@post('/api/emails/auto-link')"
+					class="bg-neutral-700 hover:bg-neutral-600 text-neutral-200 text-sm px-4 py-2 rounded-lg transition-colors"
+				>Auto-link Customers</button>
 				<button
 					type="button"
 					data-on:click="$_showAdd=true"
-					class="bg-cyan-600 hover:bg-cyan-700 text-white text-sm px-4 py-2 rounded-lg transition-colors"
+					class="bg-amber-600 hover:bg-amber-700 text-white text-sm px-4 py-2 rounded-lg transition-colors"
 				>+ Add Account</button>
 			</div>
 
@@ -449,10 +536,10 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 			class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
 			style="display:none"
 		>
-			<div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
+			<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
 				<div class="flex items-center justify-between">
-					<h3 class="text-sm font-semibold text-slate-200">Add IMAP Account</h3>
-					<button type="button" data-on:click="$_showAdd=false" class="text-slate-500 hover:text-slate-300">
+					<h3 class="text-sm font-semibold text-neutral-200">Add IMAP Account</h3>
+					<button type="button" data-on:click="$_showAdd=false" class="text-neutral-500 hover:text-neutral-300">
 						<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
 					</button>
 				</div>
@@ -463,21 +550,21 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 					@emailField("emailUser", "Username", "user@example.com", "email")
 					@emailField("emailPass", "Password", "", "password")
 					<div class="flex flex-col gap-1">
-						<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">IMAP TLS</label>
-						<select data-bind:emailTLS class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
+						<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">IMAP TLS</label>
+						<select data-bind:emailTLS class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
 							<option value="tls">TLS (port 993)</option>
 							<option value="starttls">STARTTLS (port 587)</option>
 							<option value="none">None (insecure)</option>
 						</select>
 					</div>
 					@emailField("emailFolder", "Folder", "INBOX", "text")
-					<div class="border-t border-slate-700 pt-3 mt-1">
-						<p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">SMTP (outgoing)</p>
+					<div class="border-t border-neutral-700 pt-3 mt-1">
+						<p class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">SMTP (outgoing)</p>
 						@emailField("emailSMTPHost", "SMTP Host", "mail.example.com (blank = IMAP host)", "text")
 						@emailField("emailSMTPPort", "SMTP Port", "587", "number")
 						<div class="flex flex-col gap-1">
-							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">SMTP TLS</label>
-							<select data-bind:emailSMTPTLS class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
+							<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">SMTP TLS</label>
+							<select data-bind:emailSMTPTLS class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
 								<option value="starttls">STARTTLS (port 587)</option>
 								<option value="tls">TLS (port 465)</option>
 								<option value="none">None (insecure)</option>
@@ -487,7 +574,7 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 					<button
 						type="button"
 						data-on:click="@post('/api/email-accounts') && ($_showAdd=false)"
-						class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
+						class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
 					>Save Account</button>
 				</div>
 			</div>
@@ -499,10 +586,10 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 			class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
 			style="display:none"
 		>
-			<div class="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
+			<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
 				<div class="flex items-center justify-between">
-					<h3 class="text-sm font-semibold text-slate-200">Edit Account</h3>
-					<button type="button" data-on:click="$emailSettingsEdit=''" class="text-slate-500 hover:text-slate-300">
+					<h3 class="text-sm font-semibold text-neutral-200">Edit Account</h3>
+					<button type="button" data-on:click="$emailSettingsEdit=''" class="text-neutral-500 hover:text-neutral-300">
 						<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
 					</button>
 				</div>
@@ -512,30 +599,30 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 					@emailField("emailPort", "Port", "", "number")
 					@emailField("emailUser", "Username", "", "email")
 					<div class="flex flex-col gap-1">
-						<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">Password</label>
+						<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Password</label>
 						<input
 							type="password"
 							data-bind:emailPass
 							placeholder="Leave blank to keep current"
-							class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 placeholder-slate-600"
+							class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
 						/>
 					</div>
 					<div class="flex flex-col gap-1">
-						<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">IMAP TLS</label>
-						<select data-bind:emailTLS class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
+						<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">IMAP TLS</label>
+						<select data-bind:emailTLS class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
 							<option value="tls">TLS (port 993)</option>
 							<option value="starttls">STARTTLS (port 587)</option>
 							<option value="none">None (insecure)</option>
 						</select>
 					</div>
 					@emailField("emailFolder", "Folder", "INBOX", "text")
-					<div class="border-t border-slate-700 pt-3 mt-1">
-						<p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">SMTP (outgoing)</p>
+					<div class="border-t border-neutral-700 pt-3 mt-1">
+						<p class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">SMTP (outgoing)</p>
 						@emailField("emailSMTPHost", "SMTP Host", "mail.example.com (blank = IMAP host)", "text")
 						@emailField("emailSMTPPort", "SMTP Port", "587", "number")
 						<div class="flex flex-col gap-1">
-							<label class="text-xs font-medium text-slate-400 uppercase tracking-wider">SMTP TLS</label>
-							<select data-bind:emailSMTPTLS class="bg-slate-800 text-slate-100 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
+							<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">SMTP TLS</label>
+							<select data-bind:emailSMTPTLS class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
 								<option value="starttls">STARTTLS (port 587)</option>
 								<option value="tls">TLS (port 465)</option>
 								<option value="none">None (insecure)</option>
@@ -545,7 +632,7 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 					<button
 						type="button"
 						data-on:click="@put('/api/email-accounts/'+$emailSettingsEdit)"
-						class="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
+						class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors mt-1"
 					>Save Changes</button>
 				</div>
 			</div>
@@ -557,7 +644,7 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 templ EmailAccountList(accounts []emailqueries.AccountReadModel) {
 	<div id="email-account-list">
 		if len(accounts) == 0 {
-			<div class="bg-slate-900 border border-slate-800 rounded-lg py-14 flex flex-col items-center justify-center text-slate-600">
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg py-14 flex flex-col items-center justify-center text-neutral-600">
 				<p class="text-sm">No accounts configured.</p>
 				<p class="text-xs mt-1">Click "Add Account" to get started.</p>
 			</div>
@@ -572,11 +659,11 @@ templ EmailAccountList(accounts []emailqueries.AccountReadModel) {
 }
 
 templ emailAccountCard(a emailqueries.AccountReadModel) {
-	<div class="bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col gap-3">
+	<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-4 flex flex-col gap-3">
 		<!-- Top row: name + status -->
 		<div class="flex items-center justify-between gap-2">
 			<div class="flex items-center gap-2">
-				<span class="text-sm font-semibold text-slate-200">{ a.Name }</span>
+				<span class="text-sm font-semibold text-neutral-200">{ a.Name }</span>
 				@emailAccountStatusBadge(a.Status)
 			</div>
 			<!-- Actions -->
@@ -585,43 +672,43 @@ templ emailAccountCard(a emailqueries.AccountReadModel) {
 					type="button"
 					data-on:click={ fmt.Sprintf("$emailSettingsEdit=%q; $emailName=%q; $emailHost=%q; $emailPort='%d'; $emailUser=%q; $emailTLS=%q; $emailFolder=%q; $emailPass=''; $emailSMTPHost=%q; $emailSMTPPort='%d'; $emailSMTPTLS=%q",
 						a.ID, a.Name, a.Host, a.Port, a.Username, a.TLS, a.Folder, a.SMTPHost, a.SMTPPort, a.SMTPTLS) }
-					class="text-xs text-slate-400 hover:text-cyan-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
+					class="text-xs text-neutral-400 hover:text-amber-400 transition-colors px-2 py-1 rounded hover:bg-neutral-800"
 				>Edit</button>
 				if a.Status == "paused" {
 					<button
 						type="button"
 						data-on:click={ fmt.Sprintf("@post('/api/email-accounts/%s/resume')", a.ID) }
-						class="text-xs text-slate-400 hover:text-green-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
+						class="text-xs text-neutral-400 hover:text-green-400 transition-colors px-2 py-1 rounded hover:bg-neutral-800"
 					>Resume</button>
 				} else {
 					<button
 						type="button"
 						data-on:click={ fmt.Sprintf("@post('/api/email-accounts/%s/pause')", a.ID) }
-						class="text-xs text-slate-400 hover:text-yellow-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
+						class="text-xs text-neutral-400 hover:text-yellow-400 transition-colors px-2 py-1 rounded hover:bg-neutral-800"
 					>Pause</button>
 				}
 				<button
 					type="button"
 					data-on:click={ fmt.Sprintf("@post('/api/email-sync/%s')", a.ID) }
-					class="text-xs text-slate-400 hover:text-cyan-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
+					class="text-xs text-neutral-400 hover:text-amber-400 transition-colors px-2 py-1 rounded hover:bg-neutral-800"
 					title="Trigger manual sync"
 				>Sync Now</button>
 				<button
 					type="button"
 					data-on:click={ fmt.Sprintf("confirm('Delete account %s and all its emails?') && @delete('/api/email-accounts/%s')", a.Name, a.ID) }
-					class="text-xs text-slate-400 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-slate-800"
+					class="text-xs text-neutral-400 hover:text-red-400 transition-colors px-2 py-1 rounded hover:bg-neutral-800"
 				>Delete</button>
 			</div>
 		</div>
 		<!-- Details row -->
-		<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+		<div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-500">
 			<span>{ fmt.Sprintf("%s:%d", a.Host, a.Port) }</span>
 			<span>{ a.Username }</span>
 			<span class="uppercase">{ a.TLS }</span>
 			<span>{ a.Folder }</span>
 		</div>
 		<!-- Sync info -->
-		<div class="flex items-center gap-3 text-xs text-slate-600">
+		<div class="flex items-center gap-3 text-xs text-neutral-600">
 			if a.LastSyncAt.IsZero() {
 				<span>Never synced</span>
 			} else {
@@ -636,8 +723,8 @@ templ emailAccountCard(a emailqueries.AccountReadModel) {
 			id={ fmt.Sprintf("email-folders-%s", a.ID) }
 			data-init={ fmt.Sprintf("@get('/sse/email-folders/%s', {openWhenHidden: false})", a.ID) }
 		>
-			<div class="mt-3 border-t border-slate-800 pt-3">
-				<span class="text-xs text-slate-600">Loading folders…</span>
+			<div class="mt-3 border-t border-neutral-800 pt-3">
+				<span class="text-xs text-neutral-600">Loading folders…</span>
 			</div>
 		</div>
 	</div>
@@ -650,33 +737,33 @@ templ emailAccountStatusBadge(status string) {
 		case "error":
 			<span class="text-xs px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-medium">error</span>
 		case "paused":
-			<span class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-400 font-medium">paused</span>
+			<span class="text-xs px-2 py-0.5 rounded-full bg-neutral-700 text-neutral-400 font-medium">paused</span>
 		default:
-			<span class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-500 font-medium">{ status }</span>
+			<span class="text-xs px-2 py-0.5 rounded-full bg-neutral-700 text-neutral-500 font-medium">{ status }</span>
 	}
 }
 
 // EmailFolderList is the SSE-patchable folder list in the settings account card.
 templ EmailFolderList(accountID string, folders []emailqueries.FolderReadModel) {
-	<div id={ fmt.Sprintf("email-folders-%s", accountID) } class="mt-3 border-t border-slate-800 pt-3 flex flex-col gap-1">
+	<div id={ fmt.Sprintf("email-folders-%s", accountID) } class="mt-3 border-t border-neutral-800 pt-3 flex flex-col gap-1">
 		<div class="flex items-center justify-between mb-1">
-			<span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Folders</span>
+			<span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Folders</span>
 			<button
 				type="button"
 				data-on:click={ fmt.Sprintf("@post('/api/email-accounts/%s/discover-folders')", accountID) }
-				class="text-xs text-cyan-500 hover:text-cyan-400 transition-colors"
+				class="text-xs text-amber-500 hover:text-amber-400 transition-colors"
 			>Discover</button>
 		</div>
 		if len(folders) == 0 {
-			<p class="text-xs text-slate-600 py-1">No folders found. Click "Discover" to scan server.</p>
+			<p class="text-xs text-neutral-600 py-1">No folders found. Click "Discover" to scan server.</p>
 		} else {
 			for _, f := range folders {
 				<div class="flex items-center justify-between text-xs py-0.5">
-					<span class={ templ.KV("text-slate-300", f.Enabled), templ.KV("text-slate-600 line-through", !f.Enabled) }>{ f.Name }</span>
+					<span class={ templ.KV("text-neutral-300", f.Enabled), templ.KV("text-neutral-600 line-through", !f.Enabled) }>{ f.Name }</span>
 					<button
 						type="button"
 						data-on:click={ fmt.Sprintf("@put('/api/email-folders/%s/toggle')", f.ID) }
-						class="ml-2 text-slate-500 hover:text-cyan-400 transition-colors"
+						class="ml-2 text-neutral-500 hover:text-amber-400 transition-colors"
 					>
 						if f.Enabled {
 							Disable
@@ -692,20 +779,20 @@ templ EmailFolderList(accountID string, folders []emailqueries.FolderReadModel) 
 
 // EmailFolderSidebar renders folder links for the inbox sidebar.
 templ EmailFolderSidebar(accountID, activeFolder string, folders []emailqueries.FolderReadModel) {
-	<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-		<div class="px-4 py-3 border-b border-slate-800">
-			<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Folders</h3>
+	<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+		<div class="px-4 py-3 border-b border-neutral-800">
+			<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Folders</h3>
 		</div>
-		<div class="divide-y divide-slate-800">
+		<div class="divide-y divide-neutral-800">
 			<a
 				href={ templ.SafeURL(fmt.Sprintf("/emails?account=%s", accountID)) }
-				class={ "block px-4 py-2 text-sm hover:bg-slate-800/60 transition-colors no-underline " + folderActiveClass("", activeFolder) }
+				class={ "block px-4 py-2 text-sm hover:bg-neutral-800/60 transition-colors no-underline " + folderActiveClass("", activeFolder) }
 			>All folders</a>
 			for _, f := range folders {
 				if f.Enabled {
 					<a
 						href={ templ.SafeURL(fmt.Sprintf("/emails?account=%s&folder=%s", accountID, f.Name)) }
-						class={ "block px-4 py-2 text-sm hover:bg-slate-800/60 transition-colors truncate no-underline " + folderActiveClass(f.Name, activeFolder) }
+						class={ "block px-4 py-2 text-sm hover:bg-neutral-800/60 transition-colors truncate no-underline " + folderActiveClass(f.Name, activeFolder) }
 					>{ f.Name }</a>
 				}
 			}
@@ -715,29 +802,29 @@ templ EmailFolderSidebar(accountID, activeFolder string, folders []emailqueries.
 
 // EmailThreadsSection is the email section on the customer detail page.
 templ EmailThreadsSection(customerID string, threads []emailqueries.ThreadReadModel) {
-	<div class="mt-4 bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-		<div class="flex items-center justify-between px-4 py-3 border-b border-slate-800">
-			<h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Email Threads</h2>
-			<a href="/emails" class="text-xs text-cyan-500 hover:text-cyan-400">Open inbox</a>
+	<div class="mt-4 bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+		<div class="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
+			<h2 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Email Threads</h2>
+			<a href="/emails" class="text-xs text-amber-500 hover:text-amber-400">Open inbox</a>
 		</div>
 		<div id={ fmt.Sprintf("customer-email-threads-%s", customerID) }>
 			if len(threads) == 0 {
-				<div class="flex flex-col items-center justify-center py-6 text-slate-600">
+				<div class="flex flex-col items-center justify-center py-6 text-neutral-600">
 					<p class="text-sm">No linked emails.</p>
 				</div>
 			} else {
-				<div class="divide-y divide-slate-800">
+				<div class="divide-y divide-neutral-800">
 					for _, t := range threads {
 						<div class="px-4 py-2.5 flex items-center justify-between gap-2">
 							<div class="flex flex-col gap-0.5 min-w-0">
-								<span class="text-sm text-slate-300 truncate">{ t.Subject }</span>
-								<span class="text-xs text-slate-500">{ firstParticipant(t.ParticipantAddresses) }</span>
+								<span class="text-sm text-neutral-300 truncate">{ t.Subject }</span>
+								<span class="text-xs text-neutral-500">{ firstParticipant(t.ParticipantAddresses) }</span>
 							</div>
 							<div class="flex items-center gap-2 flex-shrink-0">
 								if t.Unread {
 									<span class="w-2 h-2 rounded-full bg-blue-500"></span>
 								}
-								<span class="text-xs text-slate-500">{ formatRelTime(t.LastMessageAt) }</span>
+								<span class="text-xs text-neutral-500">{ formatRelTime(t.LastMessageAt) }</span>
 							</div>
 						</div>
 					}
@@ -751,16 +838,16 @@ templ EmailThreadsSection(customerID string, threads []emailqueries.ThreadReadMo
 
 func accountActiveClass(id, selected string) string {
 	if id == selected {
-		return "text-cyan-400 bg-slate-800/60"
+		return "text-amber-400 bg-neutral-800/60"
 	}
-	return "text-slate-300"
+	return "text-neutral-300"
 }
 
 func folderActiveClass(name, active string) string {
 	if name == active {
-		return "text-cyan-400 bg-slate-800/60"
+		return "text-amber-400 bg-neutral-800/60"
 	}
-	return "text-slate-400"
+	return "text-neutral-400"
 }
 
 func firstParticipant(s string) string {
@@ -844,15 +931,15 @@ templ AttachmentsPage(accounts []emailqueries.AccountReadModel, selectedAccount,
 		<div class="flex gap-4">
 			<!-- Account sidebar -->
 			<div class="w-56 flex-shrink-0">
-				<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
-					<div class="px-4 py-3 border-b border-slate-800">
-						<h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Accounts</h3>
+				<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+					<div class="px-4 py-3 border-b border-neutral-800">
+						<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Accounts</h3>
 					</div>
-					<div class="divide-y divide-slate-800">
+					<div class="divide-y divide-neutral-800">
 						for _, a := range accounts {
 							<a
 								href={ templ.SafeURL(fmt.Sprintf("/attachments?account=%s", a.ID)) }
-								class={ "block px-4 py-2.5 text-sm hover:bg-slate-800/60 transition-colors flex items-center justify-between gap-2 no-underline " + accountActiveClass(a.ID, selectedAccount) }
+								class={ "block px-4 py-2.5 text-sm hover:bg-neutral-800/60 transition-colors flex items-center justify-between gap-2 no-underline " + accountActiveClass(a.ID, selectedAccount) }
 							>
 								<span class="truncate">{ a.Name }</span>
 								@accountStatusDot(a.Status)
@@ -870,7 +957,7 @@ templ AttachmentsPage(accounts []emailqueries.AccountReadModel, selectedAccount,
 						value={ query }
 						data-bind:q
 						data-on:input__debounce.300ms={ fmt.Sprintf("@get('/sse/attachments?account=%s', {openWhenHidden: false})", selectedAccount) }
-						class="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 w-full placeholder-slate-600"
+						class="bg-neutral-900 border border-neutral-800 rounded-lg px-4 py-2.5 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 w-full placeholder-neutral-600"
 					/>
 					<div
 						id="attachment-results"
@@ -879,7 +966,7 @@ templ AttachmentsPage(accounts []emailqueries.AccountReadModel, selectedAccount,
 						@AttachmentResults(nil, selectedAccount)
 					</div>
 				} else {
-					<div class="text-sm text-slate-500 text-center py-16">Select an account to search attachments.</div>
+					<div class="text-sm text-neutral-500 text-center py-16">Select an account to search attachments.</div>
 				}
 			</div>
 		</div>
@@ -891,43 +978,43 @@ templ AttachmentResults(rows []emailqueries.AttachmentSearchRow, accountID strin
 	{{ selectedAccount := accountID }}
 	<div id="attachment-results" class="flex flex-col gap-1">
 		if rows == nil {
-			<div class="text-sm text-slate-600 text-center py-12">Enter a filename or extension to search.</div>
+			<div class="text-sm text-neutral-600 text-center py-12">Enter a filename or extension to search.</div>
 		} else if len(rows) == 0 {
-			<div class="text-sm text-slate-600 text-center py-12">No attachments found.</div>
+			<div class="text-sm text-neutral-600 text-center py-12">No attachments found.</div>
 		} else {
-			<div class="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden">
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
 				<table class="w-full text-sm">
-					<thead class="border-b border-slate-800">
+					<thead class="border-b border-neutral-800">
 						<tr>
-							<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">File</th>
-							<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider hidden sm:table-cell">Type</th>
-							<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider hidden sm:table-cell">Size</th>
-							<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider">Thread</th>
-							<th class="text-left px-4 py-3 text-xs font-medium text-slate-400 uppercase tracking-wider hidden md:table-cell">Date</th>
+							<th class="text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">File</th>
+							<th class="text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider hidden sm:table-cell">Type</th>
+							<th class="text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider hidden sm:table-cell">Size</th>
+							<th class="text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Thread</th>
+							<th class="text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider hidden md:table-cell">Date</th>
 						</tr>
 					</thead>
 					<tbody>
 						for _, row := range rows {
-							<tr class="border-b border-slate-800 last:border-0 hover:bg-slate-800/40 transition-colors">
+							<tr class="border-b border-neutral-800 last:border-0 hover:bg-neutral-800/40 transition-colors">
 								<td class="px-4 py-3">
-									<span class="text-slate-100 font-medium">{ row.Filename }</span>
+									<span class="text-neutral-100 font-medium">{ row.Filename }</span>
 								</td>
 								<td class="px-4 py-3 hidden sm:table-cell">
-									<span class="text-xs text-slate-500 font-mono">{ mimeShort(row.MIMEType) }</span>
+									<span class="text-xs text-neutral-500 font-mono">{ mimeShort(row.MIMEType) }</span>
 								</td>
 								<td class="px-4 py-3 hidden sm:table-cell">
-									<span class="text-xs text-slate-500">{ formatSize(row.Size) }</span>
+									<span class="text-xs text-neutral-500">{ formatSize(row.Size) }</span>
 								</td>
 								<td class="px-4 py-3">
 									<a
 										href={ templ.SafeURL(fmt.Sprintf("/emails?account=%s&thread=%s", selectedAccount, row.ThreadID)) }
 										target="_blank"
 										rel="noopener noreferrer"
-										class="text-cyan-400 hover:text-cyan-300 text-xs truncate max-w-xs block"
+										class="text-amber-400 hover:text-amber-300 text-xs truncate max-w-xs block"
 									>{ row.ThreadSubject }</a>
-									<span class="text-xs text-slate-600">{ row.FromAddr }</span>
+									<span class="text-xs text-neutral-600">{ row.FromAddr }</span>
 								</td>
-								<td class="px-4 py-3 hidden md:table-cell text-xs text-slate-500">{ row.ReceivedAt.Format("2006-01-02") }</td>
+								<td class="px-4 py-3 hidden md:table-cell text-xs text-neutral-500">{ row.ReceivedAt.Format("2006-01-02") }</td>
 							</tr>
 						}
 					</tbody>
