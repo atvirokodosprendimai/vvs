@@ -133,7 +133,7 @@ templ InvoiceDetailPage(inv queries.InvoiceReadModel) {
 	@templates.Layout("Invoice " + inv.Code) {
 		<div
 			class="max-w-4xl mx-auto"
-			data-signals="{lineProductName: '', lineDescription: '', lineQuantity: '1', lineUnitPrice: '', lineVATRate: '21', _editOpen: false, _editLineID: '', editProductName: '', editDescription: '', editQuantity: '1', editUnitPrice: '', editVATRate: '21'}"
+			data-signals="{lineProductName: '', lineDescription: '', lineQuantity: '1', lineUnitPrice: '', lineUnitPriceNet: '', lineVATRate: '21', _linePriceMode: 'gross', _editOpen: false, _editLineID: '', editProductName: '', editDescription: '', editQuantity: '1', editUnitPrice: '', editUnitPriceNet: '', editVATRate: '21', _editPriceMode: 'gross'}"
 			data-init={ fmt.Sprintf("@get('/sse/invoices/%s', {openWhenHidden: false})", inv.ID) }
 		>
 			<!-- Header with back button -->
@@ -200,18 +200,32 @@ templ InvoiceDetailPage(inv queries.InvoiceReadModel) {
 								<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Description</label>
 								<input type="text" data-bind:edit-description class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
 							</div>
+							<div class="flex flex-col gap-1">
+								<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Qty</label>
+								<input type="number" min="1" data-bind:edit-quantity class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"/>
+							</div>
 							<div class="grid grid-cols-3 gap-3">
 								<div class="flex flex-col gap-1">
-									<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Qty</label>
-									<input type="number" min="1" data-bind:edit-quantity class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"/>
+									<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Price (excl.)</label>
+									<input
+										type="number" step="0.01" min="0"
+										data-bind:edit-unit-price-net
+										data-on:input="$_editPriceMode = 'net'; $editUnitPrice = $editUnitPriceNet ? (Math.round(parseFloat($editUnitPriceNet) * (100 + parseInt($editVATRate))) / 100).toFixed(2) : ''"
+										class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+									/>
 								</div>
 								<div class="flex flex-col gap-1">
-									<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Price (incl. VAT)</label>
-									<input type="number" step="0.01" min="0" data-bind:edit-unit-price class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"/>
+									<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Price (incl.)</label>
+									<input
+										type="number" step="0.01" min="0"
+										data-bind:edit-unit-price
+										data-on:input="$_editPriceMode = 'gross'; $editUnitPriceNet = $editUnitPrice ? (Math.round(parseFloat($editUnitPrice) * 10000 / (100 + parseInt($editVATRate))) / 100).toFixed(2) : ''"
+										class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+									/>
 								</div>
 								<div class="flex flex-col gap-1">
 									<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">VAT %</label>
-									@vatRateSelect("editVATRate")
+									@vatRateSelectWithRecalc("editVATRate", "editUnitPrice", "editUnitPriceNet", "_editPriceMode")
 								</div>
 							</div>
 							<div class="flex gap-2 pt-2">
@@ -336,7 +350,7 @@ templ invoiceDetailContent(inv queries.InvoiceReadModel) {
 							if inv.Status == string(domain.StatusDraft) {
 								<tr
 									class="hover:bg-neutral-800/40 transition-colors cursor-pointer"
-									data-on:click={ fmt.Sprintf("$_editLineID = '%s'; $editProductName = '%s'; $editDescription = '%s'; $editQuantity = '%d'; $editUnitPrice = '%s'; $editVATRate = '%d'; $_editOpen = true", li.ID, escapeJS(li.ProductName), escapeJS(li.Description), li.Quantity, formatCentsPlain(li.UnitPriceGross), li.VATRate) }
+									data-on:click={ fmt.Sprintf("$_editLineID = '%s'; $editProductName = '%s'; $editDescription = '%s'; $editQuantity = '%d'; $editUnitPrice = '%s'; $editUnitPriceNet = '%s'; $editVATRate = '%d'; $_editPriceMode = 'gross'; $_editOpen = true", li.ID, escapeJS(li.ProductName), escapeJS(li.Description), li.Quantity, formatCentsPlain(li.UnitPriceGross), formatCentsPlain(li.UnitPrice), li.VATRate) }
 								>
 									<td class="px-4 py-3 text-sm text-neutral-200">{ li.ProductName }</td>
 									<td class="px-4 py-3 text-sm text-neutral-400">{ li.Description }</td>
@@ -431,20 +445,33 @@ templ invoiceDetailContent(inv queries.InvoiceReadModel) {
 								class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
 							/>
 						</div>
-						<div class="flex flex-col gap-1 w-28">
+						<div class="flex flex-col gap-1 w-24">
+							<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Price (excl.)</label>
+							<input
+								type="number"
+								step="0.01"
+								min="0"
+								data-bind:line-unit-price-net
+								data-on:input="$_linePriceMode = 'net'; $lineUnitPrice = $lineUnitPriceNet ? (Math.round(parseFloat($lineUnitPriceNet) * (100 + parseInt($lineVATRate))) / 100).toFixed(2) : ''"
+								placeholder="0.00"
+								class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+							/>
+						</div>
+						<div class="flex flex-col gap-1 w-24">
 							<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Price (incl.)</label>
 							<input
 								type="number"
 								step="0.01"
 								min="0"
 								data-bind:line-unit-price
+								data-on:input="$_linePriceMode = 'gross'; $lineUnitPriceNet = $lineUnitPrice ? (Math.round(parseFloat($lineUnitPrice) * 10000 / (100 + parseInt($lineVATRate))) / 100).toFixed(2) : ''"
 								placeholder="0.00"
 								class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
 							/>
 						</div>
 						<div class="flex flex-col gap-1 w-20">
 							<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">VAT</label>
-							@vatRateSelect("lineVATRate")
+							@vatRateSelectWithRecalc("lineVATRate", "lineUnitPrice", "lineUnitPriceNet", "_linePriceMode")
 						</div>
 						<button
 							type="button"
@@ -472,7 +499,7 @@ templ CreateInvoicePage(defaultVATRate int) {
 			</div>
 
 			<div
-				data-signals={ fmt.Sprintf("{customerID: '', customerName: '', customerCode: '', customerSearch: '', _showCustomerResults: false, issueDate: '%s', dueDate: '%s', notes: '', lineProduct1: '', lineDescription1: '', lineQty1: '1', linePrice1: '', lineVATRate1: '%d'}", time.Now().Format("2006-01-02"), time.Now().AddDate(0, 0, 30).Format("2006-01-02"), defaultVATRate) }
+				data-signals={ fmt.Sprintf("{customerID: '', customerName: '', customerCode: '', customerSearch: '', _showCustomerResults: false, issueDate: '%s', dueDate: '%s', notes: '', lineProduct1: '', lineDescription1: '', lineQty1: '1', linePrice1: '', linePriceNet1: '', lineVATRate1: '%d', _priceMode1: 'gross'}", time.Now().Format("2006-01-02"), time.Now().AddDate(0, 0, 30).Format("2006-01-02"), defaultVATRate) }
 			>
 				<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6 flex flex-col gap-5">
 					<!-- Customer search -->
@@ -547,13 +574,29 @@ templ CreateInvoicePage(defaultVATRate int) {
 								<label class="text-xs text-neutral-500">Qty</label>
 								<input type="number" min="1" data-bind:line-qty1 class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"/>
 							</div>
-							<div class="flex flex-col gap-1 w-28">
-								<label class="text-xs text-neutral-500">Price (incl. VAT)</label>
-								<input type="number" step="0.01" min="0" data-bind:line-price1 placeholder="0.00" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
+							<div class="flex flex-col gap-1 w-24">
+								<label class="text-xs text-neutral-500">Price (excl.)</label>
+								<input
+									type="number" step="0.01" min="0"
+									data-bind:line-price-net1
+									data-on:input="$_priceMode1 = 'net'; $linePrice1 = $linePriceNet1 ? (Math.round(parseFloat($linePriceNet1) * (100 + parseInt($lineVATRate1))) / 100).toFixed(2) : ''"
+									placeholder="0.00"
+									class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+								/>
+							</div>
+							<div class="flex flex-col gap-1 w-24">
+								<label class="text-xs text-neutral-500">Price (incl.)</label>
+								<input
+									type="number" step="0.01" min="0"
+									data-bind:line-price1
+									data-on:input="$_priceMode1 = 'gross'; $linePriceNet1 = $linePrice1 ? (Math.round(parseFloat($linePrice1) * 10000 / (100 + parseInt($lineVATRate1))) / 100).toFixed(2) : ''"
+									placeholder="0.00"
+									class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+								/>
 							</div>
 							<div class="flex flex-col gap-1 w-20">
 								<label class="text-xs text-neutral-500">VAT</label>
-								@vatRateSelectCreate("lineVATRate1", defaultVATRate)
+								@vatRateSelectCreateWithRecalc("lineVATRate1", defaultVATRate, "linePrice1", "linePriceNet1", "_priceMode1")
 							</div>
 						</div>
 					</div>
@@ -614,6 +657,34 @@ templ vatRateSelect(bindName string) {
 templ vatRateSelectCreate(bindName string, defaultRate int) {
 	<select
 		data-bind={ bindName }
+		class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+	>
+		<option value="21" selected?={ defaultRate == 21 }>21%</option>
+		<option value="9" selected?={ defaultRate == 9 }>9%</option>
+		<option value="5" selected?={ defaultRate == 5 }>5%</option>
+		<option value="0" selected?={ defaultRate == 0 }>0%</option>
+	</select>
+}
+
+// vatRateSelectWithRecalc renders a VAT rate dropdown that recalculates prices when changed.
+templ vatRateSelectWithRecalc(bindName, grossSignal, netSignal, modeSignal string) {
+	<select
+		data-bind={ bindName }
+		data-on:change={ fmt.Sprintf("$%s === 'net' ? ($%s = $%s ? (Math.round(parseFloat($%s) * (100 + parseInt($%s))) / 100).toFixed(2) : '') : ($%s = $%s ? (Math.round(parseFloat($%s) * 10000 / (100 + parseInt($%s))) / 100).toFixed(2) : '')", modeSignal, grossSignal, netSignal, netSignal, bindName, netSignal, grossSignal, grossSignal, bindName) }
+		class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+	>
+		<option value="21">21%</option>
+		<option value="9">9%</option>
+		<option value="5">5%</option>
+		<option value="0">0%</option>
+	</select>
+}
+
+// vatRateSelectCreateWithRecalc renders a VAT rate dropdown for create page with recalc on change.
+templ vatRateSelectCreateWithRecalc(bindName string, defaultRate int, grossSignal, netSignal, modeSignal string) {
+	<select
+		data-bind={ bindName }
+		data-on:change={ fmt.Sprintf("$%s === 'net' ? ($%s = $%s ? (Math.round(parseFloat($%s) * (100 + parseInt($%s))) / 100).toFixed(2) : '') : ($%s = $%s ? (Math.round(parseFloat($%s) * 10000 / (100 + parseInt($%s))) / 100).toFixed(2) : '')", modeSignal, grossSignal, netSignal, netSignal, bindName, netSignal, grossSignal, grossSignal, bindName) }
 		class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
 	>
 		<option value="21" selected?={ defaultRate == 21 }>21%</option>
