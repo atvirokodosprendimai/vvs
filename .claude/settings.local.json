@@ -64,7 +64,10 @@
       "Bash(xargs cat:*)",
       "Bash(node:*)",
       "Bash(xargs perl:*)",
-      "Bash(perl -pe \"s/\\\\@\\(get|post|put|delete|patch\\)\\\\\\(\\\\x27\\([^\\\\x27]*\\)\\\\x27\\\\\\)\\(?!, \\\\{openWhenHidden: false\\\\}\\)/\\\\@\\\\$1\\(\\\\x27\\\\$2\\\\x27, {openWhenHidden: false}\\)/g\")"
+      "Bash(perl -pe \"s/\\\\@\\(get|post|put|delete|patch\\)\\\\\\(\\\\x27\\([^\\\\x27]*\\)\\\\x27\\\\\\)\\(?!, \\\\{openWhenHidden: false\\\\}\\)/\\\\@\\\\$1\\(\\\\x27\\\\$2\\\\x27, {openWhenHidden: false}\\)/g\")",
+      "Bash(go tool:*)",
+      "Bash(sort -t% -k2 -n)",
+      "Bash(sort -t% -k1 -rn)"
     ]
   }
 }
