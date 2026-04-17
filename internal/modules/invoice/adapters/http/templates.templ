@@ -647,7 +647,7 @@ templ CreateInvoicePage(defaultVATRate int) {
 
 // customerSearchResults renders the dropdown of customer search results.
 templ customerSearchResults(results []CustomerSearchResult) {
-	<div id="customer-search-results">
+	<div id="customer-search-results" data-show="$_showCustomerResults" style="display:none">
 		if len(results) > 0 {
 			<div class="absolute z-10 left-0 right-0 mt-1 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
 				for _, c := range results {
