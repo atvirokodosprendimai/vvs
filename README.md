@@ -1,5 +1,8 @@
 # VVS ISP Manager
 
+<img width="2586" height="1462" alt="image" src="https://github.com/user-attachments/assets/30b1e4f4-be53-4655-8aa6-97a229d5c66c" />
+
+
 Business management system for an ISP. Manages customers, products, recurring invoices, payments, and team chat. Single binary, no external services required.
 
 ## Tech Stack
