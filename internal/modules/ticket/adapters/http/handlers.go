@@ -79,6 +79,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/tickets", h.ticketsPage)
 	r.Get("/tickets/{ticketID}", h.ticketDetailPage)
 	r.Get("/sse/tickets", h.listAllSSE)
+	r.Get("/sse/tickets/{ticketID}/detail", h.detailSSE)
 }
 
 // listSSE streams the ticket table for a customer, refreshing on any isp.ticket.* event.
@@ -215,24 +216,16 @@ func (h *Handlers) changeStatusSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sse := datastar.NewSSE(w, r)
-
 	if err := h.changeStatusCmd.Handle(r.Context(), commands.ChangeTicketStatusCommand{
 		ID:     ticketID,
 		Action: signals.TicketAction,
 	}); err != nil {
 		log.Printf("ticket handler: changeStatusSSE Handle: %v", err)
+		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(ticketFormError(err.Error()))
 		return
 	}
-
-	// Re-render status actions for the detail page.
-	if h.getTicketQuery != nil {
-		if tk, err := h.getTicketQuery.Handle(r.Context(), queries.GetTicketQuery{ID: ticketID}); err == nil {
-			sse.PatchElementTempl(ticketStatusActions(*tk))
-			sse.PatchElementTempl(ticketStatusInline(tk.Status))
-		}
-	}
+	w.WriteHeader(http.StatusOK)
 }
 
 // deleteSSE deletes a ticket.
@@ -393,6 +386,49 @@ func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
 			if !reflect.DeepEqual(current, next) {
 				sse.PatchElementTempl(AllTicketList(next))
 				current = next
+			}
+		case <-r.Context().Done():
+			return
+		}
+	}
+}
+
+// detailSSE streams ticket detail partials (status actions + badge), refreshing on isp.ticket.* events.
+func (h *Handlers) detailSSE(w http.ResponseWriter, r *http.Request) {
+	ticketID := chi.URLParam(r, "ticketID")
+	if ticketID == "" || h.getTicketQuery == nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+
+	ch, cancel := h.subscriber.ChanSubscription("isp.ticket.*")
+	defer cancel()
+
+	tk, err := h.getTicketQuery.Handle(r.Context(), queries.GetTicketQuery{ID: ticketID})
+	if err != nil {
+		log.Printf("ticket handler: detailSSE: %v", err)
+		return
+	}
+	sse.PatchElementTempl(ticketStatusActions(*tk))
+	sse.PatchElementTempl(ticketStatusInline(tk.Status))
+
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				return
+			}
+			next, err := h.getTicketQuery.Handle(r.Context(), queries.GetTicketQuery{ID: ticketID})
+			if err != nil {
+				log.Printf("ticket handler: detailSSE refresh: %v", err)
+				continue
+			}
+			if next.Status != tk.Status {
+				sse.PatchElementTempl(ticketStatusActions(*next))
+				sse.PatchElementTempl(ticketStatusInline(next.Status))
+				tk = next
 			}
 		case <-r.Context().Done():
 			return
