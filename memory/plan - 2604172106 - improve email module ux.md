@@ -39,46 +39,39 @@ status: active
 
 ## Phases
 
-### Phase 1 - Quick polish — status: open
+### Phase 1 - Quick polish — status: active
 
-1. [ ] Tag filter active state
+1. [x] Tag filter active state
    - `tagFilterButton` compares `$emailTagFilter` to name, adds amber text + bg when active
    - Use `data-class:text-amber-400="$emailTagFilter == 'unread'"` pattern (one component, one check)
    - Simpler: pass active via Go param or use `data-class` directly in templ
 
-2. [ ] Move reply form below messages in `EmailThreadPage`
-   - In `EmailThreadPage`: render `@ThreadDetail(thread)` first, then `@replyForm(thread.ID)`
-   - One-line swap
+2. [x] Move reply form below messages in `EmailThreadPage`
+   - => swapped `@ThreadDetail` before `@replyForm` in `EmailThreadPage`
 
-3. [ ] Clear compose signals on success
-   - In `composeSSE` handler: after sending, patch signals `{composeOpen: false, composeTo: '', composeSubject: '', composeBody: '', composeError: ''}`
-   - Use `sse.PatchSignals(...)` via datastar SDK
+3. [x] Clear compose signals on success
+   - => already done in existing `composeSSE` — patches `{composeTo:'',composeSubject:'',composeBody:'',composeError:'',composeOpen:false}`
 
-4. [ ] Clear reply body on success
-   - In `replySSE` handler: after sending, patch `{emailReplyBody: '', emailReplyError: ''}`
-   - Patch `ThreadDetail` fragment too (to show new message in thread)
+4. [x] Clear reply body on success
+   - => already done in existing `replySSE` — patches `{emailReplyBody:'',emailReplyError:''}` + re-fetches `ThreadDetail`
 
 5. [ ] Unread count badge on account sidebar
    - `ListAccountsHandler` read model needs `UnreadCount int` field
    - Query: `COUNT threads WHERE account_id = ? AND has_unread_tag`
    - Sidebar account link renders count badge when > 0
 
-6. [ ] Add `CustomerName`/`CustomerCode` to `ThreadReadModel`
-   - Add fields to `read_model.go`: `CustomerName string`, `CustomerCode string`
-   - Enrich in HTTP layer: inject `customerNameResolver` into email `Handlers`, resolve after `listThreads.Handle`
-   - Pattern already used in deal/ticket handlers — same `customerNameResolver` interface
-   - `threadToReadModel` stays pure; enrichment is HTTP adapter concern
+6. [x] Add `CustomerName`/`CustomerCode` to `ThreadReadModel`
+   - => added fields to `read_model.go`
+   - => added `customerInfoResolver` interface + `WithCustomerInfo` builder to `Handlers`
+   - => added `enrichThreadList` and `enrichDetail` helpers; called in `listSSE`, `threadSSE`, `threadPage`, `replySSE`
 
-7. [ ] Show customer badge on thread rows in inbox
-   - `threadRow` component: when `t.CustomerName != ""`, render pill `[CustomerCode · CustomerName]` in amber
-   - Link pill to `/customers/{t.CustomerID}`
-   - Replaces the participant address line when customer is known (or shows alongside it)
+7. [x] Show customer badge on thread rows in inbox
+   - => `threadRow`: when `t.CustomerName != ""` shows amber `{code} · {name}` span; else shows participant address
 
-8. [ ] Fix `customerLinkBadge` to show name/code (not just "Linked")
-   - `ThreadDetailReadModel` already embeds `ThreadReadModel` → has `CustomerName`, `CustomerCode` after fix #6
-   - In `customerLinkBadge`: render `{customerLabel}` is already there but called with `""` as 3rd arg
-   - `threadSSE` handler: pass `thread.CustomerName` as `customerLabel` to the template
-   - Badge becomes: `Acme Corp (CLI-001)` linkable to `/customers/{id}`, with unlink `×`
+8. [x] Fix `customerLinkBadge` to show name/code (not just "Linked")
+   - => added `customerBadgeLabel(name, code) string` helper
+   - => `ThreadDetail` now passes `customerBadgeLabel(thread.CustomerName, thread.CustomerCode)` as label
+   - => renders as `CLI-001 · Acme Corp` linked to customer page
 
 ### Phase 2 - 3-pane inline reading — status: open
 
@@ -151,4 +144,4 @@ Goal: clicking a thread shows detail in a right panel inside the inbox, without 
 
 ## Progress Log
 
-<!-- updated after each completed action -->
+- **2604172106** — Phase 1 complete (actions 1–4, 6–8). Action 5 (unread count) deferred — requires domain repo interface change. Actions 3+4 were already done in existing code.
