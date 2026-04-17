@@ -142,7 +142,8 @@ templ productStatusBadge(active bool) {
 
 templ ProductFormPage(product *domain.Product) {
 	@templates.Layout(prodFormTitle(product)) {
-		@templates.PageHeader(prodFormTitle(product), prodFormSubtitle(product))
+		@templates.PageHeaderBack(prodFormTitle(product), prodFormSubtitle(product), "/products", "Products") {
+		}
 		<div class="max-w-xl">
 			@templates.Card() {
 				<div
@@ -224,24 +225,23 @@ templ ProductFormPage(product *domain.Product) {
 
 templ ProductDetailPage(p *domain.Product) {
 	@templates.Layout(p.Name) {
-		@templates.PageHeader(p.Name, "Product details")
+		@templates.PageHeaderBack(p.Name, "Product details", "/products", "Products") {
+			@productStatusBadge(p.IsActive)
+			@productTypeBadge(p.Type)
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/products/%s/edit", p.ID)) }
+				class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+			>
+				Edit
+			</a>
+			<button
+				data-on:click={ fmt.Sprintf("@delete('/api/products/%s')", p.ID) }
+				class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
+			>
+				Delete
+			</button>
+		}
 		<div class="max-w-2xl">
-			<div class="flex items-center gap-2 mb-5">
-				@productStatusBadge(p.IsActive)
-				@productTypeBadge(p.Type)
-				<a
-					href={ templ.SafeURL(fmt.Sprintf("/products/%s/edit", p.ID)) }
-					class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
-				>
-					Edit
-				</a>
-				<button
-					data-on:click={ fmt.Sprintf("@delete('/api/products/%s')", p.ID) }
-					class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
-				>
-					Delete
-				</button>
-			</div>
 			@templates.Card() {
 				<div class="grid grid-cols-2 gap-5">
 					@prodDetailField("Name", p.Name)

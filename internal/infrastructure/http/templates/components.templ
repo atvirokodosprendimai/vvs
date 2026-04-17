@@ -27,6 +27,30 @@ templ PageHeaderRow(title string, subtitle string) {
 	</div>
 }
 
+// PageHeaderBack renders a back link above title+subtitle, with optional action buttons on the right.
+// Use this on detail/form pages that belong to a list page.
+templ PageHeaderBack(title string, subtitle string, backHref string, backLabel string) {
+	<div class="mb-6">
+		<a href={ templ.SafeURL(backHref) } class="inline-flex items-center gap-1 text-xs text-neutral-500 hover:text-neutral-300 transition-colors mb-3">
+			<svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+			</svg>
+			{ backLabel }
+		</a>
+		<div class="flex items-center justify-between">
+			<div>
+				<h1 class="text-xl font-semibold text-neutral-100 tracking-tight">{ title }</h1>
+				if subtitle != "" {
+					<p class="text-neutral-500 text-sm mt-0.5">{ subtitle }</p>
+				}
+			</div>
+			<div class="flex items-center gap-2">
+				{ children... }
+			</div>
+		</div>
+	</div>
+}
+
 templ Card() {
 	<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5">
 		{ children... }
