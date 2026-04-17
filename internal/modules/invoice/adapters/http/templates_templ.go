@@ -56,7 +56,7 @@ func InvoiceListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"invoices-page\" data-signals=\"{statusFilter: ''}\" data-init=\"@get('/sse/invoices')\"><!-- Status filter tabs --><div class=\"flex items-center gap-2 mb-4\"><button type=\"button\" data-on:click=\"$statusFilter = ''; @get('/sse/invoices')\" data-bind:class=\"$statusFilter === '' ? 'bg-amber-600 text-white border-amber-600' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-neutral-200'\" class=\"px-3 py-1.5 rounded text-xs font-medium transition-colors border\">All</button> <button type=\"button\" data-on:click=\"$statusFilter = 'draft'; @get('/sse/invoices')\" data-bind:class=\"$statusFilter === 'draft' ? 'bg-neutral-600 text-white border-neutral-600' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-neutral-200'\" class=\"px-3 py-1.5 rounded text-xs font-medium transition-colors border\">Draft</button> <button type=\"button\" data-on:click=\"$statusFilter = 'finalized'; @get('/sse/invoices')\" data-bind:class=\"$statusFilter === 'finalized' ? 'bg-blue-600 text-white border-blue-600' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-neutral-200'\" class=\"px-3 py-1.5 rounded text-xs font-medium transition-colors border\">Finalized</button> <button type=\"button\" data-on:click=\"$statusFilter = 'paid'; @get('/sse/invoices')\" data-bind:class=\"$statusFilter === 'paid' ? 'bg-green-600 text-white border-green-600' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-neutral-200'\" class=\"px-3 py-1.5 rounded text-xs font-medium transition-colors border\">Paid</button> <button type=\"button\" data-on:click=\"$statusFilter = 'void'; @get('/sse/invoices')\" data-bind:class=\"$statusFilter === 'void' ? 'bg-neutral-500 text-white border-neutral-500' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-neutral-200'\" class=\"px-3 py-1.5 rounded text-xs font-medium transition-colors border\">Void</button><div class=\"flex-1\"></div><a href=\"/invoices/new\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-4 py-1.5 rounded text-xs font-medium transition-colors\">+ New Invoice</a></div><div id=\"invoice-table\"><div class=\"text-neutral-600 text-sm py-10 text-center\">Loading...</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, " <div id=\"invoices-page\" data-signals=\"{statusFilter: ''}\" data-init=\"@get('/sse/invoices')\"><!-- Status filter tabs --><div class=\"flex items-center gap-2 mb-4\"><button type=\"button\" data-on:click=\"$statusFilter = ''; @get('/sse/invoices')\" data-class:bg-amber-600=\"$statusFilter === ''\" data-class:text-white=\"$statusFilter === ''\" data-class:border-amber-600=\"$statusFilter === ''\" data-class:bg-neutral-800=\"$statusFilter !== ''\" data-class:text-neutral-400=\"$statusFilter !== ''\" data-class:border-neutral-700=\"$statusFilter !== ''\" class=\"px-3 py-1.5 rounded text-xs font-medium transition-colors border\">All</button> <button type=\"button\" data-on:click=\"$statusFilter = 'draft'; @get('/sse/invoices')\" data-class:bg-neutral-600=\"$statusFilter === 'draft'\" data-class:text-white=\"$statusFilter === 'draft'\" data-class:border-neutral-600=\"$statusFilter === 'draft'\" data-class:bg-neutral-800=\"$statusFilter !== 'draft'\" data-class:text-neutral-400=\"$statusFilter !== 'draft'\" data-class:border-neutral-700=\"$statusFilter !== 'draft'\" class=\"px-3 py-1.5 rounded text-xs font-medium transition-colors border\">Draft</button> <button type=\"button\" data-on:click=\"$statusFilter = 'finalized'; @get('/sse/invoices')\" data-class:bg-blue-600=\"$statusFilter === 'finalized'\" data-class:text-white=\"$statusFilter === 'finalized'\" data-class:border-blue-600=\"$statusFilter === 'finalized'\" data-class:bg-neutral-800=\"$statusFilter !== 'finalized'\" data-class:text-neutral-400=\"$statusFilter !== 'finalized'\" data-class:border-neutral-700=\"$statusFilter !== 'finalized'\" class=\"px-3 py-1.5 rounded text-xs font-medium transition-colors border\">Finalized</button> <button type=\"button\" data-on:click=\"$statusFilter = 'paid'; @get('/sse/invoices')\" data-class:bg-green-600=\"$statusFilter === 'paid'\" data-class:text-white=\"$statusFilter === 'paid'\" data-class:border-green-600=\"$statusFilter === 'paid'\" data-class:bg-neutral-800=\"$statusFilter !== 'paid'\" data-class:text-neutral-400=\"$statusFilter !== 'paid'\" data-class:border-neutral-700=\"$statusFilter !== 'paid'\" class=\"px-3 py-1.5 rounded text-xs font-medium transition-colors border\">Paid</button> <button type=\"button\" data-on:click=\"$statusFilter = 'void'; @get('/sse/invoices')\" data-class:bg-neutral-500=\"$statusFilter === 'void'\" data-class:text-white=\"$statusFilter === 'void'\" data-class:border-neutral-500=\"$statusFilter === 'void'\" data-class:bg-neutral-800=\"$statusFilter !== 'void'\" data-class:text-neutral-400=\"$statusFilter !== 'void'\" data-class:border-neutral-700=\"$statusFilter !== 'void'\" class=\"px-3 py-1.5 rounded text-xs font-medium transition-colors border\">Void</button><div class=\"flex-1\"></div><a href=\"/invoices/new\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-4 py-1.5 rounded text-xs font-medium transition-colors\">+ New Invoice</a></div><div id=\"invoice-table\"><div class=\"text-neutral-600 text-sm py-10 text-center\">Loading...</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -114,7 +114,7 @@ func InvoiceTable(invoices []queries.InvoiceReadModel) templ.Component {
 				var templ_7745c5c3_Var4 templ.SafeURL
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/invoices/%s", inv.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 94, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 119, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -127,7 +127,7 @@ func InvoiceTable(invoices []queries.InvoiceReadModel) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(inv.Code)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 96, Col: 20}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 121, Col: 20}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -145,7 +145,7 @@ func InvoiceTable(invoices []queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var6 templ.SafeURL
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/customers/%s", inv.CustomerID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 101, Col: 77}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 126, Col: 77}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -158,7 +158,7 @@ func InvoiceTable(invoices []queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(inv.CustomerName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 103, Col: 29}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 128, Col: 29}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -181,7 +181,7 @@ func InvoiceTable(invoices []queries.InvoiceReadModel) templ.Component {
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(inv.IssueDate.Format("Jan 2, 2006"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 108, Col: 92}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 133, Col: 92}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -199,7 +199,7 @@ func InvoiceTable(invoices []queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(inv.DueDate.Format("Jan 2, 2006"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 111, Col: 72}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 136, Col: 72}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -217,7 +217,7 @@ func InvoiceTable(invoices []queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(inv.DueDate.Format("Jan 2, 2006"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 113, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 138, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -235,7 +235,7 @@ func InvoiceTable(invoices []queries.InvoiceReadModel) templ.Component {
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(formatCentsPlain(inv.SubTotal))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 116, Col: 108}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 141, Col: 108}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -248,7 +248,7 @@ func InvoiceTable(invoices []queries.InvoiceReadModel) templ.Component {
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(formatCentsPlain(inv.VATTotal))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 117, Col: 108}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 142, Col: 108}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -261,7 +261,7 @@ func InvoiceTable(invoices []queries.InvoiceReadModel) templ.Component {
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(formatCents(inv.TotalAmount, inv.Currency))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 118, Col: 120}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 143, Col: 120}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -334,7 +334,7 @@ func InvoiceDetailPage(inv queries.InvoiceReadModel) templ.Component {
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@get('/sse/invoices/%s', {openWhenHidden: false})", inv.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 137, Col: 87}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 162, Col: 87}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -347,7 +347,7 @@ func InvoiceDetailPage(inv queries.InvoiceReadModel) templ.Component {
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(inv.Code)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 148, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 173, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -373,7 +373,7 @@ func InvoiceDetailPage(inv queries.InvoiceReadModel) templ.Component {
 				var templ_7745c5c3_Var18 templ.SafeURL
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/customers/%s", inv.CustomerID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 154, Col: 74}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 179, Col: 74}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -386,7 +386,7 @@ func InvoiceDetailPage(inv queries.InvoiceReadModel) templ.Component {
 				var templ_7745c5c3_Var19 string
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(inv.CustomerName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 156, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 181, Col: 26}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {
@@ -404,7 +404,7 @@ func InvoiceDetailPage(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var20 string
 					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(inv.CustomerCode)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 158, Col: 75}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 183, Col: 75}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 					if templ_7745c5c3_Err != nil {
@@ -423,7 +423,7 @@ func InvoiceDetailPage(inv queries.InvoiceReadModel) templ.Component {
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(inv.CreatedAt.Format("Jan 2, 2006 15:04"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 161, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 186, Col: 96}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -461,7 +461,7 @@ func InvoiceDetailPage(inv queries.InvoiceReadModel) templ.Component {
 				var templ_7745c5c3_Var22 string
 				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/invoices/%s/lines/' + $_editLineID); $_editOpen = false", inv.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 234, Col: 114}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 259, Col: 114}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
@@ -520,7 +520,7 @@ func invoiceStatusActions(inv queries.InvoiceReadModel) templ.Component {
 			var templ_7745c5c3_Var24 string
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/invoices/%s/finalize')", inv.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 257, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 282, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
@@ -533,7 +533,7 @@ func invoiceStatusActions(inv queries.InvoiceReadModel) templ.Component {
 			var templ_7745c5c3_Var25 string
 			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/invoices/%s/void')", inv.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 262, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 287, Col: 72}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 			if templ_7745c5c3_Err != nil {
@@ -552,7 +552,7 @@ func invoiceStatusActions(inv queries.InvoiceReadModel) templ.Component {
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/invoices/%s/pay')", inv.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 269, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 294, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -565,7 +565,7 @@ func invoiceStatusActions(inv queries.InvoiceReadModel) templ.Component {
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/invoices/%s/void')", inv.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 274, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 299, Col: 72}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -589,7 +589,7 @@ func invoiceStatusActions(inv queries.InvoiceReadModel) templ.Component {
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(inv.PaidAt.Format("Jan 2, 2006 15:04"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 281, Col: 90}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 306, Col: 90}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -644,7 +644,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(inv.IssueDate.Format("Jan 2, 2006"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 298, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 323, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {
@@ -679,7 +679,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(inv.DueDate.Format("Jan 2, 2006"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 302, Col: 156}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 327, Col: 156}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -692,7 +692,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(inv.Currency)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 306, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 331, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
@@ -705,7 +705,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(formatCents(inv.TotalAmount, inv.Currency))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 310, Col: 111}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 335, Col: 111}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
@@ -723,7 +723,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(inv.Notes)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 318, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 343, Col: 73}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -741,7 +741,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(inv.LineItems)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 326, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 351, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
@@ -780,7 +780,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var38 string
 					templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$_editLineID = '%s'; $editProductName = '%s'; $editDescription = '%s'; $editQuantity = '%d'; $editUnitPrice = '%s'; $editUnitPriceNet = '%s'; $editVATRate = '%d'; $_editPriceMode = 'gross'; $_editOpen = true", li.ID, escapeJS(li.ProductName), escapeJS(li.Description), li.Quantity, formatCentsPlain(li.UnitPriceGross), formatCentsPlain(li.UnitPrice), li.VATRate))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 353, Col: 400}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 378, Col: 400}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 					if templ_7745c5c3_Err != nil {
@@ -793,7 +793,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var39 string
 					templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(li.ProductName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 355, Col: 72}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 380, Col: 72}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 					if templ_7745c5c3_Err != nil {
@@ -806,7 +806,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var40 string
 					templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(li.Description)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 356, Col: 72}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 381, Col: 72}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 					if templ_7745c5c3_Err != nil {
@@ -819,7 +819,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var41 string
 					templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", li.Quantity))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 357, Col: 112}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 382, Col: 112}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 					if templ_7745c5c3_Err != nil {
@@ -832,7 +832,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var42 string
 					templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(formatCentsPlain(li.UnitPriceGross))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 358, Col: 127}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 383, Col: 127}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 					if templ_7745c5c3_Err != nil {
@@ -845,7 +845,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var43 string
 					templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d%%", li.VATRate))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 359, Col: 113}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 384, Col: 113}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 					if templ_7745c5c3_Err != nil {
@@ -858,7 +858,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var44 string
 					templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(formatCentsPlain(li.TotalPrice))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 360, Col: 123}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 385, Col: 123}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 					if templ_7745c5c3_Err != nil {
@@ -871,7 +871,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var45 string
 					templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(formatCentsPlain(li.TotalVAT))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 361, Col: 121}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 386, Col: 121}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 					if templ_7745c5c3_Err != nil {
@@ -884,7 +884,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var46 string
 					templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(formatCentsPlain(li.TotalGross))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 362, Col: 123}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 387, Col: 123}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 					if templ_7745c5c3_Err != nil {
@@ -897,7 +897,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var47 string
 					templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/invoices/%s/lines/%s')", inv.ID, li.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 366, Col: 99}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 391, Col: 99}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 					if templ_7745c5c3_Err != nil {
@@ -915,7 +915,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var48 string
 					templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(li.ProductName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 373, Col: 72}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 398, Col: 72}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 					if templ_7745c5c3_Err != nil {
@@ -928,7 +928,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var49 string
 					templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(li.Description)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 374, Col: 72}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 399, Col: 72}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 					if templ_7745c5c3_Err != nil {
@@ -941,7 +941,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var50 string
 					templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", li.Quantity))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 375, Col: 112}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 400, Col: 112}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 					if templ_7745c5c3_Err != nil {
@@ -954,7 +954,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var51 string
 					templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(formatCentsPlain(li.UnitPriceGross))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 376, Col: 127}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 401, Col: 127}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 					if templ_7745c5c3_Err != nil {
@@ -967,7 +967,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var52 string
 					templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d%%", li.VATRate))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 377, Col: 113}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 402, Col: 113}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 					if templ_7745c5c3_Err != nil {
@@ -980,7 +980,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var53 string
 					templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(formatCentsPlain(li.TotalPrice))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 378, Col: 123}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 403, Col: 123}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 					if templ_7745c5c3_Err != nil {
@@ -993,7 +993,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var54 string
 					templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(formatCentsPlain(li.TotalVAT))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 379, Col: 121}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 404, Col: 121}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 					if templ_7745c5c3_Err != nil {
@@ -1006,7 +1006,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 					var templ_7745c5c3_Var55 string
 					templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(formatCentsPlain(li.TotalGross))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 380, Col: 123}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 405, Col: 123}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 					if templ_7745c5c3_Err != nil {
@@ -1025,7 +1025,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 			var templ_7745c5c3_Var56 string
 			templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(formatCentsPlain(inv.SubTotal))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 388, Col: 120}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 413, Col: 120}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 			if templ_7745c5c3_Err != nil {
@@ -1048,7 +1048,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 			var templ_7745c5c3_Var57 string
 			templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(formatCentsPlain(inv.VATTotal))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 398, Col: 120}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 423, Col: 120}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 			if templ_7745c5c3_Err != nil {
@@ -1071,7 +1071,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 			var templ_7745c5c3_Var58 string
 			templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(formatCents(inv.TotalAmount, inv.Currency))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 408, Col: 144}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 433, Col: 144}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 			if templ_7745c5c3_Err != nil {
@@ -1112,7 +1112,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 			var templ_7745c5c3_Var59 string
 			templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/invoices/%s/lines')", inv.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 478, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 503, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 			if templ_7745c5c3_Err != nil {
@@ -1172,7 +1172,7 @@ func CreateInvoicePage(defaultVATRate int) templ.Component {
 			var templ_7745c5c3_Var62 string
 			templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("{customerID: '', customerName: '', customerCode: '', customerSearch: '', _showCustomerResults: false, issueDate: '%s', dueDate: '%s', notes: '', lineProduct1: '', lineDescription1: '', lineQty1: '1', linePrice1: '', linePriceNet1: '', lineVATRate1: '%d', _priceMode1: 'gross'}", time.Now().Format("2006-01-02"), time.Now().AddDate(0, 0, 30).Format("2006-01-02"), defaultVATRate))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 502, Col: 410}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 527, Col: 410}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 			if templ_7745c5c3_Err != nil {
@@ -1239,7 +1239,7 @@ func customerSearchResults(results []CustomerSearchResult) templ.Component {
 				var templ_7745c5c3_Var64 string
 				templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$customerID = '%s'; $customerName = '%s'; $customerCode = '%s'; $customerSearch = '%s'; $_showCustomerResults = false", c.ID, escapeJS(c.CompanyName), escapeJS(c.Code), escapeJS(c.CompanyName)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 631, Col: 228}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 656, Col: 228}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
 				if templ_7745c5c3_Err != nil {
@@ -1252,7 +1252,7 @@ func customerSearchResults(results []CustomerSearchResult) templ.Component {
 				var templ_7745c5c3_Var65 string
 				templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(c.Code)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 634, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 659, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
 				if templ_7745c5c3_Err != nil {
@@ -1265,7 +1265,7 @@ func customerSearchResults(results []CustomerSearchResult) templ.Component {
 				var templ_7745c5c3_Var66 string
 				templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(c.CompanyName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 635, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 660, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
 				if templ_7745c5c3_Err != nil {
@@ -1318,7 +1318,7 @@ func vatRateSelect(bindName string) templ.Component {
 		var templ_7745c5c3_Var68 string
 		templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.JoinStringErrs(bindName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 646, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 671, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var68))
 		if templ_7745c5c3_Err != nil {
@@ -1361,7 +1361,7 @@ func vatRateSelectCreate(bindName string, defaultRate int) templ.Component {
 		var templ_7745c5c3_Var70 string
 		templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.JoinStringErrs(bindName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 659, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 684, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var70))
 		if templ_7745c5c3_Err != nil {
@@ -1444,7 +1444,7 @@ func vatRateSelectWithRecalc(bindName, grossSignal, netSignal, modeSignal string
 		var templ_7745c5c3_Var72 string
 		templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(bindName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 672, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 697, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var72))
 		if templ_7745c5c3_Err != nil {
@@ -1457,7 +1457,7 @@ func vatRateSelectWithRecalc(bindName, grossSignal, netSignal, modeSignal string
 		var templ_7745c5c3_Var73 string
 		templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$%s === 'net' ? ($%s = $%s ? (Math.round(parseFloat($%s) * (100 + parseInt($%s))) / 100).toFixed(2) : '') : ($%s = $%s ? (Math.round(parseFloat($%s) * 10000 / (100 + parseInt($%s))) / 100).toFixed(2) : '')", modeSignal, grossSignal, netSignal, netSignal, bindName, netSignal, grossSignal, grossSignal, bindName))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 673, Col: 343}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 698, Col: 343}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var73))
 		if templ_7745c5c3_Err != nil {
@@ -1500,7 +1500,7 @@ func vatRateSelectCreateWithRecalc(bindName string, defaultRate int, grossSignal
 		var templ_7745c5c3_Var75 string
 		templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.JoinStringErrs(bindName)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 686, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 711, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var75))
 		if templ_7745c5c3_Err != nil {
@@ -1513,7 +1513,7 @@ func vatRateSelectCreateWithRecalc(bindName string, defaultRate int, grossSignal
 		var templ_7745c5c3_Var76 string
 		templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$%s === 'net' ? ($%s = $%s ? (Math.round(parseFloat($%s) * (100 + parseInt($%s))) / 100).toFixed(2) : '') : ($%s = $%s ? (Math.round(parseFloat($%s) * 10000 / (100 + parseInt($%s))) / 100).toFixed(2) : '')", modeSignal, grossSignal, netSignal, netSignal, bindName, netSignal, grossSignal, grossSignal, bindName))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 687, Col: 343}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 712, Col: 343}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var76))
 		if templ_7745c5c3_Err != nil {
@@ -1624,7 +1624,7 @@ func invoiceStatusBadge(status string, overdue bool) templ.Component {
 				var templ_7745c5c3_Var78 string
 				templ_7745c5c3_Var78, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 712, Col: 127}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 737, Col: 127}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var78))
 				if templ_7745c5c3_Err != nil {
@@ -1668,7 +1668,7 @@ func invoiceFormError(message string) templ.Component {
 		var templ_7745c5c3_Var80 string
 		templ_7745c5c3_Var80, templ_7745c5c3_Err = templ.JoinStringErrs(message)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 719, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/invoice/adapters/http/templates.templ`, Line: 744, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var80))
 		if templ_7745c5c3_Err != nil {

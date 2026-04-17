@@ -24,31 +24,56 @@ templ InvoiceListPage() {
 				<button
 					type="button"
 					data-on:click="$statusFilter = ''; @get('/sse/invoices')"
-					data-bind:class="$statusFilter === '' ? 'bg-amber-600 text-white border-amber-600' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-neutral-200'"
+					data-class:bg-amber-600="$statusFilter === ''"
+					data-class:text-white="$statusFilter === ''"
+					data-class:border-amber-600="$statusFilter === ''"
+					data-class:bg-neutral-800="$statusFilter !== ''"
+					data-class:text-neutral-400="$statusFilter !== ''"
+					data-class:border-neutral-700="$statusFilter !== ''"
 					class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 				>All</button>
 				<button
 					type="button"
 					data-on:click="$statusFilter = 'draft'; @get('/sse/invoices')"
-					data-bind:class="$statusFilter === 'draft' ? 'bg-neutral-600 text-white border-neutral-600' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-neutral-200'"
+					data-class:bg-neutral-600="$statusFilter === 'draft'"
+					data-class:text-white="$statusFilter === 'draft'"
+					data-class:border-neutral-600="$statusFilter === 'draft'"
+					data-class:bg-neutral-800="$statusFilter !== 'draft'"
+					data-class:text-neutral-400="$statusFilter !== 'draft'"
+					data-class:border-neutral-700="$statusFilter !== 'draft'"
 					class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 				>Draft</button>
 				<button
 					type="button"
 					data-on:click="$statusFilter = 'finalized'; @get('/sse/invoices')"
-					data-bind:class="$statusFilter === 'finalized' ? 'bg-blue-600 text-white border-blue-600' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-neutral-200'"
+					data-class:bg-blue-600="$statusFilter === 'finalized'"
+					data-class:text-white="$statusFilter === 'finalized'"
+					data-class:border-blue-600="$statusFilter === 'finalized'"
+					data-class:bg-neutral-800="$statusFilter !== 'finalized'"
+					data-class:text-neutral-400="$statusFilter !== 'finalized'"
+					data-class:border-neutral-700="$statusFilter !== 'finalized'"
 					class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 				>Finalized</button>
 				<button
 					type="button"
 					data-on:click="$statusFilter = 'paid'; @get('/sse/invoices')"
-					data-bind:class="$statusFilter === 'paid' ? 'bg-green-600 text-white border-green-600' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-neutral-200'"
+					data-class:bg-green-600="$statusFilter === 'paid'"
+					data-class:text-white="$statusFilter === 'paid'"
+					data-class:border-green-600="$statusFilter === 'paid'"
+					data-class:bg-neutral-800="$statusFilter !== 'paid'"
+					data-class:text-neutral-400="$statusFilter !== 'paid'"
+					data-class:border-neutral-700="$statusFilter !== 'paid'"
 					class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 				>Paid</button>
 				<button
 					type="button"
 					data-on:click="$statusFilter = 'void'; @get('/sse/invoices')"
-					data-bind:class="$statusFilter === 'void' ? 'bg-neutral-500 text-white border-neutral-500' : 'bg-neutral-800 text-neutral-400 border-neutral-700 hover:text-neutral-200'"
+					data-class:bg-neutral-500="$statusFilter === 'void'"
+					data-class:text-white="$statusFilter === 'void'"
+					data-class:border-neutral-500="$statusFilter === 'void'"
+					data-class:bg-neutral-800="$statusFilter !== 'void'"
+					data-class:text-neutral-400="$statusFilter !== 'void'"
+					data-class:border-neutral-700="$statusFilter !== 'void'"
 					class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 				>Void</button>
 				<div class="flex-1"></div>
