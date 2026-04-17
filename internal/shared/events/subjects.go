@@ -258,6 +258,27 @@ var ChatRead Subject = "isp.chat.read.%s"
 var ChatThreadCreated Subject = "isp.chat.thread.created"
 
 // ────────────────────────────────────────────────────────────────────
+// Invoice
+// ────────────────────────────────────────────────────────────────────
+
+var InvoiceAll Subject = "isp.invoice.*"
+
+// InvoiceCreated is published when a new invoice is created.
+var InvoiceCreated Subject = "isp.invoice.created"
+
+// InvoiceUpdated is published when invoice details are modified.
+var InvoiceUpdated Subject = "isp.invoice.updated"
+
+// InvoiceFinalized is published when an invoice is finalized (locked).
+var InvoiceFinalized Subject = "isp.invoice.finalized"
+
+// InvoicePaid is published when an invoice is marked as paid.
+var InvoicePaid Subject = "isp.invoice.paid"
+
+// InvoiceVoided is published when an invoice is voided/cancelled.
+var InvoiceVoided Subject = "isp.invoice.voided"
+
+// ────────────────────────────────────────────────────────────────────
 // Notifications
 // ────────────────────────────────────────────────────────────────────
 
