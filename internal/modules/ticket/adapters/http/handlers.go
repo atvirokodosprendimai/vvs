@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -13,6 +14,18 @@ import (
 	"github.com/vvs/isp/internal/modules/ticket/app/queries"
 	"github.com/vvs/isp/internal/shared/events"
 )
+
+// CustomerSearchResult holds a customer match for the ticket creation search dropdown.
+type CustomerSearchResult struct {
+	ID          string
+	Code        string
+	CompanyName string
+}
+
+// CustomerSearcher searches customers by name/code for ticket creation.
+type CustomerSearcher interface {
+	SearchCustomers(ctx context.Context, query string, limit int) ([]CustomerSearchResult, error)
+}
 
 // Handlers wires together all ticket command/query handlers for the SSE layer.
 type Handlers struct {
@@ -27,6 +40,7 @@ type Handlers struct {
 	listComments    *queries.ListCommentsHandler
 	subscriber      events.EventSubscriber
 	publisher       events.EventPublisher
+	custSearch      CustomerSearcher
 }
 
 func NewHandlers(
@@ -65,6 +79,12 @@ func (h *Handlers) WithGetTicket(q *queries.GetTicketHandler) *Handlers {
 	return h
 }
 
+// WithCustomerSearch adds customer search for the standalone new-ticket modal.
+func (h *Handlers) WithCustomerSearch(cs CustomerSearcher) *Handlers {
+	h.custSearch = cs
+	return h
+}
+
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	// Customer-scoped routes (existing)
 	r.Get("/sse/customers/{id}/tickets", h.listSSE)
@@ -80,6 +100,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/tickets/{ticketID}", h.ticketDetailPage)
 	r.Get("/sse/tickets", h.listAllSSE)
 	r.Get("/sse/tickets/{ticketID}/detail", h.detailSSE)
+	r.Post("/api/tickets", h.createTicket)
+	r.Get("/sse/tickets/customers/search", h.ticketCustomerSearch)
 }
 
 // listSSE streams the ticket table for a customer, refreshing on any isp.ticket.* event.
@@ -452,4 +474,79 @@ func filterTickets(tickets []queries.TicketReadModel, search string) []queries.T
 		}
 	}
 	return out
+}
+
+// createTicket creates a ticket from the standalone page modal (customer from signals).
+func (h *Handlers) createTicket(w http.ResponseWriter, r *http.Request) {
+	var signals struct {
+		CustomerID string `json:"newTicketCustomerID"`
+		Subject    string `json:"newTicketSubject"`
+		Body       string `json:"newTicketBody"`
+		Priority   string `json:"newTicketPriority"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("ticket handler: createTicket ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+
+	if strings.TrimSpace(signals.CustomerID) == "" {
+		sse.PatchElementTempl(newTicketError("Please select a customer"))
+		return
+	}
+	if strings.TrimSpace(signals.Subject) == "" {
+		sse.PatchElementTempl(newTicketError("Subject is required"))
+		return
+	}
+
+	_, err := h.openCmd.Handle(r.Context(), commands.OpenTicketCommand{
+		CustomerID: signals.CustomerID,
+		Subject:    signals.Subject,
+		Body:       signals.Body,
+		Priority:   signals.Priority,
+	})
+	if err != nil {
+		log.Printf("ticket handler: createTicket Handle: %v", err)
+		sse.PatchElementTempl(newTicketError("Failed to create ticket"))
+		return
+	}
+
+	cleared, _ := json.Marshal(map[string]any{
+		"_newTicketOpen":            false,
+		"newTicketCustomerID":      "",
+		"newTicketCustomerName":    "",
+		"newTicketCustomerSearch":  "",
+		"newTicketSubject":         "",
+		"newTicketBody":            "",
+		"newTicketPriority":        "medium",
+	})
+	sse.PatchSignals(cleared)
+}
+
+// ticketCustomerSearch searches customers for the new-ticket modal.
+func (h *Handlers) ticketCustomerSearch(w http.ResponseWriter, r *http.Request) {
+	if h.custSearch == nil {
+		http.Error(w, "not configured", http.StatusInternalServerError)
+		return
+	}
+
+	var signals struct {
+		Search string `json:"newTicketCustomerSearch"`
+	}
+	_ = datastar.ReadSignals(r, &signals)
+	q := strings.TrimSpace(signals.Search)
+	if len(q) < 2 {
+		return
+	}
+
+	results, err := h.custSearch.SearchCustomers(r.Context(), q, 10)
+	if err != nil {
+		log.Printf("ticket handler: ticketCustomerSearch: %v", err)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElementTempl(ticketCustomerSearchResults(results))
 }

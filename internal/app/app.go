@@ -360,6 +360,7 @@ func New(cfg Config) (*App, error) {
 	)
 	ticketRoutes.WithListAll(listAllTicketsQuery)
 	ticketRoutes.WithGetTicket(getTicketQuery)
+	ticketRoutes.WithCustomerSearch(&ticketCustomerSearchBridge{handler: listCustomersQuery})
 	moduleRoutes = append(moduleRoutes, ticketRoutes)
 	if customerRoutes != nil {
 		customerRoutes.WithTicketsQuery(listTicketsQuery)
@@ -729,6 +730,32 @@ func (b *ticketCustomerNameBridge) CustomerName(ctx context.Context, id string) 
 		return ""
 	}
 	return c.CompanyName
+}
+
+// ticketCustomerSearchBridge adapts the customer query handler to the ticket module's
+// CustomerSearcher interface.
+type ticketCustomerSearchBridge struct {
+	handler *customerqueries.ListCustomersHandler
+}
+
+func (b *ticketCustomerSearchBridge) SearchCustomers(ctx context.Context, query string, limit int) ([]tickethttp.CustomerSearchResult, error) {
+	result, err := b.handler.Handle(ctx, customerqueries.ListCustomersQuery{
+		Search:   query,
+		PageSize: limit,
+		Page:     1,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]tickethttp.CustomerSearchResult, len(result.Customers))
+	for i, c := range result.Customers {
+		out[i] = tickethttp.CustomerSearchResult{
+			ID:          c.ID,
+			Code:        c.Code.String(),
+			CompanyName: c.CompanyName,
+		}
+	}
+	return out, nil
 }
 
 // provisionerDispatcher picks the right RouterProvisioner based on conn.RouterType.

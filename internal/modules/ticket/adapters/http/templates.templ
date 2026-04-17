@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
 	"github.com/vvs/isp/internal/modules/ticket/app/queries"
@@ -14,17 +15,102 @@ templ TicketsPage() {
 		@templates.PageHeader("Tickets", "All tickets across customers")
 		<div
 			id="tickets-page"
-			data-signals="{ticketSearch: '', commentBody: '', ticketAction: ''}"
+			data-signals="{ticketSearch: '', commentBody: '', ticketAction: '', _newTicketOpen: false, newTicketCustomerID: '', newTicketCustomerName: '', newTicketCustomerSearch: '', _showTicketCustResults: false, newTicketSubject: '', newTicketBody: '', newTicketPriority: 'medium'}"
 			data-init="@get('/sse/tickets')"
 		>
-			<div class="mb-4">
+			<div class="mb-4 flex items-center gap-3">
 				<input
 					type="text"
 					data-bind:ticket-search
 					data-on:input__debounce.300ms="@get('/sse/tickets')"
 					placeholder="Search tickets..."
-					class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-full max-w-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+					class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm flex-1 max-w-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
 				/>
+				<button
+					type="button"
+					data-on:click="$_newTicketOpen = true"
+					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+				>+ New Ticket</button>
+			</div>
+
+			<!-- New ticket modal -->
+			<div
+				data-show="$_newTicketOpen"
+				style="display:none"
+				class="fixed inset-0 z-50 flex items-center justify-center"
+			>
+				<div
+					class="absolute inset-0 bg-black/60"
+					data-on:click="$_newTicketOpen = false"
+				></div>
+				<div class="relative bg-neutral-900 border border-neutral-700 rounded-lg p-6 w-full max-w-md shadow-xl">
+					<div class="flex items-center justify-between mb-4">
+						<h3 class="text-sm font-semibold text-neutral-200">New Ticket</h3>
+						<button
+							type="button"
+							data-on:click="$_newTicketOpen = false"
+							class="text-neutral-500 hover:text-neutral-300 transition-colors"
+						>
+							<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+							</svg>
+						</button>
+					</div>
+					<div class="flex flex-col gap-3">
+						<!-- Customer search -->
+						<div class="flex flex-col gap-1 relative">
+							<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Customer *</label>
+							<input
+								type="text"
+								data-bind:new-ticket-customer-search
+								data-on:input__debounce.300ms="$newTicketCustomerSearch.length >= 2 && ($_showTicketCustResults = true, @get('/sse/tickets/customers/search'))"
+								data-on:focus="$newTicketCustomerSearch.length >= 2 && ($_showTicketCustResults = true, @get('/sse/tickets/customers/search'))"
+								placeholder="Search customer..."
+								class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+							/>
+							<div data-show="$newTicketCustomerID !== ''" style="display:none" class="flex items-center gap-2 mt-1">
+								<span class="text-xs text-neutral-400">Selected:</span>
+								<span class="text-xs text-amber-400" data-text="$newTicketCustomerName"></span>
+								<button
+									type="button"
+									data-on:click="$newTicketCustomerID = ''; $newTicketCustomerName = ''; $newTicketCustomerSearch = ''; $_showTicketCustResults = false"
+									class="text-xs text-red-400 hover:text-red-300 ml-1"
+								>clear</button>
+							</div>
+							<div id="ticket-customer-search-results" data-show="$_showTicketCustResults" style="display:none"></div>
+						</div>
+						<div class="flex flex-col gap-1">
+							<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Subject *</label>
+							<input type="text" data-bind:new-ticket-subject placeholder="Ticket subject..." class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"/>
+						</div>
+						<div class="flex flex-col gap-1">
+							<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Description</label>
+							<textarea rows="3" data-bind:new-ticket-body placeholder="Describe the issue..." class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600 resize-none"></textarea>
+						</div>
+						<div class="flex flex-col gap-1">
+							<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Priority</label>
+							<select data-bind="newTicketPriority" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+								<option value="low">Low</option>
+								<option value="medium" selected>Medium</option>
+								<option value="high">High</option>
+								<option value="urgent">Urgent</option>
+							</select>
+						</div>
+						<div id="new-ticket-errors"></div>
+						<div class="flex gap-2 pt-2">
+							<button
+								type="button"
+								data-on:click="@post('/api/tickets')"
+								class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors flex-1"
+							>Create Ticket</button>
+							<button
+								type="button"
+								data-on:click="$_newTicketOpen = false"
+								class="bg-neutral-800 hover:bg-neutral-700 text-neutral-400 px-4 py-2 rounded text-sm font-medium transition-colors border border-neutral-700"
+							>Cancel</button>
+						</div>
+					</div>
+				</div>
 			</div>
 			<div id="all-tickets">
 				<div class="text-neutral-600 text-sm py-10 text-center">Loading...</div>
@@ -625,5 +711,34 @@ templ commentInput(ticketID string) {
 templ ticketFormError(message string) {
 	<div id="ticket-form-errors" class="bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-2 rounded text-xs">
 		{ message }
+	</div>
+}
+
+templ newTicketError(message string) {
+	<div id="new-ticket-errors" class="bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-2 rounded text-xs">
+		{ message }
+	</div>
+}
+
+func escapeJS(s string) string {
+	return strings.ReplaceAll(s, "'", "\\'")
+}
+
+templ ticketCustomerSearchResults(results []CustomerSearchResult) {
+	<div id="ticket-customer-search-results" data-show="$_showTicketCustResults" style="display:none">
+		if len(results) > 0 {
+			<div class="absolute z-10 left-0 right-0 mt-1 bg-neutral-800 border border-neutral-700 rounded-lg shadow-xl max-h-48 overflow-y-auto">
+				for _, c := range results {
+					<button
+						type="button"
+						data-on:click={ fmt.Sprintf("$newTicketCustomerID = '%s'; $newTicketCustomerName = '%s'; $newTicketCustomerSearch = '%s'; $_showTicketCustResults = false", c.ID, escapeJS(c.CompanyName), escapeJS(c.CompanyName)) }
+						class="w-full text-left px-3 py-2 hover:bg-neutral-700 transition-colors flex items-center gap-2 text-sm"
+					>
+						<span class="text-amber-400 font-mono text-xs">{ c.Code }</span>
+						<span class="text-neutral-200">{ c.CompanyName }</span>
+					</button>
+				}
+			</div>
+		}
 	</div>
 }
