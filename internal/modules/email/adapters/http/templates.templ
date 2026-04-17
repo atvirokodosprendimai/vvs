@@ -155,7 +155,8 @@ templ tagFilterButton(name, color, label string) {
 	<button
 		type="button"
 		data-on:click={ fmt.Sprintf("$emailTagFilter = $emailTagFilter == %q ? '' : %q; $emailPage = 0; @get('/sse/emails', {openWhenHidden: false})", name, name) }
-		class="w-full text-left px-4 py-2 text-sm text-neutral-400 hover:bg-neutral-800/60 transition-colors flex items-center gap-2"
+		data-class={ fmt.Sprintf(`{"text-amber-400 bg-neutral-800/60": $emailTagFilter == %q, "text-neutral-400": $emailTagFilter != %q}`, name, name) }
+		class="w-full text-left px-4 py-2 text-sm hover:bg-neutral-800/60 transition-colors flex items-center gap-2"
 	>
 		<span class="w-2 h-2 rounded-full flex-shrink-0" style={ fmt.Sprintf("background-color:%s", color) }></span>
 		{ label }
@@ -229,7 +230,11 @@ templ threadRow(t emailqueries.ThreadReadModel) {
 			<span class="text-xs text-neutral-500 flex-shrink-0">{ formatRelTime(t.LastMessageAt) }</span>
 		</div>
 		<div class="flex items-center gap-2 justify-between">
-			<span class="text-xs text-neutral-500 truncate">{ firstParticipant(t.ParticipantAddresses) }</span>
+			if t.CustomerName != "" {
+				<span class="text-xs text-amber-400 font-medium truncate">{ t.CustomerCode } · { t.CustomerName }</span>
+			} else {
+				<span class="text-xs text-neutral-500 truncate">{ firstParticipant(t.ParticipantAddresses) }</span>
+			}
 			<div class="flex items-center gap-1">
 				if t.Unread {
 					<span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
@@ -257,8 +262,8 @@ templ EmailThreadPage(thread emailqueries.ThreadDetailReadModel) {
 				Back to Inbox
 			</a>
 		</div>
-		@replyForm(thread.ID)
 		@ThreadDetail(thread)
+		@replyForm(thread.ID)
 	}
 }
 
@@ -304,7 +309,7 @@ templ ThreadDetail(thread emailqueries.ThreadDetailReadModel) {
 				<span class="text-xs text-neutral-600 flex-shrink-0">{ fmt.Sprintf("%d msg", len(thread.Messages)) }</span>
 			</div>
 			<div class="flex items-center gap-3 flex-shrink-0">
-				@customerLinkBadge(thread.ID, thread.CustomerID, "")
+				@customerLinkBadge(thread.ID, thread.CustomerID, customerBadgeLabel(thread.CustomerName, thread.CustomerCode))
 				if thread.CustomerID != "" {
 					<button
 						type="button"
@@ -835,6 +840,16 @@ templ EmailThreadsSection(customerID string, threads []emailqueries.ThreadReadMo
 }
 
 // --- helpers ---
+
+func customerBadgeLabel(name, code string) string {
+	if name == "" {
+		return ""
+	}
+	if code != "" {
+		return code + " · " + name
+	}
+	return name
+}
 
 func accountActiveClass(id, selected string) string {
 	if id == selected {

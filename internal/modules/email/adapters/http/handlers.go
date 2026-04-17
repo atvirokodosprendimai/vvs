@@ -54,6 +54,13 @@ type ticketOpener interface {
 	Open(ctx context.Context, customerID, subject, body, priority string) (ticketID string, err error)
 }
 
+// customerInfoResolver provides customer name and code from a customer ID.
+// Returns empty strings when the customer is not found.
+type customerInfoResolver interface {
+	ResolveCustomerName(ctx context.Context, id string) string
+	ResolveCustomerCode(ctx context.Context, id string) string
+}
+
 // folderToggler is the minimal interface for folder enable/disable.
 type folderToggler interface {
 	FindByID(ctx context.Context, id string) (*domain.EmailFolder, error)
@@ -89,6 +96,7 @@ type Handlers struct {
 	subscriber         events.EventSubscriber
 	publisher          events.EventPublisher
 	pageSize           int // threads per inbox page; 0 → DefaultPageSize
+	custInfo           customerInfoResolver
 }
 
 func NewHandlers(
@@ -133,6 +141,35 @@ func NewHandlers(
 		subscriber:   subscriber,
 		publisher:    publisher,
 	}
+}
+
+// WithCustomerInfo injects customer name/code resolver for enriching thread displays.
+func (h *Handlers) WithCustomerInfo(r customerInfoResolver) *Handlers {
+	h.custInfo = r
+	return h
+}
+
+// enrichThreadList sets CustomerName/CustomerCode on each thread that has a CustomerID.
+func (h *Handlers) enrichThreadList(ctx context.Context, result *emailqueries.ThreadListResult) {
+	if h.custInfo == nil {
+		return
+	}
+	for i := range result.Threads {
+		t := &result.Threads[i]
+		if t.CustomerID != "" {
+			t.CustomerName = h.custInfo.ResolveCustomerName(ctx, t.CustomerID)
+			t.CustomerCode = h.custInfo.ResolveCustomerCode(ctx, t.CustomerID)
+		}
+	}
+}
+
+// enrichDetail sets CustomerName/CustomerCode on a thread detail model.
+func (h *Handlers) enrichDetail(ctx context.Context, t *emailqueries.ThreadDetailReadModel) {
+	if h.custInfo == nil || t.CustomerID == "" {
+		return
+	}
+	t.CustomerName = h.custInfo.ResolveCustomerName(ctx, t.CustomerID)
+	t.CustomerCode = h.custInfo.ResolveCustomerCode(ctx, t.CustomerID)
 }
 
 // WithPageSize sets the number of email threads per inbox page.
@@ -254,6 +291,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 		log.Printf("email: listSSE: %v", err)
 		return
 	}
+	h.enrichThreadList(r.Context(), &current)
 	sse.PatchElementTempl(ThreadList(current))
 
 	for {
@@ -267,6 +305,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 				log.Printf("email: listSSE refresh: %v", err)
 				continue
 			}
+			h.enrichThreadList(r.Context(), &next)
 			if !reflect.DeepEqual(current, next) {
 				sse.PatchElementTempl(ThreadList(next))
 				current = next
@@ -285,6 +324,7 @@ func (h *Handlers) threadPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
+	h.enrichDetail(r.Context(), thread)
 	// Mark as read on open.
 	_ = h.markReadCmd.Handle(r.Context(), emailcommands.MarkReadCommand{ThreadID: threadID})
 	if err := EmailThreadPage(*thread).Render(r.Context(), w); err != nil {
@@ -309,6 +349,7 @@ func (h *Handlers) threadSSE(w http.ResponseWriter, r *http.Request) {
 		log.Printf("email: threadSSE: %v", err)
 		return
 	}
+	h.enrichDetail(r.Context(), current)
 	sse.PatchElementTempl(ThreadDetail(*current))
 
 	// Auto mark read on open.
@@ -325,6 +366,7 @@ func (h *Handlers) threadSSE(w http.ResponseWriter, r *http.Request) {
 				log.Printf("email: threadSSE refresh: %v", err)
 				continue
 			}
+			h.enrichDetail(r.Context(), next)
 			if !reflect.DeepEqual(current, next) {
 				sse.PatchElementTempl(ThreadDetail(*next))
 				current = next
@@ -354,6 +396,7 @@ func (h *Handlers) replySSE(w http.ResponseWriter, r *http.Request) {
 	}
 	thread, err := h.getThread.Handle(r.Context(), threadID)
 	if err == nil {
+		h.enrichDetail(r.Context(), thread)
 		sse.PatchElementTempl(ThreadDetail(*thread))
 	}
 	sse.PatchSignals([]byte(`{"emailReplyBody":"","emailReplyError":""}`))

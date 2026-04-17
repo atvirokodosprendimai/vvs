@@ -10,6 +10,8 @@ type ThreadReadModel struct {
 	Subject              string
 	ParticipantAddresses string
 	CustomerID           string
+	CustomerName         string // enriched by HTTP layer via customerInfoResolver
+	CustomerCode         string // enriched by HTTP layer via customerInfoResolver
 	MessageCount         int
 	LastMessageAt        time.Time
 	PreviewText          string // first ~120 chars of last message body
