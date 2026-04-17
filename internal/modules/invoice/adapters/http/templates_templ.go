@@ -450,7 +450,7 @@ func InvoiceDetailPage(inv queries.InvoiceReadModel) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = vatRateSelect("edit-v-a-t-rate").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = vatRateSelect("editVATRate").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1101,7 +1101,7 @@ func invoiceDetailContent(inv queries.InvoiceReadModel) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = vatRateSelect("line-v-a-t-rate").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = vatRateSelect("lineVATRate").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1182,7 +1182,7 @@ func CreateInvoicePage(defaultVATRate int) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = vatRateSelectCreate("line-v-a-t-rate1", defaultVATRate).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = vatRateSelectCreate("lineVATRate1", defaultVATRate).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

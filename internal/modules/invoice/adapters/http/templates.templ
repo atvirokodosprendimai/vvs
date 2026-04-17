@@ -211,7 +211,7 @@ templ InvoiceDetailPage(inv queries.InvoiceReadModel) {
 								</div>
 								<div class="flex flex-col gap-1">
 									<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">VAT %</label>
-									@vatRateSelect("edit-v-a-t-rate")
+									@vatRateSelect("editVATRate")
 								</div>
 							</div>
 							<div class="flex gap-2 pt-2">
@@ -444,7 +444,7 @@ templ invoiceDetailContent(inv queries.InvoiceReadModel) {
 						</div>
 						<div class="flex flex-col gap-1 w-20">
 							<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">VAT</label>
-							@vatRateSelect("line-v-a-t-rate")
+							@vatRateSelect("lineVATRate")
 						</div>
 						<button
 							type="button"
@@ -553,7 +553,7 @@ templ CreateInvoicePage(defaultVATRate int) {
 							</div>
 							<div class="flex flex-col gap-1 w-20">
 								<label class="text-xs text-neutral-500">VAT</label>
-								@vatRateSelectCreate("line-v-a-t-rate1", defaultVATRate)
+								@vatRateSelectCreate("lineVATRate1", defaultVATRate)
 							</div>
 						</div>
 					</div>
