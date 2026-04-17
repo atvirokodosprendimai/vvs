@@ -520,7 +520,7 @@ func (h *Handlers) createTicket(w http.ResponseWriter, r *http.Request) {
 		"newTicketCustomerSearch":  "",
 		"newTicketSubject":         "",
 		"newTicketBody":            "",
-		"newTicketPriority":        "medium",
+		"newTicketPriority":        "normal",
 	})
 	sse.PatchSignals(cleared)
 }

@@ -15,7 +15,7 @@ templ TicketsPage() {
 		@templates.PageHeader("Tickets", "All tickets across customers")
 		<div
 			id="tickets-page"
-			data-signals="{ticketSearch: '', commentBody: '', ticketAction: '', _newTicketOpen: false, newTicketCustomerID: '', newTicketCustomerName: '', newTicketCustomerSearch: '', _showTicketCustResults: false, newTicketSubject: '', newTicketBody: '', newTicketPriority: 'medium'}"
+			data-signals="{ticketSearch: '', commentBody: '', ticketAction: '', _newTicketOpen: false, newTicketCustomerID: '', newTicketCustomerName: '', newTicketCustomerSearch: '', _showTicketCustResults: false, newTicketSubject: '', newTicketBody: '', newTicketPriority: 'normal'}"
 			data-init="@get('/sse/tickets')"
 		>
 			<div class="mb-4 flex items-center gap-3">
@@ -91,7 +91,7 @@ templ TicketsPage() {
 							<label class="text-xs font-medium text-neutral-500 uppercase tracking-wider">Priority</label>
 							<select data-bind="newTicketPriority" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
 								<option value="low">Low</option>
-								<option value="medium" selected>Medium</option>
+								<option value="normal" selected>Normal</option>
 								<option value="high">High</option>
 								<option value="urgent">Urgent</option>
 							</select>
