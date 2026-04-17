@@ -164,22 +164,15 @@ templ AllTicketList(tickets []queries.TicketReadModel) {
 						for _, tk := range tickets {
 							<tr class="hover:bg-neutral-800/40 transition-colors">
 								<td class="px-4 py-3 font-medium text-neutral-100 text-sm max-w-xs truncate">
-									if tk.CustomerID != "" {
-										<a
-											href={ templ.SafeURL(fmt.Sprintf("/customers/%s?tab=tickets", tk.CustomerID)) }
-											class="hover:text-amber-400 transition-colors"
-										>{ tk.Subject }</a>
-									} else {
-										<a
-											href={ templ.SafeURL(fmt.Sprintf("/tickets/%s", tk.ID)) }
-											class="hover:text-amber-400 transition-colors"
-										>{ tk.Subject }</a>
-									}
+									<a
+										href={ templ.SafeURL(fmt.Sprintf("/tickets/%s", tk.ID)) }
+										class="hover:text-amber-400 transition-colors"
+									>{ tk.Subject }</a>
 								</td>
 								<td class="px-4 py-3 text-sm">
 									if tk.CustomerName != "" {
 										<a
-											href={ templ.SafeURL(fmt.Sprintf("/customers/%s", tk.CustomerID)) }
+											href={ templ.SafeURL(fmt.Sprintf("/customers/%s?tab=tickets", tk.CustomerID)) }
 											class="text-amber-400 hover:text-amber-300"
 										>{ tk.CustomerName }</a>
 									} else {
