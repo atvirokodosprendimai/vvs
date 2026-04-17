@@ -13,77 +13,50 @@ import (
 // InvoiceListPage is the standalone invoices list page at /invoices.
 templ InvoiceListPage() {
 	@templates.Layout("Invoices") {
-		@templates.PageHeader("Invoices", "All invoices across customers")
-		<div
-			id="invoices-page"
-			data-signals="{statusFilter: ''}"
-			data-init="@get('/sse/invoices')"
-		>
-			<!-- Status filter tabs -->
-			<div class="flex items-center gap-2 mb-4">
+		<div data-signals="{statusFilter: ''}">
+			@templates.PageHeaderRow("Invoices", "All invoices across customers") {
 				<button
 					type="button"
 					data-on:click="$statusFilter = ''; @get('/sse/invoices')"
-					data-class:bg-amber-600="$statusFilter === ''"
-					data-class:text-white="$statusFilter === ''"
-					data-class:border-amber-600="$statusFilter === ''"
-					data-class:bg-neutral-800="$statusFilter !== ''"
-					data-class:text-neutral-400="$statusFilter !== ''"
-					data-class:border-neutral-700="$statusFilter !== ''"
+					data-class={ `{"bg-amber-600 text-white border-amber-600": $statusFilter === '', "bg-neutral-800 text-neutral-400 border-neutral-700": $statusFilter !== ''}` }
 					class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 				>All</button>
 				<button
 					type="button"
 					data-on:click="$statusFilter = 'draft'; @get('/sse/invoices')"
-					data-class:bg-neutral-600="$statusFilter === 'draft'"
-					data-class:text-white="$statusFilter === 'draft'"
-					data-class:border-neutral-600="$statusFilter === 'draft'"
-					data-class:bg-neutral-800="$statusFilter !== 'draft'"
-					data-class:text-neutral-400="$statusFilter !== 'draft'"
-					data-class:border-neutral-700="$statusFilter !== 'draft'"
+					data-class={ `{"bg-neutral-600 text-white border-neutral-600": $statusFilter === 'draft', "bg-neutral-800 text-neutral-400 border-neutral-700": $statusFilter !== 'draft'}` }
 					class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 				>Draft</button>
 				<button
 					type="button"
 					data-on:click="$statusFilter = 'finalized'; @get('/sse/invoices')"
-					data-class:bg-blue-600="$statusFilter === 'finalized'"
-					data-class:text-white="$statusFilter === 'finalized'"
-					data-class:border-blue-600="$statusFilter === 'finalized'"
-					data-class:bg-neutral-800="$statusFilter !== 'finalized'"
-					data-class:text-neutral-400="$statusFilter !== 'finalized'"
-					data-class:border-neutral-700="$statusFilter !== 'finalized'"
+					data-class={ `{"bg-blue-600 text-white border-blue-600": $statusFilter === 'finalized', "bg-neutral-800 text-neutral-400 border-neutral-700": $statusFilter !== 'finalized'}` }
 					class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 				>Finalized</button>
 				<button
 					type="button"
 					data-on:click="$statusFilter = 'paid'; @get('/sse/invoices')"
-					data-class:bg-green-600="$statusFilter === 'paid'"
-					data-class:text-white="$statusFilter === 'paid'"
-					data-class:border-green-600="$statusFilter === 'paid'"
-					data-class:bg-neutral-800="$statusFilter !== 'paid'"
-					data-class:text-neutral-400="$statusFilter !== 'paid'"
-					data-class:border-neutral-700="$statusFilter !== 'paid'"
+					data-class={ `{"bg-green-600 text-white border-green-600": $statusFilter === 'paid', "bg-neutral-800 text-neutral-400 border-neutral-700": $statusFilter !== 'paid'}` }
 					class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 				>Paid</button>
 				<button
 					type="button"
 					data-on:click="$statusFilter = 'void'; @get('/sse/invoices')"
-					data-class:bg-neutral-500="$statusFilter === 'void'"
-					data-class:text-white="$statusFilter === 'void'"
-					data-class:border-neutral-500="$statusFilter === 'void'"
-					data-class:bg-neutral-800="$statusFilter !== 'void'"
-					data-class:text-neutral-400="$statusFilter !== 'void'"
-					data-class:border-neutral-700="$statusFilter !== 'void'"
+					data-class={ `{"bg-neutral-500 text-white border-neutral-500": $statusFilter === 'void', "bg-neutral-800 text-neutral-400 border-neutral-700": $statusFilter !== 'void'}` }
 					class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
 				>Void</button>
-				<div class="flex-1"></div>
 				<a
 					href="/invoices/new"
 					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-1.5 rounded text-xs font-medium transition-colors"
 				>+ New Invoice</a>
-			</div>
-			<div id="invoice-table">
-				<div class="text-neutral-600 text-sm py-10 text-center">Loading...</div>
+			}
+			<div
+				id="invoices-page"
+				data-init="@get('/sse/invoices')"
+			>
+				<div id="invoice-table">
+					<div class="text-neutral-600 text-sm py-10 text-center">Loading...</div>
+				</div>
 			</div>
 		</div>
 	}
