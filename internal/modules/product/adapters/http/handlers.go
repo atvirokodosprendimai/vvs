@@ -99,7 +99,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Subscribe before initial render so no event is missed
-	ch, cancel := h.subscriber.ChanSubscription("isp.product.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.ProductAll.String())
 	defer cancel()
 
 	q := queries.ListProductsQuery{

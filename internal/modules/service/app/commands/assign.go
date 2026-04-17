@@ -39,7 +39,7 @@ func (h *AssignServiceHandler) Handle(ctx context.Context, cmd AssignServiceComm
 	if err := h.repo.Save(ctx, svc); err != nil {
 		return nil, err
 	}
-	h.publisher.Publish(ctx, "isp.service.assigned", events.DomainEvent{
+	h.publisher.Publish(ctx, events.ServiceAssigned.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "service.assigned",
 		AggregateID: svc.ID,

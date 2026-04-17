@@ -26,7 +26,7 @@ func (h *DeleteContactHandler) Handle(ctx context.Context, cmd DeleteContactComm
 	if err := h.repo.Delete(ctx, cmd.ID); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.contact.deleted", events.DomainEvent{
+	h.publisher.Publish(ctx, events.ContactDeleted.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "contact.deleted",
 		AggregateID: cmd.ID,

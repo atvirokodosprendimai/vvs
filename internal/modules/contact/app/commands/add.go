@@ -37,7 +37,7 @@ func (h *AddContactHandler) Handle(ctx context.Context, cmd AddContactCommand) (
 	if err := h.repo.Save(ctx, c); err != nil {
 		return nil, err
 	}
-	h.publisher.Publish(ctx, "isp.contact.added", events.DomainEvent{
+	h.publisher.Publish(ctx, events.ContactAdded.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "contact.added",
 		AggregateID: c.ID,

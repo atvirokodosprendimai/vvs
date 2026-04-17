@@ -38,7 +38,7 @@ func (h *DeleteCustomerHandler) Handle(ctx context.Context, cmd DeleteCustomerCo
 		"code": customer.Code.String(),
 	})
 
-	h.publisher.Publish(ctx, "isp.customer.deleted", events.DomainEvent{
+	h.publisher.Publish(ctx, events.CustomerDeleted.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "customer.deleted",
 		AggregateID: customer.ID,

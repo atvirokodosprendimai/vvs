@@ -38,10 +38,10 @@ func (h *GlobalHandler) globalSSE(w http.ResponseWriter, r *http.Request) {
 	clockTicker := time.NewTicker(time.Second)
 	defer clockTicker.Stop()
 
-	notifCh, cancelNotif := h.subscriber.ChanSubscription("isp.notifications")
+	notifCh, cancelNotif := h.subscriber.ChanSubscription(events.Notifications.String())
 	defer cancelNotif()
 
-	chatCh, cancelChat := h.subscriber.ChanSubscription("isp.chat.message.general")
+	chatCh, cancelChat := h.subscriber.ChanSubscription(events.ChatMessageGeneral.String())
 	defer cancelChat()
 
 	// Initial state

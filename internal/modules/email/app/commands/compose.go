@@ -102,7 +102,7 @@ func (h *ComposeEmailHandler) Handle(ctx context.Context, cmd ComposeEmailComman
 		slog.Error("compose: imap append", "err", err)
 	}
 
-	h.pub.Publish(ctx, "isp.email.thread_updated", events.DomainEvent{
+	h.pub.Publish(ctx, events.EmailThreadUpdated.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.composed", AggregateID: thread.ID,
 	})
 	return nil

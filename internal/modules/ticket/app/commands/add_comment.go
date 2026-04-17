@@ -45,7 +45,7 @@ func (h *AddCommentHandler) Handle(ctx context.Context, cmd AddCommentCommand) (
 	if err := h.repo.SaveComment(ctx, comment); err != nil {
 		return nil, err
 	}
-	h.publisher.Publish(ctx, "isp.ticket.comment_added", events.DomainEvent{
+	h.publisher.Publish(ctx, events.TicketCommentAdded.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "ticket.comment_added",
 		AggregateID: cmd.TicketID,

@@ -31,7 +31,7 @@ func (h *MarkReadHandler) Handle(ctx context.Context, cmd MarkReadCommand) error
 	if err := h.tags.RemoveFromThread(ctx, cmd.ThreadID, tag.ID); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.email.read", events.DomainEvent{
+	h.publisher.Publish(ctx, events.EmailRead.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "email.read",
 		AggregateID: cmd.ThreadID,

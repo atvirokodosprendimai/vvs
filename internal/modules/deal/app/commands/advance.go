@@ -53,7 +53,7 @@ func (h *AdvanceDealHandler) Handle(ctx context.Context, cmd AdvanceDealCommand)
 	if err := h.repo.Save(ctx, deal); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.deal.advanced", events.DomainEvent{
+	h.publisher.Publish(ctx, events.DealAdvanced.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "deal.advanced",
 		AggregateID: deal.ID,

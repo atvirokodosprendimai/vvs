@@ -25,7 +25,7 @@ func NewWorker(store *Store, pub events.EventPublisher) *Worker {
 
 // Run blocks until ctx is cancelled. Call it in a goroutine.
 func (w *Worker) Run(ctx context.Context, sub events.EventSubscriber) {
-	ch, cancel := sub.ChanSubscription("isp.>")
+	ch, cancel := sub.ChanSubscription(events.Everything.String())
 	defer cancel()
 
 	for {
@@ -55,7 +55,7 @@ func (w *Worker) handle(ctx context.Context, event events.DomainEvent) {
 
 	// Wake all SSE clients so they re-query their unread state.
 	data, _ := json.Marshal(map[string]string{"id": id})
-	w.publisher.Publish(ctx, "isp.notifications", events.DomainEvent{
+	w.publisher.Publish(ctx, events.Notifications.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "notification.created",
 		AggregateID: id,

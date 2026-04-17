@@ -37,7 +37,7 @@ func (h *UpdateDealHandler) Handle(ctx context.Context, cmd UpdateDealCommand) e
 	if err := h.repo.Save(ctx, deal); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.deal.updated", events.DomainEvent{
+	h.publisher.Publish(ctx, events.DealUpdated.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "deal.updated",
 		AggregateID: deal.ID,

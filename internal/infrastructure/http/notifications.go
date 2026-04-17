@@ -34,7 +34,7 @@ func (h *NotifHandler) notificationsSSE(w http.ResponseWriter, r *http.Request) 
 
 	sse := datastar.NewSSE(w, r)
 
-	ch, cancel := h.subscriber.ChanSubscription("isp.notifications")
+	ch, cancel := h.subscriber.ChanSubscription(events.Notifications.String())
 	defer cancel()
 
 	// Initial render

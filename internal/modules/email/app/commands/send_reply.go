@@ -108,7 +108,7 @@ func (h *SendReplyHandler) Handle(ctx context.Context, cmd SendReplyCommand) err
 		}
 	}
 
-	h.pub.Publish(ctx, "isp.email.thread_updated", events.DomainEvent{
+	h.pub.Publish(ctx, events.EmailThreadUpdated.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.reply_sent", AggregateID: thread.ID,
 	})
 	return nil

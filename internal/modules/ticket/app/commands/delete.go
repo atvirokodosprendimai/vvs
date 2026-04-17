@@ -30,7 +30,7 @@ func (h *DeleteTicketHandler) Handle(ctx context.Context, cmd DeleteTicketComman
 	if err := h.repo.Delete(ctx, cmd.ID); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.ticket.deleted", events.DomainEvent{
+	h.publisher.Publish(ctx, events.TicketDeleted.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "ticket.deleted",
 		AggregateID: cmd.ID,

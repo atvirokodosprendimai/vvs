@@ -29,7 +29,7 @@ func (h *DeleteRouterHandler) Handle(ctx context.Context, id string) error {
 	}
 
 	data, _ := json.Marshal(map[string]string{"id": router.ID, "name": router.Name})
-	h.publisher.Publish(ctx, "isp.network.router.deleted", events.DomainEvent{
+	h.publisher.Publish(ctx, events.NetworkRouterDeleted.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "network.router.deleted",
 		AggregateID: router.ID,

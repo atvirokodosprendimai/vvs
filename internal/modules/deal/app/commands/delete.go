@@ -29,7 +29,7 @@ func (h *DeleteDealHandler) Handle(ctx context.Context, cmd DeleteDealCommand) e
 	if err := h.repo.Delete(ctx, cmd.ID); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.deal.deleted", events.DomainEvent{
+	h.publisher.Publish(ctx, events.DealDeleted.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "deal.deleted",
 		AggregateID: cmd.ID,

@@ -92,7 +92,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 
 	sse := datastar.NewSSE(w, r)
 
-	ch, cancel := h.subscriber.ChanSubscription("isp.ticket.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.TicketAll.String())
 	defer cancel()
 
 	q := queries.ListTicketsForCustomerQuery{CustomerID: customerID}
@@ -291,7 +291,7 @@ func (h *Handlers) listCommentsSSE(w http.ResponseWriter, r *http.Request) {
 
 	sse := datastar.NewSSE(w, r)
 
-	ch, cancel := h.subscriber.ChanSubscription("isp.ticket.comment_added")
+	ch, cancel := h.subscriber.ChanSubscription(events.TicketCommentAdded.String())
 	defer cancel()
 
 	q := queries.ListCommentsQuery{TicketID: ticketID}
@@ -354,7 +354,7 @@ func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
 
 	sse := datastar.NewSSE(w, r)
 
-	ch, cancel := h.subscriber.ChanSubscription("isp.ticket.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.TicketAll.String())
 	defer cancel()
 
 	var signals struct {
@@ -403,7 +403,7 @@ func (h *Handlers) detailSSE(w http.ResponseWriter, r *http.Request) {
 
 	sse := datastar.NewSSE(w, r)
 
-	ch, cancel := h.subscriber.ChanSubscription("isp.ticket.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.TicketAll.String())
 	defer cancel()
 
 	tk, err := h.getTicketQuery.Handle(r.Context(), queries.GetTicketQuery{ID: ticketID})

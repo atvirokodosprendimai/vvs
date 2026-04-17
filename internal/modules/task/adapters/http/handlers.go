@@ -75,7 +75,7 @@ func (h *Handlers) listPage(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
 	sse := datastar.NewSSE(w, r)
 
-	ch, cancel := h.subscriber.ChanSubscription("isp.task.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.TaskAll.String())
 	defer cancel()
 
 	current, err := h.listAll.Handle(r.Context())
@@ -116,7 +116,7 @@ func (h *Handlers) listForCustomerSSE(w http.ResponseWriter, r *http.Request) {
 
 	sse := datastar.NewSSE(w, r)
 
-	ch, cancel := h.subscriber.ChanSubscription("isp.task.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.TaskAll.String())
 	defer cancel()
 
 	q := queries.ListTasksForCustomerQuery{CustomerID: customerID}

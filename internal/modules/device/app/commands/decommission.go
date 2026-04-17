@@ -32,7 +32,7 @@ func (h *DecommissionDeviceHandler) Handle(ctx context.Context, cmd Decommission
 	if err := h.repo.Save(ctx, d); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.device.decommissioned", events.DomainEvent{
+	h.publisher.Publish(ctx, events.DeviceDecommissioned.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "device.decommissioned",
 		AggregateID: d.ID,

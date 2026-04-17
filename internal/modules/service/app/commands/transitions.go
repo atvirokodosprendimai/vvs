@@ -33,7 +33,7 @@ func (h *SuspendServiceHandler) Handle(ctx context.Context, cmd SuspendServiceCo
 	if err := h.repo.Save(ctx, svc); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.service.suspended", events.DomainEvent{
+	h.publisher.Publish(ctx, events.ServiceSuspended.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "service.suspended",
 		AggregateID: svc.ID, OccurredAt: time.Now().UTC(),
 	})
@@ -64,7 +64,7 @@ func (h *ReactivateServiceHandler) Handle(ctx context.Context, cmd ReactivateSer
 	if err := h.repo.Save(ctx, svc); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.service.reactivated", events.DomainEvent{
+	h.publisher.Publish(ctx, events.ServiceReactivated.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "service.reactivated",
 		AggregateID: svc.ID, OccurredAt: time.Now().UTC(),
 	})
@@ -95,7 +95,7 @@ func (h *CancelServiceHandler) Handle(ctx context.Context, cmd CancelServiceComm
 	if err := h.repo.Save(ctx, svc); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.service.cancelled", events.DomainEvent{
+	h.publisher.Publish(ctx, events.ServiceCancelled.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "service.cancelled",
 		AggregateID: svc.ID, OccurredAt: time.Now().UTC(),
 	})

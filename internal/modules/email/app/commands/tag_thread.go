@@ -39,7 +39,7 @@ func (h *ApplyTagHandler) Handle(ctx context.Context, cmd ApplyTagCommand) error
 	if err := h.tags.ApplyToThread(ctx, domain.EmailThreadTag{ThreadID: cmd.ThreadID, TagID: cmd.TagID}); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.email.thread_tagged", events.DomainEvent{
+	h.publisher.Publish(ctx, events.EmailThreadTagged.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.thread_tagged",
 		AggregateID: cmd.ThreadID, OccurredAt: time.Now().UTC(),
 	})
@@ -59,7 +59,7 @@ func (h *RemoveTagHandler) Handle(ctx context.Context, cmd RemoveTagCommand) err
 	if err := h.tags.RemoveFromThread(ctx, cmd.ThreadID, cmd.TagID); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.email.thread_untagged", events.DomainEvent{
+	h.publisher.Publish(ctx, events.EmailThreadUntagged.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.thread_untagged",
 		AggregateID: cmd.ThreadID, OccurredAt: time.Now().UTC(),
 	})

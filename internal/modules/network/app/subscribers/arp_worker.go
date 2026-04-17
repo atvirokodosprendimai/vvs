@@ -23,10 +23,10 @@ func NewARPWorker(cmd *commands.SyncCustomerARPHandler) *ARPWorker {
 // Run blocks until ctx is cancelled. Must be called in a goroutine.
 func (w *ARPWorker) Run(ctx context.Context, sub events.EventSubscriber) {
 	// Two channels: auto-sync on customer status change, manual trigger from UI
-	customerCh, cancelCustomer := sub.ChanSubscription("isp.customer.*")
+	customerCh, cancelCustomer := sub.ChanSubscription(events.CustomerAll.String())
 	defer cancelCustomer()
 
-	arpCh, cancelARP := sub.ChanSubscription("isp.network.arp_requested")
+	arpCh, cancelARP := sub.ChanSubscription(events.NetworkARPRequested.String())
 	defer cancelARP()
 
 	for {

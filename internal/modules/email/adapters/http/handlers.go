@@ -237,7 +237,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sse := datastar.NewSSE(w, r)
-	ch, cancel := h.subscriber.ChanSubscription("isp.email.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.EmailAll.String())
 	defer cancel()
 
 	q := emailqueries.ListThreadsQuery{
@@ -301,7 +301,7 @@ func (h *Handlers) threadSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sse := datastar.NewSSE(w, r)
-	ch, cancel := h.subscriber.ChanSubscription("isp.email.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.EmailAll.String())
 	defer cancel()
 
 	current, err := h.getThread.Handle(r.Context(), threadID)
@@ -610,7 +610,7 @@ func (h *Handlers) autoLinkSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if linked > 0 {
-		h.publisher.Publish(r.Context(), "isp.email.customer_linked", events.DomainEvent{
+		h.publisher.Publish(r.Context(), events.EmailCustomerLinked.String(), events.DomainEvent{
 			Type:       "email.customers_auto_linked",
 			OccurredAt: time.Now().UTC(),
 		})
@@ -644,7 +644,7 @@ func (h *Handlers) settingsPage(w http.ResponseWriter, r *http.Request) {
 // accountListSSE streams the account list, refreshing on isp.email.* events.
 func (h *Handlers) accountListSSE(w http.ResponseWriter, r *http.Request) {
 	sse := datastar.NewSSE(w, r)
-	ch, cancel := h.subscriber.ChanSubscription("isp.email.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.EmailAll.String())
 	defer cancel()
 
 	current, err := h.listAccounts.Handle(r.Context())
@@ -758,7 +758,7 @@ func (h *Handlers) resumeAccountSSE(w http.ResponseWriter, r *http.Request) {
 // triggerSyncSSE publishes a manual sync request for a specific account.
 func (h *Handlers) triggerSyncSSE(w http.ResponseWriter, r *http.Request) {
 	accountID := chi.URLParam(r, "accountID")
-	h.publisher.Publish(r.Context(), "isp.email.sync_requested."+accountID, events.DomainEvent{
+	h.publisher.Publish(r.Context(), events.EmailSyncRequested.Format(accountID), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.sync_requested", AggregateID: accountID,
 	})
 	w.WriteHeader(http.StatusNoContent)
@@ -805,7 +805,7 @@ func (h *Handlers) toggleFolderSSE(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) folderListSSE(w http.ResponseWriter, r *http.Request) {
 	accountID := chi.URLParam(r, "accountID")
 	sse := datastar.NewSSE(w, r)
-	ch, cancel := h.subscriber.ChanSubscription("isp.email.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.EmailAll.String())
 	defer cancel()
 
 	folders, err := h.listFolders.Handle(r.Context(), accountID)

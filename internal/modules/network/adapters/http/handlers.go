@@ -92,7 +92,7 @@ func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	sse := datastar.NewSSE(w, r)
 
-	ch, cancel := h.subscriber.ChanSubscription("isp.network.router.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.NetworkRouterAll.String())
 	defer cancel()
 
 	current, err := h.listQuery.Handle(r.Context())

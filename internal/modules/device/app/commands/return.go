@@ -32,7 +32,7 @@ func (h *ReturnDeviceHandler) Handle(ctx context.Context, cmd ReturnDeviceComman
 	if err := h.repo.Save(ctx, d); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.device.returned", events.DomainEvent{
+	h.publisher.Publish(ctx, events.DeviceReturned.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "device.returned",
 		AggregateID: d.ID,

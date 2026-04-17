@@ -122,7 +122,7 @@ func (h *DeviceHandlers) qrPNG(w http.ResponseWriter, r *http.Request) {
 
 func (h *DeviceHandlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	sse := datastar.NewSSE(w, r)
-	ch, cancel := h.subscriber.ChanSubscription("isp.device.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.DeviceAll.String())
 	defer cancel()
 
 	q := queries.ListDevicesQuery{

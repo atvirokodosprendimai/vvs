@@ -57,7 +57,7 @@ func (w *SyncWorker) run() {
 	var manualTrigger <-chan events.DomainEvent
 	var cancelSub func()
 	if w.sub != nil {
-		manualTrigger, cancelSub = w.sub.ChanSubscription("isp.email.sync_requested.*")
+		manualTrigger, cancelSub = w.sub.ChanSubscription(events.EmailSyncRequestedAll.String())
 		defer cancelSub()
 	}
 
@@ -122,7 +122,7 @@ func (w *SyncWorker) syncAll() {
 	} else if linked > 0 {
 		slog.Info("email sync: auto-linked threads to customers", "count", linked)
 		if w.pub != nil {
-			w.pub.Publish(ctx, "isp.email.customer_linked", events.DomainEvent{
+			w.pub.Publish(ctx, events.EmailCustomerLinked.String(), events.DomainEvent{
 				Type:       "email.customers_auto_linked",
 				OccurredAt: time.Now().UTC(),
 			})

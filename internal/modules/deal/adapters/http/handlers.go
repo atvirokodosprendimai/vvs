@@ -61,7 +61,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	sse := datastar.NewSSE(w, r)
 
 	// Subscribe before initial render so no event is missed.
-	ch, cancel := h.subscriber.ChanSubscription("isp.deal.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.DealAll.String())
 	defer cancel()
 
 	q := queries.ListDealsForCustomerQuery{CustomerID: customerID}
@@ -208,8 +208,15 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Notify all deal SSE listeners via event subscription.
-	w.WriteHeader(http.StatusOK)
+	sse2 := datastar.NewSSE(w, r)
+	cleared, _ := json.Marshal(map[string]any{
+		"_dealModalOpen": false,
+		"_dealId":        "",
+		"dealTitle":      "",
+		"dealValue":      "",
+		"dealNotes":      "",
+	})
+	sse2.PatchSignals(cleared)
 }
 
 func (h *Handlers) advanceSSE(w http.ResponseWriter, r *http.Request) {

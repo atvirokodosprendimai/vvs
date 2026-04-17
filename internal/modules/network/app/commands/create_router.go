@@ -40,7 +40,7 @@ func (h *CreateRouterHandler) Handle(ctx context.Context, cmd CreateRouterComman
 	}
 
 	data, _ := json.Marshal(toReadModel(router))
-	h.publisher.Publish(ctx, "isp.network.router.created", events.DomainEvent{
+	h.publisher.Publish(ctx, events.NetworkRouterCreated.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "network.router.created",
 		AggregateID: router.ID,

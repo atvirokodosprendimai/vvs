@@ -40,7 +40,7 @@ func (h *CreateProductHandler) Handle(ctx context.Context, cmd CreateProductComm
 
 	data, _ := json.Marshal(domainToReadModel(product))
 
-	h.publisher.Publish(ctx, "isp.product.created", events.DomainEvent{
+	h.publisher.Publish(ctx, events.ProductCreated.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "product.created",
 		AggregateID: product.ID,

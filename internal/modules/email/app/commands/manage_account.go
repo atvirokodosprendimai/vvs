@@ -26,7 +26,7 @@ func (h *PauseAccountHandler) Handle(ctx context.Context, id string) error {
 	if err := h.repo.Save(ctx, a); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.email.account_paused", events.DomainEvent{
+	h.publisher.Publish(ctx, events.EmailAccountPaused.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.account_paused", AggregateID: id,
 	})
 	return nil
@@ -50,7 +50,7 @@ func (h *ResumeAccountHandler) Handle(ctx context.Context, id string) error {
 	if err := h.repo.Save(ctx, a); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.email.account_resumed", events.DomainEvent{
+	h.publisher.Publish(ctx, events.EmailAccountResumed.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.account_resumed", AggregateID: id,
 	})
 	return nil

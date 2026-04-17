@@ -38,23 +38,23 @@ func (h *ChangeCustomerStatusHandler) Handle(ctx context.Context, cmd ChangeCust
 		return err
 	}
 
-	var eventType string
+	var action string
 	switch cmd.Action {
 	case ActionQualify:
 		err = customer.Qualify()
-		eventType = "customer.qualified"
+		action = "qualified"
 	case ActionConvert:
 		err = customer.Convert()
-		eventType = "customer.converted"
+		action = "converted"
 	case ActionSuspend:
 		err = customer.Suspend()
-		eventType = "customer.suspended"
+		action = "suspended"
 	case ActionActivate:
 		err = customer.Activate()
-		eventType = "customer.activated"
+		action = "activated"
 	case ActionChurn:
 		err = customer.Churn()
-		eventType = "customer.churned"
+		action = "churned"
 	default:
 		return domain.ErrInvalidTransition
 	}
@@ -67,9 +67,9 @@ func (h *ChangeCustomerStatusHandler) Handle(ctx context.Context, cmd ChangeCust
 	}
 
 	data, _ := json.Marshal(domainToReadModel(customer))
-	h.publisher.Publish(ctx, "isp."+eventType, events.DomainEvent{
+	h.publisher.Publish(ctx, events.CustomerStatusChanged.Format(action), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
-		Type:        eventType,
+		Type:        "customer." + action,
 		AggregateID: customer.ID,
 		OccurredAt:  time.Now().UTC(),
 		Data:        data,

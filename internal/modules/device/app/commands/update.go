@@ -39,7 +39,7 @@ func (h *UpdateDeviceHandler) Handle(ctx context.Context, cmd UpdateDeviceComman
 	if err := h.repo.Save(ctx, d); err != nil {
 		return nil, err
 	}
-	h.publisher.Publish(ctx, "isp.device.updated", events.DomainEvent{
+	h.publisher.Publish(ctx, events.DeviceUpdated.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "device.updated",
 		AggregateID: d.ID,

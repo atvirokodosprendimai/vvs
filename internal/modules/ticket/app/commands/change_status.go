@@ -51,7 +51,7 @@ func (h *ChangeTicketStatusHandler) Handle(ctx context.Context, cmd ChangeTicket
 	if err := h.repo.Save(ctx, tk); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.ticket.status_changed", events.DomainEvent{
+	h.publisher.Publish(ctx, events.TicketStatusChanged.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "ticket.status_changed",
 		AggregateID: tk.ID,

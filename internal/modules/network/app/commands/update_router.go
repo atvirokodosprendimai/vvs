@@ -45,7 +45,7 @@ func (h *UpdateRouterHandler) Handle(ctx context.Context, cmd UpdateRouterComman
 	}
 
 	data, _ := json.Marshal(toReadModel(router))
-	h.publisher.Publish(ctx, "isp.network.router.updated", events.DomainEvent{
+	h.publisher.Publish(ctx, events.NetworkRouterUpdated.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "network.router.updated",
 		AggregateID: router.ID,

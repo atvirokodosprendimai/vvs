@@ -49,7 +49,7 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	customerID := chi.URLParam(r, "id")
 	sse := datastar.NewSSE(w, r)
 
-	ch, cancel := h.subscriber.ChanSubscription("isp.contact.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.ContactAll.String())
 	defer cancel()
 
 	q := queries.ListContactsForCustomerQuery{CustomerID: customerID}

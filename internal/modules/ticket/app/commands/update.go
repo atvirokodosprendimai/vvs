@@ -42,7 +42,7 @@ func (h *UpdateTicketHandler) Handle(ctx context.Context, cmd UpdateTicketComman
 	if err := h.repo.Save(ctx, tk); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.ticket.updated", events.DomainEvent{
+	h.publisher.Publish(ctx, events.TicketUpdated.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "ticket.updated",
 		AggregateID: tk.ID,

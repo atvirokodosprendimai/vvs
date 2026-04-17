@@ -33,7 +33,7 @@ func (h *RegisterDeviceHandler) Handle(ctx context.Context, cmd RegisterDeviceCo
 	if err := h.repo.Save(ctx, d); err != nil {
 		return nil, err
 	}
-	h.publisher.Publish(ctx, "isp.device.registered", events.DomainEvent{
+	h.publisher.Publish(ctx, events.DeviceRegistered.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "device.registered",
 		AggregateID: d.ID,

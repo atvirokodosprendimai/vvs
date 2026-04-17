@@ -43,7 +43,7 @@ func (h *CreateTaskHandler) Handle(ctx context.Context, cmd CreateTaskCommand) (
 	if err := h.repo.Save(ctx, task); err != nil {
 		return nil, err
 	}
-	h.publisher.Publish(ctx, "isp.task.created", events.DomainEvent{
+	h.publisher.Publish(ctx, events.TaskCreated.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "task.created",
 		AggregateID: task.ID,

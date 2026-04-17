@@ -38,7 +38,7 @@ func (h *OpenTicketHandler) Handle(ctx context.Context, cmd OpenTicketCommand) (
 	if err := h.repo.Save(ctx, tk); err != nil {
 		return nil, err
 	}
-	h.publisher.Publish(ctx, "isp.ticket.opened", events.DomainEvent{
+	h.publisher.Publish(ctx, events.TicketOpened.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "ticket.opened",
 		AggregateID: tk.ID,

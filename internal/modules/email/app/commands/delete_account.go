@@ -21,7 +21,7 @@ func (h *DeleteAccountHandler) Handle(ctx context.Context, id string) error {
 	if err := h.repo.Delete(ctx, id); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.email.account_deleted", events.DomainEvent{
+	h.publisher.Publish(ctx, events.EmailAccountDeleted.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.account_deleted", AggregateID: id,
 	})
 	return nil

@@ -32,7 +32,7 @@ func (h *LinkCustomerHandler) Handle(ctx context.Context, cmd LinkCustomerComman
 	if err := h.threads.Save(ctx, t); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.email.customer_linked", events.DomainEvent{
+	h.publisher.Publish(ctx, events.EmailCustomerLinked.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.customer_linked",
 		AggregateID: cmd.ThreadID, OccurredAt: time.Now().UTC(),
 	})

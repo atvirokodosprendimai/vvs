@@ -85,7 +85,7 @@ func (h *ChatHandler) chatPageSSE(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if err := h.store.MarkRead(r.Context(), threadID, user.ID); err == nil {
-			h.publisher.Publish(r.Context(), "isp.chat.read."+threadID, events.DomainEvent{
+			h.publisher.Publish(r.Context(), events.ChatRead.Format(threadID), events.DomainEvent{
 				ID:          uuid.Must(uuid.NewV7()).String(),
 				Type:        "chat.read",
 				AggregateID: threadID,
@@ -97,7 +97,7 @@ func (h *ChatHandler) chatPageSSE(w http.ResponseWriter, r *http.Request) {
 	sse := datastar.NewSSE(w, r)
 
 	// Subscribe to thread list events.
-	chatCh, cancelChat := h.subscriber.ChanSubscription("isp.chat.>")
+	chatCh, cancelChat := h.subscriber.ChanSubscription(events.ChatAll.String())
 	defer cancelChat()
 
 	// Subscribe to messages for the selected thread (nil channel = never fires).
@@ -105,7 +105,7 @@ func (h *ChatHandler) chatPageSSE(w http.ResponseWriter, r *http.Request) {
 	cancelMsg := func() {}
 	defer func() { cancelMsg() }()
 	if threadID != "" {
-		ch, cancel := h.subscriber.ChanSubscription("isp.chat.message." + threadID)
+		ch, cancel := h.subscriber.ChanSubscription(events.ChatMessage.Format(threadID))
 		msgCh = ch
 		cancelMsg = cancel
 	}
@@ -214,7 +214,7 @@ func (h *ChatHandler) chatSend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data, _ := json.Marshal(msg)
-	h.publisher.Publish(r.Context(), "isp.chat.message."+threadID, events.DomainEvent{
+	h.publisher.Publish(r.Context(), events.ChatMessage.Format(threadID), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "chat.message",
 		AggregateID: msg.ID,
@@ -265,7 +265,7 @@ func (h *ChatHandler) createDirect(w http.ResponseWriter, r *http.Request) {
 		if err := h.store.AddMember(r.Context(), thread.ID, signals.TargetUserID); err != nil {
 			log.Printf("createDirect: AddMember (target): %v", err)
 		}
-		h.publisher.Publish(r.Context(), "isp.chat.thread.created", events.DomainEvent{
+		h.publisher.Publish(r.Context(), events.ChatThreadCreated.String(), events.DomainEvent{
 			ID:          uuid.Must(uuid.NewV7()).String(),
 			Type:        "chat.thread.created",
 			AggregateID: thread.ID,
@@ -321,7 +321,7 @@ func (h *ChatHandler) createChannel(w http.ResponseWriter, r *http.Request) {
 		log.Printf("createChannel: AddMember: %v", err)
 	}
 
-	h.publisher.Publish(r.Context(), "isp.chat.thread.created", events.DomainEvent{
+	h.publisher.Publish(r.Context(), events.ChatThreadCreated.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "chat.thread.created",
 		AggregateID: thread.ID,

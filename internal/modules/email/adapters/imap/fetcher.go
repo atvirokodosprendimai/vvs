@@ -104,7 +104,7 @@ func Fetch(ctx context.Context, account *domain.EmailAccount, repos Repos, newID
 	if totalFetched > 0 {
 		slog.Info("imap: sync complete", "account", account.Name, "fetched", totalFetched)
 		if pub != nil {
-			_ = pub.Publish(ctx, "isp.email.synced", events.DomainEvent{
+			_ = pub.Publish(ctx, events.EmailSynced.String(), events.DomainEvent{
 				Type:        "email.synced",
 				AggregateID: account.ID,
 				OccurredAt:  time.Now().UTC(),

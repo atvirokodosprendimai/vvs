@@ -131,7 +131,7 @@ func (h *SyncCustomerARPHandler) Handle(ctx context.Context, cmd SyncCustomerARP
 		Action:     cmd.Action,
 		Status:     arpStatus,
 	})
-	h.publisher.Publish(ctx, "isp.network.arp_changed", events.DomainEvent{
+	h.publisher.Publish(ctx, events.NetworkARPChanged.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "network.arp_changed",
 		AggregateID: arpData.ID,

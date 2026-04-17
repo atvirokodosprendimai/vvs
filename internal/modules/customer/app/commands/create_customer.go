@@ -65,7 +65,7 @@ func (h *CreateCustomerHandler) Handle(ctx context.Context, cmd CreateCustomerCo
 
 	data, _ := json.Marshal(domainToReadModel(customer))
 
-	h.publisher.Publish(ctx, "isp.customer.created", events.DomainEvent{
+	h.publisher.Publish(ctx, events.CustomerCreated.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "customer.created",
 		AggregateID: customer.ID,

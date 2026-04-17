@@ -51,7 +51,7 @@ func (h *ChangeTaskStatusHandler) Handle(ctx context.Context, cmd ChangeTaskStat
 	if err := h.repo.Save(ctx, task); err != nil {
 		return nil, err
 	}
-	h.publisher.Publish(ctx, "isp.task.status_changed", events.DomainEvent{
+	h.publisher.Publish(ctx, events.TaskStatusChanged.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "task.status_changed",
 		AggregateID: task.ID,

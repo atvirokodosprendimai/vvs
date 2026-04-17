@@ -34,7 +34,7 @@ func (h *DeployDeviceHandler) Handle(ctx context.Context, cmd DeployDeviceComman
 	if err := h.repo.Save(ctx, d); err != nil {
 		return nil, err
 	}
-	h.publisher.Publish(ctx, "isp.device.deployed", events.DomainEvent{
+	h.publisher.Publish(ctx, events.DeviceDeployed.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "device.deployed",
 		AggregateID: d.ID,

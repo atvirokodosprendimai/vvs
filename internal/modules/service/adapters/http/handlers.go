@@ -63,7 +63,7 @@ func (h *ServiceHandlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	sse := datastar.NewSSE(w, r)
 
 	// Subscribe before initial render so no event is missed.
-	ch, cancel := h.subscriber.ChanSubscription("isp.service.*")
+	ch, cancel := h.subscriber.ChanSubscription(events.ServiceAll.String())
 	defer cancel()
 
 	q := queries.ListServicesForCustomerQuery{CustomerID: customerID}

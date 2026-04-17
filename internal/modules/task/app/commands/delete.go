@@ -26,7 +26,7 @@ func (h *DeleteTaskHandler) Handle(ctx context.Context, cmd DeleteTaskCommand) e
 	if err := h.repo.Delete(ctx, cmd.ID); err != nil {
 		return err
 	}
-	h.publisher.Publish(ctx, "isp.task.deleted", events.DomainEvent{
+	h.publisher.Publish(ctx, events.TaskDeleted.String(), events.DomainEvent{
 		ID:          uuid.Must(uuid.NewV7()).String(),
 		Type:        "task.deleted",
 		AggregateID: cmd.ID,
