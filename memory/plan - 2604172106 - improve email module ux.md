@@ -1,5 +1,5 @@
 ---
-tldr: Email inbox UX — 3-pane inline reading, tag filter active state, reply form position, post-send signal clearing, unread counts
+tldr: Email inbox UX — 3-pane inline reading, customer context (name/code + email-match suggestion), tag filter active state, reply form position, post-send clearing, unread counts
 status: active
 ---
 
@@ -16,17 +16,24 @@ status: active
 | # | Problem | Severity |
 |---|---------|----------|
 | 1 | Thread rows use `target="_blank"` — every click opens a new tab | High |
-| 2 | Tag filter buttons have no active state visual feedback | Medium |
-| 3 | Reply form rendered **before** thread messages, not after | Medium |
-| 4 | Compose modal doesn't close/clear signals after successful send | Medium |
-| 5 | Reply textarea isn't cleared after successful reply | Medium |
-| 6 | Account sidebar shows status dot but no unread count badge | Low |
+| 2 | No customer context visible near threads — `CustomerID` stored but name/code not shown | High |
+| 3 | `customerLinkBadge` shows "Linked" text only — no name, code, or link to customer page | High |
+| 4 | No auto-suggest customer from participant email address (contacts table knows this mapping) | Medium |
+| 5 | Tag filter buttons have no active state visual feedback | Medium |
+| 6 | Reply form rendered **before** thread messages, not after | Medium |
+| 7 | Compose modal doesn't close/clear signals after successful send | Medium |
+| 8 | Reply textarea isn't cleared after successful reply | Medium |
+| 9 | Account sidebar shows status dot but no unread count badge | Low |
 
 ### Key backend facts
 
 - `/sse/emails/{threadID}` already exists → `ThreadDetail` component
 - `/api/email-threads/{threadID}/read` → marks thread read
 - `$emailAccountID`, `$emailTagFilter`, `$emailSearch`, `$emailFolder`, `$emailPage` signals already defined on inbox
+- `ThreadReadModel` has `CustomerID` but **no** `CustomerName`/`CustomerCode`
+- `threadToReadModel` in `list_threads.go` only maps domain fields — no customer resolver injected
+- Customer name lookup needs a `customerNameResolver` port (already exists in other modules — e.g. deal handlers use it)
+- Contact email → customer mapping: contacts table has `email` column; query `SELECT customer_id FROM contacts WHERE email = ?`
 
 ---
 
@@ -56,6 +63,23 @@ status: active
    - Query: `COUNT threads WHERE account_id = ? AND has_unread_tag`
    - Sidebar account link renders count badge when > 0
 
+6. [ ] Add `CustomerName`/`CustomerCode` to `ThreadReadModel`
+   - Add fields to `read_model.go`: `CustomerName string`, `CustomerCode string`
+   - Enrich in HTTP layer: inject `customerNameResolver` into email `Handlers`, resolve after `listThreads.Handle`
+   - Pattern already used in deal/ticket handlers — same `customerNameResolver` interface
+   - `threadToReadModel` stays pure; enrichment is HTTP adapter concern
+
+7. [ ] Show customer badge on thread rows in inbox
+   - `threadRow` component: when `t.CustomerName != ""`, render pill `[CustomerCode · CustomerName]` in amber
+   - Link pill to `/customers/{t.CustomerID}`
+   - Replaces the participant address line when customer is known (or shows alongside it)
+
+8. [ ] Fix `customerLinkBadge` to show name/code (not just "Linked")
+   - `ThreadDetailReadModel` already embeds `ThreadReadModel` → has `CustomerName`, `CustomerCode` after fix #6
+   - In `customerLinkBadge`: render `{customerLabel}` is already there but called with `""` as 3rd arg
+   - `threadSSE` handler: pass `thread.CustomerName` as `customerLabel` to the template
+   - Badge becomes: `Acme Corp (CLI-001)` linkable to `/customers/{id}`, with unlink `×`
+
 ### Phase 2 - 3-pane inline reading — status: open
 
 Goal: clicking a thread shows detail in a right panel inside the inbox, without opening a new tab.
@@ -82,7 +106,14 @@ Goal: clicking a thread shows detail in a right panel inside the inbox, without 
    - In `threadSSE`: after patching thread detail, also fire `markReadCmd.Handle(ctx, threadID)`
    - Saves the separate manual "Mark read" click
 
-5. [ ] Keep full-page route working
+5. [ ] Auto-suggest customer from participant email match
+   - Add `SuggestedCustomerID`, `SuggestedCustomerName`, `SuggestedCustomerCode` to `ThreadDetailReadModel`
+   - New port: `type contactEmailLookup interface { FindCustomerByContactEmail(ctx, email string) (id, name, code string, err error) }`
+   - In `GetThreadHandler` (or in `threadSSE` handler): when `CustomerID == ""`, iterate participant addresses, call lookup for each, first match → suggestion
+   - Template: show "Suggested: [CustomerName]" pill (neutral/yellow tone) below `customerLinkBadge`, with "Link" button calling existing `/api/email-threads/{id}/link`
+   - One-click accept: on click → `@post('/api/email-threads/{id}/link')` with `customerID` signal pre-set to suggestion ID
+
+6. [ ] Keep full-page route working
    - `/emails/threads/{threadID}` stays as-is for direct links / bookmarks
    - No changes needed to `threadPage` handler
 
@@ -103,6 +134,10 @@ Goal: clicking a thread shows detail in a right panel inside the inbox, without 
 ## Verification
 
 - [ ] Click thread in inbox → detail panel opens inline, no new tab
+- [ ] Thread row shows customer name + code badge when linked
+- [ ] Thread detail header shows "Acme Corp (CLI-001)" linked to customer page
+- [ ] Thread with unlinked but matching participant email → shows "Suggested: Acme Corp" pill with Link button
+- [ ] Accept suggestion → thread linked, suggested pill replaced by proper badge
 - [ ] Tag filter "unread" → button highlights amber, threads filtered
 - [ ] Send reply → reply body clears, thread refreshes showing new message
 - [ ] Compose send → modal closes, all fields cleared
