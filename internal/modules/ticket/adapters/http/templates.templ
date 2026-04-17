@@ -101,7 +101,7 @@ templ TicketDetailPage(tk queries.TicketReadModel) {
 					<h1 class="text-lg font-semibold text-neutral-100">{ tk.Subject }</h1>
 					<div class="flex items-center gap-3 mt-1">
 						@ticketPriorityBadge(tk.Priority)
-						@ticketStatusBadge(tk.Status)
+						@ticketStatusInline(tk.Status)
 						if tk.CustomerName != "" {
 							<a
 								href={ templ.SafeURL(fmt.Sprintf("/customers/%s", tk.CustomerID)) }
@@ -113,42 +113,7 @@ templ TicketDetailPage(tk queries.TicketReadModel) {
 				</div>
 			</div>
 
-			<!-- Status actions -->
-			<div class="flex gap-2 mb-4">
-				if tk.Status == domain.StatusOpen {
-					<button
-						type="button"
-						data-on:click={ fmt.Sprintf("$ticketAction = 'start'; @put('/api/tickets/%s/status')", tk.ID) }
-						class="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-blue-500/20"
-					>Start Work</button>
-				}
-				if tk.Status == domain.StatusInProgress {
-					<button
-						type="button"
-						data-on:click={ fmt.Sprintf("$ticketAction = 'resolve'; @put('/api/tickets/%s/status')", tk.ID) }
-						class="bg-green-500/10 hover:bg-green-500/20 text-green-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-green-500/20"
-					>Resolve</button>
-				}
-				if tk.Status != domain.StatusClosed {
-					<button
-						type="button"
-						data-on:click={ fmt.Sprintf("$ticketAction = 'close'; @put('/api/tickets/%s/status')", tk.ID) }
-						class="bg-neutral-500/10 hover:bg-neutral-500/20 text-neutral-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-neutral-500/20"
-					>Close</button>
-				}
-				if tk.Status == domain.StatusResolved || tk.Status == domain.StatusClosed {
-					<button
-						type="button"
-						data-on:click={ fmt.Sprintf("$ticketAction = 'reopen'; @put('/api/tickets/%s/status')", tk.ID) }
-						class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-amber-500/20"
-					>Reopen</button>
-				}
-				<button
-					type="button"
-					data-on:click={ fmt.Sprintf("@delete('/api/tickets/%s')", tk.ID) }
-					class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20 ml-auto"
-				>Delete</button>
-			</div>
+			@ticketStatusActions(tk)
 
 			<!-- Body -->
 			if tk.Body != "" {
@@ -198,6 +163,52 @@ templ TicketDetailPage(tk queries.TicketReadModel) {
 			</div>
 		</div>
 	}
+}
+
+// ticketStatusActions renders the patchable action buttons for a ticket detail page.
+templ ticketStatusActions(tk queries.TicketReadModel) {
+	<div id="ticket-status-actions" class="flex gap-2 mb-4">
+		if tk.Status == domain.StatusOpen {
+			<button
+				type="button"
+				data-on:click={ fmt.Sprintf("$ticketAction = 'start'; @put('/api/tickets/%s/status')", tk.ID) }
+				class="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-blue-500/20"
+			>Start Work</button>
+		}
+		if tk.Status == domain.StatusInProgress {
+			<button
+				type="button"
+				data-on:click={ fmt.Sprintf("$ticketAction = 'resolve'; @put('/api/tickets/%s/status')", tk.ID) }
+				class="bg-green-500/10 hover:bg-green-500/20 text-green-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-green-500/20"
+			>Resolve</button>
+		}
+		if tk.Status != domain.StatusClosed {
+			<button
+				type="button"
+				data-on:click={ fmt.Sprintf("$ticketAction = 'close'; @put('/api/tickets/%s/status')", tk.ID) }
+				class="bg-neutral-500/10 hover:bg-neutral-500/20 text-neutral-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-neutral-500/20"
+			>Close</button>
+		}
+		if tk.Status == domain.StatusResolved || tk.Status == domain.StatusClosed {
+			<button
+				type="button"
+				data-on:click={ fmt.Sprintf("$ticketAction = 'reopen'; @put('/api/tickets/%s/status')", tk.ID) }
+				class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-amber-500/20"
+			>Reopen</button>
+		}
+		<button
+			type="button"
+			data-on:click={ fmt.Sprintf("@delete('/api/tickets/%s')", tk.ID) }
+			class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20 ml-auto"
+		>Delete</button>
+	</div>
+}
+
+// ticketStatusInline renders a patchable status badge for the ticket header.
+templ ticketStatusInline(status string) {
+	<span id="ticket-status-inline">
+		@ticketStatusBadge(status)
+	</span>
 }
 
 // TicketSection renders the full tickets panel for a customer detail page.

@@ -215,16 +215,24 @@ func (h *Handlers) changeStatusSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	sse := datastar.NewSSE(w, r)
+
 	if err := h.changeStatusCmd.Handle(r.Context(), commands.ChangeTicketStatusCommand{
 		ID:     ticketID,
 		Action: signals.TicketAction,
 	}); err != nil {
 		log.Printf("ticket handler: changeStatusSSE Handle: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		sse.PatchElementTempl(ticketFormError(err.Error()))
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	// Re-render status actions for the detail page.
+	if h.getTicketQuery != nil {
+		if tk, err := h.getTicketQuery.Handle(r.Context(), queries.GetTicketQuery{ID: ticketID}); err == nil {
+			sse.PatchElementTempl(ticketStatusActions(*tk))
+			sse.PatchElementTempl(ticketStatusInline(tk.Status))
+		}
+	}
 }
 
 // deleteSSE deletes a ticket.
