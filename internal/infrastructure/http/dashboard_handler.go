@@ -20,6 +20,12 @@ type DashboardData struct {
 	UnpaidInvoices   int64
 	ActiveTasks      int64
 
+	// Today — action items requiring attention now
+	TodayOverdueInvoices []TodayInvoice
+	TodayDueServices     []TodayService
+	TodayUrgentTickets   []TodayTicket
+	TodayOverdueTasks    []TodayTask
+
 	// Ticket status breakdown
 	TicketStatuses []StatusCount
 
@@ -37,6 +43,43 @@ type DashboardData struct {
 
 	// Monthly revenue (last 6 months)
 	MonthlyRevenue []MonthRevenue
+}
+
+// TodayInvoice is a finalized invoice past its due date.
+type TodayInvoice struct {
+	ID            string
+	InvoiceNumber string
+	CustomerName  string
+	Total         float64
+	DueDate       time.Time
+}
+
+// TodayService is an active service whose next billing date has passed.
+type TodayService struct {
+	ID              string
+	ProductName     string
+	PriceAmount     int64
+	Currency        string
+	CustomerID      string
+	NextBillingDate time.Time
+}
+
+// TodayTicket is an open/in-progress ticket sorted oldest-first.
+type TodayTicket struct {
+	ID        string
+	Subject   string
+	Status    string
+	Priority  string
+	CreatedAt time.Time
+}
+
+// TodayTask is a task with a due date that has passed and is not done.
+type TodayTask struct {
+	ID         string
+	Title      string
+	Priority   string
+	DueDate    time.Time
+	CustomerID string
 }
 
 type StatusCount struct {
@@ -89,6 +132,39 @@ func newDashboardStatsHandler(reader *gorm.DB) http.HandlerFunc {
 		reader.Table("invoices").Where("status NOT IN ('paid','void')").Count(&d.UnpaidInvoices)
 		reader.Table("tasks").Where("status IN ('todo','in_progress')").Count(&d.ActiveTasks)
 
+		// Today — overdue invoices (finalized, due_date < now)
+		now := time.Now().UTC()
+		reader.Table("invoices").
+			Select("id, invoice_number, customer_name, total, due_date").
+			Where("status = 'finalized' AND due_date < ?", now).
+			Order("due_date ASC").
+			Limit(10).
+			Scan(&d.TodayOverdueInvoices)
+
+		// Today — services due for billing (active, next_billing_date <= now)
+		reader.Table("customer_services").
+			Select("id, product_name, price_amount, currency, customer_id, next_billing_date").
+			Where("status = 'active' AND next_billing_date IS NOT NULL AND next_billing_date <= ?", now).
+			Order("next_billing_date ASC").
+			Limit(10).
+			Scan(&d.TodayDueServices)
+
+		// Today — oldest open/in-progress tickets (limit 5)
+		reader.Table("tickets").
+			Select("id, subject, status, priority, created_at").
+			Where("status IN ('open', 'in_progress')").
+			Order("created_at ASC").
+			Limit(5).
+			Scan(&d.TodayUrgentTickets)
+
+		// Today — overdue tasks (due_date <= now, not done/cancelled)
+		reader.Table("tasks").
+			Select("id, title, priority, due_date, customer_id").
+			Where("due_date IS NOT NULL AND due_date <= ? AND status IN ('todo', 'in_progress')", now).
+			Order("due_date ASC").
+			Limit(10).
+			Scan(&d.TodayOverdueTasks)
+
 		// Ticket status distribution
 		reader.Table("tickets").
 			Select("status, count(*) as count").
@@ -122,7 +198,7 @@ func newDashboardStatsHandler(reader *gorm.DB) http.HandlerFunc {
 			Scan(&d.RecentInvoices)
 
 		// Monthly revenue — last 6 months
-		sixMonthsAgo := time.Now().AddDate(0, -6, 0).Format("2006-01-02")
+		sixMonthsAgo := now.AddDate(0, -6, 0).Format("2006-01-02")
 		reader.Table("invoices").
 			Select("strftime('%Y-%m', created_at) as month, COALESCE(SUM(total), 0) as total").
 			Where("status = 'paid' AND created_at >= ?", sixMonthsAgo).
