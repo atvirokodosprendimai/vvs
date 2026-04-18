@@ -16,7 +16,6 @@ templ PaymentImportPage() {
 	@templates.Layout("Payment Import") {
 		@templates.PageHeader("Payment Import", "Upload a SEPA CSV file to match and mark invoices as paid")
 		<div class="max-w-3xl">
-			<!-- Upload card -->
 			<div class="bg-neutral-800 border border-neutral-700 rounded-lg p-6 mb-6">
 				<h2 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4">Upload CSV File</h2>
 				<form
@@ -35,14 +34,10 @@ templ PaymentImportPage() {
 							name="csv_file"
 							accept=".csv,.txt"
 							required
-							class="bg-neutral-900 text-neutral-300 border border-neutral-700 rounded px-3 py-2 text-sm
-							       focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500
-							       file:mr-3 file:py-1 file:px-3 file:rounded file:border-0
-							       file:text-xs file:font-medium file:bg-amber-500/10 file:text-amber-400
-							       hover:file:bg-amber-500/20 cursor-pointer"
+							class="bg-neutral-900 text-neutral-300 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-amber-500/10 file:text-amber-400 hover:file:bg-amber-500/20 cursor-pointer"
 						/>
 						<p class="text-xs text-neutral-600">
-							Expected format: <span class="font-mono text-neutral-500">Date;Amount;Reference;PayerName;PayerIBAN</span>
+							Semicolon or comma delimited. Columns auto-detected from header row.
 						</p>
 					</div>
 					<div>
@@ -55,15 +50,12 @@ templ PaymentImportPage() {
 					</div>
 				</form>
 			</div>
-
-			<!-- SSE target for match results (empty on initial load) -->
 			<div id="preview-section"></div>
 		</div>
 	}
 }
 
-// PaymentImportPreviewPage is the full page rendered after a CSV upload,
-// showing the upload form and the match preview results.
+// PaymentImportPreviewPage is rendered after CSV upload — shows upload form + match results.
 templ PaymentImportPreviewPage(results []domain.MatchResult) {
 	@templates.Layout("Payment Import") {
 		@templates.PageHeader("Payment Import", "Upload a SEPA CSV file to match and mark invoices as paid")
@@ -71,47 +63,30 @@ templ PaymentImportPreviewPage(results []domain.MatchResult) {
 			class="max-w-3xl"
 			data-signals={ previewSignals(results) }
 		>
-			<!-- Upload card -->
 			<div class="bg-neutral-800 border border-neutral-700 rounded-lg p-6 mb-6">
-				<h2 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4">Upload CSV File</h2>
+				<h2 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4">Upload Another File</h2>
 				<form
 					method="POST"
 					action="/payments/import/preview"
 					enctype="multipart/form-data"
-					class="flex flex-col gap-4"
+					class="flex items-end gap-3"
 				>
-					<div class="flex flex-col gap-1.5">
-						<label for="csv_file" class="text-xs font-medium text-neutral-400 uppercase tracking-wider">
-							SEPA CSV File
-						</label>
-						<input
-							type="file"
-							id="csv_file"
-							name="csv_file"
-							accept=".csv,.txt"
-							required
-							class="bg-neutral-900 text-neutral-300 border border-neutral-700 rounded px-3 py-2 text-sm
-							       focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500
-							       file:mr-3 file:py-1 file:px-3 file:rounded file:border-0
-							       file:text-xs file:font-medium file:bg-amber-500/10 file:text-amber-400
-							       hover:file:bg-amber-500/20 cursor-pointer"
-						/>
-						<p class="text-xs text-neutral-600">
-							Expected format: <span class="font-mono text-neutral-500">Date;Amount;Reference;PayerName;PayerIBAN</span>
-						</p>
-					</div>
-					<div>
-						<button
-							type="submit"
-							class="bg-amber-500 hover:bg-amber-400 text-neutral-900 font-semibold px-5 py-2 rounded text-sm transition-colors"
-						>
-							Preview Matches
-						</button>
-					</div>
+					<input
+						type="file"
+						id="csv_file"
+						name="csv_file"
+						accept=".csv,.txt"
+						required
+						class="bg-neutral-900 text-neutral-300 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-medium file:bg-amber-500/10 file:text-amber-400 hover:file:bg-amber-500/20 cursor-pointer"
+					/>
+					<button
+						type="submit"
+						class="bg-neutral-700 hover:bg-neutral-600 text-neutral-200 px-4 py-2 rounded text-sm transition-colors"
+					>
+						Re-upload
+					</button>
 				</form>
 			</div>
-
-			<!-- Match preview -->
 			<div id="preview-section">
 				@PaymentMatchPreview(results)
 			</div>
@@ -119,20 +94,18 @@ templ PaymentImportPreviewPage(results []domain.MatchResult) {
 	}
 }
 
-// previewSignals builds the initial data-signals JSON for the preview page.
-// It declares selectedIds as a comma-separated string of pre-checked invoice IDs.
+// previewSignals builds data-signals JSON pre-selecting exact-match invoice IDs.
 func previewSignals(results []domain.MatchResult) string {
 	var ids []string
 	for _, r := range results {
-		if r.Confidence == domain.ConfidenceExact && r.InvoiceStatus != "paid" && r.InvoiceID != "" {
-			ids = append(ids, r.InvoiceID)
+		if r.Confidence == domain.ConfidenceExact && r.Invoice != nil && r.Invoice.Status != "paid" {
+			ids = append(ids, r.Invoice.ID)
 		}
 	}
 	return fmt.Sprintf(`{"selectedIds": %q}`, strings.Join(ids, ","))
 }
 
 // PaymentMatchPreview renders the table of CSV rows matched to invoices.
-// It is used both as a standalone SSE fragment and embedded in PaymentImportPreviewPage.
 templ PaymentMatchPreview(results []domain.MatchResult) {
 	if len(results) == 0 {
 		<div class="bg-neutral-800 border border-neutral-700 rounded-lg p-8 text-center">
@@ -167,9 +140,7 @@ templ PaymentMatchPreview(results []domain.MatchResult) {
 				</table>
 			</div>
 			<div class="px-5 py-4 border-t border-neutral-700 flex items-center justify-between bg-neutral-900/30">
-				<p class="text-xs text-neutral-600">
-					Only checked rows will be marked as paid.
-				</p>
+				<p class="text-xs text-neutral-600">Only checked rows will be marked as paid.</p>
 				<button
 					type="button"
 					data-on:click="@post('/payments/import/confirm')"
@@ -182,87 +153,99 @@ templ PaymentMatchPreview(results []domain.MatchResult) {
 	}
 }
 
-// matchRow renders a single CSV match row with a Datastar-driven checkbox.
+// matchRow renders a single CSV match row.
 templ matchRow(m domain.MatchResult) {
 	switch m.Confidence {
 	case domain.ConfidenceExact:
-		if m.InvoiceStatus == "paid" {
+		if m.Invoice != nil && m.Invoice.Status == "paid" {
 			<tr class="opacity-50">
-				<td class="px-4 py-3 text-sm text-neutral-500 font-mono">{ m.Row.Date }</td>
-				<td class="px-4 py-3 text-sm text-neutral-400">{ m.Row.Payer }</td>
-				<td class="px-4 py-3 text-sm text-right font-mono text-neutral-400">{ m.Row.Amount }</td>
-				<td class="px-4 py-3 text-sm text-neutral-500 font-mono truncate max-w-xs">{ m.Row.Reference }</td>
+				@rowCells(m, "text-neutral-500", "text-neutral-400")
 				<td class="px-4 py-3 text-sm">
-					<span class="text-neutral-400">{ m.InvoiceNumber }</span>
+					<span class="text-neutral-400">{ m.Invoice.Code }</span>
 				</td>
 				<td class="px-4 py-3">
 					<span class="px-2 py-0.5 text-xs font-medium rounded bg-neutral-700/50 text-neutral-500 border border-neutral-700">Already paid</span>
 				</td>
-				<td class="px-4 py-3 text-center">
-					<span class="text-neutral-600 text-xs">—</span>
-				</td>
+				<td class="px-4 py-3 text-center text-neutral-600 text-xs">—</td>
 			</tr>
 		} else {
 			<tr class="bg-amber-500/5 hover:bg-amber-500/10 transition-colors">
-				<td class="px-4 py-3 text-sm text-neutral-300 font-mono">{ m.Row.Date }</td>
-				<td class="px-4 py-3 text-sm text-neutral-200">{ m.Row.Payer }</td>
-				<td class="px-4 py-3 text-sm text-right font-mono text-amber-400 font-semibold">{ m.Row.Amount }</td>
-				<td class="px-4 py-3 text-sm text-neutral-400 font-mono truncate max-w-xs">{ m.Row.Reference }</td>
+				@rowCells(m, "text-neutral-300", "text-amber-400 font-semibold")
 				<td class="px-4 py-3 text-sm">
-					<span class="text-amber-400 font-medium">{ m.InvoiceNumber }</span>
+					if m.Invoice != nil {
+						<span class="text-amber-400 font-medium">{ m.Invoice.Code }</span>
+					}
 				</td>
 				<td class="px-4 py-3">
-					@invoiceStatusPill(m.InvoiceStatus)
+					if m.Invoice != nil {
+						@invoiceStatusPill(m.Invoice.Status)
+					}
 				</td>
 				<td class="px-4 py-3 text-center">
-					<input
-						type="checkbox"
-						checked
-						data-on:change={ fmt.Sprintf("const _a=$selectedIds.split(',').filter(x=>x!=''); const _i=_a.indexOf('%s'); if($el.checked){if(_i<0)_a.push('%s')}else{if(_i>=0)_a.splice(_i,1)}; $selectedIds=_a.join(',')", m.InvoiceID, m.InvoiceID) }
-						class="w-4 h-4 accent-amber-500 cursor-pointer"
-					/>
+					if m.Invoice != nil {
+						<input
+							type="checkbox"
+							checked
+							data-on:change={ toggleIDScript(m.Invoice.ID) }
+							class="w-4 h-4 accent-amber-500 cursor-pointer"
+						/>
+					}
 				</td>
 			</tr>
 		}
 	case domain.ConfidenceAmountMismatch:
 		<tr class="bg-orange-500/5 hover:bg-orange-500/10 transition-colors">
-			<td class="px-4 py-3 text-sm text-neutral-300 font-mono">{ m.Row.Date }</td>
-			<td class="px-4 py-3 text-sm text-neutral-200">{ m.Row.Payer }</td>
-			<td class="px-4 py-3 text-sm text-right font-mono text-orange-400">{ m.Row.Amount }</td>
-			<td class="px-4 py-3 text-sm text-neutral-400 font-mono truncate max-w-xs">{ m.Row.Reference }</td>
+			@rowCells(m, "text-neutral-300", "text-orange-400")
 			<td class="px-4 py-3 text-sm">
-				<span class="text-orange-400">{ m.InvoiceNumber }</span>
-				<span class="text-neutral-600 text-xs ml-1">(amount differs)</span>
+				if m.Invoice != nil {
+					<span class="text-orange-400">{ m.Invoice.Code }</span>
+					<span class="text-neutral-600 text-xs ml-1">(amount differs)</span>
+				}
 			</td>
 			<td class="px-4 py-3">
-				@invoiceStatusPill(m.InvoiceStatus)
+				if m.Invoice != nil {
+					@invoiceStatusPill(m.Invoice.Status)
+				}
 			</td>
 			<td class="px-4 py-3 text-center">
-				<input
-					type="checkbox"
-					data-on:change={ fmt.Sprintf("const _a=$selectedIds.split(',').filter(x=>x!=''); const _i=_a.indexOf('%s'); if($el.checked){if(_i<0)_a.push('%s')}else{if(_i>=0)_a.splice(_i,1)}; $selectedIds=_a.join(',')", m.InvoiceID, m.InvoiceID) }
-					class="w-4 h-4 accent-amber-500 cursor-pointer"
-				/>
+				if m.Invoice != nil {
+					<input
+						type="checkbox"
+						data-on:change={ toggleIDScript(m.Invoice.ID) }
+						class="w-4 h-4 accent-amber-500 cursor-pointer"
+					/>
+				}
 			</td>
 		</tr>
 	default:
 		<tr class="opacity-50">
-			<td class="px-4 py-3 text-sm text-neutral-500 font-mono">{ m.Row.Date }</td>
-			<td class="px-4 py-3 text-sm text-neutral-500">{ m.Row.Payer }</td>
-			<td class="px-4 py-3 text-sm text-right font-mono text-neutral-500">{ m.Row.Amount }</td>
-			<td class="px-4 py-3 text-sm text-neutral-600 font-mono truncate max-w-xs">{ m.Row.Reference }</td>
+			@rowCells(m, "text-neutral-500", "text-neutral-500")
 			<td class="px-4 py-3 text-sm text-neutral-600 italic">no match</td>
 			<td class="px-4 py-3">
 				<span class="px-2 py-0.5 text-xs font-medium rounded bg-neutral-700/30 text-neutral-600 border border-neutral-800">Unmatched</span>
 			</td>
-			<td class="px-4 py-3 text-center">
-				<span class="text-neutral-700 text-xs">—</span>
-			</td>
+			<td class="px-4 py-3 text-center text-neutral-700 text-xs">—</td>
 		</tr>
 	}
 }
 
-// invoiceStatusPill renders a small status badge for the matched invoice status.
+// rowCells renders the first 4 data cells shared across all row variants.
+templ rowCells(m domain.MatchResult, textClass string, amtClass string) {
+	<td class={ "px-4 py-3 text-sm font-mono " + textClass }>{ m.Entry.Date.Format("2006-01-02") }</td>
+	<td class={ "px-4 py-3 text-sm " + textClass }>{ m.Entry.PayerName }</td>
+	<td class={ "px-4 py-3 text-sm text-right font-mono " + amtClass }>{ fmt.Sprintf("€%.2f", float64(m.Entry.Amount)/100) }</td>
+	<td class={ "px-4 py-3 text-sm font-mono truncate max-w-xs " + textClass }>{ m.Entry.Reference }</td>
+}
+
+// toggleIDScript returns the JS expression for adding/removing an invoice ID from the selectedIds signal.
+func toggleIDScript(id string) string {
+	return fmt.Sprintf(
+		"const _a=$selectedIds.split(',').filter(x=>x!='');const _i=_a.indexOf('%s');if($el.checked){if(_i<0)_a.push('%s')}else{if(_i>=0)_a.splice(_i,1)};$selectedIds=_a.join(',')",
+		id, id,
+	)
+}
+
+// invoiceStatusPill renders a small status badge.
 templ invoiceStatusPill(status string) {
 	switch status {
 	case "finalized":
@@ -278,7 +261,7 @@ templ invoiceStatusPill(status string) {
 	}
 }
 
-// PaymentImportSuccess is rendered into #preview-section after a successful confirm.
+// PaymentImportSuccess is the SSE fragment shown after a successful confirm.
 templ PaymentImportSuccess(count int) {
 	<div id="preview-section">
 		<div class="bg-green-500/10 border border-green-500/20 rounded-lg p-6 flex items-start gap-4">
@@ -289,15 +272,13 @@ templ PaymentImportSuccess(count int) {
 			</div>
 			<div>
 				<h3 class="text-sm font-semibold text-green-300">Import complete</h3>
-				<p class="text-sm text-green-400/80 mt-0.5">
-					{ fmt.Sprintf("%d invoice(s) marked as paid successfully.", count) }
-				</p>
+				<p class="text-sm text-green-400/80 mt-0.5">{ fmt.Sprintf("%d invoice(s) marked as paid successfully.", count) }</p>
 			</div>
 		</div>
 	</div>
 }
 
-// paymentImportError renders an inline error fragment for #preview-section.
+// paymentImportError renders an error fragment for #preview-section.
 templ paymentImportError(msg string) {
 	<div id="preview-section">
 		<div class="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-start gap-3">

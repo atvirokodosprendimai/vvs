@@ -101,6 +101,6 @@ func (h *Handlers) confirmImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sse.PatchElementTempl(PaymentImportSuccess(result.MarkedCount))
+	sse.PatchElementTempl(PaymentImportSuccess(len(result.MarkedPaid)))
 	sse.Redirect("/payments/import")
 }

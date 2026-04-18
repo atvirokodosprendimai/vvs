@@ -97,6 +97,8 @@ import (
 	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
 
 	invoicehttp "github.com/vvs/isp/internal/modules/invoice/adapters/http"
+	paymenthttp "github.com/vvs/isp/internal/modules/payment/adapters/http"
+	paymentcommands "github.com/vvs/isp/internal/modules/payment/app/commands"
 	invoicepersistence "github.com/vvs/isp/internal/modules/invoice/adapters/persistence"
 	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
 	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
@@ -640,6 +642,15 @@ func New(cfg Config) (*App, error) {
 		croncommands.NewDeleteJobHandler(cronRepo),
 	)
 	moduleRoutes = append(moduleRoutes, cronRoutes)
+
+	// Payment import module
+	paymentRoutes := paymenthttp.NewHandlers(
+		paymentcommands.NewPreviewImportHandler(invoiceRepo),
+		paymentcommands.NewConfirmImportHandler(markPaidCmd),
+	)
+	moduleRoutes = append(moduleRoutes, paymentRoutes)
+	log.Printf("module wired: payment import")
+
 	if err := rpcServer.Register(); err != nil {
 		return nil, fmt.Errorf("nats rpc: %w", err)
 	}
