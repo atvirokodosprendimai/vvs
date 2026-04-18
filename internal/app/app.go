@@ -516,7 +516,9 @@ func New(cfg Config) (*App, error) {
 	auditLogRepo := auditlogpersistence.NewGormAuditLogRepository(gdb)
 	createAuditLogCmd := auditlogcommands.NewCreateAuditLogHandler(auditLogRepo)
 	listAuditLogsQuery := auditlogqueries.NewListAuditLogsHandler(auditLogRepo)
+	listForResourceQuery := auditlogqueries.NewListForResourceHandler(auditLogRepo)
 	auditRoutes := auditloghttp.NewHandlers(listAuditLogsQuery, subscriber)
+	auditRoutes.WithListForResource(listForResourceQuery)
 	moduleRoutes = append(moduleRoutes, auditRoutes)
 	if customerRoutes != nil {
 		customerRoutes.WithAuditLogger(createAuditLogCmd)
@@ -538,6 +540,7 @@ func New(cfg Config) (*App, error) {
 			assignServiceCmd, suspendServiceCmd, reactivateServiceCmd, cancelServiceCmd,
 			listServicesQuery, subscriber, publisher,
 		)
+		serviceRoutes.WithAuditLogger(createAuditLogCmd)
 		moduleRoutes = append(moduleRoutes, serviceRoutes)
 		log.Printf("module enabled: service")
 	}

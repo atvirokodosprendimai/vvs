@@ -394,6 +394,16 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 				<div data-show="$_crmTab === 'invoices'" style="display:none">
 					@InvoiceSection(c.ID, invoices)
 				</div>
+				<div data-show="$_crmTab === 'auditlog'" style="display:none">
+					<div class="mt-4"
+						data-init={ fmt.Sprintf("@get('/sse/customers/%s/audit-logs', {openWhenHidden: false})", c.ID) }>
+						<div id="audit-logs-list">
+							<div class="flex items-center justify-center py-10 text-neutral-600">
+								<p class="text-sm">Loading audit log…</p>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		</div>
@@ -435,6 +445,7 @@ templ CRMTabBar(serviceCount, contactCount, dealCount, ticketCount, taskCount, e
 		@crmTab("tasks", "Tasks", taskCount)
 		@crmTab("emails", "Emails", emailCount)
 		@crmTab("invoices", "Invoices", invoiceCount)
+		@crmTab("auditlog", "Audit Log", 0)
 	</div>
 }
 
