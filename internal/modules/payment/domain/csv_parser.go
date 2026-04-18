@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+
 var dateFormats = []string{"2006-01-02", "02.01.2006", "2006/01/02", "01/02/2006"}
 
 // ParseCSV parses a bank CSV export into PaymentEntry slice.
@@ -136,20 +137,62 @@ func parseRow(row []string, cols columnMap) (PaymentEntry, bool) {
 	}, true
 }
 
-// parseAmount parses "100.00" or "100,00" → 10000 cents.
+// parseAmount parses amount strings into integer cents without float math.
+// Handles "100.00", "100,00", "1.234,56" (EU), "1,234.56" (US), "1234" (no decimal).
 func parseAmount(s string) (int64, error) {
 	s = strings.ReplaceAll(s, " ", "")
-	s = strings.ReplaceAll(s, ",", ".")
-	// Handle cases like "1.234.56" (thousand separator + decimal)
-	if strings.Count(s, ".") > 1 {
-		parts := strings.Split(s, ".")
-		s = strings.Join(parts[:len(parts)-1], "") + "." + parts[len(parts)-1]
+	if s == "" {
+		return 0, fmt.Errorf("empty amount")
 	}
-	f, err := strconv.ParseFloat(s, 64)
+
+	// Determine decimal separator: whichever of '.' or ',' appears last.
+	lastDot := strings.LastIndex(s, ".")
+	lastComma := strings.LastIndex(s, ",")
+
+	var intPart, fracPart string
+	switch {
+	case lastDot > lastComma:
+		// dot is decimal: "1,234.56" or "1234.56"
+		intPart = strings.ReplaceAll(s[:lastDot], ",", "")
+		fracPart = s[lastDot+1:]
+	case lastComma > lastDot:
+		// comma is decimal: "1.234,56" or "1234,56"
+		intPart = strings.ReplaceAll(s[:lastComma], ".", "")
+		fracPart = s[lastComma+1:]
+	default:
+		// no separator — whole euros
+		intPart = s
+		fracPart = ""
+	}
+
+	if intPart == "" {
+		intPart = "0"
+	}
+	euros, err := strconv.ParseInt(intPart, 10, 64)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("invalid amount %q: %w", s, err)
 	}
-	return int64(f * 100), nil
+
+	var cents int64
+	switch len(fracPart) {
+	case 0:
+		cents = 0
+	case 1:
+		d, err := strconv.ParseInt(fracPart, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("invalid amount fraction %q: %w", s, err)
+		}
+		cents = d * 10
+	default:
+		// 2+ decimal places: use first two digits only
+		d, err := strconv.ParseInt(fracPart[:2], 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("invalid amount fraction %q: %w", s, err)
+		}
+		cents = d
+	}
+
+	return euros*100 + cents, nil
 }
 
 func contains(s string, subs ...string) bool {

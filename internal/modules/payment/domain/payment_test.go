@@ -76,6 +76,23 @@ func TestParseCSV_CommaDecimalAmount(t *testing.T) {
 	}
 }
 
+func TestParseCSV_EUThousandSeparator(t *testing.T) {
+	// "1.234,56" — dot = thousand separator, comma = decimal (European format)
+	csv := []byte(`Date;Beneficiary;IBAN;Amount;Currency;Reference;Description
+2026-04-01;UAB Klientas;LT123;1.234,56;EUR;INV-011;Payment
+`)
+	entries, err := ParseCSV(csv)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("want 1 entry, got %d", len(entries))
+	}
+	if entries[0].Amount != 123456 {
+		t.Errorf("want 123456 cents (1234.56 EUR), got %d", entries[0].Amount)
+	}
+}
+
 func TestParseCSV_DateFormats(t *testing.T) {
 	tests := []struct {
 		date string

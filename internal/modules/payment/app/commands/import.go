@@ -2,6 +2,8 @@ package commands
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
 	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
@@ -54,7 +56,10 @@ func (h *PreviewImportHandler) Handle(ctx context.Context, cmd PreviewImportComm
 	for code := range codeSet {
 		inv, err := h.lookup.FindByCode(ctx, code)
 		if err != nil {
-			continue // not found — matcher will mark as unmatched
+			if errors.Is(err, invoicedomain.ErrInvoiceNotFound) {
+				continue // not found — matcher will mark as unmatched
+			}
+			return nil, fmt.Errorf("lookup invoice %s: %w", code, err)
 		}
 		refs = append(refs, domain.InvoiceRef{
 			ID:           inv.ID,

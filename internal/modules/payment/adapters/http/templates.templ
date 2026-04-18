@@ -94,11 +94,12 @@ templ PaymentImportPreviewPage(results []domain.MatchResult) {
 	}
 }
 
-// previewSignals builds data-signals JSON pre-selecting exact-match invoice IDs.
+// previewSignals builds data-signals JSON pre-selecting finalized exact-match invoice IDs.
+// Only "finalized" invoices are pre-selected — draft/void cannot transition to paid.
 func previewSignals(results []domain.MatchResult) string {
 	var ids []string
 	for _, r := range results {
-		if r.Confidence == domain.ConfidenceExact && r.Invoice != nil && r.Invoice.Status != "paid" {
+		if r.Confidence == domain.ConfidenceExact && r.Invoice != nil && r.Invoice.Status == "finalized" {
 			ids = append(ids, r.Invoice.ID)
 		}
 	}
@@ -185,7 +186,7 @@ templ matchRow(m domain.MatchResult) {
 					if m.Invoice != nil {
 						<input
 							type="checkbox"
-							checked
+							checked?={ m.Invoice.Status == "finalized" }
 							data-on:change={ toggleIDScript(m.Invoice.ID) }
 							class="w-4 h-4 accent-amber-500 cursor-pointer"
 						/>
@@ -274,6 +275,30 @@ templ PaymentImportSuccess(count int) {
 				<h3 class="text-sm font-semibold text-green-300">Import complete</h3>
 				<p class="text-sm text-green-400/80 mt-0.5">{ fmt.Sprintf("%d invoice(s) marked as paid successfully.", count) }</p>
 			</div>
+		</div>
+	</div>
+}
+
+// paymentImportPartialSuccess is shown when some invoices were marked paid but others failed.
+templ paymentImportPartialSuccess(count int, errs []string) {
+	<div id="preview-section">
+		<div class="bg-amber-500/10 border border-amber-500/20 rounded-lg p-6 flex flex-col gap-3">
+			<div class="flex items-start gap-4">
+				<div class="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m0 3.75h.007v.008H12v-.008zm0-12a9 9 0 1 0 0 18 9 9 0 0 0 0-18z"/>
+					</svg>
+				</div>
+				<div>
+					<h3 class="text-sm font-semibold text-amber-300">Partial import</h3>
+					<p class="text-sm text-amber-400/80 mt-0.5">{ fmt.Sprintf("%d invoice(s) marked as paid. %d failed:", count, len(errs)) }</p>
+				</div>
+			</div>
+			<ul class="pl-12 space-y-1">
+				for _, e := range errs {
+					<li class="text-xs text-red-400 font-mono">{ e }</li>
+				}
+			</ul>
 		</div>
 	</div>
 }

@@ -40,9 +40,12 @@ func (h *Handlers) showImportPage(w http.ResponseWriter, r *http.Request) {
 // previewImport handles the CSV upload (regular multipart POST, not Datastar SSE).
 // It parses the file, runs match logic, and returns the full preview page.
 func (h *Handlers) previewImport(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseMultipartForm(32 << 20); err != nil {
+	const maxUploadSize = 5 << 20 // 5 MB
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+
+	if err := r.ParseMultipartForm(1 << 20); err != nil {
 		log.Printf("payment handler: previewImport: ParseMultipartForm: %v", err)
-		http.Error(w, "could not parse upload", http.StatusBadRequest)
+		http.Error(w, "could not parse upload (file may be too large)", http.StatusBadRequest)
 		return
 	}
 
@@ -64,7 +67,7 @@ func (h *Handlers) previewImport(w http.ResponseWriter, r *http.Request) {
 	results, err := h.previewCmd.Handle(r.Context(), commands.PreviewImportCommand{CSVData: data})
 	if err != nil {
 		log.Printf("payment handler: previewImport: Handle: %v", err)
-		http.Error(w, "failed to parse CSV: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "could not parse CSV file", http.StatusBadRequest)
 		return
 	}
 
@@ -101,6 +104,11 @@ func (h *Handlers) confirmImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(result.Errors) > 0 {
+		log.Printf("payment handler: confirmImport: partial errors: %v", result.Errors)
+		sse.PatchElementTempl(paymentImportPartialSuccess(len(result.MarkedPaid), result.Errors))
+		return
+	}
 	sse.PatchElementTempl(PaymentImportSuccess(len(result.MarkedPaid)))
 	sse.Redirect("/payments/import")
 }
