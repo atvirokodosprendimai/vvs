@@ -10,12 +10,13 @@ import (
 )
 
 type AssignServiceCommand struct {
-	CustomerID  string
-	ProductID   string
-	ProductName string
-	PriceAmount int64
-	Currency    string
-	StartDate   time.Time
+	CustomerID   string
+	ProductID    string
+	ProductName  string
+	PriceAmount  int64
+	Currency     string
+	StartDate    time.Time
+	BillingCycle string // "monthly", "quarterly", "yearly"
 }
 
 type AssignServiceHandler struct {
@@ -31,7 +32,7 @@ func (h *AssignServiceHandler) Handle(ctx context.Context, cmd AssignServiceComm
 	svc, err := domain.NewService(
 		uuid.Must(uuid.NewV7()).String(),
 		cmd.CustomerID, cmd.ProductID, cmd.ProductName,
-		cmd.PriceAmount, cmd.Currency, cmd.StartDate,
+		cmd.PriceAmount, cmd.Currency, cmd.StartDate, cmd.BillingCycle,
 	)
 	if err != nil {
 		return nil, err

@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/vvs/isp/internal/modules/service/app/queries"
 	"github.com/vvs/isp/internal/modules/service/domain"
@@ -12,7 +13,7 @@ import (
 // plus an "Assign Service" modal.
 templ ServiceSection(customerID string, services []queries.ServiceReadModel) {
 	<div
-		data-signals="{_assignOpen: false, productid: '', productname: '', priceamount: '', currency: 'EUR'}"
+		data-signals="{_assignOpen: false, productid: '', productname: '', priceamount: '', currency: 'EUR', billingcycle: 'monthly'}"
 		class="mt-4 bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden"
 	>
 		<!-- Section header -->
@@ -102,6 +103,19 @@ templ ServiceSection(customerID string, services []queries.ServiceReadModel) {
 						</div>
 					</div>
 
+					<!-- Billing cycle -->
+					<div class="flex flex-col gap-1">
+						<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Billing Cycle</label>
+						<select
+							data-bind:billingcycle
+							class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+						>
+							<option value="monthly">Monthly</option>
+							<option value="quarterly">Quarterly</option>
+							<option value="yearly">Yearly</option>
+						</select>
+					</div>
+
 					<div id="service-form-errors"></div>
 				</div>
 
@@ -139,6 +153,8 @@ templ ServiceTable(customerID string, services []queries.ServiceReadModel) {
 					<tr class="border-b border-neutral-800">
 						<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Product</th>
 						<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Price</th>
+						<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Billing</th>
+						<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Next Due</th>
 						<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Since</th>
 						<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Status</th>
 						<th class="text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Actions</th>
@@ -158,6 +174,8 @@ templ serviceRow(svc queries.ServiceReadModel) {
 	<tr class="hover:bg-neutral-800/40 transition-colors" id={ fmt.Sprintf("service-%s", svc.ID) }>
 		<td class="px-4 py-3 font-medium text-neutral-100 text-sm">{ svc.ProductName }</td>
 		<td class="px-4 py-3 text-neutral-300 text-sm font-mono">{ formatPrice(svc.PriceAmount, svc.Currency) }</td>
+		<td class="px-4 py-3 text-neutral-400 text-sm capitalize">{ svc.BillingCycle }</td>
+		<td class="px-4 py-3 text-neutral-400 text-sm">{ formatNextBillingDate(svc.NextBillingDate) }</td>
 		<td class="px-4 py-3 text-neutral-400 text-sm">{ svc.StartDate.Format("Jan 2006") }</td>
 		<td class="px-4 py-3">
 			@serviceStatusBadge(svc.Status)
@@ -213,6 +231,13 @@ templ serviceFormError(message string) {
 	<div id="service-form-errors" class="bg-red-500/10 border border-red-500/20 text-red-400 px-3 py-2 rounded text-xs">
 		{ message }
 	</div>
+}
+
+func formatNextBillingDate(t *time.Time) string {
+	if t == nil {
+		return "—"
+	}
+	return t.Format("2 Jan 2006")
 }
 
 func formatPrice(cents int64, currency string) string {

@@ -104,10 +104,11 @@ func (h *ServiceHandlers) assignSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var signals struct {
-		ProductID   string `json:"productid"`
-		ProductName string `json:"productname"`
-		PriceAmount string `json:"priceamount"`
-		Currency    string `json:"currency"`
+		ProductID    string `json:"productid"`
+		ProductName  string `json:"productname"`
+		PriceAmount  string `json:"priceamount"`
+		Currency     string `json:"currency"`
+		BillingCycle string `json:"billingcycle"`
 	}
 	if err := datastar.ReadSignals(r, &signals); err != nil {
 		log.Printf("service handler: assignSSE ReadSignals: %v", err)
@@ -130,12 +131,13 @@ func (h *ServiceHandlers) assignSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err = h.assignCmd.Handle(r.Context(), commands.AssignServiceCommand{
-		CustomerID:  customerID,
-		ProductID:   signals.ProductID,
-		ProductName: signals.ProductName,
-		PriceAmount: priceAmount,
-		Currency:    currency,
-		StartDate:   time.Now().UTC(),
+		CustomerID:   customerID,
+		ProductID:    signals.ProductID,
+		ProductName:  signals.ProductName,
+		PriceAmount:  priceAmount,
+		Currency:     currency,
+		StartDate:    time.Now().UTC(),
+		BillingCycle: signals.BillingCycle,
 	})
 	if err != nil {
 		log.Printf("service handler: assignSSE Handle: %v", err)
@@ -144,10 +146,11 @@ func (h *ServiceHandlers) assignSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cleared, _ := json.Marshal(map[string]any{
-		"_assignOpen": false,
-		"productid":   "",
-		"productname": "",
-		"priceamount": "",
+		"_assignOpen":  false,
+		"productid":    "",
+		"productname":  "",
+		"priceamount":  "",
+		"billingcycle": "",
 	})
 	sse.PatchSignals(cleared)
 }

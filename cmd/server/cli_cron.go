@@ -157,6 +157,8 @@ func cronRunCommand() *cli.Command {
 			}
 			defer cleanup()
 
+			RegisterBillingActions(gdb)
+
 			repo := cronpersistence.NewGormJobRepository(gdb)
 			RunDueJobs(ctx, repo, rpcServer)
 			return nil
