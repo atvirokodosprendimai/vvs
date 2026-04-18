@@ -98,6 +98,20 @@ func (r *InvoiceRepository) FindByID(ctx context.Context, id string) (*domain.In
 	return toDomain(&model), nil
 }
 
+func (r *InvoiceRepository) FindByCode(ctx context.Context, code string) (*domain.Invoice, error) {
+	var model invoiceModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Preload("LineItems").Where("code = ?", code).First(&model).Error
+	})
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, domain.ErrInvoiceNotFound
+		}
+		return nil, err
+	}
+	return toDomain(&model), nil
+}
+
 func (r *InvoiceRepository) ListByCustomer(ctx context.Context, customerID string) ([]*domain.Invoice, error) {
 	var models []invoiceModel
 	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
