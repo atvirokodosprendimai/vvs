@@ -21,7 +21,7 @@ var (
 )
 
 // Router stores connection details for a managed network device.
-// Passwords are stored in plaintext — add AES-GCM encryption before production.
+// Password is stored encrypted at rest via AES-256-GCM (see persistence layer).
 type Router struct {
 	ID         string
 	Name       string // human label, e.g. "Edge-01"

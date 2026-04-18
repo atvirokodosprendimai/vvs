@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"log"
+	"math"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -116,6 +117,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/invoices", h.listPage)
 	r.Get("/invoices/new", h.createPage)
 	r.Get("/invoices/{id}", h.detailPage)
+	r.Get("/invoices/{id}/pdf", h.pdfPage)
 
 	r.Get("/sse/invoices", h.listSSE)
 	r.Get("/sse/invoices/{id}", h.detailSSE)
@@ -149,6 +151,17 @@ func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	InvoiceDetailPage(*inv).Render(r.Context(), w)
+}
+
+func (h *Handlers) pdfPage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	inv, err := h.getQuery.Handle(r.Context(), id)
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	InvoicePrintPage(*inv).Render(r.Context(), w)
 }
 
 func (h *Handlers) createPage(w http.ResponseWriter, r *http.Request) {
@@ -502,7 +515,7 @@ func parseValueCents(s string) int64 {
 	if err != nil {
 		return 0
 	}
-	return int64(f * 100)
+	return int64(math.Round(f * 100))
 }
 
 // parseVATRate parses a VAT rate string. Returns defaultRate if empty/invalid.

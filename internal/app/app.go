@@ -101,6 +101,7 @@ import (
 	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
 	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
 	invoicemigrations "github.com/vvs/isp/internal/modules/invoice/migrations"
+	invoiceworkers "github.com/vvs/isp/internal/modules/invoice/app/workers"
 
 	auditloghttp "github.com/vvs/isp/internal/modules/audit_log/adapters/http"
 	auditlogpersistence "github.com/vvs/isp/internal/modules/audit_log/adapters/persistence"
@@ -240,7 +241,7 @@ func New(cfg Config) (*App, error) {
 	}
 
 	// 7. Network module
-	routerRepo := networkpersistence.NewGormRouterRepository(gdb)
+	routerRepo := networkpersistence.NewGormRouterRepository(gdb, []byte(cfg.RouterEncKey))
 	createRouterCmd := networkcommands.NewCreateRouterHandler(routerRepo, publisher)
 	updateRouterCmd := networkcommands.NewUpdateRouterHandler(routerRepo, publisher)
 	deleteRouterCmd := networkcommands.NewDeleteRouterHandler(routerRepo, publisher)
@@ -511,6 +512,16 @@ func New(cfg Config) (*App, error) {
 		customerRoutes.WithInvoicesQuery(listInvoicesForCustomerQuery)
 	}
 	log.Printf("module wired: invoice")
+
+	// Invoice delivery worker — sends invoice email on isp.invoice.finalized
+	if nc != nil {
+		deliveryWorker := invoiceworkers.NewInvoiceDeliveryWorker(
+			&emailAccountMailerBridge{accounts: emailAccountRepo, smtp: smtpSender},
+			&customerEmailBridge{query: getCustomerQuery},
+		)
+		go deliveryWorker.Run(context.Background(), subscriber)
+		log.Printf("module wired: invoice delivery worker")
+	}
 
 	// Audit Log module
 	auditLogRepo := auditlogpersistence.NewGormAuditLogRepository(gdb)
@@ -887,6 +898,33 @@ func (d *provisionerDispatcher) pick(conn networkdomain.RouterConn) networkdomai
 		return d.arista
 	}
 	return d.mikrotik
+}
+
+// emailAccountMailerBridge implements invoiceworkers.Mailer using the first active email account.
+type emailAccountMailerBridge struct {
+	accounts *emailpersistence.GormEmailAccountRepository
+	smtp     *smtpAdapter.Sender
+}
+
+func (b *emailAccountMailerBridge) Send(ctx context.Context, to, subject, body string) error {
+	accounts, err := b.accounts.ListActive(ctx)
+	if err != nil || len(accounts) == 0 {
+		return fmt.Errorf("invoice delivery: no active email account")
+	}
+	return b.smtp.Send(ctx, accounts[0], to, subject, body, "", "")
+}
+
+// customerEmailBridge implements invoiceworkers.CustomerEmailGetter via the GetCustomer query.
+type customerEmailBridge struct {
+	query *customerqueries.GetCustomerHandler
+}
+
+func (b *customerEmailBridge) GetCustomerEmail(ctx context.Context, customerID string) (string, error) {
+	c, err := b.query.Handle(ctx, customerqueries.GetCustomerQuery{ID: customerID})
+	if err != nil {
+		return "", err
+	}
+	return c.Email, nil
 }
 
 // seedGeneralChannel ensures the #general channel exists.

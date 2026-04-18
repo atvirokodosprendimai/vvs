@@ -15,20 +15,13 @@ import (
 	servicepersistence "github.com/vvs/isp/internal/modules/service/adapters/persistence"
 )
 
-// billingNoopPublisher discards invoice events in the cron context (no NATS available).
-type billingNoopPublisher struct{}
-
-func (billingNoopPublisher) Publish(_ context.Context, _ string, _ events.DomainEvent) error {
-	return nil
-}
-
 // RegisterBillingActions wires the billing run dependencies and registers the
 // "generate-due-invoices" cron action. Call before RunDueJobs.
-func RegisterBillingActions(gdb *gormsqlite.DB) {
+func RegisterBillingActions(gdb *gormsqlite.DB, pub events.EventPublisher) {
 	serviceRepo := servicepersistence.NewGormServiceRepository(gdb)
 	customerQuery := customerqueries.NewGetCustomerHandler(gdb)
 	invoiceRepo := invoicepersistence.NewInvoiceRepository(gdb)
-	handler := invoicecommands.NewGenerateFromServicesHandler(invoiceRepo, billingNoopPublisher{})
+	handler := invoicecommands.NewGenerateFromServicesHandler(invoiceRepo, pub)
 
 	RegisterAction("generate-due-invoices", func(ctx context.Context) error {
 		now := time.Now().UTC()

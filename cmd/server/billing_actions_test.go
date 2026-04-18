@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/vvs/isp/internal/shared/events"
 	"github.com/vvs/isp/internal/testutil"
 
 	customermigrations "github.com/vvs/isp/internal/modules/customer/migrations"
@@ -45,7 +46,7 @@ func setupBillingTest(t *testing.T) (
 	invoiceRepo := invoicepersistence.NewInvoiceRepository(db)
 
 	// Wire billing action against the same DB.
-	RegisterBillingActions(db)
+	RegisterBillingActions(db, noopTestPublisher{})
 
 	return customerRepo, createCustomer, serviceRepo, assignService, invoiceRepo
 }
@@ -159,4 +160,10 @@ func TestBillingAction_CustomerNotFound_SkipsGracefully(t *testing.T) {
 	invoices, err := invoiceRepo.ListAll(ctx)
 	require.NoError(t, err)
 	assert.Empty(t, invoices)
+}
+
+type noopTestPublisher struct{}
+
+func (noopTestPublisher) Publish(_ context.Context, _ string, _ events.DomainEvent) error {
+	return nil
 }

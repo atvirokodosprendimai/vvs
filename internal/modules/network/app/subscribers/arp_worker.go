@@ -22,12 +22,15 @@ func NewARPWorker(cmd *commands.SyncCustomerARPHandler) *ARPWorker {
 
 // Run blocks until ctx is cancelled. Must be called in a goroutine.
 func (w *ARPWorker) Run(ctx context.Context, sub events.EventSubscriber) {
-	// Two channels: auto-sync on customer status change, manual trigger from UI
+	// Three channels: auto-sync on customer status change, manual trigger from UI, service lifecycle
 	customerCh, cancelCustomer := sub.ChanSubscription(events.CustomerAll.String())
 	defer cancelCustomer()
 
 	arpCh, cancelARP := sub.ChanSubscription(events.NetworkARPRequested.String())
 	defer cancelARP()
+
+	serviceCh, cancelService := sub.ChanSubscription(events.ServiceAll.String())
+	defer cancelService()
 
 	for {
 		select {
@@ -42,6 +45,12 @@ func (w *ARPWorker) Run(ctx context.Context, sub events.EventSubscriber) {
 				return
 			}
 			w.handleARPRequested(ctx, event)
+
+		case event, ok := <-serviceCh:
+			if !ok {
+				return
+			}
+			w.handleServiceEvent(ctx, event)
 
 		case <-ctx.Done():
 			return
@@ -73,6 +82,36 @@ func (w *ARPWorker) handleCustomerEvent(ctx context.Context, event events.Domain
 		Action:     action,
 	}); err != nil {
 		log.Printf("warn: arp auto-sync for customer %s: %v", payload.ID, err)
+	}
+}
+
+// handleServiceEvent syncs ARP when a service is suspended, cancelled, or reactivated.
+func (w *ARPWorker) handleServiceEvent(ctx context.Context, event events.DomainEvent) {
+	var payload struct {
+		ID         string `json:"id"`
+		CustomerID string `json:"customer_id"`
+		Status     string `json:"status"`
+	}
+	if err := json.Unmarshal(event.Data, &payload); err != nil {
+		return
+	}
+	if payload.CustomerID == "" {
+		return
+	}
+
+	// For suspended/cancelled services, disable ARP. For active/reactivated, enable.
+	action := commands.ARPActionEnable
+	if payload.Status == "suspended" || payload.Status == "cancelled" {
+		action = commands.ARPActionDisable
+	} else if payload.Status != "active" {
+		return // ignore other statuses
+	}
+
+	if err := w.cmd.Handle(ctx, commands.SyncCustomerARPCommand{
+		CustomerID: payload.CustomerID,
+		Action:     action,
+	}); err != nil {
+		log.Printf("warn: arp service sync for customer %s: %v", payload.CustomerID, err)
 	}
 }
 

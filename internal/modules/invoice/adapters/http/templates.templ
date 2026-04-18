@@ -753,3 +753,70 @@ func isOverdue(inv queries.InvoiceReadModel) bool {
 func escapeJS(s string) string {
 	return strings.ReplaceAll(s, "'", "\\'")
 }
+
+// InvoicePrintPage is a minimal print-friendly HTML page at /invoices/{id}/pdf.
+templ InvoicePrintPage(inv queries.InvoiceReadModel) {
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<meta charset="UTF-8"/>
+			<title>Invoice { inv.Code }</title>
+			<style>
+				body { font-family: sans-serif; font-size: 12px; color: #111; margin: 40px; }
+				h1 { font-size: 20px; margin: 0 0 4px 0; }
+				.meta { color: #555; margin-bottom: 24px; }
+				table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+				th { text-align: left; border-bottom: 2px solid #ccc; padding: 6px 8px; font-size: 11px; text-transform: uppercase; }
+				td { padding: 6px 8px; border-bottom: 1px solid #eee; }
+				.right { text-align: right; }
+				.totals { margin-top: 12px; text-align: right; }
+				.totals p { margin: 4px 0; }
+				.total-due { font-size: 16px; font-weight: bold; margin-top: 8px; }
+				@media print { body { margin: 0; } }
+			</style>
+		</head>
+		<body>
+			<h1>Invoice { inv.Code }</h1>
+			<div class="meta">
+				<p>Customer: { inv.CustomerName } ({ inv.CustomerCode })</p>
+				<p>Issue date: { inv.IssueDate.Format("2006-01-02") } &nbsp;&nbsp; Due date: { inv.DueDate.Format("2006-01-02") }</p>
+				<p>Status: { string(inv.Status) }</p>
+			</div>
+			<table>
+				<thead>
+					<tr>
+						<th>Description</th>
+						<th class="right">Qty</th>
+						<th class="right">Unit (net)</th>
+						<th class="right">VAT%</th>
+						<th class="right">Total (gross)</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, li := range inv.LineItems {
+						<tr>
+							<td>
+								{ li.ProductName }
+								if li.Description != "" {
+									<br/><small style="color:#666">{ li.Description }</small>
+								}
+							</td>
+							<td class="right">{ fmt.Sprintf("%d", li.Quantity) }</td>
+							<td class="right">{ formatCentsPlain(li.UnitPrice) }</td>
+							<td class="right">{ fmt.Sprintf("%d%%", li.VATRate) }</td>
+							<td class="right">{ formatCentsPlain(li.TotalGross) }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+			<div class="totals">
+				<p>Subtotal (net): { formatCents(inv.SubTotal, inv.Currency) }</p>
+				<p>VAT: { formatCents(inv.VATTotal, inv.Currency) }</p>
+				<p class="total-due">Total due: { formatCents(inv.TotalAmount, inv.Currency) }</p>
+			</div>
+			if inv.Notes != "" {
+				<p style="margin-top:24px;color:#555;font-size:11px">Notes: { inv.Notes }</p>
+			}
+		</body>
+	</html>
+}
