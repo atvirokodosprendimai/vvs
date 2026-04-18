@@ -580,6 +580,18 @@ func New(cfg Config) (*App, error) {
 		PauseJob:  croncommands.NewPauseJobHandler(cronRepo),
 		ResumeJob: croncommands.NewResumeJobHandler(cronRepo),
 		DeleteJob: croncommands.NewDeleteJobHandler(cronRepo),
+
+		ListAllInvoices:     listAllInvoicesQuery,
+		GetInvoice:          getInvoiceQuery,
+		ListInvoicesForCust: listInvoicesForCustomerQuery,
+		CreateInvoice:       createInvoiceCmd,
+		FinalizeInvoice:     finalizeInvoiceCmd,
+		MarkPaidInvoice:     markPaidCmd,
+		VoidInvoice:         voidInvoiceCmd,
+		GenerateInvoice:     generateInvoiceCmd,
+		AddInvoiceLine:      addLineItemCmd,
+		UpdateInvoiceLine:   updateLineItemCmd,
+		RemoveInvoiceLine:   removeLineItemCmd,
 	})
 
 	// Cron web UI (always enabled)

@@ -60,6 +60,7 @@ func main() {
 					userCommands(),
 					deviceCommands(),
 					cronCommands(),
+					invoiceCommands(),
 				},
 			},
 		},
