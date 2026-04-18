@@ -1,0 +1,134 @@
+package http
+
+import (
+	"fmt"
+
+	"github.com/vvs/isp/internal/infrastructure/http/templates"
+	"github.com/vvs/isp/internal/modules/audit_log/app/queries"
+)
+
+// AuditLogsPage is the standalone audit log list page at /audit-logs.
+templ AuditLogsPage(logs []*queries.AuditLogReadModel) {
+	@templates.Layout("Audit Log") {
+		@templates.PageHeaderRow("Audit Log", "System activity history") {
+			<!-- Resource filter tabs -->
+			<button
+				data-on:click="($auditResourceFilter = '') && @get('/sse/audit-logs')"
+				class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
+				data-class:bg-amber-600={ "$auditResourceFilter === ''" }
+				data-class:text-white={ "$auditResourceFilter === ''" }
+				data-class:border-amber-600={ "$auditResourceFilter === ''" }
+				data-class:bg-neutral-800={ "$auditResourceFilter !== ''" }
+				data-class:text-neutral-400={ "$auditResourceFilter !== ''" }
+				data-class:border-neutral-700={ "$auditResourceFilter !== ''" }
+			>All</button>
+			<button
+				data-on:click="($auditResourceFilter = 'customer') && @get('/sse/audit-logs')"
+				class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
+				data-class:bg-amber-600={ "$auditResourceFilter === 'customer'" }
+				data-class:text-white={ "$auditResourceFilter === 'customer'" }
+				data-class:border-amber-600={ "$auditResourceFilter === 'customer'" }
+				data-class:bg-neutral-800={ "$auditResourceFilter !== 'customer'" }
+				data-class:text-neutral-400={ "$auditResourceFilter !== 'customer'" }
+				data-class:border-neutral-700={ "$auditResourceFilter !== 'customer'" }
+			>Customer</button>
+			<button
+				data-on:click="($auditResourceFilter = 'ticket') && @get('/sse/audit-logs')"
+				class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
+				data-class:bg-amber-600={ "$auditResourceFilter === 'ticket'" }
+				data-class:text-white={ "$auditResourceFilter === 'ticket'" }
+				data-class:border-amber-600={ "$auditResourceFilter === 'ticket'" }
+				data-class:bg-neutral-800={ "$auditResourceFilter !== 'ticket'" }
+				data-class:text-neutral-400={ "$auditResourceFilter !== 'ticket'" }
+				data-class:border-neutral-700={ "$auditResourceFilter !== 'ticket'" }
+			>Ticket</button>
+			<button
+				data-on:click="($auditResourceFilter = 'invoice') && @get('/sse/audit-logs')"
+				class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
+				data-class:bg-amber-600={ "$auditResourceFilter === 'invoice'" }
+				data-class:text-white={ "$auditResourceFilter === 'invoice'" }
+				data-class:border-amber-600={ "$auditResourceFilter === 'invoice'" }
+				data-class:bg-neutral-800={ "$auditResourceFilter !== 'invoice'" }
+				data-class:text-neutral-400={ "$auditResourceFilter !== 'invoice'" }
+				data-class:border-neutral-700={ "$auditResourceFilter !== 'invoice'" }
+			>Invoice</button>
+		}
+		<div
+			id="audit-logs-page"
+			data-signals="{auditResourceFilter: ''}"
+			data-init="@get('/sse/audit-logs')"
+		>
+			<div id="audit-logs-list">
+				@AuditLogList(logs)
+			</div>
+		</div>
+	}
+}
+
+// AuditLogList is the live-patchable list fragment, targeted by id="audit-logs-list".
+templ AuditLogList(logs []*queries.AuditLogReadModel) {
+	<div id="audit-logs-list">
+		if len(logs) == 0 {
+			<div class="flex flex-col items-center justify-center py-10 text-neutral-600">
+				<p class="text-sm">No audit log entries.</p>
+			</div>
+		} else {
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+				<table class="w-full">
+					<thead>
+						<tr class="border-b border-neutral-800">
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Time</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Actor</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Action</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Resource</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">ID</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-neutral-800">
+						for _, al := range logs {
+							@AuditLogRow(al)
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+// AuditLogRow renders a single audit log table row.
+templ AuditLogRow(al *queries.AuditLogReadModel) {
+	<tr class="hover:bg-neutral-800/40 transition-colors">
+		<td class="px-4 py-3 text-neutral-400 text-sm whitespace-nowrap">{ al.CreatedAt.Format("2006-01-02 15:04") }</td>
+		<td class="px-4 py-3 text-sm">
+			if al.ActorName != "" {
+				<span class="text-neutral-200">{ al.ActorName }</span>
+			} else {
+				<span class="text-neutral-600">—</span>
+			}
+		</td>
+		<td class="px-4 py-3 text-sm">
+			<span class="px-2 py-0.5 text-xs font-medium rounded bg-neutral-800 text-neutral-300 border border-neutral-700">{ al.Action }</span>
+		</td>
+		<td class="px-4 py-3 text-sm text-neutral-400">{ al.Resource }</td>
+		<td class="px-4 py-3 text-sm">
+			switch al.Resource {
+				case "customer":
+					<a href={ templ.SafeURL(fmt.Sprintf("/customers/%s", al.ResourceID)) } class="text-amber-400 hover:text-amber-300 font-mono text-xs">{ shortID(al.ResourceID) }</a>
+				case "ticket":
+					<a href={ templ.SafeURL(fmt.Sprintf("/tickets/%s", al.ResourceID)) } class="text-amber-400 hover:text-amber-300 font-mono text-xs">{ shortID(al.ResourceID) }</a>
+				case "invoice":
+					<a href={ templ.SafeURL(fmt.Sprintf("/invoices/%s", al.ResourceID)) } class="text-amber-400 hover:text-amber-300 font-mono text-xs">{ shortID(al.ResourceID) }</a>
+				default:
+					<span class="text-neutral-400 font-mono text-xs">{ shortID(al.ResourceID) }</span>
+			}
+		</td>
+	</tr>
+}
+
+// shortID returns the first 8 characters of an ID, or the full ID if shorter.
+func shortID(id string) string {
+	if len(id) <= 8 {
+		return id
+	}
+	return id[:8]
+}
