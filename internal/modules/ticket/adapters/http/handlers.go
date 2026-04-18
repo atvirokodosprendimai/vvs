@@ -13,7 +13,9 @@ import (
 	"github.com/vvs/isp/internal/modules/ticket/app/commands"
 	"github.com/vvs/isp/internal/modules/ticket/app/queries"
 	"github.com/vvs/isp/internal/modules/ticket/domain"
+	"github.com/vvs/isp/internal/shared/audit"
 	"github.com/vvs/isp/internal/shared/events"
+	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
 )
 
 // CustomerSearchResult holds a customer match for the ticket creation search dropdown.
@@ -42,6 +44,7 @@ type Handlers struct {
 	subscriber      events.EventSubscriber
 	publisher       events.EventPublisher
 	custSearch      CustomerSearcher
+	auditLogger     audit.Logger
 }
 
 func NewHandlers(
@@ -81,6 +84,24 @@ func (h *Handlers) WithGetTicket(q *queries.GetTicketHandler) *Handlers {
 }
 
 // WithCustomerSearch adds customer search for the standalone new-ticket modal.
+func (h *Handlers) WithAuditLogger(l audit.Logger) *Handlers {
+	h.auditLogger = l
+	return h
+}
+
+func (h *Handlers) audit(r *http.Request, action, resourceID string) {
+	if h.auditLogger == nil {
+		return
+	}
+	user := authhttp.UserFromContext(r.Context())
+	actorID, actorName := "", ""
+	if user != nil {
+		actorID = user.ID
+		actorName = user.Username
+	}
+	go func() { _ = h.auditLogger.Log(context.Background(), actorID, actorName, action, "ticket", resourceID, nil) }()
+}
+
 func (h *Handlers) WithCustomerSearch(cs CustomerSearcher) *Handlers {
 	h.custSearch = cs
 	return h
@@ -169,7 +190,7 @@ func (h *Handlers) openSSE(w http.ResponseWriter, r *http.Request) {
 
 	sse := datastar.NewSSE(w, r)
 
-	_, err := h.openCmd.Handle(r.Context(), commands.OpenTicketCommand{
+	tk, err := h.openCmd.Handle(r.Context(), commands.OpenTicketCommand{
 		CustomerID: customerID,
 		Subject:    signals.TicketSubject,
 		Body:       signals.TicketBody,
@@ -180,6 +201,7 @@ func (h *Handlers) openSSE(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(ticketFormError(err.Error()))
 		return
 	}
+	h.audit(r, "ticket.opened", tk.ID)
 
 	// Close modal.
 	cleared, _ := json.Marshal(map[string]any{"_ticketModalOpen": false, "ticketSubject": "", "ticketBody": ""})
@@ -217,6 +239,7 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(ticketFormError(err.Error()))
 		return
 	}
+	h.audit(r, "ticket.updated", ticketID)
 
 	cleared, _ := json.Marshal(map[string]any{"_ticketModalOpen": false, "_ticketEditOpen": false, "ticketSubject": "", "ticketBody": ""})
 	sse.PatchSignals(cleared)
@@ -248,6 +271,7 @@ func (h *Handlers) changeStatusSSE(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(ticketFormError(err.Error()))
 		return
 	}
+	h.audit(r, "ticket.status_changed", ticketID)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -264,7 +288,7 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
-
+	h.audit(r, "ticket.deleted", ticketID)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -517,7 +541,7 @@ func (h *Handlers) createTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := h.openCmd.Handle(r.Context(), commands.OpenTicketCommand{
+	tk, err := h.openCmd.Handle(r.Context(), commands.OpenTicketCommand{
 		CustomerID: signals.CustomerID,
 		Subject:    signals.Subject,
 		Body:       signals.Body,
@@ -528,6 +552,7 @@ func (h *Handlers) createTicket(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(newTicketError("Failed to create ticket"))
 		return
 	}
+	h.audit(r, "ticket.opened", tk.ID)
 
 	cleared, _ := json.Marshal(map[string]any{
 		"_newTicketOpen":            false,

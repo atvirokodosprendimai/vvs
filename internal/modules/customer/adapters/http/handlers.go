@@ -29,7 +29,9 @@ import (
 	emailhttp "github.com/vvs/isp/internal/modules/email/adapters/http"
 	emailQueries "github.com/vvs/isp/internal/modules/email/app/queries"
 	invoiceQueries "github.com/vvs/isp/internal/modules/invoice/app/queries"
+	"github.com/vvs/isp/internal/shared/audit"
 	"github.com/vvs/isp/internal/shared/events"
+	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
 )
 
 // RouterSummary is the minimal router data needed for the customer form dropdown.
@@ -59,6 +61,7 @@ type Handlers struct {
 	listTasksQuery       *taskQueries.ListTasksForCustomerHandler
 	listEmailQuery       *emailQueries.ListThreadsForCustomerHandler
 	listInvoicesQuery    *invoiceQueries.ListInvoicesForCustomerHandler
+	auditLogger          audit.Logger
 }
 
 func NewHandlers(
@@ -131,6 +134,24 @@ func (h *Handlers) WithEmailThreadsQuery(q *emailQueries.ListThreadsForCustomerH
 func (h *Handlers) WithInvoicesQuery(q *invoiceQueries.ListInvoicesForCustomerHandler) *Handlers {
 	h.listInvoicesQuery = q
 	return h
+}
+
+func (h *Handlers) WithAuditLogger(l audit.Logger) *Handlers {
+	h.auditLogger = l
+	return h
+}
+
+func (h *Handlers) audit(r *http.Request, action, resourceID string) {
+	if h.auditLogger == nil {
+		return
+	}
+	user := authhttp.UserFromContext(r.Context())
+	actorID, actorName := "", ""
+	if user != nil {
+		actorID = user.ID
+		actorName = user.Username
+	}
+	go func() { _ = h.auditLogger.Log(context.Background(), actorID, actorName, action, "customer", resourceID, nil) }()
 }
 
 func (h *Handlers) RegisterRoutes(r chi.Router) {
@@ -313,7 +334,7 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	sse := datastar.NewSSE(w, r)
 
-	_, err := h.createCmd.Handle(r.Context(), commands.CreateCustomerCommand{
+	cust, err := h.createCmd.Handle(r.Context(), commands.CreateCustomerCommand{
 		CompanyName: signals.CompanyName,
 		ContactName: signals.ContactName,
 		Email:       signals.Email,
@@ -324,6 +345,7 @@ func (h *Handlers) createSSE(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(formError(err.Error()))
 		return
 	}
+	h.audit(r, "customer.created", cust.ID)
 
 	sse.Redirect("/customers")
 }
@@ -375,6 +397,7 @@ func (h *Handlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(formError(err.Error()))
 		return
 	}
+	h.audit(r, "customer.updated", id)
 
 	sse.Redirect("/customers/" + id)
 }
@@ -388,6 +411,7 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 		log.Printf("handler error: %v", err)
 		return
 	}
+	h.audit(r, "customer.deleted", id)
 
 	sse.Redirect("/customers")
 }
@@ -439,6 +463,7 @@ func (h *Handlers) changeStatusSSE(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(formError(err.Error()))
 		return
 	}
+	h.audit(r, "customer.status_changed", id)
 	sse.Redirect("/customers/" + id)
 }
 

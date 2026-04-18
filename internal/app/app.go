@@ -102,6 +102,12 @@ import (
 	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
 	invoicemigrations "github.com/vvs/isp/internal/modules/invoice/migrations"
 
+	auditloghttp "github.com/vvs/isp/internal/modules/audit_log/adapters/http"
+	auditlogpersistence "github.com/vvs/isp/internal/modules/audit_log/adapters/persistence"
+	auditlogcommands "github.com/vvs/isp/internal/modules/audit_log/app/commands"
+	auditlogqueries "github.com/vvs/isp/internal/modules/audit_log/app/queries"
+	auditlogmigrations "github.com/vvs/isp/internal/modules/audit_log/migrations"
+
 	devicehttp "github.com/vvs/isp/internal/modules/device/adapters/http"
 	devicepersistence "github.com/vvs/isp/internal/modules/device/adapters/persistence"
 	devicecommands "github.com/vvs/isp/internal/modules/device/app/commands"
@@ -154,6 +160,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "task", FS: taskmigrations.FS, TableName: "goose_task"},
 		{Name: "email", FS: emailmigrations.FS, TableName: "goose_email"},
 		{Name: "invoice", FS: invoicemigrations.FS, TableName: "goose_invoice"},
+		{Name: "audit_log", FS: auditlogmigrations.FS, TableName: "goose_audit_log"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -501,10 +508,24 @@ func New(cfg Config) (*App, error) {
 	invoiceRoutes.WithDefaultVATRate(vatRate)
 	moduleRoutes = append(moduleRoutes, invoiceRoutes)
 	if customerRoutes != nil {
-		// TODO(dev3): WithInvoicesQuery is being added by Dev 3
 		customerRoutes.WithInvoicesQuery(listInvoicesForCustomerQuery)
 	}
 	log.Printf("module wired: invoice")
+
+	// Audit Log module
+	auditLogRepo := auditlogpersistence.NewGormAuditLogRepository(gdb)
+	createAuditLogCmd := auditlogcommands.NewCreateAuditLogHandler(auditLogRepo)
+	listAuditLogsQuery := auditlogqueries.NewListAuditLogsHandler(auditLogRepo)
+	auditRoutes := auditloghttp.NewHandlers(listAuditLogsQuery, subscriber)
+	moduleRoutes = append(moduleRoutes, auditRoutes)
+	if customerRoutes != nil {
+		customerRoutes.WithAuditLogger(createAuditLogCmd)
+	}
+	if ticketRoutes != nil {
+		ticketRoutes.WithAuditLogger(createAuditLogCmd)
+	}
+	invoiceRoutes.WithAuditLogger(createAuditLogCmd)
+	log.Printf("module wired: audit_log")
 
 	// 10. Service module — commands + route registration
 	assignServiceCmd := servicecommands.NewAssignServiceHandler(serviceRepo, publisher)

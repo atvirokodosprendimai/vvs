@@ -13,7 +13,9 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 	"github.com/vvs/isp/internal/modules/invoice/app/commands"
 	"github.com/vvs/isp/internal/modules/invoice/app/queries"
+	"github.com/vvs/isp/internal/shared/audit"
 	"github.com/vvs/isp/internal/shared/events"
+	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
 )
 
 // CustomerSearchResult is returned by CustomerSearcher for the autocomplete dropdown.
@@ -43,6 +45,7 @@ type Handlers struct {
 	subscriber     events.EventSubscriber
 	custSearch     CustomerSearcher
 	defaultVATRate int
+	auditLogger    audit.Logger
 }
 
 func NewHandlers(
@@ -83,6 +86,24 @@ func (h *Handlers) WithGenerateCmd(cmd *commands.GenerateFromSubscriptionsHandle
 func (h *Handlers) WithCustomerSearch(cs CustomerSearcher) *Handlers {
 	h.custSearch = cs
 	return h
+}
+
+func (h *Handlers) WithAuditLogger(l audit.Logger) *Handlers {
+	h.auditLogger = l
+	return h
+}
+
+func (h *Handlers) audit(r *http.Request, action, resourceID string) {
+	if h.auditLogger == nil {
+		return
+	}
+	user := authhttp.UserFromContext(r.Context())
+	actorID, actorName := "", ""
+	if user != nil {
+		actorID = user.ID
+		actorName = user.Username
+	}
+	go func() { _ = h.auditLogger.Log(context.Background(), actorID, actorName, action, "invoice", resourceID, nil) }()
 }
 
 // WithDefaultVATRate sets the default VAT rate for new line items.
@@ -290,6 +311,7 @@ func (h *Handlers) create(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(invoiceFormError(err.Error()))
 		return
 	}
+	h.audit(r, "invoice.created", inv.ID)
 
 	sse.Redirect("/invoices/" + inv.ID)
 }
@@ -309,6 +331,7 @@ func (h *Handlers) finalize(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(invoiceFormError(err.Error()))
 		return
 	}
+	h.audit(r, "invoice.finalized", id)
 
 	sse.Redirect("/invoices/" + id)
 }
@@ -328,6 +351,7 @@ func (h *Handlers) markPaid(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(invoiceFormError(err.Error()))
 		return
 	}
+	h.audit(r, "invoice.paid", id)
 
 	sse.Redirect("/invoices/" + id)
 }
@@ -347,6 +371,7 @@ func (h *Handlers) voidInvoice(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(invoiceFormError(err.Error()))
 		return
 	}
+	h.audit(r, "invoice.voided", id)
 
 	sse.Redirect("/invoices/" + id)
 }
