@@ -46,7 +46,7 @@ func setupDunningTest(t *testing.T, mailer invoicecommands.EmailSender) (
 	testutil.RunMigrations(t, db, customermigrations.FS, "goose_customer")
 	testutil.RunMigrations(t, db, invoicemigrations.FS, "goose_invoice")
 
-	RegisterDunningActionsWithMailer(db, mailer)
+	RegisterDunningActionsWithMailer(db, mailer, nil)
 
 	return db,
 		customerpersistence.NewGormCustomerRepository(db),

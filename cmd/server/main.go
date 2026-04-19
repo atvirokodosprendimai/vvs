@@ -45,6 +45,11 @@ func main() {
 				Usage:   "Bearer token for REST API (/api/v1/*)",
 				Sources: cli.EnvVars("VVS_API_TOKEN"),
 			},
+			&cli.StringFlag{
+				Name:    "base-url",
+				Usage:   "Public base URL for generated links, e.g. https://isp.example.com (no trailing slash)",
+				Sources: cli.EnvVars("VVS_BASE_URL"),
+			},
 		},
 		Commands: []*cli.Command{
 			serveCommand(),
@@ -151,11 +156,6 @@ func serveCommand() *cli.Command {
 				Usage:   "Set Secure flag on session cookie (enable for HTTPS-only production deployments)",
 				Sources: cli.EnvVars("VVS_SECURE_COOKIE"),
 			},
-			&cli.StringFlag{
-				Name:    "base-url",
-				Usage:   "Public base URL for generated links, e.g. https://isp.example.com (no trailing slash)",
-				Sources: cli.EnvVars("VVS_BASE_URL"),
-			},
 			&cli.BoolFlag{
 				Name:    "debug",
 				Usage:   "Enable verbose debug logging",
@@ -195,7 +195,7 @@ func serveCommand() *cli.Command {
 				EmailPageSize:         int(cmd.Int("email-page-size")),
 				SessionLifetimeSecs:   int(cmd.Int("session-lifetime")),
 				SecureCookie:          cmd.Bool("secure-cookie"),
-				BaseURL:               cmd.String("base-url"),
+				BaseURL:               cmd.Root().String("base-url"),
 				EnabledModules:        enabledModules,
 				Debug:                 cmd.Bool("debug"),
 			}
