@@ -6,6 +6,7 @@ package nats
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -250,12 +251,21 @@ func (b *STBBridge) handleChannelResolve(msg *nats.Msg) {
 		stbBridgeReply(msg, nil, errSuspended)
 		return
 	}
-	_ = key // ownership already verified by resolveKey
 
-	ch, err := b.channels.FindByID(ctx, req.ChannelID)
+	// Entitlement check: verify the requested channel is in the subscriber's package.
+	// Using FindByPackage rather than FindByID prevents token-holders from resolving
+	// channels outside their subscription.
+	chs, err := b.channels.FindByPackage(ctx, key.PackageID)
 	if err != nil {
 		stbBridgeReply(msg, nil, err)
 		return
+	}
+	var ch *domain.Channel
+	for _, c := range chs {
+		if c.ID == req.ChannelID {
+			ch = c
+			break
+		}
 	}
 	if ch == nil || !ch.Active {
 		stbBridgeReply(msg, nil, errChannelNotFound)
@@ -300,8 +310,8 @@ func buildXMLTV(channels []*domain.Channel, days int) string {
 		if epgID == "" {
 			epgID = ch.ID
 		}
-		sb.WriteString(fmt.Sprintf("\n  <channel id=%q><display-name>%s</display-name></channel>",
-			epgID, xmlEscape(ch.Name)))
+		sb.WriteString(fmt.Sprintf("\n  <channel id=\"%s\"><display-name>%s</display-name></channel>",
+			xmlEscape(epgID), xmlEscape(ch.Name)))
 	}
 	// Programme stubs (real EPG data would come from an external source).
 	now := time.Now().UTC().Truncate(time.Hour)
@@ -317,10 +327,10 @@ func buildXMLTV(channels []*domain.Channel, days int) string {
 				epgID = ch.ID
 			}
 			sb.WriteString(fmt.Sprintf(
-				"\n  <programme start=%q stop=%q channel=%q><title lang=\"lt\">%s</title></programme>",
+				"\n  <programme start=\"%s\" stop=\"%s\" channel=\"%s\"><title lang=\"lt\">%s</title></programme>",
 				start.Format("20060102150405 +0000"),
 				stop.Format("20060102150405 +0000"),
-				epgID,
+				xmlEscape(epgID),
 				xmlEscape(ch.Name),
 			))
 		}
@@ -357,7 +367,14 @@ func (e *stbBridgeError) Error() string { return e.msg }
 func stbBridgeReply(msg *nats.Msg, data any, err error) {
 	var env stbEnvelope
 	if err != nil {
-		env = stbEnvelope{Error: err.Error()}
+		// Only expose safe sentinel messages to callers.
+		// Internal DB/infrastructure errors are masked to avoid leaking details.
+		var bridgeErr *stbBridgeError
+		if errors.As(err, &bridgeErr) {
+			env = stbEnvelope{Error: bridgeErr.msg}
+		} else {
+			env = stbEnvelope{Error: "internal error"}
+		}
 	} else {
 		env = stbEnvelope{Data: data}
 	}

@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
@@ -109,7 +110,7 @@ func runSTB(ctx context.Context, cmd *cli.Command) error {
 
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
+	r.Use(middleware.RequestLogger(&redactingFormatter{})) // tokens redacted from path logs
 	r.Use(middleware.Recoverer)
 
 	// ── M3U8 playlist endpoints ─────────────────────────────────────────────
@@ -124,7 +125,7 @@ func runSTB(ctx context.Context, cmd *cli.Command) error {
 	r.Get("/stream/{token}/{channelID}", streamHandler(client))
 
 	// ── Stalker/MAG protocol ─────────────────────────────────────────────────
-	r.Get("/portal/server.php", stalkerHandler(client))
+	r.Get("/portal/server.php", stalkerHandler(client, baseURL))
 
 	srv := &http.Server{Addr: addr, Handler: r}
 
@@ -218,7 +219,7 @@ func streamHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
 // ── Stalker/MAG protocol ──────────────────────────────────────────────────────
 // Minimal implementation — MAG boxes call /portal/server.php?token=X&action=Y
 
-func stalkerHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
+func stalkerHandler(client *iptvnats.STBNATSClient, baseURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := r.URL.Query().Get("token")
 		action := r.URL.Query().Get("action")
@@ -274,7 +275,7 @@ func stalkerHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
 					ID:   ch.ID,
 					Name: ch.Name,
 					Logo: ch.LogoURL,
-					CMD:  fmt.Sprintf("ffrt http://%s", ch.ID), // placeholder
+					CMD:  fmt.Sprintf("ffrt %s/stream/%s/%s", baseURL, token, ch.ID),
 				}
 			}
 			writeJSON(w, map[string]any{
@@ -299,4 +300,34 @@ func writeJSON(w http.ResponseWriter, v any) {
 		return
 	}
 	w.Write(b)
+}
+
+// ── Token-redacting request logger ───────────────────────────────────────────
+// Tokens are 64-char hex strings embedded in URL paths.
+// Logging them verbatim would leak bearer credentials to log aggregators.
+
+var hexTokenRe = regexp.MustCompile(`/[0-9a-f]{64}`)
+
+type (
+	redactingFormatter struct{}
+	redactingLogEntry  struct{ r *http.Request }
+)
+
+func (*redactingFormatter) NewLogEntry(r *http.Request) middleware.LogEntry {
+	return &redactingLogEntry{r: r}
+}
+
+func (e *redactingLogEntry) Write(status, bytes int, _ http.Header, elapsed time.Duration, _ interface{}) {
+	path := hexTokenRe.ReplaceAllString(e.r.URL.Path, "/[TOKEN]")
+	slog.Info("request",
+		"method", e.r.Method,
+		"path", path,
+		"status", status,
+		"bytes", bytes,
+		"elapsed", elapsed.Round(time.Millisecond),
+	)
+}
+
+func (e *redactingLogEntry) Panic(v interface{}, stack []byte) {
+	slog.Error("panic", "err", v, "stack", string(stack))
 }

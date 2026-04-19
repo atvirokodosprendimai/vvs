@@ -190,11 +190,9 @@ func TestSTBBridge_ChannelResolve_ReturnsStreamURL(t *testing.T) {
 	fix := startSTBBridge(t)
 	fix.keys.key = activeKey()
 	fix.subs.sub = activeSub()
-	fix.channels.byID["ch-5"] = &domain.Channel{
-		ID:        "ch-5",
-		Name:      "BBC",
-		StreamURL: "http://stream.example.com/bbc",
-		Active:    true,
+	// Bridge now uses FindByPackage for entitlement check, not FindByID.
+	fix.channels.byPackage = []*domain.Channel{
+		{ID: "ch-5", Name: "BBC", StreamURL: "http://stream.example.com/bbc", Active: true},
 	}
 
 	env := rpcSTB(t, fix.clientNC, iptvnats.SubjectChannelResolve, map[string]string{
@@ -206,13 +204,28 @@ func TestSTBBridge_ChannelResolve_ReturnsStreamURL(t *testing.T) {
 	assert.Equal(t, "http://stream.example.com/bbc", data["streamURL"])
 }
 
+func TestSTBBridge_ChannelResolve_NotInPackage(t *testing.T) {
+	// Token is valid but channelID is not in the subscriber's package — entitlement bypass prevention.
+	fix := startSTBBridge(t)
+	fix.keys.key = activeKey()
+	fix.subs.sub = activeSub()
+	fix.channels.byPackage = []*domain.Channel{
+		{ID: "ch-allowed", Name: "CNN", Active: true},
+	}
+
+	env := rpcSTB(t, fix.clientNC, iptvnats.SubjectChannelResolve, map[string]string{
+		"token":     "abc123",
+		"channelID": "ch-not-in-package",
+	})
+	assert.NotEmpty(t, env["error"])
+}
+
 func TestSTBBridge_ChannelResolve_InactiveChannel(t *testing.T) {
 	fix := startSTBBridge(t)
 	fix.keys.key = activeKey()
 	fix.subs.sub = activeSub()
-	fix.channels.byID["ch-inactive"] = &domain.Channel{
-		ID:     "ch-inactive",
-		Active: false,
+	fix.channels.byPackage = []*domain.Channel{
+		{ID: "ch-inactive", Active: false},
 	}
 
 	env := rpcSTB(t, fix.clientNC, iptvnats.SubjectChannelResolve, map[string]string{
