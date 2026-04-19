@@ -109,7 +109,13 @@ func (h *Handlers) audit(r *http.Request, action, resourceID string) {
 		actorID = user.ID
 		actorName = user.Username
 	}
-	go func() { _ = h.auditLogger.Log(context.Background(), actorID, actorName, action, "invoice", resourceID, nil) }()
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := h.auditLogger.Log(ctx, actorID, actorName, action, "invoice", resourceID, nil); err != nil {
+			log.Printf("audit: invoice %s %s: %v", action, resourceID, err)
+		}
+	}()
 }
 
 // WithDefaultVATRate sets the default VAT rate for new line items.
@@ -202,7 +208,9 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
 		StatusFilter string `json:"statusFilter"`
 	}
-	_ = datastar.ReadSignals(r, &signals)
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("invoice listSSE: ReadSignals: %v", err)
+	}
 	statusFilter := strings.TrimSpace(signals.StatusFilter)
 
 	current, err := h.listAllQuery.Handle(r.Context(), queries.ListAllInvoicesQuery{Status: statusFilter})
@@ -559,7 +567,9 @@ func (h *Handlers) customerSearch(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
 		Search string `json:"customerSearch"`
 	}
-	_ = datastar.ReadSignals(r, &signals)
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("invoice customerSearch: ReadSignals: %v", err)
+	}
 	query := strings.TrimSpace(signals.Search)
 
 	sse := datastar.NewSSE(w, r)

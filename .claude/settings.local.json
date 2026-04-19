@@ -108,7 +108,8 @@
       "Bash(echo \"Import running in background PID=$!\")",
       "Bash(./gomine .)",
       "Bash(bash /Users/mind/.claude/hooks/post-commit-mine.sh)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(*)"
     ]
   }
 }

@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"log"
 	"net/http"
+	"sync"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
@@ -14,6 +16,49 @@ import (
 )
 
 const cookieName = "vvs_session"
+
+// loginRateLimiter tracks failed login attempts per IP address.
+// Allows up to 10 failures per 15-minute window before locking out.
+type loginRateLimiter struct {
+	mu      sync.Mutex
+	entries map[string]*loginEntry
+}
+
+type loginEntry struct {
+	failures int
+	resetAt  time.Time
+}
+
+const (
+	loginMaxFailures = 10
+	loginWindow      = 15 * time.Minute
+)
+
+var globalLoginLimiter = &loginRateLimiter{entries: make(map[string]*loginEntry)}
+
+func (l *loginRateLimiter) allow(ip string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	now := time.Now()
+	e, ok := l.entries[ip]
+	if !ok || now.After(e.resetAt) {
+		l.entries[ip] = &loginEntry{failures: 0, resetAt: now.Add(loginWindow)}
+		return true
+	}
+	return e.failures < loginMaxFailures
+}
+
+func (l *loginRateLimiter) record(ip string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	now := time.Now()
+	e, ok := l.entries[ip]
+	if !ok || now.After(e.resetAt) {
+		l.entries[ip] = &loginEntry{failures: 1, resetAt: now.Add(loginWindow)}
+		return
+	}
+	e.failures++
+}
 
 type Handlers struct {
 	loginCmd              *commands.LoginHandler
@@ -25,10 +70,22 @@ type Handlers struct {
 	listUsersQuery        *queries.ListUsersHandler
 	currentUser           *queries.GetCurrentUserHandler
 	permRepo              domain.RolePermissionsRepository
+	maxAge                int
+	secureCookie          bool
 }
 
 func (h *Handlers) WithPermRepo(r domain.RolePermissionsRepository) *Handlers {
 	h.permRepo = r
+	return h
+}
+
+func (h *Handlers) WithMaxAge(secs int) *Handlers {
+	h.maxAge = secs
+	return h
+}
+
+func (h *Handlers) WithSecureCookie(secure bool) *Handlers {
+	h.secureCookie = secure
 	return h
 }
 
@@ -76,6 +133,16 @@ func (h *Handlers) loginPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) loginSSE(w http.ResponseWriter, r *http.Request) {
+	ip := r.RemoteAddr
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		ip = xff
+	}
+	if !globalLoginLimiter.allow(ip) {
+		sse := datastar.NewSSE(w, r)
+		sse.PatchElementTempl(loginError("Too many attempts. Try again in 15 minutes."))
+		return
+	}
+
 	var signals struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -91,6 +158,7 @@ func (h *Handlers) loginSSE(w http.ResponseWriter, r *http.Request) {
 		Password: signals.Password,
 	})
 	if err != nil {
+		globalLoginLimiter.record(ip)
 		// Only create SSE on the error path so headers stay unlocked for cookie on success.
 		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(loginError("Invalid username or password"))
@@ -98,13 +166,18 @@ func (h *Handlers) loginSSE(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set cookie BEFORE NewSSE — NewSSE locks headers.
+	maxAge := h.maxAge
+	if maxAge <= 0 {
+		maxAge = 86400
+	}
 	http.SetCookie(w, &http.Cookie{
 		Name:     cookieName,
 		Value:    result.Token,
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   86400,
+		MaxAge:   maxAge,
+		Secure:   h.secureCookie,
 	})
 	sse := datastar.NewSSE(w, r)
 	sse.Redirect("/")

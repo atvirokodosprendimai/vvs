@@ -68,7 +68,9 @@ func (h *ChatHandler) chatPageSSE(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
 		ThreadID string `json:"threadid"`
 	}
-	_ = datastar.ReadSignals(r, &signals)
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("chatPageSSE: ReadSignals: %v", err)
+	}
 	threadID := signals.ThreadID
 
 	// Ensure membership + mark read for the selected thread.

@@ -2,11 +2,11 @@ package http
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
 	"github.com/vvs/isp/internal/modules/ticket/app/queries"
 	"github.com/vvs/isp/internal/modules/ticket/domain"
+	"github.com/vvs/isp/internal/shared/jsutil"
 )
 
 // TicketsPage is the standalone tickets list page at /tickets.
@@ -741,9 +741,6 @@ templ newTicketError(message string) {
 	</div>
 }
 
-func escapeJS(s string) string {
-	return strings.ReplaceAll(s, "'", "\\'")
-}
 
 templ ticketCustomerSearchResults(results []CustomerSearchResult) {
 	<div id="ticket-customer-search-results" data-show="$_showTicketCustResults" style="display:none">
@@ -752,7 +749,7 @@ templ ticketCustomerSearchResults(results []CustomerSearchResult) {
 				for _, c := range results {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$newTicketCustomerID = '%s'; $newTicketCustomerName = '%s'; $newTicketCustomerSearch = '%s'; $_showTicketCustResults = false", c.ID, escapeJS(c.CompanyName), escapeJS(c.CompanyName)) }
+						data-on:click={ fmt.Sprintf("$newTicketCustomerID = '%s'; $newTicketCustomerName = '%s'; $newTicketCustomerSearch = '%s'; $_showTicketCustResults = false", c.ID, jsutil.EscapeJS(c.CompanyName), jsutil.EscapeJS(c.CompanyName)) }
 						class="w-full text-left px-3 py-2 hover:bg-neutral-700 transition-colors flex items-center gap-2 text-sm"
 					>
 						<span class="text-amber-400 font-mono text-xs">{ c.Code }</span>

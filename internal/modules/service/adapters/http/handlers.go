@@ -65,7 +65,13 @@ func (h *ServiceHandlers) audit(r *http.Request, action, resourceID string) {
 		actorID = user.ID
 		actorName = user.Username
 	}
-	go func() { _ = h.auditLogger.Log(context.Background(), actorID, actorName, action, "service", resourceID, nil) }()
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := h.auditLogger.Log(ctx, actorID, actorName, action, "service", resourceID, nil); err != nil {
+			log.Printf("audit: service %s %s: %v", action, resourceID, err)
+		}
+	}()
 }
 
 func (h *ServiceHandlers) RegisterRoutes(r chi.Router) {

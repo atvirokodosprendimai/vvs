@@ -29,3 +29,18 @@
 - 2026-04-19 `49c49e9` feat(invoice): PDF portal link — invoice_tokens table, public GET /i/{token} handler, SHA-256 token, 48h TTL
 - 2026-04-19 `0c8e31b` fix(security): rand.Read error propagation, viewer self-service password exemption, new middleware test
 - 2026-04-19 `67a0642` plan: per-role module access control with nav hiding
+- 2026-04-19 `9bd529e` feat(auth): module permission domain — Module type, PermissionSet, migration 003, GORM repo
+- 2026-04-19 `6ff4971` feat(rbac): per-role module permission middleware + DB storage
+- 2026-04-19 `5304025` feat(rbac): wire RequireModuleAccess per-module via ModuleNamed interface
+- 2026-04-19 `28b05fe` feat(rbac): server-side nav hiding + domain context helpers
+- 2026-04-19 `3463161` feat(rbac): admin permissions UI at /settings/permissions
+- 2026-04-19 `6335a8e` chore(plan): mark per-role module access plan as completed
+- 2026-04-19 `6852d43` fix(rbac): Codex review hardening — login lockout, users guard, DefaultPermissions
+- 2026-04-19 `45d357f` test(e2e): module permissions + role enforcement E2E tests
+- 2026-04-19 `be57d4d` test(e2e): comprehensive Playwright coverage for all modules
+- 2026-04-19 `7a76882` test(e2e): fix 3 failing tests — nav visibility + SSE response parsing
+- 2026-04-19 `43a27f2` plan: user edit — display name, division, role change modal
+- 2026-04-19 `2976d20` feat(auth): add full_name + division fields to User domain + migration 004
+- 2026-04-19 `9090de9` feat(auth): UpdateUserCommand — admin full edit, self full-name-only
+- 2026-04-19 `e10c4e2` feat(auth): user edit modal + profile full-name self-edit UI
+- 2026-04-19 `049555a` chore(plan): mark user edit plan as completed

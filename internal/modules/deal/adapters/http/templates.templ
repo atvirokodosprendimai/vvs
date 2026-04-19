@@ -6,6 +6,7 @@ import (
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
 	"github.com/vvs/isp/internal/modules/deal/app/queries"
 	"github.com/vvs/isp/internal/modules/deal/domain"
+	"github.com/vvs/isp/internal/shared/jsutil"
 )
 
 // DealSection renders the full deals panel for a customer detail page.
@@ -209,7 +210,7 @@ templ dealRow(customerID string, d queries.DealReadModel) {
 					<!-- Edit -->
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$_dealId = '%s'; $dealTitle = '%s'; $dealValue = '%s'; $dealCurrency = '%s'; $dealNotes = '%s'; $_dealModalOpen = true", d.ID, d.Title, formatDealValueRaw(d.Value), d.Currency, d.Notes) }
+						data-on:click={ fmt.Sprintf("$_dealId = '%s'; $dealTitle = '%s'; $dealValue = '%s'; $dealCurrency = '%s'; $dealNotes = '%s'; $_dealModalOpen = true", d.ID, jsutil.EscapeJS(d.Title), formatDealValueRaw(d.Value), jsutil.EscapeJS(d.Currency), jsutil.EscapeJS(d.Notes)) }
 						class="bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 px-2.5 py-1 rounded text-xs font-medium transition-colors border border-orange-500/20"
 					>
 						Edit

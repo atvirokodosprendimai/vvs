@@ -7,6 +7,7 @@ import (
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
 	"github.com/vvs/isp/internal/modules/auth/app/queries"
 	"github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/vvs/isp/internal/shared/jsutil"
 )
 
 templ LoginPage(errMsg string) {
@@ -234,7 +235,7 @@ templ userRow(row queries.UserRow, currentUserID string) {
 		<td class="px-4 py-3 text-right">
 			<div class="flex items-center justify-end gap-3">
 				<button
-					data-on:click={ fmt.Sprintf("($editFullName='%s')&&($editDivision='%s')&&($editRole='%s')&&($_editID='%s')&&($_editOpen=true)", row.FullName, row.Division, string(row.Role), row.ID) }
+					data-on:click={ fmt.Sprintf("($editFullName='%s')&&($editDivision='%s')&&($editRole='%s')&&($_editID='%s')&&($_editOpen=true)", jsutil.EscapeJS(row.FullName), jsutil.EscapeJS(row.Division), string(row.Role), row.ID) }
 					class="text-neutral-400 hover:text-amber-400 text-xs transition-colors"
 				>
 					Edit

@@ -194,6 +194,12 @@ func New(cfg Config) (*App, error) {
 	userRepo := authpersistence.NewGormUserRepository(gdb)
 	sessionRepo := authpersistence.NewGormSessionRepository(gdb)
 	permRepo := authpersistence.NewGormRolePermissionsRepository(gdb)
+
+	// Prune expired sessions on startup to avoid unbounded growth.
+	if err := sessionRepo.PruneExpired(context.Background()); err != nil {
+		log.Printf("warn: prune sessions on startup: %v", err)
+	}
+
 	loginCmd := authcommands.NewLoginHandler(userRepo, sessionRepo)
 	logoutCmd := authcommands.NewLogoutHandler(sessionRepo)
 	createUserCmd := authcommands.NewCreateUserHandler(userRepo)
@@ -202,7 +208,10 @@ func New(cfg Config) (*App, error) {
 	updateUserCmd := authcommands.NewUpdateUserHandler(userRepo)
 	listUsersQuery := authqueries.NewListUsersHandler(userRepo)
 	getCurrentUserQuery := authqueries.NewGetCurrentUserHandler(userRepo, sessionRepo)
-	authRoutes := authhttp.NewHandlers(loginCmd, logoutCmd, createUserCmd, deleteUserCmd, changeSelfPasswordCmd, updateUserCmd, listUsersQuery, getCurrentUserQuery).WithPermRepo(permRepo)
+	authRoutes := authhttp.NewHandlers(loginCmd, logoutCmd, createUserCmd, deleteUserCmd, changeSelfPasswordCmd, updateUserCmd, listUsersQuery, getCurrentUserQuery).
+		WithPermRepo(permRepo).
+		WithMaxAge(cfg.SessionLifetime()).
+		WithSecureCookie(cfg.SecureCookie)
 
 	if cfg.AdminUser != "" && cfg.AdminPassword != "" {
 		if err := seedAdmin(context.Background(), userRepo, cfg.AdminUser, cfg.AdminPassword); err != nil {

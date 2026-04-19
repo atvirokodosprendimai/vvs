@@ -77,7 +77,9 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
 		AuditResourceFilter string `json:"auditResourceFilter"`
 	}
-	_ = datastar.ReadSignals(r, &signals)
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("audit_log listSSE: ReadSignals: %v", err)
+	}
 
 	q := queries.ListAuditLogsQuery{
 		Resource: signals.AuditResourceFilter,
