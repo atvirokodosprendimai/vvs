@@ -97,3 +97,13 @@ func TestRequireWrite_NoUser_PassesThrough(t *testing.T) {
 	handler.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code, "no user in context should pass through RequireWrite")
 }
+
+func TestRequireWrite_ViewerAllowed_OnSelfServicePasswordChange(t *testing.T) {
+	// Viewer-role users must be able to change their own password even though it's a POST.
+	viewer := makeTestUser(t, authdomain.RoleViewer)
+	handler := withUserMiddleware(viewer, infrahttp.RequireWrite(okHandler()))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/api/users/me/password", nil)
+	handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code, "viewer must be allowed to POST to self-service password route")
+}

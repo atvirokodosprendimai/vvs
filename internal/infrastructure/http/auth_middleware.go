@@ -9,16 +9,24 @@ import (
 	"github.com/vvs/isp/internal/modules/auth/app/queries"
 )
 
+// selfServicePaths lists mutating routes that all authenticated users (including viewers) may access.
+var selfServicePaths = map[string]bool{
+	"/api/users/me/password": true,
+}
+
 // RequireWrite is a middleware that blocks viewer-role users from all mutating
 // HTTP methods (POST, PUT, PATCH, DELETE). It must be placed after RequireAuth.
+// Self-service paths (e.g. changing one's own password) are exempt.
 func RequireWrite(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
-			u := authhttp.UserFromContext(r.Context())
-			if u != nil && !u.CanWrite() {
-				http.Error(w, "Forbidden: read-only account", http.StatusForbidden)
-				return
+			if !selfServicePaths[r.URL.Path] {
+				u := authhttp.UserFromContext(r.Context())
+				if u != nil && !u.CanWrite() {
+					http.Error(w, "Forbidden: read-only account", http.StatusForbidden)
+					return
+				}
 			}
 		}
 		next.ServeHTTP(w, r)

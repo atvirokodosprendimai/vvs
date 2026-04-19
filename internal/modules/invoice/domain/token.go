@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,9 +23,12 @@ type InvoiceToken struct {
 
 // NewInvoiceToken creates a token and returns it along with the plaintext token to embed in the URL.
 // The plaintext token is never stored — only its SHA-256 hash is persisted.
-func NewInvoiceToken(invoiceID string, ttl time.Duration) (*InvoiceToken, string) {
+// Returns an error if the OS random source fails (rare but must not silently produce a weak token).
+func NewInvoiceToken(invoiceID string, ttl time.Duration) (*InvoiceToken, string, error) {
 	raw := make([]byte, 32)
-	_, _ = rand.Read(raw)
+	if _, err := rand.Read(raw); err != nil {
+		return nil, "", fmt.Errorf("invoice token: read random: %w", err)
+	}
 	plain := base64.RawURLEncoding.EncodeToString(raw)
 	sum := sha256.Sum256([]byte(plain))
 	now := time.Now().UTC()
@@ -34,7 +38,7 @@ func NewInvoiceToken(invoiceID string, ttl time.Duration) (*InvoiceToken, string
 		TokenHash: hex.EncodeToString(sum[:]),
 		ExpiresAt: now.Add(ttl),
 		CreatedAt: now,
-	}, plain
+	}, plain, nil
 }
 
 // IsExpired reports whether the token has passed its expiry time.

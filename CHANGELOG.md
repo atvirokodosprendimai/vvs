@@ -26,3 +26,4 @@
 - 2026-04-19 `24dd0a1` feat(rbac): add viewer (read-only) role with server-side enforcement
 - 2026-04-19 `76774f3` test(auth): RBAC middleware tests — RequireWrite blocks viewer on mutations
 - 2026-04-19 `7bda379` feat(auth): self-service change password — profile page + POST /api/users/me/password
+- 2026-04-19 `49c49e9` feat(invoice): PDF portal link — invoice_tokens table, public GET /i/{token} handler, SHA-256 token, 48h TTL
