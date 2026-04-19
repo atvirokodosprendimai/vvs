@@ -16,3 +16,6 @@
 - 2026-04-18 `9b1bef4` feat(payment): HTTP handlers, Templ UI, app.go wiring
 - 2026-04-18 `e780523` chore(payment): remove Dev C conflicting stub files
 - 2026-04-18 `363cff2` fix(payment): Codex review hardening — float precision, body limit, partial errors
+- 2026-04-18 `9a73ef8` chore: update changelog and regenerate templ files
+- 2026-04-18 `cff9b3c` feat(gomine): Go AST chunker + MemPalace importer
+- 2026-04-19 `14d7eb3` fix(gomine): correct Ollama embed URL + separate go_code collection
