@@ -24,6 +24,7 @@ const (
 	SubjectEPGShort       = "isp.stb.rpc.epg.short"
 	SubjectChannelResolve = "isp.stb.rpc.channel.resolve"
 	SubjectConfigGet      = "isp.stb.rpc.config.get"
+	SubjectDVRGet         = "isp.stb.rpc.dvr.get"
 )
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
@@ -106,6 +107,7 @@ func (b *STBBridge) Register() error {
 		{SubjectEPGShort, b.handleEPGShort},
 		{SubjectChannelResolve, b.handleChannelResolve},
 		{SubjectConfigGet, b.handleConfigGet},
+		{SubjectDVRGet, b.handleDVRGet},
 	}
 	for _, e := range entries {
 		sub, err := b.nc.Subscribe(e.subject, e.handler)
@@ -475,6 +477,10 @@ func (b *STBBridge) handleConfigGet(msg *nats.Msg) {
 		Token  string `json:"token"`
 		Active bool   `json:"active"`
 	}{token, active}, nil)
+}
+
+func (b *STBBridge) handleDVRGet(msg *nats.Msg) {
+	stbBridgeReply(msg, nil, &stbBridgeError{"dvr not enabled"})
 }
 
 // ── Internal helpers ──────────────────────────────────────────────────────────

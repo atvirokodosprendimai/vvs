@@ -84,6 +84,12 @@ func serveCommand() *cli.Command {
 				Sources: cli.EnvVars("VVS_BASE_URL"),
 				Value:   "http://localhost:8082",
 			},
+			&cli.BoolFlag{
+				Name:    "proxy-enabled",
+				Usage:   "Proxy stream requests instead of redirecting (hides upstream URLs)",
+				Sources: cli.EnvVars("STB_PROXY_ENABLED"),
+				Value:   false,
+			},
 		},
 		Action: runSTB,
 	}
@@ -94,6 +100,7 @@ func runSTB(ctx context.Context, cmd *cli.Command) error {
 	natsURL := cmd.String("nats-url")
 	natsToken := cmd.String("nats-auth-token")
 	baseURL := strings.TrimRight(cmd.String("base-url"), "/")
+	proxyEnabled := cmd.Bool("proxy-enabled")
 
 	opts := []nats.Option{nats.Name("vvs-stb")}
 	if natsToken != "" {
@@ -125,8 +132,11 @@ func runSTB(ctx context.Context, cmd *cli.Command) error {
 	// ── Device config ────────────────────────────────────────────────────────
 	r.Get("/getconfig", getConfigHandler(client, baseURL))
 
-	// ── Stream redirect ──────────────────────────────────────────────────────
-	r.Get("/stream/{token}/{channelID}", streamHandler(client))
+	// ── Stream (redirect or transparent proxy) ──────────────────────────────
+	r.Get("/stream/{token}/{channelID}", streamHandler(client, proxyEnabled))
+
+	// ── DVR (stub — not yet implemented) ────────────────────────────────────
+	r.Get("/dvr/{token}/{channelID}/{startUnix}", dvrHandler())
 
 	// ── Stalker/MAG protocol ─────────────────────────────────────────────────
 	r.Get("/portal/server.php", stalkerHandler(client, baseURL))
@@ -245,9 +255,16 @@ func epgShortHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
 	}
 }
 
-// ── Stream redirect ───────────────────────────────────────────────────────────
+// ── Stream redirect or transparent proxy ─────────────────────────────────────
 
-func streamHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
+var streamProxyClient = &http.Client{
+	Timeout: 30 * time.Second,
+	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+		return nil // follow redirects
+	},
+}
+
+func streamHandler(client *iptvnats.STBNATSClient, proxy bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := chi.URLParam(r, "token")
 		channelID := chi.URLParam(r, "channelID")
@@ -256,7 +273,58 @@ func streamHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-		http.Redirect(w, r, streamURL, http.StatusFound)
+		if !proxy {
+			http.Redirect(w, r, streamURL, http.StatusFound)
+			return
+		}
+		// Transparent proxy: forward request to upstream and stream response back.
+		// Hides the upstream URL from clients.
+		upReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, streamURL, nil)
+		if err != nil {
+			http.Error(w, "upstream error", http.StatusBadGateway)
+			return
+		}
+		// Forward useful headers.
+		for _, h := range []string{"Range", "Accept", "User-Agent"} {
+			if v := r.Header.Get(h); v != "" {
+				upReq.Header.Set(h, v)
+			}
+		}
+		resp, err := streamProxyClient.Do(upReq)
+		if err != nil {
+			http.Error(w, "upstream error", http.StatusBadGateway)
+			return
+		}
+		defer resp.Body.Close()
+		// Copy upstream headers that matter for streaming.
+		for _, h := range []string{"Content-Type", "Content-Length", "Content-Range", "Accept-Ranges"} {
+			if v := resp.Header.Get(h); v != "" {
+				w.Header().Set(h, v)
+			}
+		}
+		w.WriteHeader(resp.StatusCode)
+		buf := make([]byte, 32*1024)
+		for {
+			n, rerr := resp.Body.Read(buf)
+			if n > 0 {
+				if _, werr := w.Write(buf[:n]); werr != nil {
+					return
+				}
+			}
+			if rerr != nil {
+				return
+			}
+		}
+	}
+}
+
+// ── DVR stub ─────────────────────────────────────────────────────────────────
+
+func dvrHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotImplemented)
+		json.NewEncoder(w).Encode(map[string]string{"error": "dvr not enabled"})
 	}
 }
 
