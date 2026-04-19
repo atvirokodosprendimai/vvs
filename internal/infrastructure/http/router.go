@@ -93,6 +93,13 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 	// Static files (unauthenticated)
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
+	// Health check (unauthenticated)
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+
 	// Module public routes (unauthenticated)
 	for _, m := range modules {
 		if p, ok := m.(PublicModuleRoutes); ok {
