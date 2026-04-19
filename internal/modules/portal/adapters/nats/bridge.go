@@ -18,6 +18,7 @@ import (
 // Subjects served by PortalBridge.
 const (
 	SubjectTokenValidate        = "isp.portal.rpc.token.validate"
+	SubjectTokenMarkUsed        = "isp.portal.rpc.token.markused"
 	SubjectInvoicesList         = "isp.portal.rpc.invoices.list"
 	SubjectInvoiceGet           = "isp.portal.rpc.invoice.get"
 	SubjectInvoiceGetByToken    = "isp.portal.rpc.invoice.token.get"
@@ -26,9 +27,10 @@ const (
 	SubjectCustomerGet          = "isp.portal.rpc.customer.get"
 )
 
-// portalTokenReader reads portal tokens from the DB.
+// portalTokenReader reads and updates portal tokens from the DB.
 type portalTokenReader interface {
 	FindByHash(ctx context.Context, hash string) (*portaldomain.PortalToken, error)
+	MarkUsed(ctx context.Context, tokenHash string) error
 }
 
 // invoiceTokenStore persists and retrieves invoice PDF tokens.
@@ -98,6 +100,7 @@ func (b *PortalBridge) Register() error {
 	}
 	entries := []entry{
 		{SubjectTokenValidate, b.handleTokenValidate},
+		{SubjectTokenMarkUsed, b.handleTokenMarkUsed},
 		{SubjectInvoicesList, b.handleInvoicesList},
 		{SubjectInvoiceGet, b.handleInvoiceGet},
 		{SubjectInvoiceGetByToken, b.handleInvoiceGetByToken},
@@ -146,9 +149,32 @@ func (b *PortalBridge) handleTokenValidate(msg *nats.Msg) {
 		return
 	}
 	bridgeReply(msg, struct {
-		CustomerID string    `json:"customerID"`
-		ExpiresAt  time.Time `json:"expiresAt"`
-	}{tok.CustomerID, tok.ExpiresAt}, nil)
+		CustomerID string     `json:"customerID"`
+		ExpiresAt  time.Time  `json:"expiresAt"`
+		UsedAt     *time.Time `json:"usedAt,omitempty"`
+	}{tok.CustomerID, tok.ExpiresAt, tok.UsedAt}, nil)
+}
+
+func (b *PortalBridge) handleTokenMarkUsed(msg *nats.Msg) {
+	var req struct {
+		Hash string `json:"hash"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	if req.Hash == "" {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := b.tokenRepo.MarkUsed(ctx, req.Hash); err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	bridgeReply(msg, struct{ OK bool }{true}, nil)
 }
 
 func (b *PortalBridge) handleInvoicesList(msg *nats.Msg) {

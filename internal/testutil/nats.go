@@ -13,7 +13,7 @@ import (
 func NewTestNATS(t *testing.T) (events.EventPublisher, events.EventSubscriber) {
 	t.Helper()
 
-	ns, nc, err := infraNats.StartEmbedded("")
+	ns, nc, err := infraNats.StartEmbedded("", "", "")
 	if err != nil {
 		t.Fatalf("testutil: start embedded nats: %v", err)
 	}

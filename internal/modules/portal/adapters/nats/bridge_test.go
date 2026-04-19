@@ -29,6 +29,8 @@ func (s *stubPortalTokenReader) FindByHash(_ context.Context, _ string) (*portal
 	return s.tok, nil
 }
 
+func (s *stubPortalTokenReader) MarkUsed(_ context.Context, _ string) error { return nil }
+
 type stubInvoiceTokenStore struct {
 	tokens map[string]*invoicedomain.InvoiceToken
 }
@@ -80,7 +82,7 @@ func (s *stubInvoiceGetter) Handle(_ context.Context, id string) (*invoicequerie
 
 func startBridge(t *testing.T) (*nats.Conn, *nats.Conn, *stubPortalTokenReader, *stubInvoiceTokenStore, *stubCustomerReader) {
 	t.Helper()
-	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0") // random port for external connections
+	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0", "", "") // random port for external connections
 	require.NoError(t, err)
 	t.Cleanup(func() { ns.Shutdown() })
 	t.Cleanup(func() { serverNC.Close() })
@@ -103,7 +105,7 @@ func startBridge(t *testing.T) (*nats.Conn, *nats.Conn, *stubPortalTokenReader, 
 
 func startBridgeWithInvoices(t *testing.T) (*nats.Conn, *nats.Conn, *stubInvoiceTokenStore, *stubInvoiceGetter) {
 	t.Helper()
-	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0")
+	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0", "", "")
 	require.NoError(t, err)
 	t.Cleanup(func() { ns.Shutdown() })
 	t.Cleanup(func() { serverNC.Close() })
@@ -297,7 +299,7 @@ func TestBridge_CustomerGet_NotFound(t *testing.T) {
 
 // listInvoices handler requires DB-backed handler — nil returns error, not panic.
 func TestBridge_InvoicesList_NilHandler_ReturnsError(t *testing.T) {
-	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0")
+	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0", "", "")
 	require.NoError(t, err)
 	t.Cleanup(func() { ns.Shutdown() })
 	defer serverNC.Close()
@@ -316,7 +318,7 @@ func TestBridge_InvoicesList_NilHandler_ReturnsError(t *testing.T) {
 
 func TestBridge_InvoiceGet_EmptyCustomerID_Forbidden(t *testing.T) {
 	// customerID is now mandatory — empty value must be rejected before any DB access.
-	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0")
+	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0", "", "")
 	require.NoError(t, err)
 	t.Cleanup(func() { ns.Shutdown() })
 	defer serverNC.Close()
@@ -341,7 +343,7 @@ func TestBridge_InvoiceGet_EmptyCustomerID_Forbidden(t *testing.T) {
 }
 
 func TestBridge_InvoiceGet_WrongCustomerID_Forbidden(t *testing.T) {
-	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0")
+	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0", "", "")
 	require.NoError(t, err)
 	t.Cleanup(func() { ns.Shutdown() })
 	defer serverNC.Close()

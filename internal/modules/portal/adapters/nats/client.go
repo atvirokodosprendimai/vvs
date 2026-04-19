@@ -40,8 +40,9 @@ func NewPortalNATSClient(nc *nats.Conn, timeout time.Duration) *PortalNATSClient
 // Satisfies domain.PortalTokenRepository.FindByHash.
 func (c *PortalNATSClient) FindByHash(ctx context.Context, hash string) (*portaldomain.PortalToken, error) {
 	var resp struct {
-		CustomerID string    `json:"customerID"`
-		ExpiresAt  time.Time `json:"expiresAt"`
+		CustomerID string     `json:"customerID"`
+		ExpiresAt  time.Time  `json:"expiresAt"`
+		UsedAt     *time.Time `json:"usedAt,omitempty"`
 	}
 	if err := c.rpc(ctx, SubjectTokenValidate, map[string]string{"hash": hash}, &resp); err != nil {
 		return nil, err
@@ -49,7 +50,15 @@ func (c *PortalNATSClient) FindByHash(ctx context.Context, hash string) (*portal
 	return &portaldomain.PortalToken{
 		CustomerID: resp.CustomerID,
 		ExpiresAt:  resp.ExpiresAt,
+		UsedAt:     resp.UsedAt,
 	}, nil
+}
+
+// MarkUsed marks a portal magic-link token as consumed via NATS.
+// Satisfies domain.PortalTokenRepository.MarkUsed.
+func (c *PortalNATSClient) MarkUsed(ctx context.Context, tokenHash string) error {
+	var resp struct{ OK bool }
+	return c.rpc(ctx, SubjectTokenMarkUsed, map[string]string{"hash": tokenHash}, &resp)
 }
 
 // Save is not used on the portal side.

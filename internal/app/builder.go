@@ -57,7 +57,12 @@ func New(cfg Config) (*App, error) {
 		}
 		log.Printf("NATS connected to external server: %s", cfg.NATSUrl)
 	} else {
-		ns, nc, err = infranats.StartEmbedded(cfg.NATSListenAddr, cfg.NATSAuthToken)
+		// Prefer per-user credentials; fall back to legacy single token.
+		corePass := cfg.NATSCorePassword
+		if corePass == "" {
+			corePass = cfg.NATSAuthToken
+		}
+		ns, nc, err = infranats.StartEmbedded(cfg.NATSListenAddr, corePass, cfg.NATSPortalPassword)
 		if err != nil {
 			return nil, fmt.Errorf("start nats: %w", err)
 		}

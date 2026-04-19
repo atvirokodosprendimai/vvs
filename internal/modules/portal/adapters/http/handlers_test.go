@@ -39,6 +39,14 @@ func (r *stubTokenRepo) FindByHash(_ context.Context, hash string) (*domain.Port
 	return t, nil
 }
 
+func (r *stubTokenRepo) MarkUsed(_ context.Context, hash string) error {
+	if t, ok := r.tokens[hash]; ok {
+		now := time.Now().UTC()
+		t.UsedAt = &now
+	}
+	return nil
+}
+
 func (r *stubTokenRepo) DeleteByCustomerID(_ context.Context, _ string) error { return nil }
 func (r *stubTokenRepo) PruneExpired(_ context.Context) error                 { return nil }
 
@@ -230,4 +238,63 @@ func TestGeneratePortalLink_NoUser_Forbidden(t *testing.T) {
 	r.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusForbidden, rr.Code)
+}
+
+// ── tests: single-use magic-link enforcement ──────────────────────────────────
+
+func TestPortalAuth_SingleUse_FirstClickSucceeds(t *testing.T) {
+	repo := newStubTokenRepo()
+	router := newPortalRouter(repo)
+	plain := seedToken(t, repo, "cust-1", time.Hour)
+
+	req := httptest.NewRequest(http.MethodGet, "/portal/auth?token="+plain, nil)
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusFound, rr.Code)
+	assert.Equal(t, "/portal/invoices", rr.Header().Get("Location"))
+}
+
+func TestPortalAuth_SingleUse_SecondClickShowsExpiredPage(t *testing.T) {
+	repo := newStubTokenRepo()
+	router := newPortalRouter(repo)
+	plain := seedToken(t, repo, "cust-1", time.Hour)
+
+	// First click — consumes the token.
+	req1 := httptest.NewRequest(http.MethodGet, "/portal/auth?token="+plain, nil)
+	rr1 := httptest.NewRecorder()
+	router.ServeHTTP(rr1, req1)
+	require.Equal(t, http.StatusFound, rr1.Code)
+
+	// Second click — token already used.
+	req2 := httptest.NewRequest(http.MethodGet, "/portal/auth?token="+plain, nil)
+	rr2 := httptest.NewRecorder()
+	router.ServeHTTP(rr2, req2)
+
+	assert.Equal(t, http.StatusOK, rr2.Code)
+	assert.Contains(t, rr2.Body.String(), "Access link expired")
+}
+
+func TestPortalAuth_UsedToken_SessionCookieStillValid(t *testing.T) {
+	repo := newStubTokenRepo()
+	plain := seedToken(t, repo, "cust-1", time.Hour)
+
+	// Build router with a stub invoice lister so /portal/invoices doesn't panic.
+	type stubLister struct{}
+	_ = stubLister{}
+
+	// Click the magic link — sets cookie and marks token used.
+	router := newPortalRouter(repo)
+	req1 := httptest.NewRequest(http.MethodGet, "/portal/auth?token="+plain, nil)
+	rr1 := httptest.NewRecorder()
+	router.ServeHTTP(rr1, req1)
+	require.Equal(t, http.StatusFound, rr1.Code)
+
+	// Subsequent /portal/auth call (magic link reuse) should be rejected.
+	req2 := httptest.NewRequest(http.MethodGet, "/portal/auth?token="+plain, nil)
+	rr2 := httptest.NewRecorder()
+	router.ServeHTTP(rr2, req2)
+
+	assert.Equal(t, http.StatusOK, rr2.Code)
+	assert.Contains(t, rr2.Body.String(), "Access link expired", "reused magic link should show expired page")
 }

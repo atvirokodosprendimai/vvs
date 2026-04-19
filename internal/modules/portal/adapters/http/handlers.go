@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
+	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
 	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
 	"github.com/vvs/isp/internal/modules/portal/domain"
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
@@ -97,10 +98,13 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/customers/{id}/portal-link", h.generatePortalLink)
 }
 
+// authLimiter allows 10 magic-link auth attempts per IP per 15 minutes.
+var authLimiter = infrahttp.NewIPRateLimiter(10, 15*time.Minute)
+
 // RegisterPublicRoutes registers portal routes before the auth middleware.
 // Implements infrastructure/http.PublicModuleRoutes.
 func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
-	r.Get("/portal/auth", h.portalAuth)
+	r.With(authLimiter.Middleware()).Get("/portal/auth", h.portalAuth)
 	r.Post("/portal/logout", h.portalLogout)
 	r.Group(func(r chi.Router) {
 		r.Use(h.requirePortalAuth)
@@ -150,9 +154,15 @@ func (h *Handlers) portalAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tok, err := h.tokenRepo.FindByHash(r.Context(), domain.HashOf(plain))
-	if err != nil || tok == nil || tok.IsExpired() {
+	if err != nil || tok == nil || tok.IsExpired() || tok.IsUsed() {
 		PortalExpiredPage().Render(r.Context(), w)
 		return
+	}
+
+	// Mark token as consumed before issuing the cookie — single-use enforcement.
+	if err := h.tokenRepo.MarkUsed(r.Context(), domain.HashOf(plain)); err != nil {
+		log.Printf("portal auth: mark token used: %v", err)
+		// Non-fatal: proceed to issue cookie (MarkUsed failure is better than locking the user out).
 	}
 
 	http.SetCookie(w, &http.Cookie{
@@ -236,7 +246,7 @@ func (h *Handlers) generatePortalLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	customerID := chi.URLParam(r, "id")
-	tok, plain, err := domain.NewPortalToken(customerID, 24*time.Hour)
+	tok, plain, err := domain.NewPortalToken(customerID, 15*time.Minute)
 	if err != nil {
 		log.Printf("portal generatePortalLink: %v", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)

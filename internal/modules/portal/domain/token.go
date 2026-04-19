@@ -20,6 +20,7 @@ type PortalToken struct {
 	TokenHash  string // SHA-256(plaintext), only this is stored
 	ExpiresAt  time.Time
 	CreatedAt  time.Time
+	UsedAt     *time.Time // set on first successful auth click; nil = not yet used
 }
 
 // NewPortalToken creates a portal token for the given customer with the specified TTL.
@@ -47,6 +48,12 @@ func (t *PortalToken) IsExpired() bool {
 	return time.Now().UTC().After(t.ExpiresAt)
 }
 
+// IsUsed reports whether this magic-link token has already been consumed.
+// A used token cannot be used to start a new session.
+func (t *PortalToken) IsUsed() bool {
+	return t.UsedAt != nil
+}
+
 // HashOf returns the SHA-256 hex hash of a plaintext token for lookup.
 func HashOf(plain string) string {
 	sum := sha256.Sum256([]byte(plain))
@@ -57,6 +64,7 @@ func HashOf(plain string) string {
 type PortalTokenRepository interface {
 	Save(ctx context.Context, t *PortalToken) error
 	FindByHash(ctx context.Context, hash string) (*PortalToken, error)
+	MarkUsed(ctx context.Context, tokenHash string) error
 	DeleteByCustomerID(ctx context.Context, customerID string) error
 	PruneExpired(ctx context.Context) error
 }

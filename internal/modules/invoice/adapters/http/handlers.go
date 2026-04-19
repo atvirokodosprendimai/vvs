@@ -21,6 +21,7 @@ import (
 	"github.com/vvs/isp/internal/shared/events"
 	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
+	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
 )
 
 // CustomerSearchResult is returned by CustomerSearcher for the autocomplete dropdown.
@@ -149,11 +150,14 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Delete("/api/invoices/{id}/lines/{lineID}", h.removeLine)
 }
 
+// pdfTokenLimiter allows 20 public PDF requests per IP per 5 minutes.
+var pdfTokenLimiter = infrahttp.NewIPRateLimiter(20, 5*time.Minute)
+
 // RegisterPublicRoutes registers routes that do not require authentication.
 // Must be called on a router that is NOT wrapped by RequireAuth.
 func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 	if h.tokenRepo != nil {
-		r.Get("/i/{token}", h.publicInvoiceByToken)
+		r.With(pdfTokenLimiter.Middleware()).Get("/i/{token}", h.publicInvoiceByToken)
 	}
 }
 
