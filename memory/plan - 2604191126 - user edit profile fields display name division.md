@@ -1,6 +1,6 @@
 ---
 tldr: Add editable profile fields to users — display name, division; admin edit modal + self-service on profile page
-status: active
+status: completed
 ---
 
 # Plan: User edit — display name, division, role change
@@ -26,62 +26,41 @@ status: active
 
 ## Phases
 
-### Phase 1 — Domain + Migration — status: open
+### Phase 1 — Domain + Migration — status: completed
 
-1. [ ] Add `FullName`, `Division` fields to `User` struct + `UpdateProfile` method
-   - `FullName string` — display name shown in UI instead of username where appropriate
-   - `Division string` — optional org unit / department
-   - `UpdateProfile(fullName, division string)` — sets fields + `UpdatedAt`; admin-only setter for division
-   - no validation beyond trim (both optional)
+1. [x] Add `FullName`, `Division` fields to `User` struct + `UpdateProfile` method
+   - => `internal/modules/auth/domain/user.go` — added fields + `UpdateProfile()` + `ChangeRole()`
+2. [x] Migration `004_add_user_profile_fields.sql`
+   - => `internal/modules/auth/migrations/004_add_user_profile_fields.sql`
+3. [x] Update GORM/SQLite persistence
+   - => `UserModel` + `userToModel`/`userToDomain` mappers updated in `models.go`
 
-2. [ ] Migration `004_add_user_profile_fields.sql`
-   - `ALTER TABLE users ADD COLUMN full_name TEXT NOT NULL DEFAULT ''`
-   - `ALTER TABLE users ADD COLUMN division TEXT NOT NULL DEFAULT ''`
+### Phase 2 — Application Layer — status: completed
 
-3. [ ] Update GORM/SQLite persistence in `internal/modules/auth/adapters/db/`
-   - add columns to the GORM model / raw scan structs
-   - `Save()` already exists — just ensure new fields are persisted
+4. [x] Add `UpdateUserCommand` + handler
+   - => admin: all fields; self: full_name only (division+role ignored); other non-admin: ErrForbidden
+   - => `internal/modules/auth/app/commands/update_user.go`
+5. [x] Update `UserRow` query model + `ListUsersHandler`
+   - => `FullName`, `Division` added to `UserRow`
+6. [x] Wire into `Handlers` + `app.go`
+   - => `NewHandlers` signature extended; `updateUserCmd` added
 
-### Phase 2 — Application Layer — status: open
+### Phase 3 — HTTP + UI — status: completed
 
-4. [ ] Add `UpdateUserCommand` + handler (admin edits any user)
-   - fields: `UserID`, `FullName`, `Division`, `Role`
-   - guard: caller must be admin
-   - `internal/modules/auth/app/commands/update_user.go`
+7. [x] `PUT /api/users/{id}` + `PUT /api/users/me/profile` routes + handlers
+   - => signals: `editFullName`, `editDivision`, `editRole` (admin); `profileFullName` (self)
+8. [x] Edit user modal in `templates.templ`
+   - => inline edit modal; "Edit" button per row sets `$_editID`+`$editFullName`+`$editDivision`+`$editRole`
+   - => `UserTable` + `userRow` show Full Name + Division columns
+9. [x] Self-edit on `/profile` — full name input + `Save display name` button
 
-5. [ ] Update `UserRow` query model + `ListUsersHandler` to include new fields
-   - `internal/modules/auth/app/queries/list_users.go`
-   - add `FullName`, `Division` to `UserRow`
+### Phase 4 — Tests — status: completed
 
-6. [ ] Wire `UpdateUserCommand` into `Handlers` in `app.go` + `NewHandlers`
-
-### Phase 3 — HTTP + UI — status: open
-
-7. [ ] Add `PUT /api/users/{id}` route + `updateUserSSE` handler
-   - admin-only guard (`IsAdmin()`)
-   - reads signals: `editFullName`, `editDivision`, `editRole`
-   - patches `#user-table` on success
-
-8. [ ] Edit user modal in `templates.templ`
-   - trigger: "Edit" button per row in `userRow` — sets `$_editUserID`, `$editFullName`, `$editDivision`, `$editRole`
-   - modal: full name input, division input, role select
-   - submit: `@put('/api/users/' + $_editUserID)`
-   - add `FullName`, `Division` columns to `UserTable` header + `userRow`
-
-9. [ ] Self-edit on `/profile` page — full name only
-   - add `FullName` display + editable input on `ProfilePage`
-   - `PUT /api/users/me/profile` endpoint (self: full_name only, no division/role)
-
-### Phase 4 — Tests — status: open
-
-10. [ ] Unit test for `UpdateUserCommand`
-    - admin can update full_name, division, role
-    - non-admin returns error
-    - unknown user returns error
-
-11. [ ] E2E test: edit user flow
-    - open edit modal, change display name + division, verify row updates
-    - add to `e2e/system.spec.js`
+10. [x] Unit tests for `UpdateUserCommand` — 5 tests, all pass
+    - => `update_user_test.go` — admin edit, self-edit, forbidden, not-found, invalid-role
+11. [x] E2E additions
+    - => `system.spec.js` — Full Name/Division columns visible, Edit button opens modal
+    - => `profile.spec.js` — display name input + save button present
 
 ## Verification
 
@@ -96,3 +75,5 @@ status: active
 ## Adjustments
 
 ## Progress Log
+
+- 2604191126 — all 4 phases complete; commits 2976d20, 9090de9, e10c4e2
