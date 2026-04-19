@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -56,6 +57,14 @@ type portalServiceClient interface {
 	ListServices(ctx context.Context, customerID string) ([]*PortalService, error)
 }
 
+// portalBotClient communicates with the portal chat bot via NATS.
+type portalBotClient interface {
+	BotMessage(ctx context.Context, customerID, sessionID, message string) (reply, newSessionID, state string, suggestHandoff bool, err error)
+	BotHandoff(ctx context.Context, customerID, sessionID string) (threadID, state string, err error)
+	BotLiveMessage(ctx context.Context, customerID, sessionID, message string) (staffReply, state string, err error)
+	BotClose(ctx context.Context, customerID, sessionID string, createTicket bool) (ticketID string, err error)
+}
+
 // PortalService is the service view presented in the portal.
 type PortalService struct {
 	ID               string
@@ -85,6 +94,7 @@ type Handlers struct {
 	custReader   customerReader
 	tickets      portalTicketClient
 	services     portalServiceClient
+	bot          portalBotClient
 	baseURL      string
 	secureCookie bool
 }
@@ -131,6 +141,11 @@ func (h *Handlers) WithServices(sc portalServiceClient) *Handlers {
 	return h
 }
 
+func (h *Handlers) WithBot(bc portalBotClient) *Handlers {
+	h.bot = bc
+	return h
+}
+
 // RegisterRoutes registers admin routes (protected by RequireAuth in the router).
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/customers/{id}/portal-link", h.generatePortalLink)
@@ -157,6 +172,10 @@ func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 		r.Post("/portal/tickets", h.ticketCreate)
 		r.Get("/portal/tickets/{id}", h.ticketDetail)
 		r.Post("/portal/tickets/{id}/comments", h.ticketCommentAdd)
+		r.Post("/portal/bot/message", h.botMessage)
+		r.Post("/portal/bot/handoff", h.botHandoff)
+		r.Post("/portal/bot/livemessage", h.botLiveMessage)
+		r.Post("/portal/bot/close", h.botClose)
 	})
 }
 
@@ -443,6 +462,111 @@ func (h *Handlers) ticketCommentAdd(w http.ResponseWriter, r *http.Request) {
 		log.Printf("portal ticketCommentAdd: %v", err)
 	}
 	http.Redirect(w, r, fmt.Sprintf("/portal/tickets/%s", id), http.StatusSeeOther)
+}
+
+// botMessage handles POST /portal/bot/message.
+func (h *Handlers) botMessage(w http.ResponseWriter, r *http.Request) {
+	if h.bot == nil {
+		http.Error(w, "bot not available", http.StatusServiceUnavailable)
+		return
+	}
+	customerID := PortalCustomerIDFromContext(r.Context())
+	var req struct {
+		SessionID string `json:"sessionID"`
+		Message   string `json:"message"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	reply, sid, state, suggest, err := h.bot.BotMessage(r.Context(), customerID, req.SessionID, req.Message)
+	if err != nil {
+		log.Printf("portal botMessage: %v", err)
+		http.Error(w, "bot error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{ //nolint:errcheck
+		"reply":          reply,
+		"sessionID":      sid,
+		"state":          state,
+		"suggestHandoff": suggest,
+	})
+}
+
+// botHandoff handles POST /portal/bot/handoff.
+func (h *Handlers) botHandoff(w http.ResponseWriter, r *http.Request) {
+	if h.bot == nil {
+		http.Error(w, "bot not available", http.StatusServiceUnavailable)
+		return
+	}
+	customerID := PortalCustomerIDFromContext(r.Context())
+	var req struct {
+		SessionID string `json:"sessionID"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	_, state, err := h.bot.BotHandoff(r.Context(), customerID, req.SessionID)
+	if err != nil {
+		log.Printf("portal botHandoff: %v", err)
+		http.Error(w, "handoff error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{"state": state}) //nolint:errcheck
+}
+
+// botLiveMessage handles POST /portal/bot/livemessage.
+func (h *Handlers) botLiveMessage(w http.ResponseWriter, r *http.Request) {
+	if h.bot == nil {
+		http.Error(w, "bot not available", http.StatusServiceUnavailable)
+		return
+	}
+	customerID := PortalCustomerIDFromContext(r.Context())
+	var req struct {
+		SessionID string `json:"sessionID"`
+		Message   string `json:"message"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	staffReply, state, err := h.bot.BotLiveMessage(r.Context(), customerID, req.SessionID, req.Message)
+	if err != nil {
+		log.Printf("portal botLiveMessage: %v", err)
+		http.Error(w, "live message error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{ //nolint:errcheck
+		"staffReply": staffReply,
+		"state":      state,
+	})
+}
+
+// botClose handles POST /portal/bot/close.
+func (h *Handlers) botClose(w http.ResponseWriter, r *http.Request) {
+	if h.bot == nil {
+		http.Error(w, "bot not available", http.StatusServiceUnavailable)
+		return
+	}
+	customerID := PortalCustomerIDFromContext(r.Context())
+	var req struct {
+		SessionID    string `json:"sessionID"`
+		CreateTicket bool   `json:"createTicket"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	ticketID, err := h.bot.BotClose(r.Context(), customerID, req.SessionID, req.CreateTicket)
+	if err != nil {
+		log.Printf("portal botClose: %v", err)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{"ticketID": ticketID}) //nolint:errcheck
 }
 
 // resolveCustomer fetches customer info for the portal header, returning a fallback on error.

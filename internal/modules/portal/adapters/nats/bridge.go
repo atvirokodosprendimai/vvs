@@ -6,10 +6,15 @@ package nats
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
+	"github.com/vvs/isp/internal/infrastructure/bot"
+	"github.com/vvs/isp/internal/infrastructure/chat"
 	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
 	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
 	portaldomain "github.com/vvs/isp/internal/modules/portal/domain"
@@ -34,6 +39,11 @@ const (
 	SubjectTicketCommentAdd  = "isp.portal.rpc.ticket.comment.add"
 
 	SubjectServicesList = "isp.portal.rpc.services.list"
+
+	SubjectBotMessage     = "isp.portal.rpc.bot.message"
+	SubjectBotHandoff     = "isp.portal.rpc.bot.handoff"
+	SubjectBotLiveMessage = "isp.portal.rpc.bot.livemessage"
+	SubjectBotClose       = "isp.portal.rpc.bot.close"
 )
 
 // portalTokenReader reads and updates portal tokens from the DB.
@@ -116,6 +126,10 @@ type PortalBridge struct {
 	openTicket     ticketOpener
 	addComment     ticketCommenter
 	serviceLister  bridgeServiceLister
+	// bot components
+	botSessions    *bot.Sessions
+	botOllama      *bot.OllamaClient
+	chatStore      *chat.Store
 	subs           []*nats.Subscription
 }
 
@@ -136,6 +150,15 @@ func NewPortalBridge(
 		getInvoice:   getInvoice,
 		custReader:   custReader,
 	}
+}
+
+// WithBot wires the bot session store, Ollama client, and chat store into the bridge.
+// Call before Register() to enable the bot RPC subjects.
+func (b *PortalBridge) WithBot(sessions *bot.Sessions, ollama *bot.OllamaClient, cs *chat.Store) *PortalBridge {
+	b.botSessions = sessions
+	b.botOllama   = ollama
+	b.chatStore    = cs
+	return b
 }
 
 // WithServices wires the service lister into the bridge.
@@ -173,6 +196,10 @@ func (b *PortalBridge) Register() error {
 		{SubjectTicketOpen, b.handleTicketOpen},
 		{SubjectTicketCommentAdd, b.handleTicketCommentAdd},
 		{SubjectServicesList, b.handleServicesList},
+		{SubjectBotMessage, b.handleBotMessage},
+		{SubjectBotHandoff, b.handleBotHandoff},
+		{SubjectBotLiveMessage, b.handleBotLiveMessage},
+		{SubjectBotClose, b.handleBotClose},
 	}
 	for _, e := range entries {
 		sub, err := b.nc.Subscribe(e.subject, e.handler)
@@ -420,6 +447,342 @@ func (b *PortalBridge) handleInvoiceTokenMint(msg *nats.Msg) {
 	bridgeReply(msg, struct {
 		Plain string `json:"plain"`
 	}{plain}, nil)
+}
+
+// ── bot handlers ──────────────────────────────────────────────────────────────
+
+// handleBotMessage processes a customer message: rule-based FAQ → AI fallback.
+func (b *PortalBridge) handleBotMessage(msg *nats.Msg) {
+	if b.botSessions == nil {
+		bridgeReply(msg, nil, &bridgeError{"bot not configured"})
+		return
+	}
+	var req struct {
+		CustomerID string `json:"customerID"`
+		SessionID  string `json:"sessionID"`
+		Message    string `json:"message"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	if req.CustomerID == "" {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
+	if req.SessionID == "" {
+		req.SessionID = uuid.Must(uuid.NewV7()).String()
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	sess := b.botSessions.GetOrCreate(req.SessionID, req.CustomerID)
+	if sess.State == bot.StateClosed {
+		bridgeReply(msg, map[string]any{"reply": "This conversation has ended.", "sessionID": req.SessionID, "state": sess.State}, nil)
+		return
+	}
+	if sess.State == bot.StateLive {
+		bridgeReply(msg, map[string]any{"reply": "You are connected to a staff member. Use /portal/bot/livemessage to send messages.", "sessionID": req.SessionID, "state": sess.State}, nil)
+		return
+	}
+
+	// Build rule context.
+	rc := b.buildRuleContext(ctx, req.CustomerID)
+
+	// Try rule-based FAQ.
+	reply, matched, suggestHandoff := bot.MatchRules(ctx, req.Message, rc)
+	if !matched {
+		// AI fallback via Ollama.
+		if b.botOllama != nil {
+			reply = b.ollamaFallback(ctx, sess, req.Message, rc)
+		} else {
+			reply = "I'm not sure how to answer that. Would you like to speak with a staff member?"
+			suggestHandoff = true
+		}
+	}
+
+	// Append to session history.
+	now := time.Now()
+	sess.Messages = append(sess.Messages,
+		bot.BotMessage{Role: "user", Content: req.Message, At: now},
+		bot.BotMessage{Role: "assistant", Content: reply, At: now},
+	)
+
+	bridgeReply(msg, map[string]any{
+		"reply":          reply,
+		"sessionID":      req.SessionID,
+		"state":          sess.State,
+		"suggestHandoff": suggestHandoff,
+	}, nil)
+}
+
+// handleBotHandoff initiates a live staff handoff.
+func (b *PortalBridge) handleBotHandoff(msg *nats.Msg) {
+	if b.botSessions == nil || b.chatStore == nil {
+		bridgeReply(msg, nil, &bridgeError{"bot not configured"})
+		return
+	}
+	var req struct {
+		CustomerID string `json:"customerID"`
+		SessionID  string `json:"sessionID"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	if req.CustomerID == "" || req.SessionID == "" {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	sess := b.botSessions.Get(req.SessionID)
+	if sess == nil {
+		bridgeReply(msg, nil, &bridgeError{"session not found"})
+		return
+	}
+
+	threadID := fmt.Sprintf("portal-%s", req.SessionID)
+	exists, err := b.chatStore.ThreadExists(ctx, threadID)
+	if err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+
+	customerName := req.CustomerID
+	if b.custReader != nil {
+		if c, err := b.custReader.GetPortalCustomer(ctx, req.CustomerID); err == nil && c != nil {
+			customerName = c.CompanyName
+		}
+	}
+
+	if !exists {
+		if err := b.chatStore.CreateThread(ctx, chat.Thread{
+			ID:        threadID,
+			Type:      "portal-support",
+			Name:      fmt.Sprintf("Portal: %s", customerName),
+			CreatedBy: "system",
+			CreatedAt: time.Now().UTC(),
+		}); err != nil {
+			bridgeReply(msg, nil, err)
+			return
+		}
+
+		// Post conversation history as first message.
+		history := buildHistoryText(sess.Messages)
+		_ = b.chatStore.Save(ctx, chat.Message{
+			ID:        uuid.Must(uuid.NewV7()).String(),
+			ThreadID:  threadID,
+			UserID:    "system",
+			Username:  "Bot",
+			Body:      fmt.Sprintf("Customer %s connected via portal chat.\n\n%s", customerName, history),
+			CreatedAt: time.Now().UTC(),
+		})
+	}
+
+	sess.State = bot.StateHandoff
+	sess.ThreadID = threadID
+
+	bridgeReply(msg, map[string]any{
+		"threadID": threadID,
+		"state":    sess.State,
+	}, nil)
+}
+
+// handleBotLiveMessage routes a message in a live handoff session.
+func (b *PortalBridge) handleBotLiveMessage(msg *nats.Msg) {
+	if b.botSessions == nil || b.chatStore == nil {
+		bridgeReply(msg, nil, &bridgeError{"bot not configured"})
+		return
+	}
+	var req struct {
+		CustomerID string `json:"customerID"`
+		SessionID  string `json:"sessionID"`
+		Message    string `json:"message"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	if req.CustomerID == "" || req.SessionID == "" {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	sess := b.botSessions.Get(req.SessionID)
+	if sess == nil || sess.ThreadID == "" {
+		bridgeReply(msg, nil, &bridgeError{"no active live session"})
+		return
+	}
+
+	// Store customer message.
+	if req.Message != "" {
+		_ = b.chatStore.Save(ctx, chat.Message{
+			ID:        uuid.Must(uuid.NewV7()).String(),
+			ThreadID:  sess.ThreadID,
+			UserID:    req.CustomerID,
+			Username:  "Customer",
+			Body:      req.Message,
+			CreatedAt: time.Now().UTC(),
+		})
+		sess.State = bot.StateLive
+	}
+
+	// Get latest staff reply.
+	msgs, err := b.chatStore.Recent(ctx, sess.ThreadID, 1)
+	if err != nil {
+		bridgeReply(msg, map[string]any{"state": sess.State}, nil)
+		return
+	}
+	var staffReply string
+	for _, m := range msgs {
+		if m.UserID != req.CustomerID && m.UserID != "system" {
+			staffReply = m.Body
+			break
+		}
+	}
+	bridgeReply(msg, map[string]any{
+		"staffReply": staffReply,
+		"state":      sess.State,
+	}, nil)
+}
+
+// handleBotClose closes a bot session and optionally creates a support ticket.
+func (b *PortalBridge) handleBotClose(msg *nats.Msg) {
+	if b.botSessions == nil {
+		bridgeReply(msg, nil, &bridgeError{"bot not configured"})
+		return
+	}
+	var req struct {
+		CustomerID   string `json:"customerID"`
+		SessionID    string `json:"sessionID"`
+		CreateTicket bool   `json:"createTicket"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	if req.CustomerID == "" || req.SessionID == "" {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
+
+	sess := b.botSessions.Get(req.SessionID)
+	ticketID := ""
+	if req.CreateTicket && b.openTicket != nil && sess != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		subject := "Portal chat — unresolved question"
+		body := buildHistoryText(sess.Messages)
+		if tk, err := b.openTicket.Handle(ctx, ticketcommands.OpenTicketCommand{
+			CustomerID: req.CustomerID,
+			Subject:    subject,
+			Body:       body,
+			Priority:   "normal",
+		}); err == nil {
+			ticketID = tk.ID
+		}
+	}
+	if sess != nil {
+		sess.State = bot.StateClosed
+	}
+	b.botSessions.Delete(req.SessionID)
+
+	bridgeReply(msg, map[string]any{
+		"ticketID": ticketID,
+		"state":    bot.StateClosed,
+	}, nil)
+}
+
+// buildRuleContext fetches data needed for rule evaluation.
+func (b *PortalBridge) buildRuleContext(ctx context.Context, customerID string) *bot.RuleContext {
+	rc := &bot.RuleContext{CustomerID: customerID}
+
+	if b.custReader != nil {
+		if c, err := b.custReader.GetPortalCustomer(ctx, customerID); err == nil && c != nil {
+			rc.Customer = &bot.CustomerInfo{
+				CompanyName: c.CompanyName,
+				Email:       c.Email,
+				IPAddress:   c.IPAddress,
+			}
+		}
+	}
+
+	if b.serviceLister != nil {
+		if svcs, err := b.serviceLister.ListForCustomer(ctx, customerID); err == nil {
+			for _, s := range svcs {
+				rc.Services = append(rc.Services, &bot.ServiceInfo{
+					ID:               s.ID,
+					ProductName:      s.ProductName,
+					PriceAmountCents: s.PriceAmountCents,
+					Status:           s.Status,
+					NextBillingDate:  s.NextBillingDate,
+				})
+			}
+		}
+	}
+
+	if b.listInvoices != nil {
+		if invoices, err := b.listInvoices.Handle(ctx, invoicequeries.ListInvoicesForCustomerQuery{CustomerID: customerID}); err == nil {
+			for _, inv := range invoices {
+				info := bot.InvoiceInfo{
+					Code:        inv.Code,
+					Status:      inv.Status,
+					TotalAmount: inv.TotalAmount,
+					IssueDate:   inv.IssueDate,
+				}
+				if inv.PaidAt != nil {
+					info.PaidAt = inv.PaidAt
+				}
+				rc.Invoices = append(rc.Invoices, info)
+				if inv.Status == "finalized" {
+					rc.OverdueCount++
+					rc.OverdueTotal += inv.TotalAmount
+				}
+			}
+		}
+	}
+
+	return rc
+}
+
+// ollamaFallback calls Ollama with session history + system prompt.
+func (b *PortalBridge) ollamaFallback(ctx context.Context, sess *bot.BotSession, userMsg string, rc *bot.RuleContext) string {
+	sysPrompt := bot.BuildSystemPrompt(rc.Customer, rc.Services, rc.Invoices)
+	msgs := []bot.OllamaMessage{{Role: "system", Content: sysPrompt}}
+	for _, m := range sess.Messages {
+		msgs = append(msgs, bot.OllamaMessage{Role: m.Role, Content: m.Content})
+	}
+	msgs = append(msgs, bot.OllamaMessage{Role: "user", Content: userMsg})
+
+	reply, err := b.botOllama.Chat(ctx, msgs)
+	if err != nil {
+		log.Printf("portal bot: ollama: %v", err)
+		return "I'm having trouble answering that right now. Would you like to speak with a staff member?"
+	}
+	return strings.TrimSpace(reply)
+}
+
+// buildHistoryText formats the bot session messages as plain text for handoff/ticket.
+func buildHistoryText(messages []bot.BotMessage) string {
+	if len(messages) == 0 {
+		return "(no prior messages)"
+	}
+	var sb strings.Builder
+	for _, m := range messages {
+		role := "Customer"
+		if m.Role == "assistant" {
+			role = "Bot"
+		}
+		sb.WriteString(fmt.Sprintf("[%s] %s\n", role, m.Content))
+	}
+	return sb.String()
 }
 
 func (b *PortalBridge) handleServicesList(msg *nats.Msg) {

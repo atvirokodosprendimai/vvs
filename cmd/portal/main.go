@@ -136,6 +136,7 @@ func runPortal(ctx context.Context, cmd *cli.Command) error {
 		WithCustomerReader(custAdapter).
 		WithTickets(client).
 		WithServices(&portalServiceClientAdapter{client: client}).
+		WithBot(client).
 		WithBaseURL(baseURL).
 		WithSecureCookie(secureCookie)
 

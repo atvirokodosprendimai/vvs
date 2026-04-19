@@ -1,0 +1,229 @@
+package http
+
+// PortalChatWidget renders a floating chat button + panel injected into every portal page.
+// All interaction is handled by vanilla JS — no Datastar dependency.
+templ PortalChatWidget() {
+	<!-- Floating chat widget -->
+	<div id="vvs-chat" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:50">
+		<!-- Chat panel (hidden by default) -->
+		<div
+			id="vvs-chat-panel"
+			style="display:none;flex-direction:column;width:22rem;height:28rem;background:#242424;border:1px solid #3d3d3d;border-radius:0.75rem;box-shadow:0 20px 40px rgba(0,0,0,0.5);margin-bottom:1rem;overflow:hidden"
+		>
+			<!-- Header -->
+			<div style="display:flex;align-items:center;justify-content:space-between;padding:0.75rem 1rem;background:#1a1a1a;border-bottom:1px solid #3d3d3d">
+				<div style="display:flex;align-items:center;gap:0.5rem">
+					<div style="width:0.5rem;height:0.5rem;border-radius:50%;background:#22c55e"></div>
+					<span style="font-size:0.875rem;font-weight:600;color:#e5e5e5">Support Chat</span>
+				</div>
+				<div style="display:flex;gap:0.5rem">
+					<button
+						id="vvs-chat-close"
+						title="End conversation"
+						style="font-size:0.75rem;color:#777;background:none;border:none;cursor:pointer;padding:0.25rem 0.5rem;border-radius:0.25rem"
+						onmouseenter="this.style.color='#e5e5e5'"
+						onmouseleave="this.style.color='#777'"
+					>End</button>
+					<button
+						id="vvs-chat-minimize"
+						title="Minimize"
+						style="color:#777;background:none;border:none;cursor:pointer;padding:0.25rem"
+						onmouseenter="this.style.color='#e5e5e5'"
+						onmouseleave="this.style.color='#777'"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"></path>
+						</svg>
+					</button>
+				</div>
+			</div>
+			<!-- Messages -->
+			<div id="vvs-chat-msgs" style="flex:1;overflow-y:auto;padding:0.75rem;display:flex;flex-direction:column;gap:0.5rem"></div>
+			<!-- Handoff suggestion banner -->
+			<div id="vvs-chat-handoff-bar" style="display:none;padding:0.5rem 0.75rem;background:#1a1a1a;border-top:1px solid #3d3d3d">
+				<button
+					id="vvs-chat-handoff"
+					style="width:100%;padding:0.4rem 0.75rem;background:#b45309;color:#fff;border:none;border-radius:0.375rem;font-size:0.8125rem;cursor:pointer"
+					onmouseenter="this.style.background='#92400e'"
+					onmouseleave="this.style.background='#b45309'"
+				>Talk to a staff member</button>
+			</div>
+			<!-- Input -->
+			<div style="padding:0.75rem;border-top:1px solid #3d3d3d;background:#1a1a1a">
+				<form id="vvs-chat-form" style="display:flex;gap:0.5rem">
+					<input
+						id="vvs-chat-input"
+						type="text"
+						placeholder="Type a message…"
+						autocomplete="off"
+						style="flex:1;padding:0.4rem 0.75rem;background:#2e2e2e;border:1px solid #3d3d3d;border-radius:0.375rem;color:#e5e5e5;font-size:0.875rem;outline:none"
+					/>
+					<button
+						type="submit"
+						id="vvs-chat-send"
+						style="padding:0.4rem 0.75rem;background:#b45309;color:#fff;border:none;border-radius:0.375rem;font-size:0.875rem;cursor:pointer;white-space:nowrap"
+					>Send</button>
+				</form>
+			</div>
+		</div>
+		<!-- Floating button -->
+		<button
+			id="vvs-chat-btn"
+			title="Chat with support"
+			style="width:3.25rem;height:3.25rem;border-radius:50%;background:#b45309;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.4);margin-left:auto"
+			onmouseenter="this.style.background='#92400e'"
+			onmouseleave="this.style.background='#b45309'"
+		>
+			<svg id="vvs-chat-btn-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"></path>
+			</svg>
+		</button>
+	</div>
+	<script>
+(function() {
+	var sessionID = sessionStorage.getItem('vvs_chat_session') || '';
+	var chatState = sessionStorage.getItem('vvs_chat_state') || 'bot';
+	var isOpen = false;
+
+	var panel     = document.getElementById('vvs-chat-panel');
+	var msgs      = document.getElementById('vvs-chat-msgs');
+	var form      = document.getElementById('vvs-chat-form');
+	var input     = document.getElementById('vvs-chat-input');
+	var handoffBar= document.getElementById('vvs-chat-handoff-bar');
+	var handoffBtn= document.getElementById('vvs-chat-handoff');
+	var closeBtn  = document.getElementById('vvs-chat-close');
+	var minBtn    = document.getElementById('vvs-chat-minimize');
+	var chatBtn   = document.getElementById('vvs-chat-btn');
+
+	function openPanel() {
+		isOpen = true;
+		panel.style.display = 'flex';
+		if (msgs.children.length === 0) {
+			appendMsg('assistant', 'Hi! How can I help you today?');
+		}
+		input.focus();
+	}
+
+	function closePanel() {
+		isOpen = false;
+		panel.style.display = 'none';
+	}
+
+	function appendMsg(role, text) {
+		var wrap = document.createElement('div');
+		wrap.style.display = 'flex';
+		wrap.style.justifyContent = role === 'user' ? 'flex-end' : 'flex-start';
+		var bubble = document.createElement('div');
+		bubble.textContent = text;
+		bubble.style.maxWidth = '80%';
+		bubble.style.padding = '0.4rem 0.625rem';
+		bubble.style.borderRadius = '0.5rem';
+		bubble.style.fontSize = '0.8125rem';
+		bubble.style.lineHeight = '1.4';
+		bubble.style.wordBreak = 'break-word';
+		if (role === 'user') {
+			bubble.style.background = '#b45309';
+			bubble.style.color = '#fff';
+		} else if (role === 'system') {
+			bubble.style.background = '#374151';
+			bubble.style.color = '#9ca3af';
+			bubble.style.fontStyle = 'italic';
+		} else {
+			bubble.style.background = '#2e2e2e';
+			bubble.style.color = '#e5e5e5';
+			bubble.style.border = '1px solid #3d3d3d';
+		}
+		wrap.appendChild(bubble);
+		msgs.appendChild(wrap);
+		msgs.scrollTop = msgs.scrollHeight;
+	}
+
+	function setSending(busy) {
+		var btn = document.getElementById('vvs-chat-send');
+		if (btn) btn.disabled = busy;
+		input.disabled = busy;
+	}
+
+	chatBtn.addEventListener('click', function() {
+		if (isOpen) { closePanel(); } else { openPanel(); }
+	});
+	minBtn.addEventListener('click', closePanel);
+
+	form.addEventListener('submit', async function(e) {
+		e.preventDefault();
+		var msg = input.value.trim();
+		if (!msg) return;
+		input.value = '';
+		appendMsg('user', msg);
+		setSending(true);
+
+		try {
+			if (chatState === 'live') {
+				var r = await fetch('/portal/bot/livemessage', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({sessionID: sessionID, message: msg})
+				});
+				var d = await r.json();
+				if (d.staffReply) appendMsg('assistant', d.staffReply);
+				chatState = d.state || chatState;
+			} else {
+				var r = await fetch('/portal/bot/message', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({sessionID: sessionID, message: msg})
+				});
+				var d = await r.json();
+				sessionID = d.sessionID || sessionID;
+				chatState = d.state || chatState;
+				sessionStorage.setItem('vvs_chat_session', sessionID);
+				sessionStorage.setItem('vvs_chat_state', chatState);
+				if (d.reply) appendMsg('assistant', d.reply);
+				if (d.suggestHandoff) handoffBar.style.display = 'block';
+			}
+		} catch (err) {
+			appendMsg('system', 'Connection error. Please try again.');
+		}
+		setSending(false);
+		input.focus();
+	});
+
+	handoffBtn.addEventListener('click', async function() {
+		handoffBar.style.display = 'none';
+		appendMsg('system', 'Connecting you to a staff member…');
+		try {
+			var r = await fetch('/portal/bot/handoff', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({sessionID: sessionID})
+			});
+			var d = await r.json();
+			chatState = d.state || 'handoff';
+			sessionStorage.setItem('vvs_chat_state', chatState);
+			appendMsg('system', 'You are now connected to our support team. A staff member will reply shortly.');
+		} catch (err) {
+			appendMsg('system', 'Could not connect to staff. Please try the Support section.');
+		}
+	});
+
+	closeBtn.addEventListener('click', async function() {
+		if (sessionID) {
+			try {
+				await fetch('/portal/bot/close', {
+					method: 'POST',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({sessionID: sessionID, createTicket: false})
+				});
+			} catch (_) {}
+		}
+		sessionID = '';
+		chatState = 'bot';
+		sessionStorage.removeItem('vvs_chat_session');
+		sessionStorage.removeItem('vvs_chat_state');
+		msgs.innerHTML = '';
+		handoffBar.style.display = 'none';
+		closePanel();
+	});
+})();
+	</script>
+}

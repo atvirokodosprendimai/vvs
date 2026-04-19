@@ -67,3 +67,4 @@
 - 2026-04-19 `abc6bf0` chore(plan): mark network provisioning plan as completed
 - 2026-04-19 `cab098b` feat(portal): support ticket submission via NATS bridge
 - 2026-04-19 `36e2ea4` feat(portal): service status + usage summary page
+- 2026-04-19 `9d89926` feat(observability): Prometheus metrics endpoint + instrumentation
