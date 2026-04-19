@@ -12,3 +12,4 @@
 - [Codex review after coding](feedback_codex_review_after_code.md) — Auto-spawn Codex review in background after every coding task
 - [Datastar bind kebab = camelCase](feedback_datastar_bind_kebab_camel.md) — data-bind:foo-bar and $fooBar are the same signal; not a mismatch
 - [IMAP Envelope missing References](feedback_imap_envelope_no_references.md) — Parse References header from raw body bytes, not Envelope struct
+- [Hexagonal: contracts first, then agents](feedback_hexagonal_contracts_first.md) — Write ports/interfaces before spawning parallel agents on adapters
