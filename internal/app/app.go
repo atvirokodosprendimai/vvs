@@ -128,6 +128,10 @@ import (
 	portalnats "github.com/vvs/isp/internal/modules/portal/adapters/nats"
 	portalpersistence "github.com/vvs/isp/internal/modules/portal/adapters/persistence"
 	portalmigrations "github.com/vvs/isp/internal/modules/portal/migrations"
+
+	iptvhttp "github.com/vvs/isp/internal/modules/iptv/adapters/http"
+	iptvpersistence "github.com/vvs/isp/internal/modules/iptv/adapters/persistence"
+	iptvmigrations "github.com/vvs/isp/internal/modules/iptv/migrations"
 )
 
 type App struct {
@@ -171,6 +175,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "invoice", FS: invoicemigrations.FS, TableName: "goose_invoice"},
 		{Name: "audit_log", FS: auditlogmigrations.FS, TableName: "goose_audit_log"},
 		{Name: "portal", FS: portalmigrations.FS, TableName: "goose_portal"},
+		{Name: "iptv", FS: iptvmigrations.FS, TableName: "goose_iptv"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -695,6 +700,16 @@ func New(cfg Config) (*App, error) {
 		return nil, fmt.Errorf("portal nats bridge: %w", err)
 	}
 	log.Printf("portal NATS bridge registered")
+
+	// IPTV module
+	iptvChannelRepo := iptvpersistence.NewChannelRepository(gdb)
+	iptvPackageRepo := iptvpersistence.NewPackageRepository(gdb)
+	iptvSubRepo := iptvpersistence.NewSubscriptionRepository(gdb)
+	iptvSTBRepo := iptvpersistence.NewSTBRepository(gdb)
+	iptvKeyRepo := iptvpersistence.NewSubscriptionKeyRepository(gdb)
+	iptvRoutes := iptvhttp.NewIPTVHandlers(iptvChannelRepo, iptvPackageRepo, iptvSubRepo, iptvSTBRepo, iptvKeyRepo)
+	moduleRoutes = append(moduleRoutes, iptvRoutes)
+	log.Printf("module wired: iptv")
 
 	if err := rpcServer.Register(); err != nil {
 		return nil, fmt.Errorf("nats rpc: %w", err)

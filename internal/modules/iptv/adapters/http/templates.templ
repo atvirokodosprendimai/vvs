@@ -1,0 +1,200 @@
+package http
+
+import (
+	"fmt"
+
+	"github.com/vvs/isp/internal/infrastructure/http/templates"
+	"github.com/vvs/isp/internal/modules/iptv/domain"
+)
+
+// ── Channel List ──────────────────────────────────────────────────────────────
+
+templ IPTVChannelListPage(channels []*domain.Channel) {
+	@templates.Layout("IPTV Channels") {
+		@templates.PageHeaderRow("IPTV — Channels", "Manage broadcast channels") {
+			<a
+				href="/iptv/packages"
+				class="px-3 py-1.5 rounded text-xs font-medium border border-neutral-700 bg-neutral-800 text-neutral-400 hover:text-amber-400 transition-colors"
+			>Packages</a>
+			<a
+				href="/iptv/subscriptions"
+				class="px-3 py-1.5 rounded text-xs font-medium border border-neutral-700 bg-neutral-800 text-neutral-400 hover:text-amber-400 transition-colors"
+			>Subscriptions</a>
+			<a
+				href="/iptv/stbs"
+				class="px-3 py-1.5 rounded text-xs font-medium border border-neutral-700 bg-neutral-800 text-neutral-400 hover:text-amber-400 transition-colors"
+			>STBs</a>
+		}
+		<div class="p-6">
+			if len(channels) == 0 {
+				<div class="text-neutral-500 text-sm">No channels yet.</div>
+			} else {
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="text-left text-neutral-500 border-b border-neutral-800">
+							<th class="pb-2 pr-4 font-medium">Name</th>
+							<th class="pb-2 pr-4 font-medium">Category</th>
+							<th class="pb-2 pr-4 font-medium">EPG ID</th>
+							<th class="pb-2 font-medium">Status</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, ch := range channels {
+							<tr class="border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-colors">
+								<td class="py-2.5 pr-4 text-neutral-200 font-medium">
+									if ch.LogoURL != "" {
+										<img src={ ch.LogoURL } alt="" class="inline-block w-5 h-5 rounded mr-2 object-contain bg-neutral-800"/>
+									}
+									{ ch.Name }
+								</td>
+								<td class="py-2.5 pr-4 text-neutral-400">{ ch.Category }</td>
+								<td class="py-2.5 pr-4 text-neutral-500 font-mono text-xs">{ ch.EPGSource }</td>
+								<td class="py-2.5">
+									if ch.Active {
+										<span class="px-2 py-0.5 rounded text-xs bg-emerald-900/40 text-emerald-400 border border-emerald-800">active</span>
+									} else {
+										<span class="px-2 py-0.5 rounded text-xs bg-neutral-800 text-neutral-500 border border-neutral-700">inactive</span>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			}
+		</div>
+	}
+}
+
+// ── Package List ──────────────────────────────────────────────────────────────
+
+templ IPTVPackageListPage(packages []*domain.Package) {
+	@templates.Layout("IPTV Packages") {
+		@templates.PageHeaderRow("IPTV — Packages", "Channel bundles for subscribers") {
+			<a
+				href="/iptv/channels"
+				class="px-3 py-1.5 rounded text-xs font-medium border border-neutral-700 bg-neutral-800 text-neutral-400 hover:text-amber-400 transition-colors"
+			>Channels</a>
+		}
+		<div class="p-6">
+			if len(packages) == 0 {
+				<div class="text-neutral-500 text-sm">No packages yet.</div>
+			} else {
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="text-left text-neutral-500 border-b border-neutral-800">
+							<th class="pb-2 pr-4 font-medium">Name</th>
+							<th class="pb-2 pr-4 font-medium">Price</th>
+							<th class="pb-2 pr-4 font-medium">Description</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, pkg := range packages {
+							<tr class="border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-colors">
+								<td class="py-2.5 pr-4 text-neutral-200 font-medium">{ pkg.Name }</td>
+								<td class="py-2.5 pr-4 text-amber-400 font-mono">{ fmtCents(pkg.PriceCents) }</td>
+								<td class="py-2.5 text-neutral-500">{ pkg.Description }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			}
+		</div>
+	}
+}
+
+// ── Subscription List ─────────────────────────────────────────────────────────
+
+templ IPTVSubscriptionListPage(subs []*domain.Subscription) {
+	@templates.Layout("IPTV Subscriptions") {
+		@templates.PageHeaderRow("IPTV — Subscriptions", "Active customer subscriptions") {
+			<a
+				href="/iptv/channels"
+				class="px-3 py-1.5 rounded text-xs font-medium border border-neutral-700 bg-neutral-800 text-neutral-400 hover:text-amber-400 transition-colors"
+			>Channels</a>
+		}
+		<div class="p-6">
+			if len(subs) == 0 {
+				<div class="text-neutral-500 text-sm">No active subscriptions.</div>
+			} else {
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="text-left text-neutral-500 border-b border-neutral-800">
+							<th class="pb-2 pr-4 font-medium">Customer</th>
+							<th class="pb-2 pr-4 font-medium">Package</th>
+							<th class="pb-2 pr-4 font-medium">Status</th>
+							<th class="pb-2 font-medium">Started</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, s := range subs {
+							<tr class="border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-colors">
+								<td class="py-2.5 pr-4 text-neutral-400 font-mono text-xs">{ s.CustomerID }</td>
+								<td class="py-2.5 pr-4 text-neutral-400 font-mono text-xs">{ s.PackageID }</td>
+								<td class="py-2.5 pr-4">
+									@subStatusBadge(s.Status)
+								</td>
+								<td class="py-2.5 text-neutral-500">{ s.StartsAt.Format("2006-01-02") }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			}
+		</div>
+	}
+}
+
+templ subStatusBadge(status string) {
+	switch status {
+		case "active":
+			<span class="px-2 py-0.5 rounded text-xs bg-emerald-900/40 text-emerald-400 border border-emerald-800">{ status }</span>
+		case "suspended":
+			<span class="px-2 py-0.5 rounded text-xs bg-amber-900/40 text-amber-400 border border-amber-800">{ status }</span>
+		default:
+			<span class="px-2 py-0.5 rounded text-xs bg-neutral-800 text-neutral-500 border border-neutral-700">{ status }</span>
+	}
+}
+
+// ── STB List ──────────────────────────────────────────────────────────────────
+
+templ IPTVSTBListPage(stbs []*domain.STB) {
+	@templates.Layout("IPTV STBs") {
+		@templates.PageHeaderRow("IPTV — Set-Top Boxes", "Device inventory") {
+			<a
+				href="/iptv/channels"
+				class="px-3 py-1.5 rounded text-xs font-medium border border-neutral-700 bg-neutral-800 text-neutral-400 hover:text-amber-400 transition-colors"
+			>Channels</a>
+		}
+		<div class="p-6">
+			if len(stbs) == 0 {
+				<div class="text-neutral-500 text-sm">No STBs registered.</div>
+			} else {
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="text-left text-neutral-500 border-b border-neutral-800">
+							<th class="pb-2 pr-4 font-medium">MAC</th>
+							<th class="pb-2 pr-4 font-medium">Model</th>
+							<th class="pb-2 pr-4 font-medium">Customer</th>
+							<th class="pb-2 font-medium">Assigned</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, stb := range stbs {
+							<tr class="border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-colors">
+								<td class="py-2.5 pr-4 text-neutral-200 font-mono text-xs">{ stb.MAC }</td>
+								<td class="py-2.5 pr-4 text-neutral-400">{ stb.Model }</td>
+								<td class="py-2.5 pr-4 text-neutral-400 font-mono text-xs">{ stb.CustomerID }</td>
+								<td class="py-2.5 text-neutral-500">{ stb.AssignedAt.Format("2006-01-02") }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			}
+		</div>
+	}
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+func fmtCents(cents int64) string {
+	return fmt.Sprintf("%d.%02d EUR", cents/100, cents%100)
+}
