@@ -1,5 +1,5 @@
 /**
- * Profile page tests — page load, change password flow.
+ * Profile page tests — page load, change password flow, 2FA setup.
  */
 const { test, expect } = require('@playwright/test');
 
@@ -46,5 +46,45 @@ test.describe('Profile', () => {
     await page.goto('/profile');
     await expect(page.locator('input[placeholder="Your full name"]')).toBeVisible();
     await expect(page.locator('button:has-text("Save display name")')).toBeVisible();
+  });
+
+  // ── Two-Factor Authentication ──────────────────────────────────────────────
+
+  test('profile page has 2FA link', async ({ page }) => {
+    await page.goto('/profile');
+    await expect(page.locator('a[href="/profile/2fa"]')).toBeVisible();
+  });
+
+  test('2FA setup page loads', async ({ page }) => {
+    await page.goto('/profile/2fa');
+    await expect(page.locator('h1, h2').filter({ hasText: /Two-Factor/i })).toBeVisible();
+  });
+
+  test('2FA setup page has no server errors', async ({ page }) => {
+    await page.goto('/profile/2fa');
+    const bodyText = await page.locator('body').innerText();
+    expect(bodyText).not.toContain('panic:');
+    expect(bodyText).not.toContain('500');
+  });
+
+  test('2FA setup page shows QR code and confirm input', async ({ page }) => {
+    await page.goto('/profile/2fa');
+    // QR code image
+    await expect(page.locator('img[alt="TOTP QR code"]')).toBeVisible();
+    // Manual key code block
+    await expect(page.locator('code')).toBeVisible();
+    // 6-digit confirm input
+    await expect(page.locator('input[placeholder="000000"]')).toBeVisible();
+    // Enable button
+    await expect(page.locator('button:has-text("Enable Two-Factor Auth")')).toBeVisible();
+  });
+
+  test('2FA wrong code shows error', async ({ page }) => {
+    await page.goto('/profile/2fa');
+    await page.fill('input[placeholder="000000"]', '000000');
+    await page.click('button:has-text("Enable Two-Factor Auth")');
+    await expect(page.locator('#totp-setup-error')).toBeVisible({ timeout: 5_000 });
+    const errText = await page.locator('#totp-setup-error').innerText();
+    expect(errText.length).toBeGreaterThan(0);
   });
 });
