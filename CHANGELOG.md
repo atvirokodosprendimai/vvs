@@ -113,3 +113,4 @@
 - 2026-04-19 `2a30057` chore(plan): mark dynamic roles plan as completed
 - 2026-04-19 `f024f76` fix(users): edit button modal not opening when FullName/Division empty
 - 2026-04-19 `0702053` revert: restore ()&& pattern for edit button signal chain
+- 2026-04-19 `6ed38be` fix(users): edit button modal — semicolons replace ()&& short-circuit; fix strict E2E selector
