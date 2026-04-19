@@ -65,3 +65,4 @@
 - 2026-04-19 `e953d0c` chore(plan): mark magic-link hardening plan as completed
 - 2026-04-19 `f9cf15b` test(network): FakeRouterProvisioner testutil + subscriber integration tests
 - 2026-04-19 `abc6bf0` chore(plan): mark network provisioning plan as completed
+- 2026-04-19 `cab098b` feat(portal): support ticket submission via NATS bridge

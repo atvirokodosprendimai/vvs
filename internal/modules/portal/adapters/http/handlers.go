@@ -51,11 +51,29 @@ type portalTicketClient interface {
 	AddTicketComment(ctx context.Context, ticketID, customerID, body string) (string, error)
 }
 
+// portalServiceClient lists the customer's services.
+type portalServiceClient interface {
+	ListServices(ctx context.Context, customerID string) ([]*PortalService, error)
+}
+
+// PortalService is the service view presented in the portal.
+type PortalService struct {
+	ID               string
+	ProductName      string
+	PriceAmountCents int64
+	Currency         string
+	Status           string
+	BillingCycle     string
+	NextBillingDate  *time.Time
+}
+
 // PortalCustomer holds the customer info shown in the portal header.
 type PortalCustomer struct {
 	ID          string
 	CompanyName string
 	Email       string
+	IPAddress   string
+	NetworkZone string
 }
 
 // Handlers serves the customer portal — public-facing, separate from admin UI.
@@ -66,6 +84,7 @@ type Handlers struct {
 	pdfTokens    pdfTokenMinter
 	custReader   customerReader
 	tickets      portalTicketClient
+	services     portalServiceClient
 	baseURL      string
 	secureCookie bool
 }
@@ -107,6 +126,11 @@ func (h *Handlers) WithTickets(tc portalTicketClient) *Handlers {
 	return h
 }
 
+func (h *Handlers) WithServices(sc portalServiceClient) *Handlers {
+	h.services = sc
+	return h
+}
+
 // RegisterRoutes registers admin routes (protected by RequireAuth in the router).
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/customers/{id}/portal-link", h.generatePortalLink)
@@ -128,6 +152,7 @@ func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 		r.Get("/portal/invoices", h.invoiceList)
 		r.Get("/portal/invoices/{id}", h.invoiceDetail)
 		r.Get("/portal/tickets", h.ticketList)
+		r.Get("/portal/services", h.serviceList)
 		r.Get("/portal/tickets/new", h.ticketNew)
 		r.Post("/portal/tickets", h.ticketCreate)
 		r.Get("/portal/tickets/{id}", h.ticketDetail)
@@ -285,6 +310,26 @@ func (h *Handlers) generatePortalLink(w http.ResponseWriter, r *http.Request) {
 
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElementTempl(PortalLinkFragment(portalURL))
+}
+
+// serviceList renders the customer's active services.
+func (h *Handlers) serviceList(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	customerID := PortalCustomerIDFromContext(r.Context())
+	if h.services == nil {
+		http.Error(w, "service information not available", http.StatusServiceUnavailable)
+		return
+	}
+
+	services, err := h.services.ListServices(r.Context(), customerID)
+	if err != nil {
+		log.Printf("portal serviceList: %v", err)
+		http.Error(w, "error loading services", http.StatusInternalServerError)
+		return
+	}
+
+	cust := h.resolveCustomer(r.Context(), customerID)
+	PortalServiceListPage(cust, services).Render(r.Context(), w)
 }
 
 // ticketList renders the customer's support ticket list.

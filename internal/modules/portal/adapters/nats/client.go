@@ -144,6 +144,17 @@ func (c *PortalNATSClient) GetCustomer(ctx context.Context, id string) (*BridgeC
 	return &cust, nil
 }
 
+// ListServices returns the customer's active and suspended services via NATS.
+func (c *PortalNATSClient) ListServices(ctx context.Context, customerID string) ([]*BridgeService, error) {
+	var resp struct {
+		Services []*BridgeService `json:"services"`
+	}
+	if err := c.rpc(ctx, SubjectServicesList, map[string]string{"customerID": customerID}, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Services, nil
+}
+
 // ValidateInvoiceToken validates a PDF token hash via NATS.
 // Returns the InvoiceID the token grants access to.
 func (c *PortalNATSClient) ValidateInvoiceToken(ctx context.Context, tokenHash string) (string, error) {

@@ -95,6 +95,7 @@ type CustomerReadModel struct {
 	RouterID    *string   `json:"router_id"`
 	IPAddress   string    `json:"ip_address"`
 	MACAddress  string    `json:"mac_address"`
+	NetworkZone string    `json:"network_zone"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -120,6 +121,7 @@ func (m *CustomerReadModel) ToDomain() *domain.Customer {
 		RouterID:    m.RouterID,
 		IPAddress:   m.IPAddress,
 		MACAddress:  m.MACAddress,
+		NetworkZone: m.NetworkZone,
 	}
 }
 

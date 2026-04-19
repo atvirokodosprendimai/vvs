@@ -135,6 +135,7 @@ func runPortal(ctx context.Context, cmd *cli.Command) error {
 		WithPDFTokens(client).
 		WithCustomerReader(custAdapter).
 		WithTickets(client).
+		WithServices(&portalServiceClientAdapter{client: client}).
 		WithBaseURL(baseURL).
 		WithSecureCookie(secureCookie)
 
@@ -213,7 +214,34 @@ func (a *portalCustomerReaderAdapter) GetPortalCustomer(ctx context.Context, id 
 		ID:          bc.ID,
 		CompanyName: bc.CompanyName,
 		Email:       bc.Email,
+		IPAddress:   bc.IPAddress,
+		NetworkZone: bc.NetworkZone,
 	}, nil
+}
+
+// portalServiceClientAdapter satisfies portalhttp.portalServiceClient using PortalNATSClient.
+type portalServiceClientAdapter struct {
+	client *portalnats.PortalNATSClient
+}
+
+func (a *portalServiceClientAdapter) ListServices(ctx context.Context, customerID string) ([]*portalhttp.PortalService, error) {
+	svcs, err := a.client.ListServices(ctx, customerID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*portalhttp.PortalService, len(svcs))
+	for i, s := range svcs {
+		out[i] = &portalhttp.PortalService{
+			ID:               s.ID,
+			ProductName:      s.ProductName,
+			PriceAmountCents: s.PriceAmountCents,
+			Currency:         s.Currency,
+			Status:           s.Status,
+			BillingCycle:     s.BillingCycle,
+			NextBillingDate:  s.NextBillingDate,
+		}
+	}
+	return out, nil
 }
 
 // portalInvoiceListAdapter satisfies invoicequeries.InvoiceReadModel slice expectations.

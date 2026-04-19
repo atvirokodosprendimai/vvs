@@ -164,7 +164,9 @@ func wireInfra(
 		nc, portalTokenRepo, inv.tokenRepo,
 		inv.listForCustomer, inv.get,
 		&natsPortalCustomerBridge{query: cust.getQuery},
-	).WithTickets(crm.listTickets, crm.openTicket, crm.addComment)
+	).
+		WithTickets(crm.listTickets, crm.openTicket, crm.addComment).
+		WithServices(&portalServiceBridge{repo: svc.repo})
 	if err := portalBridge.Register(); err != nil {
 		return nil, fmt.Errorf("portal nats bridge: %w", err)
 	}

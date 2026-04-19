@@ -32,6 +32,8 @@ const (
 	SubjectTicketsList       = "isp.portal.rpc.tickets.list"
 	SubjectTicketOpen        = "isp.portal.rpc.ticket.open"
 	SubjectTicketCommentAdd  = "isp.portal.rpc.ticket.comment.add"
+
+	SubjectServicesList = "isp.portal.rpc.services.list"
 )
 
 // portalTokenReader reads and updates portal tokens from the DB.
@@ -76,26 +78,45 @@ type invoiceByIDGetter interface {
 	Handle(ctx context.Context, id string) (*invoicequeries.InvoiceReadModel, error)
 }
 
+// bridgeServiceLister lists a customer's services.
+type bridgeServiceLister interface {
+	ListForCustomer(ctx context.Context, customerID string) ([]*BridgeService, error)
+}
+
+// BridgeService is the minimal service data sent over NATS to the portal.
+type BridgeService struct {
+	ID              string
+	ProductName     string
+	PriceAmountCents int64
+	Currency        string
+	Status          string
+	BillingCycle    string
+	NextBillingDate *time.Time
+}
+
 // BridgeCustomer is the minimal customer data exposed over NATS.
 type BridgeCustomer struct {
 	ID          string
 	CompanyName string
 	Email       string
+	IPAddress   string
+	NetworkZone string
 }
 
 // PortalBridge subscribes to isp.portal.rpc.* subjects and serves portal data.
 // Runs on vvs-core — has direct access to SQLite via the injected handlers/repos.
 type PortalBridge struct {
-	nc           *nats.Conn
-	tokenRepo    portalTokenReader
-	invoiceToken invoiceTokenStore
-	listInvoices invoicesByCustomerLister
-	getInvoice   invoiceByIDGetter
-	custReader   bridgeCustomerReader
-	ticketLister ticketListerForCustomer
-	openTicket   ticketOpener
-	addComment   ticketCommenter
-	subs         []*nats.Subscription
+	nc             *nats.Conn
+	tokenRepo      portalTokenReader
+	invoiceToken   invoiceTokenStore
+	listInvoices   invoicesByCustomerLister
+	getInvoice     invoiceByIDGetter
+	custReader     bridgeCustomerReader
+	ticketLister   ticketListerForCustomer
+	openTicket     ticketOpener
+	addComment     ticketCommenter
+	serviceLister  bridgeServiceLister
+	subs           []*nats.Subscription
 }
 
 // NewPortalBridge creates a bridge. Call Register() to start serving.
@@ -115,6 +136,13 @@ func NewPortalBridge(
 		getInvoice:   getInvoice,
 		custReader:   custReader,
 	}
+}
+
+// WithServices wires the service lister into the bridge.
+// Call before Register() to enable the services list RPC subject.
+func (b *PortalBridge) WithServices(lister bridgeServiceLister) *PortalBridge {
+	b.serviceLister = lister
+	return b
 }
 
 // WithTickets wires the ticket sub-handlers into the bridge.
@@ -144,6 +172,7 @@ func (b *PortalBridge) Register() error {
 		{SubjectTicketsList, b.handleTicketsList},
 		{SubjectTicketOpen, b.handleTicketOpen},
 		{SubjectTicketCommentAdd, b.handleTicketCommentAdd},
+		{SubjectServicesList, b.handleServicesList},
 	}
 	for _, e := range entries {
 		sub, err := b.nc.Subscribe(e.subject, e.handler)
@@ -391,6 +420,35 @@ func (b *PortalBridge) handleInvoiceTokenMint(msg *nats.Msg) {
 	bridgeReply(msg, struct {
 		Plain string `json:"plain"`
 	}{plain}, nil)
+}
+
+func (b *PortalBridge) handleServicesList(msg *nats.Msg) {
+	if b.serviceLister == nil {
+		bridgeReply(msg, nil, &bridgeError{"service list handler not configured"})
+		return
+	}
+	var req struct {
+		CustomerID string `json:"customerID"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	if req.CustomerID == "" {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	services, err := b.serviceLister.ListForCustomer(ctx, req.CustomerID)
+	if err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	bridgeReply(msg, struct {
+		Services []*BridgeService `json:"services"`
+	}{services}, nil)
 }
 
 func (b *PortalBridge) handleCustomerGet(msg *nats.Msg) {
