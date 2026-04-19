@@ -31,4 +31,7 @@ type PackageRepository interface {
 	AddChannel(ctx context.Context, packageID, channelID string) error
 	RemoveChannel(ctx context.Context, packageID, channelID string) error
 	ListChannelIDs(ctx context.Context, packageID string) ([]string, error)
+	// SetChannelOrder sets per-package channel display order.
+	// channelIDs not belonging to the package are silently skipped.
+	SetChannelOrder(ctx context.Context, packageID string, channelIDs []string) error
 }

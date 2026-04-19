@@ -54,6 +54,7 @@ type ChannelModel struct {
 	Name      string    `gorm:"type:text;not null"`
 	LogoURL   string    `gorm:"type:text;not null;default:''"`
 	StreamURL string    `gorm:"type:text;not null;default:''"`
+	DVRUrl    string    `gorm:"column:dvr_url;type:text;not null;default:''"`
 	Category  string    `gorm:"type:text;not null;default:''"`
 	EPGSource string    `gorm:"type:text;not null;default:''"`
 	Active    bool      `gorm:"not null;default:1"`
@@ -66,7 +67,7 @@ func (ChannelModel) TableName() string { return "iptv_channels" }
 func toChannelModel(c *domain.Channel) ChannelModel {
 	return ChannelModel{
 		ID: c.ID, Name: c.Name, LogoURL: c.LogoURL, StreamURL: c.StreamURL,
-		Category: c.Category, EPGSource: c.EPGSource, Active: c.Active,
+		DVRUrl: c.DVRUrl, Category: c.Category, EPGSource: c.EPGSource, Active: c.Active,
 		CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt,
 	}
 }
@@ -74,7 +75,7 @@ func toChannelModel(c *domain.Channel) ChannelModel {
 func (m *ChannelModel) toDomain() *domain.Channel {
 	return &domain.Channel{
 		ID: m.ID, Name: m.Name, LogoURL: m.LogoURL, StreamURL: m.StreamURL,
-		Category: m.Category, EPGSource: m.EPGSource, Active: m.Active,
+		DVRUrl: m.DVRUrl, Category: m.Category, EPGSource: m.EPGSource, Active: m.Active,
 		CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
 	}
 }
@@ -111,6 +112,7 @@ func (m *PackageModel) toDomain() *domain.Package {
 type PackageChannelModel struct {
 	PackageID string `gorm:"primaryKey;type:text"`
 	ChannelID string `gorm:"primaryKey;type:text"`
+	Position  int    `gorm:"not null;default:0"`
 }
 
 func (PackageChannelModel) TableName() string { return "iptv_package_channels" }

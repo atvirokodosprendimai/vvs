@@ -14,6 +14,7 @@ type Channel struct {
 	Name      string
 	LogoURL   string
 	StreamURL string
+	DVRUrl    string // optional DVR base URL
 	Category  string
 	EPGSource string // tvg-id / XMLTV source ID
 	Active    bool

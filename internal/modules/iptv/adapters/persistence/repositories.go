@@ -54,7 +54,7 @@ func (r *ChannelRepository) FindByPackage(ctx context.Context, packageID string)
 		return tx.
 			Joins("JOIN iptv_package_channels pc ON pc.channel_id = iptv_channels.id").
 			Where("pc.package_id = ?", packageID).
-			Order("iptv_channels.name ASC").
+			Order("pc.position ASC, iptv_channels.name ASC").
 			Find(&ms).Error
 	})
 	if err != nil {
@@ -146,6 +146,21 @@ func (r *PackageRepository) ListChannelIDs(ctx context.Context, packageID string
 		ids[i] = m.ChannelID
 	}
 	return ids, nil
+}
+
+func (r *PackageRepository) SetChannelOrder(ctx context.Context, packageID string, channelIDs []string) error {
+	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
+		for pos, chID := range channelIDs {
+			res := tx.Model(&PackageChannelModel{}).
+				Where("package_id = ? AND channel_id = ?", packageID, chID).
+				Update("position", pos)
+			if res.Error != nil {
+				return res.Error
+			}
+			// RowsAffected == 0 means channel not in this package — skip silently.
+		}
+		return nil
+	})
 }
 
 // ── SubscriptionRepository ────────────────────────────────────────────────────
