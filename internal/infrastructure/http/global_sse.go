@@ -44,7 +44,8 @@ func (h *GlobalHandler) globalSSE(w http.ResponseWriter, r *http.Request) {
 	chatCh, cancelChat := h.subscriber.ChanSubscription(events.ChatMessageGeneral.String())
 	defer cancelChat()
 
-	// Initial state
+	// Initial state — inject user role so templates can show viewer badge
+	sse.PatchSignals([]byte(`{"_userRole":"` + string(user.Role) + `"}`))
 	sse.PatchElementTempl(ClockFragment(time.Now().Format("15:04:05")))
 	h.sendNotif(r, sse, user.ID)
 	msgs, err := h.chatStore.Recent(r.Context(), "general", chatHistoryLimit)

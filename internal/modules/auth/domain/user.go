@@ -23,10 +23,11 @@ type Role string
 const (
 	RoleAdmin    Role = "admin"
 	RoleOperator Role = "operator"
+	RoleViewer   Role = "viewer"
 )
 
 func ValidRole(r Role) bool {
-	return r == RoleAdmin || r == RoleOperator
+	return r == RoleAdmin || r == RoleOperator || r == RoleViewer
 }
 
 type User struct {
@@ -85,4 +86,10 @@ func (u *User) ChangePassword(plain string) error {
 
 func (u *User) IsAdmin() bool {
 	return u.Role == RoleAdmin
+}
+
+// CanWrite returns true for roles allowed to make mutations (admin + operator).
+// Viewers are read-only and must be blocked at the API layer.
+func (u *User) CanWrite() bool {
+	return u.Role == RoleAdmin || u.Role == RoleOperator
 }
