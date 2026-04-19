@@ -48,7 +48,7 @@ func PortalTicketListPage(cust *PortalCustomer, tickets []ticketqueries.TicketRe
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6 flex items-center justify-between\"><div><h1 class=\"text-lg font-semibold text-neutral-100\">Support Tickets</h1><p class=\"text-sm text-neutral-500 mt-1\">Your open and resolved requests</p></div><a href=\"/portal/tickets/new\" class=\"flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 4.5v15m7.5-7.5h-15\"></path></svg> New Ticket</a></div><div class=\"mb-6 flex items-center gap-2 text-sm text-neutral-500\"><a href=\"/portal/invoices\" class=\"hover:text-neutral-300 transition-colors\">Invoices</a> <span class=\"text-neutral-700\">·</span> <span class=\"text-neutral-100\">Support</span></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"mb-6 flex items-center justify-between\"><div><h1 class=\"text-lg font-semibold text-neutral-100\">Support Tickets</h1><p class=\"text-sm text-neutral-500 mt-1\">Your open and resolved requests</p></div><a href=\"/portal/tickets/new\" class=\"flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M12 4.5v15m7.5-7.5h-15\"></path></svg> New Ticket</a></div><div class=\"mb-6 flex items-center gap-2 text-sm text-neutral-500\"><a href=\"/portal/invoices\" class=\"hover:text-neutral-300 transition-colors\">Invoices</a> <span class=\"text-neutral-700\">·</span> <a href=\"/portal/services\" class=\"hover:text-neutral-300 transition-colors\">Services</a> <span class=\"text-neutral-700\">·</span> <span class=\"text-neutral-100\">Support</span></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -70,7 +70,7 @@ func PortalTicketListPage(cust *PortalCustomer, tickets []ticketqueries.TicketRe
 					var templ_7745c5c3_Var3 templ.SafeURL
 					templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/portal/tickets/%s", tk.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 40, Col: 70}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 42, Col: 70}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 					if templ_7745c5c3_Err != nil {
@@ -91,7 +91,7 @@ func PortalTicketListPage(cust *PortalCustomer, tickets []ticketqueries.TicketRe
 					var templ_7745c5c3_Var4 string
 					templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(tk.Subject)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 45, Col: 78}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 47, Col: 78}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 					if templ_7745c5c3_Err != nil {
@@ -104,7 +104,7 @@ func PortalTicketListPage(cust *PortalCustomer, tickets []ticketqueries.TicketRe
 					var templ_7745c5c3_Var5 string
 					templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(tk.CreatedAt.Format("Jan 2, 2006"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 47, Col: 51}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 49, Col: 51}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 					if templ_7745c5c3_Err != nil {
@@ -122,7 +122,7 @@ func PortalTicketListPage(cust *PortalCustomer, tickets []ticketqueries.TicketRe
 						var templ_7745c5c3_Var6 string
 						templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d comment", len(tk.Comments)))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 49, Col: 61}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 51, Col: 61}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 						if templ_7745c5c3_Err != nil {
@@ -213,7 +213,7 @@ func PortalTicketNewPage(cust *PortalCustomer, errMsg string) templ.Component {
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(errMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 78, Col: 101}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 80, Col: 101}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -279,7 +279,7 @@ func PortalTicketDetailPage(cust *PortalCustomer, tk *ticketqueries.TicketReadMo
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(tk.Subject)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 127, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 129, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -300,7 +300,7 @@ func PortalTicketDetailPage(cust *PortalCustomer, tk *ticketqueries.TicketReadMo
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(tk.CreatedAt.Format("Jan 2, 2006 15:04"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 130, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 132, Col: 98}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -313,7 +313,7 @@ func PortalTicketDetailPage(cust *PortalCustomer, tk *ticketqueries.TicketReadMo
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(tk.CreatedAt.Format("Jan 2, 2006 15:04"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 139, Col: 86}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 141, Col: 86}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -326,7 +326,7 @@ func PortalTicketDetailPage(cust *PortalCustomer, tk *ticketqueries.TicketReadMo
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(tk.Body)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 141, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 143, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -355,7 +355,7 @@ func PortalTicketDetailPage(cust *PortalCustomer, tk *ticketqueries.TicketReadMo
 					var templ_7745c5c3_Var16 string
 					templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(errMsg)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 151, Col: 102}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 153, Col: 102}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 					if templ_7745c5c3_Err != nil {
@@ -373,7 +373,7 @@ func PortalTicketDetailPage(cust *PortalCustomer, tk *ticketqueries.TicketReadMo
 				var templ_7745c5c3_Var17 templ.SafeURL
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/portal/tickets/%s/comments", tk.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 155, Col: 97}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 157, Col: 97}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -458,7 +458,7 @@ func portalCommentBubble(c ticketqueries.CommentReadModel, tk *ticketqueries.Tic
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(c.CreatedAt.Format("Jan 2, 2006 15:04"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 187, Col: 83}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 189, Col: 83}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
@@ -471,7 +471,7 @@ func portalCommentBubble(c ticketqueries.CommentReadModel, tk *ticketqueries.Tic
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(c.Body)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 189, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 191, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -535,7 +535,7 @@ func portalTicketStatusBadge(status string) templ.Component {
 			var templ_7745c5c3_Var24 string
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 204, Col: 148}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/portal_tickets.templ`, Line: 206, Col: 148}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
