@@ -199,12 +199,20 @@ func newDashboardStatsHandler(reader *gorm.DB) http.HandlerFunc {
 
 		// Monthly revenue — last 6 months
 		sixMonthsAgo := now.AddDate(0, -6, 0).Format("2006-01-02")
+		type rawMonthCents struct {
+			Month string
+			Total int64
+		}
+		var rawRevenue []rawMonthCents
 		reader.Table("invoices").
-			Select("strftime('%Y-%m', created_at) as month, COALESCE(SUM(total), 0) as total").
+			Select("strftime('%Y-%m', created_at) as month, COALESCE(SUM(total_amount), 0) as total").
 			Where("status = 'paid' AND created_at >= ?", sixMonthsAgo).
 			Group("strftime('%Y-%m', created_at)").
 			Order("month ASC").
-			Scan(&d.MonthlyRevenue)
+			Scan(&rawRevenue)
+		for _, m := range rawRevenue {
+			d.MonthlyRevenue = append(d.MonthlyRevenue, MonthRevenue{Month: m.Month, Total: float64(m.Total) / 100})
+		}
 
 		// Fill missing months
 		d.MonthlyRevenue = fillMonths(d.MonthlyRevenue, 6)

@@ -1,6 +1,8 @@
 package http
 
 import (
+	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"log"
@@ -15,7 +17,17 @@ import (
 	"github.com/vvs/isp/internal/modules/auth/domain"
 )
 
-const cookieName = "vvs_session"
+const (
+	cookieName        = "vvs_session"
+	totpPendingCookie = "vvs_totp_pending"
+	totpPendingMaxAge = 300 // 5 minutes
+)
+
+// totpUserStore is a local interface for saving TOTP state on a user.
+type totpUserStore interface {
+	FindByID(ctx context.Context, id string) (*domain.User, error)
+	Save(ctx context.Context, u *domain.User) error
+}
 
 // loginRateLimiter tracks failed login attempts per IP address.
 // Allows up to 10 failures per 15-minute window before locking out.
@@ -35,6 +47,63 @@ const (
 )
 
 var globalLoginLimiter = &loginRateLimiter{entries: make(map[string]*loginEntry)}
+
+// ── TOTP pending nonce store ──────────────────────────────────────────────────
+// Stores a server-side mapping from random nonce → userID for the TOTP login step.
+// The cookie holds the opaque nonce; the userID is never sent to the client.
+
+type totpPendingNonce struct {
+	userID    string
+	expiresAt time.Time
+}
+
+var (
+	totpPendingMu    sync.Mutex
+	totpPendingStore = make(map[string]totpPendingNonce)
+)
+
+// newTOTPPending generates a random nonce, stores userID→nonce, returns the nonce.
+func newTOTPPending(userID string) string {
+	buf := make([]byte, 24)
+	_, _ = rand.Read(buf)
+	nonce := hex.EncodeToString(buf)
+	exp := time.Now().Add(totpPendingMaxAge * time.Second)
+	totpPendingMu.Lock()
+	defer totpPendingMu.Unlock()
+	// prune stale entries
+	for k, v := range totpPendingStore {
+		if time.Now().After(v.expiresAt) {
+			delete(totpPendingStore, k)
+		}
+	}
+	totpPendingStore[nonce] = totpPendingNonce{userID: userID, expiresAt: exp}
+	return nonce
+}
+
+// lookupTOTPPending returns the userID for a nonce without consuming it (for page render).
+func lookupTOTPPending(nonce string) (string, bool) {
+	totpPendingMu.Lock()
+	defer totpPendingMu.Unlock()
+	e, ok := totpPendingStore[nonce]
+	if !ok || time.Now().After(e.expiresAt) {
+		delete(totpPendingStore, nonce)
+		return "", false
+	}
+	return e.userID, true
+}
+
+// consumeTOTPPending returns the userID and deletes the nonce (single-use).
+func consumeTOTPPending(nonce string) (string, bool) {
+	totpPendingMu.Lock()
+	defer totpPendingMu.Unlock()
+	e, ok := totpPendingStore[nonce]
+	if !ok || time.Now().After(e.expiresAt) {
+		delete(totpPendingStore, nonce)
+		return "", false
+	}
+	delete(totpPendingStore, nonce)
+	return e.userID, true
+}
 
 func (l *loginRateLimiter) allow(ip string) bool {
 	l.mu.Lock()
@@ -67,9 +136,11 @@ type Handlers struct {
 	deleteUserCmd         *commands.DeleteUserHandler
 	changeSelfPasswordCmd *commands.ChangeSelfPasswordHandler
 	updateUserCmd         *commands.UpdateUserHandler
+	createSessionCmd      *commands.CreateSessionHandler
 	listUsersQuery        *queries.ListUsersHandler
 	currentUser           *queries.GetCurrentUserHandler
 	permRepo              domain.RolePermissionsRepository
+	totpUsers             totpUserStore
 	maxAge                int
 	secureCookie          bool
 }
@@ -86,6 +157,16 @@ func (h *Handlers) WithMaxAge(secs int) *Handlers {
 
 func (h *Handlers) WithSecureCookie(secure bool) *Handlers {
 	h.secureCookie = secure
+	return h
+}
+
+func (h *Handlers) WithTOTPUsers(s totpUserStore) *Handlers {
+	h.totpUsers = s
+	return h
+}
+
+func (h *Handlers) WithCreateSession(cmd *commands.CreateSessionHandler) *Handlers {
+	h.createSessionCmd = cmd
 	return h
 }
 
@@ -115,6 +196,9 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/login", h.loginPage)
 	r.Post("/api/login", h.loginSSE)
 	r.Post("/api/logout", h.logoutSSE)
+	// TOTP login step (public — no session required)
+	r.Get("/login/totp", h.loginTOTPPage)
+	r.Post("/api/login/totp", h.loginTOTPSSE)
 	r.Get("/users", h.usersPage)
 	r.Get("/api/users", h.listUsersSSE)
 	r.Post("/api/users", h.createUserSSE)
@@ -123,6 +207,10 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/profile", h.profilePage)
 	r.Post("/api/users/me/password", h.changeSelfPasswordSSE)
 	r.Put("/api/users/me/profile", h.updateSelfProfileSSE)
+	// TOTP 2FA setup
+	r.Get("/profile/2fa", h.profileTOTPSetupPage)
+	r.Post("/api/users/me/totp/enable", h.enableTOTPSSE)
+	r.Post("/api/users/me/totp/disable", h.disableTOTPSSE)
 	r.Get("/settings/permissions", h.permissionsPage)
 	r.Get("/sse/settings/permissions", h.permissionsSSE)
 	r.Post("/api/permissions/{role}/{module}", h.savePermission)
@@ -162,6 +250,32 @@ func (h *Handlers) loginSSE(w http.ResponseWriter, r *http.Request) {
 		// Only create SSE on the error path so headers stay unlocked for cookie on success.
 		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(loginError("Invalid username or password"))
+		return
+	}
+
+	// If TOTP is enabled, store the pending user ID in a short-lived cookie and
+	// redirect to the TOTP step. The session created above is valid but the session
+	// cookie is NOT set until the code is verified.
+	if result.User.TOTPEnabled {
+		// Revoke the eagerly-created session — we'll create a fresh one after TOTP.
+		pendingSum := sha256.Sum256([]byte(result.Token))
+		if err := h.logoutCmd.Handle(r.Context(), commands.LogoutCommand{TokenHash: hex.EncodeToString(pendingSum[:])}); err != nil {
+			log.Printf("loginSSE: revoke pre-TOTP session: %v", err)
+			// Non-fatal: session will expire naturally; continue to TOTP step.
+		}
+		// Store an opaque server-side nonce — never send the userID to the client.
+		nonce := newTOTPPending(result.User.ID)
+		http.SetCookie(w, &http.Cookie{
+			Name:     totpPendingCookie,
+			Value:    nonce,
+			Path:     "/",
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   totpPendingMaxAge,
+			Secure:   h.secureCookie,
+		})
+		sse := datastar.NewSSE(w, r)
+		sse.Redirect("/login/totp")
 		return
 	}
 

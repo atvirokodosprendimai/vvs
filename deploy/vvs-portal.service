@@ -1,0 +1,16 @@
+[Unit]
+Description=VVS Portal (customer self-service, public VPS)
+After=network.target
+
+[Service]
+Type=simple
+User=vvs
+EnvironmentFile=/etc/vvs/portal.env
+ExecStart=/usr/local/bin/vvs-portal serve
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -96,6 +96,7 @@ import (
 	"github.com/vvs/isp/internal/modules/email/worker"
 	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
 
+	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
 	invoicehttp "github.com/vvs/isp/internal/modules/invoice/adapters/http"
 	paymenthttp "github.com/vvs/isp/internal/modules/payment/adapters/http"
 	paymentcommands "github.com/vvs/isp/internal/modules/payment/app/commands"
@@ -124,8 +125,16 @@ import (
 	cronmigrations "github.com/vvs/isp/internal/modules/cron/migrations"
 
 	portalhttp "github.com/vvs/isp/internal/modules/portal/adapters/http"
+	portalnats "github.com/vvs/isp/internal/modules/portal/adapters/nats"
 	portalpersistence "github.com/vvs/isp/internal/modules/portal/adapters/persistence"
 	portalmigrations "github.com/vvs/isp/internal/modules/portal/migrations"
+
+	iptvhttp "github.com/vvs/isp/internal/modules/iptv/adapters/http"
+	iptvnats "github.com/vvs/isp/internal/modules/iptv/adapters/nats"
+	iptvpersistence "github.com/vvs/isp/internal/modules/iptv/adapters/persistence"
+	iptvcommands "github.com/vvs/isp/internal/modules/iptv/app/commands"
+	iptvqueries "github.com/vvs/isp/internal/modules/iptv/app/queries"
+	iptvmigrations "github.com/vvs/isp/internal/modules/iptv/migrations"
 )
 
 type App struct {
@@ -169,6 +178,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "invoice", FS: invoicemigrations.FS, TableName: "goose_invoice"},
 		{Name: "audit_log", FS: auditlogmigrations.FS, TableName: "goose_audit_log"},
 		{Name: "portal", FS: portalmigrations.FS, TableName: "goose_portal"},
+		{Name: "iptv", FS: iptvmigrations.FS, TableName: "goose_iptv"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -183,7 +193,7 @@ func New(cfg Config) (*App, error) {
 		}
 		log.Printf("NATS connected to external server: %s", cfg.NATSUrl)
 	} else {
-		ns, nc, err = infranats.StartEmbedded(cfg.NATSListenAddr)
+		ns, nc, err = infranats.StartEmbedded(cfg.NATSListenAddr, cfg.NATSAuthToken)
 		if err != nil {
 			return nil, fmt.Errorf("start nats: %w", err)
 		}
@@ -211,12 +221,15 @@ func New(cfg Config) (*App, error) {
 	deleteUserCmd := authcommands.NewDeleteUserHandler(userRepo, sessionRepo)
 	changeSelfPasswordCmd := authcommands.NewChangeSelfPasswordHandler(userRepo)
 	updateUserCmd := authcommands.NewUpdateUserHandler(userRepo)
+	createSessionCmd := authcommands.NewCreateSessionHandler(sessionRepo)
 	listUsersQuery := authqueries.NewListUsersHandler(userRepo)
 	getCurrentUserQuery := authqueries.NewGetCurrentUserHandler(userRepo, sessionRepo)
 	authRoutes := authhttp.NewHandlers(loginCmd, logoutCmd, createUserCmd, deleteUserCmd, changeSelfPasswordCmd, updateUserCmd, listUsersQuery, getCurrentUserQuery).
 		WithPermRepo(permRepo).
 		WithMaxAge(cfg.SessionLifetime()).
-		WithSecureCookie(cfg.SecureCookie)
+		WithSecureCookie(cfg.SecureCookie).
+		WithTOTPUsers(userRepo).
+		WithCreateSession(createSessionCmd)
 
 	if cfg.AdminUser != "" && cfg.AdminPassword != "" {
 		if err := seedAdmin(context.Background(), userRepo, cfg.AdminUser, cfg.AdminPassword); err != nil {
@@ -673,12 +686,64 @@ func New(cfg Config) (*App, error) {
 	// Portal module — customer self-service invoice access
 	portalTokenRepo := portalpersistence.NewGormPortalTokenRepository(gdb)
 	portalRoutes := portalhttp.NewHandlers(portalTokenRepo, listInvoicesForCustomerQuery, getInvoiceQuery).
-		WithPDFTokens(invoiceTokenRepo).
+		WithPDFTokens(&invoiceTokenMinter{tokenRepo: invoiceTokenRepo}).
 		WithCustomerReader(&portalCustomerBridge{query: getCustomerQuery}).
 		WithBaseURL(cfg.BaseURL).
 		WithSecureCookie(cfg.SecureCookie)
 	moduleRoutes = append(moduleRoutes, portalRoutes)
 	log.Printf("module wired: portal")
+
+	// Portal NATS bridge — serves isp.portal.rpc.* for vvs-portal binary
+	portalBridge := portalnats.NewPortalBridge(
+		nc, portalTokenRepo, invoiceTokenRepo,
+		listInvoicesForCustomerQuery, getInvoiceQuery,
+		&natsPortalCustomerBridge{query: getCustomerQuery},
+	)
+	if err := portalBridge.Register(); err != nil {
+		return nil, fmt.Errorf("portal nats bridge: %w", err)
+	}
+	log.Printf("portal NATS bridge registered")
+
+	// IPTV module
+	iptvChannelRepo := iptvpersistence.NewChannelRepository(gdb)
+	iptvPackageRepo := iptvpersistence.NewPackageRepository(gdb)
+	iptvSubRepo := iptvpersistence.NewSubscriptionRepository(gdb)
+	iptvSTBRepo := iptvpersistence.NewSTBRepository(gdb)
+	iptvKeyRepo := iptvpersistence.NewSubscriptionKeyRepository(gdb)
+	iptvEPGRepo := iptvpersistence.NewEPGProgrammeRepository(gdb)
+	iptvRoutes := iptvhttp.NewIPTVHandlers(
+		iptvcommands.NewCreateChannelHandler(iptvChannelRepo),
+		iptvcommands.NewUpdateChannelHandler(iptvChannelRepo),
+		iptvcommands.NewDeleteChannelHandler(iptvChannelRepo),
+		iptvcommands.NewCreatePackageHandler(iptvPackageRepo),
+		iptvcommands.NewUpdatePackageHandler(iptvPackageRepo),
+		iptvcommands.NewDeletePackageHandler(iptvPackageRepo),
+		iptvcommands.NewAddChannelToPackageHandler(iptvPackageRepo),
+		iptvcommands.NewRemoveChannelFromPackageHandler(iptvPackageRepo),
+		iptvcommands.NewCreateSubscriptionHandler(iptvSubRepo, iptvKeyRepo, iptvPackageRepo),
+		iptvcommands.NewSuspendSubscriptionHandler(iptvSubRepo),
+		iptvcommands.NewReactivateSubscriptionHandler(iptvSubRepo),
+		iptvcommands.NewCancelSubscriptionHandler(iptvSubRepo),
+		iptvcommands.NewRevokeSubscriptionKeyHandler(iptvKeyRepo),
+		iptvcommands.NewReissueSubscriptionKeyHandler(iptvKeyRepo),
+		iptvcommands.NewAssignSTBHandler(iptvSTBRepo),
+		iptvcommands.NewDeleteSTBHandler(iptvSTBRepo),
+		iptvqueries.NewListChannelsHandler(iptvChannelRepo),
+		iptvqueries.NewListPackagesHandler(iptvPackageRepo),
+		iptvqueries.NewListSubscriptionsHandler(iptvSubRepo, iptvPackageRepo),
+		iptvqueries.NewListSTBsHandler(iptvSTBRepo),
+		iptvcommands.NewImportEPGHandler(iptvEPGRepo),
+	)
+	moduleRoutes = append(moduleRoutes, iptvRoutes)
+	log.Printf("module wired: iptv")
+
+	// IPTV STB NATS bridge — serves isp.stb.rpc.* for vvs-stb binary
+	stbBridge := iptvnats.NewSTBBridge(nc, iptvKeyRepo, iptvSubRepo, iptvChannelRepo, iptvEPGRepo,
+		iptvSTBRepo, iptvSubRepo, iptvKeyRepo)
+	if err := stbBridge.Register(); err != nil {
+		return nil, fmt.Errorf("stb nats bridge: %w", err)
+	}
+	log.Printf("STB NATS bridge registered")
 
 	if err := rpcServer.Register(); err != nil {
 		return nil, fmt.Errorf("nats rpc: %w", err)
@@ -994,6 +1059,36 @@ func (b *portalCustomerBridge) GetPortalCustomer(ctx context.Context, id string)
 		return nil, err
 	}
 	return &portalhttp.PortalCustomer{
+		ID:          c.ID,
+		CompanyName: c.CompanyName,
+		Email:       c.Email,
+	}, nil
+}
+
+// invoiceTokenMinter implements portalhttp.pdfTokenMinter using the invoice token repository.
+type invoiceTokenMinter struct {
+	tokenRepo invoicedomain.InvoiceTokenRepository
+}
+
+func (m *invoiceTokenMinter) MintToken(ctx context.Context, invoiceID, _ string) (string, error) {
+	tok, plain, err := invoicedomain.NewInvoiceToken(invoiceID, 48*time.Hour)
+	if err != nil {
+		return "", err
+	}
+	return plain, m.tokenRepo.Save(ctx, tok)
+}
+
+// natsPortalCustomerBridge adapts portalCustomerBridge to portalnats.bridgeCustomerReader.
+type natsPortalCustomerBridge struct {
+	query *customerqueries.GetCustomerHandler
+}
+
+func (b *natsPortalCustomerBridge) GetPortalCustomer(ctx context.Context, id string) (*portalnats.BridgeCustomer, error) {
+	c, err := b.query.Handle(ctx, customerqueries.GetCustomerQuery{ID: id})
+	if err != nil {
+		return nil, err
+	}
+	return &portalnats.BridgeCustomer{
 		ID:          c.ID,
 		CompanyName: c.CompanyName,
 		Email:       c.Email,

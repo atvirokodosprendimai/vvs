@@ -1,0 +1,444 @@
+package http
+
+import (
+	"fmt"
+
+	"github.com/vvs/isp/internal/infrastructure/http/templates"
+	"github.com/vvs/isp/internal/modules/iptv/app/queries"
+)
+
+// ── Channel List ──────────────────────────────────────────────────────────────
+
+templ IPTVChannelListPage() {
+	@templates.Layout("IPTV Channels") {
+		<div
+			data-signals="{_iptvChOpen:false, _iptvChEditOpen:false, iptv_ch_name:'', iptv_ch_logo:'', iptv_ch_stream:'', iptv_ch_category:'', iptv_ch_epg:''}"
+		>
+			@templates.PageHeaderRow("IPTV — Channels", "Manage broadcast channels") {
+				@iptvNavLinks("channels")
+				<button
+					type="button"
+					data-on:click="$_iptvChOpen = true"
+					class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+				>+ Channel</button>
+			}
+			<div
+				id="iptv-channel-content"
+				data-init="@get('/sse/iptv/channels', {openWhenHidden: false})"
+			>
+				<div id="iptv-channel-table">
+					<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
+				</div>
+			</div>
+			<!-- Create modal -->
+			<div
+				data-show="$_iptvChOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6">
+					<h2 class="text-neutral-100 font-semibold mb-4">New Channel</h2>
+					<div class="flex flex-col gap-3">
+						<input data-bind:iptv-ch-name placeholder="Name" class={ iptvInput() }/>
+						<input data-bind:iptv-ch-logo placeholder="Logo URL" class={ iptvInput() }/>
+						<input data-bind:iptv-ch-stream placeholder="Stream URL" class={ iptvInput() }/>
+						<input data-bind:iptv-ch-category placeholder="Category (e.g. National)" class={ iptvInput() }/>
+						<input data-bind:iptv-ch-epg placeholder="EPG Source / tvg-id" class={ iptvInput() }/>
+					</div>
+					<div id="iptv-ch-form-error"></div>
+					<div class="flex gap-2 mt-4 justify-end">
+						<button type="button" data-on:click="$_iptvChOpen = false" class={ iptvCancelBtn() }>Cancel</button>
+						<button
+							type="button"
+							data-on:click="@post('/api/iptv/channels')"
+							class={ iptvPrimaryBtn() }
+						>Create</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ IPTVChannelTable(channels []queries.ChannelReadModel) {
+	<div id="iptv-channel-table">
+		if len(channels) == 0 {
+			@templates.EmptyState("No channels yet. Click + Channel to add one.")
+		} else {
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+				<table class="w-full">
+					<thead>
+						<tr class="border-b border-neutral-800">
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Name</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Category</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">EPG ID</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Status</th>
+							<th class="text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Actions</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-neutral-800">
+						for _, ch := range channels {
+							<tr class="hover:bg-neutral-800/40 transition-colors" id={ fmt.Sprintf("iptv-channel-%s", ch.ID) }>
+								<td class="px-4 py-3">
+									<span class="font-medium text-neutral-100">{ ch.Name }</span>
+								</td>
+								<td class="px-4 py-3 text-neutral-400 text-sm">{ ch.Category }</td>
+								<td class="px-4 py-3 text-neutral-500 font-mono text-xs">{ ch.EPGSource }</td>
+								<td class="px-4 py-3">
+									if ch.Active {
+										<span class="px-2 py-0.5 rounded text-xs bg-emerald-900/40 text-emerald-400 border border-emerald-800">active</span>
+									} else {
+										<span class="px-2 py-0.5 rounded text-xs bg-neutral-800 text-neutral-500 border border-neutral-700">inactive</span>
+									}
+								</td>
+								<td class="px-4 py-3 text-right">
+									<button
+										type="button"
+										data-on:click={ fmt.Sprintf("@delete('/api/iptv/channels/%s')", ch.ID) }
+										class="text-xs text-red-500 hover:text-red-400 transition-colors"
+									>Remove</button>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+// ── Package List ──────────────────────────────────────────────────────────────
+
+templ IPTVPackageListPage() {
+	@templates.Layout("IPTV Packages") {
+		<div
+			data-signals="{_iptvPkgOpen:false, iptv_pkg_name:'', iptv_pkg_price:'', iptv_pkg_desc:''}"
+		>
+			@templates.PageHeaderRow("IPTV — Packages", "Channel bundles for subscribers") {
+				@iptvNavLinks("packages")
+				<button
+					type="button"
+					data-on:click="$_iptvPkgOpen = true"
+					class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+				>+ Package</button>
+			}
+			<div
+				id="iptv-package-content"
+				data-init="@get('/sse/iptv/packages', {openWhenHidden: false})"
+			>
+				<div id="iptv-package-table">
+					<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
+				</div>
+			</div>
+			<!-- Create modal -->
+			<div
+				data-show="$_iptvPkgOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6">
+					<h2 class="text-neutral-100 font-semibold mb-4">New Package</h2>
+					<div class="flex flex-col gap-3">
+						<input data-bind:iptv-pkg-name placeholder="Name" class={ iptvInput() }/>
+						<input data-bind:iptv-pkg-price placeholder="Price (e.g. 9.99)" class={ iptvInput() }/>
+						<input data-bind:iptv-pkg-desc placeholder="Description (optional)" class={ iptvInput() }/>
+					</div>
+					<div id="iptv-pkg-form-error"></div>
+					<div class="flex gap-2 mt-4 justify-end">
+						<button type="button" data-on:click="$_iptvPkgOpen = false" class={ iptvCancelBtn() }>Cancel</button>
+						<button
+							type="button"
+							data-on:click="@post('/api/iptv/packages')"
+							class={ iptvPrimaryBtn() }
+						>Create</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ IPTVPackageTable(packages []queries.PackageReadModel) {
+	<div id="iptv-package-table">
+		if len(packages) == 0 {
+			@templates.EmptyState("No packages yet. Click + Package to add one.")
+		} else {
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+				<table class="w-full">
+					<thead>
+						<tr class="border-b border-neutral-800">
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Name</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Price</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Channels</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Description</th>
+							<th class="text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Actions</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-neutral-800">
+						for _, pkg := range packages {
+							<tr class="hover:bg-neutral-800/40 transition-colors" id={ fmt.Sprintf("iptv-package-%s", pkg.ID) }>
+								<td class="px-4 py-3 font-medium text-neutral-100">{ pkg.Name }</td>
+								<td class="px-4 py-3 text-amber-400 font-mono text-sm">{ fmtCents(pkg.PriceCents) }</td>
+								<td class="px-4 py-3 text-neutral-400 text-sm">{ fmt.Sprintf("%d", pkg.ChannelCount) }</td>
+								<td class="px-4 py-3 text-neutral-500 text-sm">{ pkg.Description }</td>
+								<td class="px-4 py-3 text-right">
+									<button
+										type="button"
+										data-on:click={ fmt.Sprintf("@delete('/api/iptv/packages/%s')", pkg.ID) }
+										class="text-xs text-red-500 hover:text-red-400 transition-colors"
+									>Remove</button>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+// ── Subscription List ─────────────────────────────────────────────────────────
+
+templ IPTVSubscriptionListPage() {
+	@templates.Layout("IPTV Subscriptions") {
+		<div
+			data-signals="{_iptvSubOpen:false, iptv_sub_customer:'', iptv_sub_package:''}"
+		>
+			@templates.PageHeaderRow("IPTV — Subscriptions", "Active customer subscriptions") {
+				@iptvNavLinks("subscriptions")
+				<button
+					type="button"
+					data-on:click="$_iptvSubOpen = true"
+					class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+				>+ Subscribe</button>
+			}
+			<div
+				id="iptv-sub-content"
+				data-init="@get('/sse/iptv/subscriptions', {openWhenHidden: false})"
+			>
+				<div id="iptv-sub-table">
+					<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
+				</div>
+			</div>
+			<!-- Create modal -->
+			<div
+				data-show="$_iptvSubOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6">
+					<h2 class="text-neutral-100 font-semibold mb-4">New Subscription</h2>
+					<div class="flex flex-col gap-3">
+						<input data-bind:iptv-sub-customer placeholder="Customer ID" class={ iptvInput() }/>
+						<input data-bind:iptv-sub-package placeholder="Package ID" class={ iptvInput() }/>
+					</div>
+					<div id="iptv-sub-form-error"></div>
+					<div class="flex gap-2 mt-4 justify-end">
+						<button type="button" data-on:click="$_iptvSubOpen = false" class={ iptvCancelBtn() }>Cancel</button>
+						<button
+							type="button"
+							data-on:click="@post('/api/iptv/subscriptions')"
+							class={ iptvPrimaryBtn() }
+						>Subscribe</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ IPTVSubscriptionTable(subs []queries.SubscriptionReadModel) {
+	<div id="iptv-sub-table">
+		if len(subs) == 0 {
+			@templates.EmptyState("No active subscriptions.")
+		} else {
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+				<table class="w-full">
+					<thead>
+						<tr class="border-b border-neutral-800">
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Customer</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Package</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Status</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Started</th>
+							<th class="text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Actions</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-neutral-800">
+						for _, s := range subs {
+							<tr class="hover:bg-neutral-800/40 transition-colors" id={ fmt.Sprintf("iptv-sub-%s", s.ID) }>
+								<td class="px-4 py-3 text-neutral-400 font-mono text-xs">{ s.CustomerID }</td>
+								<td class="px-4 py-3 text-neutral-200 text-sm">{ s.PackageName }</td>
+								<td class="px-4 py-3">@iptvSubBadge(s.Status)</td>
+								<td class="px-4 py-3 text-neutral-500 text-sm">{ s.StartsAt.Format("2006-01-02") }</td>
+								<td class="px-4 py-3 text-right flex gap-2 justify-end items-center">
+									if s.Status == "active" {
+										<button
+											type="button"
+											data-on:click={ fmt.Sprintf("@put('/api/iptv/subscriptions/%s/suspend')", s.ID) }
+											class="text-xs text-amber-500 hover:text-amber-400 transition-colors"
+										>Suspend</button>
+									}
+									if s.Status == "suspended" {
+										<button
+											type="button"
+											data-on:click={ fmt.Sprintf("@put('/api/iptv/subscriptions/%s/reactivate')", s.ID) }
+											class="text-xs text-emerald-500 hover:text-emerald-400 transition-colors"
+										>Reactivate</button>
+									}
+									if s.Status != "cancelled" {
+										<button
+											type="button"
+											data-on:click={ fmt.Sprintf("@delete('/api/iptv/subscriptions/%s')", s.ID) }
+											class="text-xs text-red-500 hover:text-red-400 transition-colors"
+										>Cancel</button>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+templ iptvSubBadge(status string) {
+	switch status {
+		case "active":
+			<span class="px-2 py-0.5 rounded text-xs bg-emerald-900/40 text-emerald-400 border border-emerald-800">{ status }</span>
+		case "suspended":
+			<span class="px-2 py-0.5 rounded text-xs bg-amber-900/40 text-amber-400 border border-amber-800">{ status }</span>
+		default:
+			<span class="px-2 py-0.5 rounded text-xs bg-neutral-800 text-neutral-500 border border-neutral-700">{ status }</span>
+	}
+}
+
+// ── STB List ──────────────────────────────────────────────────────────────────
+
+templ IPTVSTBListPage() {
+	@templates.Layout("IPTV STBs") {
+		<div
+			data-signals="{_iptvStbOpen:false, iptv_stb_mac:'', iptv_stb_model:'', iptv_stb_customer:'', iptv_stb_notes:''}"
+		>
+			@templates.PageHeaderRow("IPTV — Set-Top Boxes", "Device inventory") {
+				@iptvNavLinks("stbs")
+				<button
+					type="button"
+					data-on:click="$_iptvStbOpen = true"
+					class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+				>+ Register STB</button>
+			}
+			<div
+				id="iptv-stb-content"
+				data-init="@get('/sse/iptv/stbs', {openWhenHidden: false})"
+			>
+				<div id="iptv-stb-table">
+					<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
+				</div>
+			</div>
+			<!-- Create modal -->
+			<div
+				data-show="$_iptvStbOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6">
+					<h2 class="text-neutral-100 font-semibold mb-4">Register STB</h2>
+					<div class="flex flex-col gap-3">
+						<input data-bind:iptv-stb-mac placeholder="MAC (00:1A:2B:3C:4D:5E)" class={ iptvInput() }/>
+						<input data-bind:iptv-stb-model placeholder="Model (e.g. MAG 522W3)" class={ iptvInput() }/>
+						<input data-bind:iptv-stb-customer placeholder="Customer ID" class={ iptvInput() }/>
+						<input data-bind:iptv-stb-notes placeholder="Notes (optional)" class={ iptvInput() }/>
+					</div>
+					<div id="iptv-stb-form-error"></div>
+					<div class="flex gap-2 mt-4 justify-end">
+						<button type="button" data-on:click="$_iptvStbOpen = false" class={ iptvCancelBtn() }>Cancel</button>
+						<button
+							type="button"
+							data-on:click="@post('/api/iptv/stbs')"
+							class={ iptvPrimaryBtn() }
+						>Register</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ IPTVSTBTable(stbs []queries.STBReadModel) {
+	<div id="iptv-stb-table">
+		if len(stbs) == 0 {
+			@templates.EmptyState("No STBs registered.")
+		} else {
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+				<table class="w-full">
+					<thead>
+						<tr class="border-b border-neutral-800">
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">MAC</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Model</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Customer</th>
+							<th class="text-left text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Assigned</th>
+							<th class="text-right text-xs font-medium text-neutral-500 uppercase tracking-wider px-4 py-3">Actions</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-neutral-800">
+						for _, stb := range stbs {
+							<tr class="hover:bg-neutral-800/40 transition-colors" id={ fmt.Sprintf("iptv-stb-%s", stb.ID) }>
+								<td class="px-4 py-3 text-neutral-200 font-mono text-xs">{ stb.MAC }</td>
+								<td class="px-4 py-3 text-neutral-400 text-sm">{ stb.Model }</td>
+								<td class="px-4 py-3 text-neutral-400 font-mono text-xs">{ stb.CustomerID }</td>
+								<td class="px-4 py-3 text-neutral-500 text-sm">{ stb.AssignedAt.Format("2006-01-02") }</td>
+								<td class="px-4 py-3 text-right">
+									<button
+										type="button"
+										data-on:click={ fmt.Sprintf("@delete('/api/iptv/stbs/%s')", stb.ID) }
+										class="text-xs text-red-500 hover:text-red-400 transition-colors"
+									>Remove</button>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+// ── Shared fragments ──────────────────────────────────────────────────────────
+
+templ iptvFormError(msg string) {
+	<div id="iptv-form-error" class="mt-2 text-sm text-red-400">{ msg }</div>
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+templ iptvNavLinks(active string) {
+	for _, item := range []struct{ Label, Href, Key string }{
+		{"Channels", "/iptv/channels", "channels"},
+		{"Packages", "/iptv/packages", "packages"},
+		{"Subscriptions", "/iptv/subscriptions", "subscriptions"},
+		{"STBs", "/iptv/stbs", "stbs"},
+	} {
+		if item.Key == active {
+			<a href={ templ.SafeURL(item.Href) } class="px-3 py-1.5 rounded text-xs font-medium border border-amber-600 bg-amber-600/10 text-amber-400">{ item.Label }</a>
+		} else {
+			<a href={ templ.SafeURL(item.Href) } class="px-3 py-1.5 rounded text-xs font-medium border border-neutral-700 bg-neutral-800 text-neutral-400 hover:text-amber-400 transition-colors">{ item.Label }</a>
+		}
+	}
+}
+
+func iptvInput() string {
+	return "bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-full focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+}
+
+func iptvPrimaryBtn() string {
+	return "bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+}
+
+func iptvCancelBtn() string {
+	return "px-4 py-2 rounded text-sm font-medium border border-neutral-700 bg-neutral-800 text-neutral-400 hover:text-neutral-200 transition-colors"
+}
+
+func fmtCents(cents int64) string {
+	return fmt.Sprintf("%d.%02d EUR", cents/100, cents%100)
+}

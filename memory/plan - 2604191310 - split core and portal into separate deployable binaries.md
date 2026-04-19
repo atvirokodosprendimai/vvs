@@ -1,0 +1,565 @@
+---
+tldr: Split monolith into core binary (office/intranet) and portal binary (public VPS) — customers never reach admin
+status: completed
+---
+
+# Plan: Core / Portal Deployment Split
+
+## Context
+
+- Spec: [[spec - architecture - system design and key decisions]]
+- Spec: [[spec - portal - customer self-service access]]
+- Current state: single binary serves everything — admin dashboard, CRUD ops, customer portal — all on one process/port
+- Problem: if the binary is internet-accessible (so customers can use the portal), admin routes are also reachable
+- Goal: **customers can never reach the admin dashboard** — hard network boundary, not just auth
+
+### Architecture of the split
+
+```
+[ Office / NATed LAN ]                    [ Public VPS ]
+┌─────────────────────────┐               ┌───────────────────────────────┐
+│  vvs-core (cmd/server)  │◄──WireGuard──►│  vvs-portal (cmd/portal)      │
+│  - admin HTTP :8080      │    NATS RPC   │  - portal HTTP :8081           │
+│  - SQLite (all data)     │               │  - NO DB                       │
+│  - embedded NATS :4222   │               │  - NATS client only            │
+│  - billing, CRM, etc.    │               │  - /portal/* + /i/{token}      │
+│  - NOT internet-facing   │               │  - Nginx TLS termination        │
+└─────────────────────────┘               └───────────────────────────────┘
+         ▲
+         │ systemctl / SSH
+     Office admins
+```
+
+### Key technical decisions
+
+1. **No DB on portal VPS** — all reads go via NATS RPC (request/reply) to core
+2. **NATS bridge** — 6 new `isp.portal.rpc.*` subjects served by core; portal client calls them
+3. **WireGuard VPN** (primary) or NATS auth token (secondary) for transport security
+4. **CDN-only static assets** — no file serving changes needed (Tailwind Browser + Datastar are CDN)
+5. **`/i/{token}` moves to portal binary** — PDF tokens validated+invoice rendered on portal VPS
+6. **Admin generate-portal-link stays on core** — core saves the portal token, URLs point to portal VPS via `VVS_BASE_URL`
+
+### What stays on core only
+- All admin CRUD (customers, invoices, products, services, billing, NATS events)
+- Auth (login/logout/TOTP for admin users)
+- Email/IMAP sync
+- Billing cron jobs
+- Dunning (sends portal links but URL = portal VPS base URL)
+- InvoiceToken + PortalToken storage
+
+### What moves to portal binary
+- `GET /portal/auth` — validate portal token (calls NATS: `token.validate`)
+- `POST /portal/logout`
+- `GET /portal/invoices` — list (calls NATS: `invoices.list`)
+- `GET /portal/invoices/{id}` — detail + PDF link (calls NATS: `invoice.get` + `invoice.token.mint`)
+- `GET /i/{token}` — public PDF page (calls NATS: `invoice.token.validate` + `invoice.get`)
+- Admin portal-link generation (`POST /api/customers/{id}/portal-link`) **stays on core only**
+
+---
+
+## Phase 1 — Spec Updates — status: completed
+
+Update the two specs to document the split before writing any code.
+
+1. [x] `/eidos:spec` — update `spec - architecture - system design and key decisions.md`
+   - Add "Deployment modes" section describing single-binary vs split
+   - Document `vvs-core` vs `vvs-portal` binary responsibilities
+   - Document NATS RPC as the inter-process communication mechanism
+   - Update Mapping section with new `cmd/portal/` entry
+
+2. [x] `/eidos:spec` — update `spec - portal - customer self-service access.md`
+   - Add "Standalone deployment" section
+   - Document the 6 NATS RPC subjects portal calls
+   - Describe `/i/{token}` ownership in portal binary
+   - Note that `generatePortalLink` admin action stays on core exclusively
+
+---
+
+## Phase 2 — NATS Portal Bridge (core side) — status: completed
+
+New adapter: `internal/modules/portal/adapters/nats/bridge.go`
+
+This file runs on **core** — subscribes to `isp.portal.rpc.*` subjects and serves data from SQLite.
+
+### 6 RPC subjects
+
+| Subject | Request | Reply |
+|---------|---------|-------|
+| `isp.portal.rpc.token.validate` | `{hash: string}` | `{customerID, expiresAt}` |
+| `isp.portal.rpc.invoices.list` | `{customerID: string}` | `{invoices: []InvoiceReadModel}` |
+| `isp.portal.rpc.invoice.get` | `{invoiceID, customerID: string}` | `{invoice: InvoiceReadModel}` (ownership check included) |
+| `isp.portal.rpc.invoice.token.validate` | `{tokenHash: string}` | `{invoiceID: string}` |
+| `isp.portal.rpc.invoice.token.mint` | `{invoiceID: string}` | `{plain: string}` (48h TTL) |
+| `isp.portal.rpc.customer.get` | `{customerID: string}` | `{id, name, email: string}` |
+
+### Bridge struct
+
+```go
+package nats
+
+type PortalBridge struct {
+    nc           *nats.Conn
+    tokenRepo    portalTokenReader       // portal/domain.PortalTokenRepository
+    invoiceToken invoiceTokenStore       // invoice/domain.InvoiceTokenRepository
+    listInvoices *invoicequeries.ListInvoicesForCustomerHandler
+    getInvoice   *invoicequeries.GetInvoiceHandler
+    custReader   portalCustomerReader    // returns id/name/email
+    subs         []*nats.Subscription
+}
+
+type portalTokenReader interface {
+    FindByHash(ctx context.Context, hash string) (*portaldomain.PortalToken, error)
+}
+
+type invoiceTokenStore interface {
+    Save(ctx context.Context, t *invoicedomain.InvoiceToken) error
+    FindByHash(ctx context.Context, hash string) (*invoicedomain.InvoiceToken, error)
+}
+
+type portalCustomerReader interface {
+    GetPortalCustomer(ctx context.Context, id string) (*portalhttptype, error)
+}
+```
+
+### Pattern (same as existing rpc/server.go)
+
+```go
+func (b *PortalBridge) Register() error {
+    subjects := map[string]nats.MsgHandler{
+        "isp.portal.rpc.token.validate":         b.handleTokenValidate,
+        "isp.portal.rpc.invoices.list":           b.handleInvoicesList,
+        "isp.portal.rpc.invoice.get":             b.handleInvoiceGet,
+        "isp.portal.rpc.invoice.token.validate":  b.handleInvoiceTokenValidate,
+        "isp.portal.rpc.invoice.token.mint":      b.handleInvoiceTokenMint,
+        "isp.portal.rpc.customer.get":            b.handleCustomerGet,
+    }
+    for subject, handler := range subjects {
+        sub, err := b.nc.Subscribe(subject, handler)
+        // ...
+    }
+}
+
+// helpers
+func reply(msg *nats.Msg, data any, err error) { /* same pattern as rpc/server.go */ }
+```
+
+### Actions
+
+3. [x] Write `internal/modules/portal/adapters/nats/bridge.go`
+   - => BridgeCustomer type in nats package (avoids circular import with http package)
+   - => bridgeReply helper matches envelope pattern from rpc/server.go
+
+4. [x] Write `internal/modules/portal/adapters/nats/bridge_test.go`
+   - => 9 tests, all pass; used StartEmbedded("127.0.0.1:0") for random TCP port
+
+5. [x] Wire bridge in `internal/app/app.go`
+   - Only when NATS conn is exposed (`natsListenAddr != ""`) — bridge is only useful when portal binary will connect
+   - OR: always wire it (zero cost when no subscriber), simpler — prefer this
+   - `portalBridge := natsbridge.NewPortalBridge(nc, portalTokenRepo, invoiceTokenRepo, listInvoicesCmd, getInvoiceCmd, custReader)`
+   - `portalBridge.Register()`
+
+---
+
+## Phase 3 — Interface Extraction in Portal HTTP Handler — status: completed
+
+Currently `internal/modules/portal/adapters/http/handlers.go` holds concrete query types:
+
+```go
+listInvoices  *invoicequeries.ListInvoicesForCustomerHandler   // ← concrete
+getInvoice    *invoicequeries.GetInvoiceHandler                 // ← concrete
+```
+
+These need to become interfaces so the NATS client can satisfy them.
+
+6. [x] Extract interfaces in `internal/modules/portal/adapters/http/handlers.go`
+
+```go
+// invoiceLister lists invoices for a customer.
+type invoiceLister interface {
+    Handle(ctx context.Context, q invoicequeries.ListInvoicesForCustomerQuery) ([]invoicequeries.InvoiceReadModel, error)
+}
+
+// invoiceGetter gets a single invoice by ID.
+type invoiceGetter interface {
+    Handle(ctx context.Context, id string) (*invoicequeries.InvoiceReadModel, error)
+}
+```
+
+Change struct fields to interfaces:
+```go
+listInvoices  invoiceLister
+getInvoice    invoiceGetter
+```
+
+Change `NewHandlers` signature to accept these interfaces.
+
+No behaviour change — existing code works identically since concrete handlers satisfy the new interfaces. Run `go build ./...` to verify.
+
+---
+
+## Phase 4 — NATS Portal Client (portal side) — status: completed
+
+New file: `internal/modules/portal/adapters/nats/client.go`
+
+`PortalNATSClient` implements all interfaces the portal HTTP handler needs, backed by NATS RPC calls to core.
+
+```go
+type PortalNATSClient struct {
+    nc      *nats.Conn
+    timeout time.Duration  // default 5s
+}
+
+func NewPortalNATSClient(nc *nats.Conn) *PortalNATSClient
+
+// Implements domain.PortalTokenRepository.FindByHash
+func (c *PortalNATSClient) FindByHash(ctx, hash) (*domain.PortalToken, error)
+    // → request to "isp.portal.rpc.token.validate"
+    // → reconstruct PortalToken{CustomerID, ExpiresAt} from reply
+
+// Implements domain.PortalTokenRepository.Save  (never called by portal binary — returns ErrNotSupported)
+func (c *PortalNATSClient) Save(ctx, token) error
+
+// Implements invoiceTokenSaver.Save
+func (c *PortalNATSClient) SaveInvoiceToken(ctx, invoiceID) (plain string, err error)
+    // → request to "isp.portal.rpc.invoice.token.mint"
+
+// Implements invoiceLister
+func (c *PortalNATSClient) Handle(ctx, q ListInvoicesForCustomerQuery) ([]InvoiceReadModel, error)
+    // → request to "isp.portal.rpc.invoices.list"
+
+// Implements invoiceGetter
+func (c *PortalNATSClient) Handle(ctx, id) (*InvoiceReadModel, error)
+    // → request to "isp.portal.rpc.invoice.get" (passes empty customerID, ownership checked by bridge for admin access; portal passes customerID)
+
+// GetPortalCustomer implements customerReader
+func (c *PortalNATSClient) GetPortalCustomer(ctx, id) (*portalhttptype.PortalCustomer, error)
+    // → request to "isp.portal.rpc.customer.get"
+
+// ValidateInvoiceToken validates /i/{token} tokens
+func (c *PortalNATSClient) ValidateInvoiceToken(ctx, tokenHash string) (invoiceID string, err error)
+    // → request to "isp.portal.rpc.invoice.token.validate"
+```
+
+Note on `invoiceTokenSaver`: current interface is `Save(ctx, *invoicedomain.InvoiceToken) error`. But portal doesn't build an InvoiceToken object — it calls mint and gets a plain token back. Two options:
+- a. Change interface to accept `invoiceID string, ttl time.Duration` — cleaner for portal use
+- b. Keep existing interface; portal calls NATS to mint and gets plain token, then constructs InvoiceToken for the Save call... awkward
+- **Use option a**: Add a new narrow interface in portal http package
+
+```go
+// pdfTokenMinter mints a public PDF access token for an invoice, returns the plain token string.
+type pdfTokenMinter interface {
+    MintToken(ctx context.Context, invoiceID string) (plain string, err error)
+}
+```
+
+Rename `pdfTokens invoiceTokenSaver` → `pdfTokens pdfTokenMinter` in Handlers struct. Update `invoiceDetail` to call `h.pdfTokens.MintToken(ctx, inv.ID)`.
+
+The core-side adapter wraps `invoicedomain.NewInvoiceToken + pdfTokens.Save` into one `MintToken` call.
+The NATS-side adapter calls `isp.portal.rpc.invoice.token.mint` in `MintToken`.
+
+7. [x] Write `internal/modules/portal/adapters/nats/client.go`
+   - => InvoiceGetterAdapter needed (Handle method conflict — lister + getter both have Handle but different sig)
+   - => rpc() helper encodes/decodes envelope; uses nc.Request (blocking, not WithContext — simplicity)
+
+8. [x] client_test.go — skipped: bridge_test.go already covers full round-trip via embedded NATS
+
+9. [x] Update `internal/modules/portal/adapters/http/handlers.go`
+   - => pdfTokenMinter interface with MintToken replaces invoiceTokenSaver
+
+10. [x] Add core-side MintToken wrapper in app.go
+    - => invoiceTokenMinter struct + natsPortalCustomerBridge adapter for type conversion
+    - Wraps `invoicedomain.NewInvoiceToken` + `invoiceTokenRepo.Save` into a `MintToken` method
+    - Satisfies `pdfTokenMinter` for the existing monolith wiring
+
+---
+
+## Phase 5 — cmd/portal Binary — status: completed
+
+New entry point: `cmd/portal/main.go`
+
+This binary has **zero** imports of:
+- `internal/infrastructure/http/router.go` (admin router)
+- `internal/app/app.go` (monolith composer)
+- Any module's admin handlers
+
+It only imports:
+- `internal/modules/portal/adapters/http` (portal HTTP handlers)
+- `internal/modules/portal/adapters/nats` (portal NATS client)
+- `internal/modules/invoice/adapters/http` (for `InvoicePrintPage` template — read-only templ component)
+- `internal/modules/invoice/app/queries` (for `InvoiceReadModel` type)
+- `github.com/go-chi/chi/v5`
+- `github.com/nats-io/nats.go`
+
+### CLI flags
+
+```
+--addr             string    HTTP listen address (default ":8081", env: PORTAL_ADDR)
+--nats-url         string    NATS server URL, e.g. nats://10.8.0.1:4222 (required, env: NATS_URL)
+--base-url         string    Public base URL for /i/{token} links (env: VVS_BASE_URL)
+--secure-cookie    bool      Set Secure flag on portal cookies (env: PORTAL_SECURE_COOKIE)
+--nats-token       string    NATS auth token (optional, env: NATS_AUTH_TOKEN)
+--nats-creds       string    Path to NATS credentials file (optional, env: NATS_CREDS_FILE)
+```
+
+### Startup sequence
+
+```go
+func main() {
+    // 1. Parse flags / env
+    // 2. Connect to NATS
+    nc, err := nats.Connect(natsURL,
+        nats.Token(natsToken),           // optional
+        nats.UserCredentials(natsCreds), // optional
+        nats.MaxReconnects(-1),
+        nats.ReconnectWait(3 * time.Second),
+    )
+    // 3. Build NATS client
+    client := natsclient.NewPortalNATSClient(nc)
+    // 4. Build portal HTTP handler
+    h := portalhttp.NewHandlers(client, client, client).
+        WithPDFTokens(client).
+        WithCustomerReader(client).
+        WithBaseURL(baseURL).
+        WithSecureCookie(secureCookie)
+    // 5. Build router — ONLY public portal routes + /i/{token}
+    r := chi.NewRouter()
+    r.Use(middleware.RealIP, middleware.Recoverer)
+    h.RegisterPublicRoutes(r)
+    r.Get("/i/{token}", publicInvoiceByToken(client))  // new handler in cmd/portal
+    // 6. Serve HTTP
+    srv := &http.Server{Addr: addr, Handler: r}
+    // graceful shutdown on SIGINT/SIGTERM
+}
+```
+
+### `/i/{token}` handler (inline in cmd/portal or small portal package)
+
+```go
+func publicInvoiceByToken(client *natsclient.PortalNATSClient) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        plain := chi.URLParam(r, "token")
+        hash := sha256hex(plain)
+
+        invoiceID, err := client.ValidateInvoiceToken(r.Context(), hash)
+        if err != nil {
+            http.Error(w, "Link expired or not found", http.StatusNotFound)
+            return
+        }
+
+        inv, err := client.Handle(r.Context(), invoiceID) // invoiceGetter — no ownership check needed (token established it)
+        if err != nil {
+            http.Error(w, "Invoice not found", http.StatusNotFound)
+            return
+        }
+
+        w.Header().Set("Content-Type", "text/html; charset=utf-8")
+        w.Header().Set("Cache-Control", "no-store")
+        invoicehttp.InvoicePrintPage(*inv).Render(r.Context(), w)
+    }
+}
+```
+
+### Build targets
+
+Add to `Makefile` (or document in README):
+```makefile
+build-core:
+    go build -o bin/vvs-core ./cmd/server
+
+build-portal:
+    go build -o bin/vvs-portal ./cmd/portal
+
+build-all: build-core build-portal
+```
+
+11. [x] Create `cmd/portal/main.go`
+    - => publicInvoiceByToken handler inline (no separate file needed)
+    - => portalCustomerReaderAdapter adapter in main.go
+
+12. [x] Create publicInvoiceByToken handler — inline in main.go
+
+13. [x] go build ./cmd/portal — compiles clean
+14. [x] go build ./cmd/server — no regressions
+
+---
+
+## Phase 6 — NATS Security — status: completed
+
+When NATS is exposed on a network (via `--nats-listen`), it needs protection.
+
+### Option A — WireGuard VPN (recommended)
+
+WireGuard creates an encrypted tunnel between office server and VPS. NATS binds to WireGuard interface only:
+```
+# Core startup (office server with WireGuard IP 10.8.0.1)
+VVS_NATS_LISTEN_ADDR=10.8.0.1:4222
+
+# Portal startup (VPS with WireGuard peer 10.8.0.2)
+NATS_URL=nats://10.8.0.1:4222
+```
+NATS is never reachable from the public internet — only from WireGuard peers.
+
+### Option B — NATS Auth Token
+
+Quick protection without VPN. Less secure (NATS reachable on public internet, protected only by token):
+```
+# Core startup
+VVS_NATS_AUTH_TOKEN=very-long-random-secret
+
+# Portal startup
+NATS_AUTH_TOKEN=very-long-random-secret  → --nats-token flag
+```
+
+### Implementation
+
+15. [x] Add `--nats-auth-token` flag (NATS_AUTH_TOKEN) to cmd/server + embedded.go variadic param
+
+16. [ ] NATS TLS — deferred (WireGuard provides encryption; TLS adds complexity for no gain in VPN scenario)
+
+17. [x] Write `deploy/wireguard-setup.md`
+    - Step-by-step WireGuard config for office server + VPS
+    - wg0.conf examples for both peers
+    - systemd wg-quick@wg0 service
+    - Firewall rules: allow port 4222 only from WireGuard IP range
+
+---
+
+## Phase 7 — Deployment Artifacts — status: completed
+
+18. [x] `deploy/core.env.example`
+    ```env
+    VVS_DB_PATH=/var/lib/vvs/vvs.db
+    VVS_ADDR=127.0.0.1:8080          # only localhost — Nginx proxies
+    VVS_ADMIN_USER=admin
+    VVS_ADMIN_PASSWORD=changeme
+    VVS_NATS_LISTEN_ADDR=10.8.0.1:4222  # WireGuard interface
+    VVS_NATS_AUTH_TOKEN=              # optional backup auth
+    VVS_BASE_URL=https://portal.example.com  # portal VPS URL for generated links
+    VVS_EMAIL_ENC_KEY=
+    VVS_ROUTER_ENC_KEY=
+    ```
+
+19. [x] `deploy/portal.env.example`
+    ```env
+    PORTAL_ADDR=127.0.0.1:8081       # only localhost — Nginx proxies
+    NATS_URL=nats://10.8.0.1:4222    # core's NATS over WireGuard
+    NATS_AUTH_TOKEN=                  # if using token auth
+    VVS_BASE_URL=https://portal.example.com  # own public URL for link construction
+    PORTAL_SECURE_COOKIE=true
+    ```
+
+20. [x] `deploy/vvs-core.service` (systemd)
+    ```ini
+    [Unit]
+    Description=VVS Core Business Management
+    After=network.target
+
+    [Service]
+    Type=simple
+    User=vvs
+    WorkingDirectory=/opt/vvs
+    EnvironmentFile=/etc/vvs/core.env
+    ExecStart=/opt/vvs/bin/vvs-core serve
+    Restart=always
+    RestartSec=5
+
+    [Install]
+    WantedBy=multi-user.target
+    ```
+
+21. [x] `deploy/vvs-portal.service` (systemd)
+
+22. [x] `deploy/nginx-portal.conf`
+    - TLS termination, reverse proxy to `:8081`
+    - Strong TLS: TLS 1.2+ only, HSTS, OCSP stapling
+    - Rate limiting: `limit_req_zone` on `/portal/auth` (brute-force protection on token endpoint)
+    ```nginx
+    limit_req_zone $binary_remote_addr zone=portal_auth:10m rate=5r/m;
+
+    server {
+        listen 443 ssl http2;
+        server_name portal.example.com;
+        # ... TLS config
+
+        location /portal/auth {
+            limit_req zone=portal_auth burst=3 nodelay;
+            proxy_pass http://127.0.0.1:8081;
+        }
+
+        location / {
+            proxy_pass http://127.0.0.1:8081;
+            proxy_set_header X-Forwarded-Proto https;
+        }
+    }
+    ```
+
+---
+
+## Phase 8 — Admin Isolation Verification — status: completed
+
+Confirm the portal binary truly has zero admin routes.
+
+23. [x] Smoke test `cmd/portal/isolation_test.go`
+    ```go
+    func TestPortalBinary_AdminRoutesReturn404(t *testing.T) {
+        // Start portal binary with embedded NATS stub
+        // Hit: GET /login, GET /customers, GET /invoices, GET /settings/permissions
+        // All should return 404 (route not registered), NOT 302 to /login
+        // 302 to /login would mean admin RequireAuth middleware is present
+    }
+    ```
+
+24. [x] Integration smoke test: `go test ./cmd/portal/... -v` — passes (2 test funcs, 26 sub-tests)
+    - Connect to real embedded NATS
+    - Portal binary serves requests
+    - Verify `/portal/auth?token=invalid` → 200 expired page (not 500)
+    - Verify `/customers` → 404 (not 302)
+
+---
+
+## Verification
+
+```bash
+# Build both binaries
+go build ./cmd/server && go build ./cmd/portal
+
+# Phase 2 bridge tests
+go test ./internal/modules/portal/adapters/nats/... -v
+
+# Phase 4 NATS client tests  
+go test ./internal/modules/portal/adapters/nats/... -v
+
+# Phase 5 portal binary smoke tests
+go test ./cmd/portal/... -v
+
+# Manual integration test
+# Terminal 1: start core
+./bin/vvs-core serve --nats-listen 127.0.0.1:4222 --admin-user admin --admin-password test
+
+# Terminal 2: start portal
+./bin/vvs-portal --nats-url nats://127.0.0.1:4222 --addr :8081
+
+# Terminal 3: verify isolation
+curl -I http://localhost:8081/customers   # must be 404
+curl -I http://localhost:8081/login       # must be 404
+curl -I http://localhost:8081/portal/auth # must be 200
+
+# Verify admin still works
+curl -I http://localhost:8080/login       # must be 200 (admin login page)
+
+# Generate a portal link on core, use it on portal VPS
+# Admin: POST /api/customers/{id}/portal-link → get URL
+# Open URL on port 8081 — portal should work
+```
+
+## Adjustments
+
+<!-- Plans evolve. Document changes with timestamps. -->
+
+## Progress Log
+
+- 2026-04-19: Plan created — architecture designed, 6 NATS RPC subjects defined, 8 phases, 24 actions
+- 2026-04-19: ALL PHASES COMPLETE — commits 26e05fe, 212ca4e, e9b8c22
+  - bridge.go + bridge_test.go (9 tests), client.go, cmd/portal/main.go
+  - deploy/ artifacts (core.env.example, portal.env.example, systemd units, nginx conf, wireguard guide)
+  - isolation_test.go verifies 18 admin routes return 404 from portal binary

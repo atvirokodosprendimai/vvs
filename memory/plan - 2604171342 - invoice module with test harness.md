@@ -1,6 +1,6 @@
 ---
 tldr: Invoice module — domain aggregate with status machine, line items from products/subscriptions, CRM tab, SSE, TDD. Preceded by shared test harness.
-status: active
+status: completed
 ---
 
 # Plan: Invoice module with test harness

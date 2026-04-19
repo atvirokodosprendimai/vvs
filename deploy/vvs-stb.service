@@ -1,0 +1,16 @@
+[Unit]
+Description=VVS STB (IPTV device API, public VPS)
+After=network.target
+
+[Service]
+Type=simple
+User=vvs
+EnvironmentFile=/etc/vvs/stb.env
+ExecStart=/usr/local/bin/vvs-stb serve
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

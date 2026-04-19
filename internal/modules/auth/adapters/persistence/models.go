@@ -13,6 +13,8 @@ type UserModel struct {
 	Role         string    `gorm:"not null"`
 	FullName     string    `gorm:"not null;default:''"`
 	Division     string    `gorm:"not null;default:''"`
+	TOTPSecret   string    `gorm:"column:totp_secret;not null;default:''"`
+	TOTPEnabled  bool      `gorm:"column:totp_enabled;not null;default:0"`
 	CreatedAt    time.Time `gorm:"not null"`
 	UpdatedAt    time.Time `gorm:"not null"`
 }
@@ -37,6 +39,8 @@ func userToModel(u *domain.User) *UserModel {
 		Role:         string(u.Role),
 		FullName:     u.FullName,
 		Division:     u.Division,
+		TOTPSecret:   u.TOTPSecret,
+		TOTPEnabled:  u.TOTPEnabled,
 		CreatedAt:    u.CreatedAt,
 		UpdatedAt:    u.UpdatedAt,
 	}
@@ -50,6 +54,8 @@ func userToDomain(m *UserModel) *domain.User {
 		Role:         domain.Role(m.Role),
 		FullName:     m.FullName,
 		Division:     m.Division,
+		TOTPSecret:   m.TOTPSecret,
+		TOTPEnabled:  m.TOTPEnabled,
 		CreatedAt:    m.CreatedAt,
 		UpdatedAt:    m.UpdatedAt,
 	}

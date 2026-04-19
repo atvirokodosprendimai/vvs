@@ -44,3 +44,13 @@
 - 2026-04-19 `9090de9` feat(auth): UpdateUserCommand — admin full edit, self full-name-only
 - 2026-04-19 `e10c4e2` feat(auth): user edit modal + profile full-name self-edit UI
 - 2026-04-19 `049555a` chore(plan): mark user edit plan as completed
+- 2026-04-19 `a3f42b5` fix(security): implement all review findings — sessions, rate limit, escapeJS, audit goroutines, cookie, PRAGMAs
+- 2026-04-19 `84946db` plan: customer portal — magic-link auth, invoice list, dunning integration
+- 2026-04-19 `2c577dd` feat(portal): customer self-service portal — magic-link auth, invoice list, PDF download
+- 2026-04-19 `60a8702` test(portal): domain unit tests for PortalToken — NewToken, HashOf, IsExpired
+- 2026-04-19 `330a199` test(portal): HTTP handler tests — auth flow, cookie middleware, admin link generation
+- 2026-04-19 `5aa68e7` feat(portal+dunning): embed portal access link in dunning reminder emails
+- 2026-04-19 `99468ed` chore(plan): mark customer portal plan as completed
+- 2026-04-19 `e135a63` fix(portal): add SameSite+Secure flags to logout Set-Cookie
+- 2026-04-19 `fec7c00` plan: reporting module + two-factor auth (TOTP)
+- 2026-04-19 `11d1832` feat(reports): /reports page — MRR, invoice aging, top customers, payment trend

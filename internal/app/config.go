@@ -13,6 +13,7 @@ type Config struct {
 	// NATS options — mutually exclusive
 	NATSUrl        string // if set, connect to external NATS instead of starting embedded
 	NATSListenAddr string // if set (and NATSUrl empty), embedded NATS exposes TCP on this addr
+	NATSAuthToken  string // optional auth token required by remote clients connecting to embedded NATS
 
 	// EmailEncKey is 32 bytes (hex or raw) used to AES-256-GCM encrypt IMAP passwords.
 	// Empty = dev mode (passwords stored in plaintext — not for production).

@@ -38,12 +38,15 @@ const (
 	ModuleCron      Module = "cron"
 	ModuleAuditLog  Module = "audit_log"
 	ModuleUsers     Module = "users"
+	ModuleReports   Module = "reports"
+	ModuleIPTV      Module = "iptv"
 )
 
 // AllModules lists every module in a stable order (used for seeding and UI rendering).
 var AllModules = []Module{
 	ModuleCustomers, ModuleTickets, ModuleDeals, ModuleTasks, ModuleContacts,
-	ModuleInvoices, ModuleProducts, ModulePayments,
+	ModuleInvoices, ModuleProducts, ModulePayments, ModuleReports,
+	ModuleIPTV,
 	ModuleNetwork, ModuleEmail, ModuleCron, ModuleAuditLog, ModuleUsers,
 }
 

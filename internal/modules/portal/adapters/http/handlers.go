@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
-	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
 	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
 	"github.com/vvs/isp/internal/modules/portal/domain"
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
@@ -17,9 +16,25 @@ import (
 
 const portalCookieName = "vvs_portal"
 
-// invoiceTokenSaver allows the portal to mint PDF tokens using the invoice token infrastructure.
-type invoiceTokenSaver interface {
-	Save(ctx context.Context, t *invoicedomain.InvoiceToken) error
+// invoiceLister lists invoices for a customer.
+// Satisfied by *invoicequeries.ListInvoicesForCustomerHandler and by the NATS portal client.
+type invoiceLister interface {
+	Handle(ctx context.Context, q invoicequeries.ListInvoicesForCustomerQuery) ([]invoicequeries.InvoiceReadModel, error)
+}
+
+// invoiceGetter retrieves a single invoice by ID.
+// Satisfied by *invoicequeries.GetInvoiceHandler and by the NATS portal client.
+type invoiceGetter interface {
+	Handle(ctx context.Context, id string) (*invoicequeries.InvoiceReadModel, error)
+}
+
+// pdfTokenMinter mints a public PDF access token for an invoice.
+// Returns the plain token string to embed in the URL.
+// customerID is required so the bridge can verify ownership before minting.
+// Satisfied by a core-side adapter wrapping invoicedomain.NewInvoiceToken+Save,
+// and by the NATS portal client calling isp.portal.rpc.invoice.token.mint.
+type pdfTokenMinter interface {
+	MintToken(ctx context.Context, invoiceID, customerID string) (plain string, err error)
 }
 
 // customerReader fetches customer info for the portal header.
@@ -36,19 +51,19 @@ type PortalCustomer struct {
 
 // Handlers serves the customer portal — public-facing, separate from admin UI.
 type Handlers struct {
-	tokenRepo     domain.PortalTokenRepository
-	listInvoices  *invoicequeries.ListInvoicesForCustomerHandler
-	getInvoice    *invoicequeries.GetInvoiceHandler
-	pdfTokens     invoiceTokenSaver
-	custReader    customerReader
-	baseURL       string
-	secureCookie  bool
+	tokenRepo    domain.PortalTokenRepository
+	listInvoices invoiceLister
+	getInvoice   invoiceGetter
+	pdfTokens    pdfTokenMinter
+	custReader   customerReader
+	baseURL      string
+	secureCookie bool
 }
 
 func NewHandlers(
 	tokenRepo domain.PortalTokenRepository,
-	listInvoices *invoicequeries.ListInvoicesForCustomerHandler,
-	getInvoice *invoicequeries.GetInvoiceHandler,
+	listInvoices invoiceLister,
+	getInvoice invoiceGetter,
 ) *Handlers {
 	return &Handlers{
 		tokenRepo:    tokenRepo,
@@ -57,8 +72,8 @@ func NewHandlers(
 	}
 }
 
-func (h *Handlers) WithPDFTokens(s invoiceTokenSaver) *Handlers {
-	h.pdfTokens = s
+func (h *Handlers) WithPDFTokens(m pdfTokenMinter) *Handlers {
+	h.pdfTokens = m
 	return h
 }
 
@@ -117,7 +132,9 @@ func (h *Handlers) requirePortalAuth(next http.Handler) http.Handler {
 
 type portalCustomerKey struct{}
 
-func portalCustomerIDFromContext(ctx context.Context) string {
+// PortalCustomerIDFromContext returns the authenticated customer ID stored in ctx
+// by requirePortalAuth. Returns "" if not set.
+func PortalCustomerIDFromContext(ctx context.Context) string {
 	v, _ := ctx.Value(portalCustomerKey{}).(string)
 	return v
 }
@@ -167,7 +184,7 @@ func (h *Handlers) portalLogout(w http.ResponseWriter, r *http.Request) {
 // invoiceList renders the customer's invoice list.
 func (h *Handlers) invoiceList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	customerID := portalCustomerIDFromContext(r.Context())
+	customerID := PortalCustomerIDFromContext(r.Context())
 
 	invoices, err := h.listInvoices.Handle(r.Context(), invoicequeries.ListInvoicesForCustomerQuery{
 		CustomerID: customerID,
@@ -185,11 +202,11 @@ func (h *Handlers) invoiceList(w http.ResponseWriter, r *http.Request) {
 // invoiceDetail renders a single invoice detail with a PDF link.
 func (h *Handlers) invoiceDetail(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	customerID := portalCustomerIDFromContext(r.Context())
+	customerID := PortalCustomerIDFromContext(r.Context())
 	id := chi.URLParam(r, "id")
 
 	inv, err := h.getInvoice.Handle(r.Context(), id)
-	if err != nil {
+	if err != nil || inv == nil {
 		http.Error(w, "invoice not found", http.StatusNotFound)
 		return
 	}
@@ -201,11 +218,8 @@ func (h *Handlers) invoiceDetail(w http.ResponseWriter, r *http.Request) {
 
 	pdfURL := ""
 	if h.pdfTokens != nil {
-		tok, plain, err := invoicedomain.NewInvoiceToken(inv.ID, 48*time.Hour)
-		if err == nil {
-			if err := h.pdfTokens.Save(r.Context(), tok); err == nil {
-				pdfURL = fmt.Sprintf("/i/%s", plain)
-			}
+		if plain, err := h.pdfTokens.MintToken(r.Context(), inv.ID, customerID); err == nil {
+			pdfURL = fmt.Sprintf("/i/%s", plain)
 		}
 	}
 

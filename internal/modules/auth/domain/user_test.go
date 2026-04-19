@@ -74,3 +74,42 @@ func TestCanWrite(t *testing.T) {
 	assert.True(t, op.CanWrite())
 	assert.False(t, viewer.CanWrite())
 }
+
+// ── TOTP tests ────────────────────────────────────────────────────────────────
+
+func TestEnableTOTP_SetsSecretAndFlag(t *testing.T) {
+	u, err := domain.NewUser("alice", "Password1!", domain.RoleAdmin)
+	require.NoError(t, err)
+
+	assert.False(t, u.TOTPEnabled)
+	assert.Empty(t, u.TOTPSecret)
+
+	u.EnableTOTP("BASE32SECRET")
+	assert.True(t, u.TOTPEnabled)
+	assert.Equal(t, "BASE32SECRET", u.TOTPSecret)
+}
+
+func TestDisableTOTP_ClearsSecretAndFlag(t *testing.T) {
+	u, err := domain.NewUser("alice", "Password1!", domain.RoleAdmin)
+	require.NoError(t, err)
+	u.EnableTOTP("BASE32SECRET")
+
+	u.DisableTOTP()
+	assert.False(t, u.TOTPEnabled)
+	assert.Empty(t, u.TOTPSecret)
+}
+
+func TestVerifyTOTP_NotEnabled_ReturnsFalse(t *testing.T) {
+	u, err := domain.NewUser("alice", "Password1!", domain.RoleAdmin)
+	require.NoError(t, err)
+
+	assert.False(t, u.VerifyTOTP("123456"))
+}
+
+func TestVerifyTOTP_WrongCode_ReturnsFalse(t *testing.T) {
+	u, err := domain.NewUser("alice", "Password1!", domain.RoleAdmin)
+	require.NoError(t, err)
+	u.EnableTOTP("JBSWY3DPEHPK3PXP") // standard test secret
+
+	assert.False(t, u.VerifyTOTP("000000"))
+}

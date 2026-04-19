@@ -1,0 +1,16 @@
+[Unit]
+Description=VVS Core (ISP admin, DB, NATS bridge)
+After=network.target
+
+[Service]
+Type=simple
+User=vvs
+EnvironmentFile=/etc/vvs/core.env
+ExecStart=/usr/local/bin/vvs-core serve
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
