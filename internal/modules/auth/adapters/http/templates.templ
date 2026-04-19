@@ -200,6 +200,65 @@ templ createUserError(msg string) {
 	<div id="create-user-error" class="text-red-400 text-xs">{ msg }</div>
 }
 
+templ ProfilePage(u *domain.User) {
+	@templates.Layout("Profile") {
+		@templates.PageHeaderBack("Profile", "Manage your account", "/", "Back") {
+		}
+		<div class="max-w-sm">
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+				<div class="flex flex-col gap-4">
+					<div class="flex flex-col gap-1">
+						<span class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Username</span>
+						<span class="text-sm text-neutral-100">{ u.Username }</span>
+					</div>
+					<div class="flex flex-col gap-1">
+						<span class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Role</span>
+						@roleBadge(u.Role)
+					</div>
+					<hr class="border-neutral-800"/>
+					<div
+						class="flex flex-col gap-3"
+						data-signals="{currentPassword:'',newPassword:''}"
+					>
+						<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Change Password</h3>
+						<input
+							type="password"
+							placeholder="Current password"
+							data-bind:current-password
+							autocomplete="current-password"
+							class="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+						/>
+						<input
+							type="password"
+							placeholder="New password"
+							data-bind:new-password
+							autocomplete="new-password"
+							class="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+						/>
+						<div id="change-pw-error"></div>
+						<div id="change-pw-success"></div>
+						<button
+							type="button"
+							data-on:click="@post('/api/users/me/password')"
+							class="bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 rounded transition-colors"
+						>
+							Update password
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ changePwError(msg string) {
+	<div id="change-pw-error" class="text-red-400 text-xs">{ msg }</div>
+}
+
+templ changePwSuccess() {
+	<div id="change-pw-success" class="text-green-400 text-xs">Password updated.</div>
+}
+
 func formatDate(t time.Time) string {
 	return t.Format("2006-01-02")
 }

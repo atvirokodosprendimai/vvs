@@ -1,0 +1,60 @@
+wing: vvs
+rooms:
+- name: cmd
+  description: Files from cmd/
+  keywords:
+  - cmd
+  - cmd
+- name: memory
+  description: Files from memory/
+  keywords:
+  - memory
+  - memory
+- name: eidos
+  description: Files from eidos/
+  keywords:
+  - eidos
+  - eidos
+- name: bin
+  description: Files from bin/
+  keywords:
+  - bin
+  - bin
+- name: planning
+  description: Files from specs/
+  keywords:
+  - planning
+  - specs
+- name: internal
+  description: Files from internal/
+  keywords:
+  - internal
+  - internal
+- name: static
+  description: Files from static/
+  keywords:
+  - static
+  - static
+- name: e2e
+  description: Files from e2e/
+  keywords:
+  - e2e
+  - e2e
+- name: data
+  description: Files from data/
+  keywords:
+  - data
+  - data
+- name: backend
+  description: Files from server/
+  keywords:
+  - backend
+  - server
+- name: configuration
+  description: Files from infrastructure/
+  keywords:
+  - configuration
+  - infrastructure
+- name: general
+  description: Files that don't fit other rooms
+  keywords: []

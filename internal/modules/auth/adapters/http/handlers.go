@@ -16,12 +16,13 @@ import (
 const cookieName = "vvs_session"
 
 type Handlers struct {
-	loginCmd       *commands.LoginHandler
-	logoutCmd      *commands.LogoutHandler
-	createUserCmd  *commands.CreateUserHandler
-	deleteUserCmd  *commands.DeleteUserHandler
-	listUsersQuery *queries.ListUsersHandler
-	currentUser    *queries.GetCurrentUserHandler
+	loginCmd             *commands.LoginHandler
+	logoutCmd            *commands.LogoutHandler
+	createUserCmd        *commands.CreateUserHandler
+	deleteUserCmd        *commands.DeleteUserHandler
+	changeSelfPasswordCmd *commands.ChangeSelfPasswordHandler
+	listUsersQuery       *queries.ListUsersHandler
+	currentUser          *queries.GetCurrentUserHandler
 }
 
 func NewHandlers(
@@ -29,16 +30,18 @@ func NewHandlers(
 	logoutCmd *commands.LogoutHandler,
 	createUserCmd *commands.CreateUserHandler,
 	deleteUserCmd *commands.DeleteUserHandler,
+	changeSelfPasswordCmd *commands.ChangeSelfPasswordHandler,
 	listUsersQuery *queries.ListUsersHandler,
 	currentUser *queries.GetCurrentUserHandler,
 ) *Handlers {
 	return &Handlers{
-		loginCmd:       loginCmd,
-		logoutCmd:      logoutCmd,
-		createUserCmd:  createUserCmd,
-		deleteUserCmd:  deleteUserCmd,
-		listUsersQuery: listUsersQuery,
-		currentUser:    currentUser,
+		loginCmd:             loginCmd,
+		logoutCmd:            logoutCmd,
+		createUserCmd:        createUserCmd,
+		deleteUserCmd:        deleteUserCmd,
+		changeSelfPasswordCmd: changeSelfPasswordCmd,
+		listUsersQuery:       listUsersQuery,
+		currentUser:          currentUser,
 	}
 }
 
@@ -50,6 +53,8 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/api/users", h.listUsersSSE)
 	r.Post("/api/users", h.createUserSSE)
 	r.Delete("/api/users/{id}", h.deleteUserSSE)
+	r.Get("/profile", h.profilePage)
+	r.Post("/api/users/me/password", h.changeSelfPasswordSSE)
 }
 
 func (h *Handlers) loginPage(w http.ResponseWriter, r *http.Request) {
@@ -203,4 +208,43 @@ func (h *Handlers) deleteUserSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sse.PatchElementTempl(UserTable(rows, current.ID))
+}
+
+func (h *Handlers) profilePage(w http.ResponseWriter, r *http.Request) {
+	u := userFromContext(r)
+	if u == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	ProfilePage(u).Render(r.Context(), w)
+}
+
+func (h *Handlers) changeSelfPasswordSSE(w http.ResponseWriter, r *http.Request) {
+	current := userFromContext(r)
+	if current == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var signals struct {
+		CurrentPassword string `json:"currentPassword"`
+		NewPassword     string `json:"newPassword"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("changeSelfPasswordSSE: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+	err := h.changeSelfPasswordCmd.Handle(r.Context(), commands.ChangeSelfPasswordCommand{
+		UserID:          current.ID,
+		CurrentPassword: signals.CurrentPassword,
+		NewPassword:     signals.NewPassword,
+	})
+	if err != nil {
+		sse.PatchElementTempl(changePwError(err.Error()))
+		return
+	}
+	sse.PatchElementTempl(changePwSuccess())
 }

@@ -19,3 +19,9 @@
 - 2026-04-18 `9a73ef8` chore: update changelog and regenerate templ files
 - 2026-04-18 `cff9b3c` feat(gomine): Go AST chunker + MemPalace importer
 - 2026-04-19 `14d7eb3` fix(gomine): correct Ollama embed URL + separate go_code collection
+- 2026-04-19 `97d450e` feat: merge gomine — Go AST chunker + MemPalace code search
+- 2026-04-19 `c22b130` feat(dunning): send payment reminder emails for overdue invoices
+- 2026-04-19 `f6132b7` test(dunning): integration tests for send-dunning-reminders cron action
+- 2026-04-19 `24dd0a1` feat(rbac): add viewer (read-only) role with server-side enforcement
+- 2026-04-19 `24dd0a1` feat(rbac): add viewer (read-only) role with server-side enforcement
+- 2026-04-19 `76774f3` test(auth): RBAC middleware tests — RequireWrite blocks viewer on mutations
