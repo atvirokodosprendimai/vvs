@@ -29,10 +29,6 @@ func TestNewUser(t *testing.T) {
 		assert.ErrorIs(t, err, domain.ErrPasswordRequired)
 	})
 
-	t.Run("rejects invalid role", func(t *testing.T) {
-		_, err := domain.NewUser("bob", "secret", domain.Role("superuser"))
-		assert.ErrorIs(t, err, domain.ErrInvalidRole)
-	})
 }
 
 func TestVerifyPassword(t *testing.T) {
@@ -58,17 +54,13 @@ func TestChangePassword_RejectsEmpty(t *testing.T) {
 	assert.ErrorIs(t, u.ChangePassword(""), domain.ErrPasswordRequired)
 }
 
-func TestValidRole(t *testing.T) {
-	assert.True(t, domain.ValidRole(domain.RoleAdmin))
-	assert.True(t, domain.ValidRole(domain.RoleOperator))
-	assert.True(t, domain.ValidRole(domain.RoleViewer))
-	assert.False(t, domain.ValidRole(domain.Role("superuser")))
-}
-
 func TestCanWrite(t *testing.T) {
 	admin, _ := domain.NewUser("a", "pass", domain.RoleAdmin)
+	admin.IsWriteRole = true
 	op, _ := domain.NewUser("b", "pass", domain.RoleOperator)
+	op.IsWriteRole = true
 	viewer, _ := domain.NewUser("c", "pass", domain.RoleViewer)
+	// viewer.IsWriteRole stays false (zero value)
 
 	assert.True(t, admin.CanWrite())
 	assert.True(t, op.CanWrite())

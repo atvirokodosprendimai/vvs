@@ -13,7 +13,6 @@ import (
 var (
 	ErrUsernameRequired = errors.New("username is required")
 	ErrPasswordRequired = errors.New("password is required")
-	ErrInvalidRole      = errors.New("role must be admin or operator")
 	ErrUserNotFound     = errors.New("user not found")
 	ErrUsernameTaken    = errors.New("username already taken")
 	ErrInvalidPassword  = errors.New("invalid username or password")
@@ -21,21 +20,19 @@ var (
 
 type Role string
 
+// Built-in role names — always present, cannot be deleted.
 const (
 	RoleAdmin    Role = "admin"
 	RoleOperator Role = "operator"
 	RoleViewer   Role = "viewer"
 )
 
-func ValidRole(r Role) bool {
-	return r == RoleAdmin || r == RoleOperator || r == RoleViewer
-}
-
 type User struct {
 	ID           string
 	Username     string
 	PasswordHash string
 	Role         Role
+	IsWriteRole  bool // populated by persistence layer via JOIN with roles table
 	FullName     string
 	Division     string
 	TOTPSecret   string
@@ -75,10 +72,6 @@ func NewUser(username, plainPassword string, role Role) (*User, error) {
 	if plainPassword == "" {
 		return nil, ErrPasswordRequired
 	}
-	if !ValidRole(role) {
-		return nil, ErrInvalidRole
-	}
-
 	hash, err := bcrypt.GenerateFromPassword([]byte(plainPassword), 12)
 	if err != nil {
 		return nil, err
@@ -122,9 +115,6 @@ func (u *User) UpdateProfile(fullName, division string) {
 
 // ChangeRole updates the user's role. Callers must ensure the actor is admin.
 func (u *User) ChangeRole(r Role) error {
-	if !ValidRole(r) {
-		return ErrInvalidRole
-	}
 	u.Role = r
 	u.UpdatedAt = time.Now().UTC()
 	return nil
@@ -134,8 +124,8 @@ func (u *User) IsAdmin() bool {
 	return u.Role == RoleAdmin
 }
 
-// CanWrite returns true for roles allowed to make mutations (admin + operator).
-// Viewers are read-only and must be blocked at the API layer.
+// CanWrite returns true when the user's role permits mutations.
+// Populated from the roles table via persistence JOIN — do not hardcode role names here.
 func (u *User) CanWrite() bool {
-	return u.Role == RoleAdmin || u.Role == RoleOperator
+	return u.IsWriteRole
 }

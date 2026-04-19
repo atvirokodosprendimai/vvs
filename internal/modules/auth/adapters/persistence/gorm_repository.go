@@ -26,44 +26,51 @@ func (r *GormUserRepository) Save(ctx context.Context, u *domain.User) error {
 	})
 }
 
+const userRoleJoinSQL = `
+SELECT u.id, u.username, u.password_hash, u.role, u.full_name, u.division,
+       u.totp_secret, u.totp_enabled, u.created_at, u.updated_at,
+       COALESCE(r.can_write, 0) AS role_can_write
+FROM users u
+LEFT JOIN roles r ON u.role = r.name`
+
 func (r *GormUserRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
-	var m UserModel
+	var row userWithRoleRow
 	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
-		return tx.Where("id = ?", id).First(&m).Error
+		return tx.Raw(userRoleJoinSQL+" WHERE u.id = ? LIMIT 1", id).Scan(&row).Error
 	})
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, domain.ErrUserNotFound
-		}
 		return nil, err
 	}
-	return userToDomain(&m), nil
+	if row.ID == "" {
+		return nil, domain.ErrUserNotFound
+	}
+	return userToDomain(&row.UserModel, row.RoleCanWrite), nil
 }
 
 func (r *GormUserRepository) FindByUsername(ctx context.Context, username string) (*domain.User, error) {
-	var m UserModel
+	var row userWithRoleRow
 	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
-		return tx.Where("username = ?", username).First(&m).Error
+		return tx.Raw(userRoleJoinSQL+" WHERE u.username = ? LIMIT 1", username).Scan(&row).Error
 	})
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, domain.ErrUserNotFound
-		}
 		return nil, err
 	}
-	return userToDomain(&m), nil
+	if row.ID == "" {
+		return nil, domain.ErrUserNotFound
+	}
+	return userToDomain(&row.UserModel, row.RoleCanWrite), nil
 }
 
 func (r *GormUserRepository) ListAll(ctx context.Context) ([]*domain.User, error) {
 	var users []*domain.User
 	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
-		var models []UserModel
-		if err := tx.Order("created_at ASC").Find(&models).Error; err != nil {
+		var rows []userWithRoleRow
+		if err := tx.Raw(userRoleJoinSQL+" ORDER BY u.created_at ASC").Scan(&rows).Error; err != nil {
 			return err
 		}
-		users = make([]*domain.User, len(models))
-		for i, m := range models {
-			users[i] = userToDomain(&m)
+		users = make([]*domain.User, len(rows))
+		for i, row := range rows {
+			users[i] = userToDomain(&row.UserModel, row.RoleCanWrite)
 		}
 		return nil
 	})

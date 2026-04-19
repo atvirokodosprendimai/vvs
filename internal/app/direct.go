@@ -86,7 +86,8 @@ func NewDirect(dbPath string) (*natsrpc.Server, func(), error) {
 	// auth
 	userRepo := authpersistence.NewGormUserRepository(gdb)
 	sessionRepo := authpersistence.NewGormSessionRepository(gdb)
-	createUserCmd := authcommands.NewCreateUserHandler(userRepo)
+	roleRepo := authpersistence.NewGormRoleRepository(gdb)
+	createUserCmd := authcommands.NewCreateUserHandler(userRepo, roleRepo)
 	deleteUserCmd := authcommands.NewDeleteUserHandler(userRepo, sessionRepo)
 	listUsersQuery := authqueries.NewListUsersHandler(userRepo)
 

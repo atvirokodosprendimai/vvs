@@ -6,6 +6,33 @@ import (
 	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
+type RoleModel struct {
+	Name        string `gorm:"primaryKey"`
+	DisplayName string `gorm:"not null;default:''"`
+	IsBuiltin   bool   `gorm:"not null;default:0"`
+	CanWrite    bool   `gorm:"not null;default:1"`
+}
+
+func (RoleModel) TableName() string { return "roles" }
+
+func roleToModel(r *domain.RoleDefinition) *RoleModel {
+	return &RoleModel{
+		Name:        string(r.Name),
+		DisplayName: r.DisplayName,
+		IsBuiltin:   r.IsBuiltin,
+		CanWrite:    r.CanWrite,
+	}
+}
+
+func roleToDomain(m *RoleModel) *domain.RoleDefinition {
+	return &domain.RoleDefinition{
+		Name:        domain.Role(m.Name),
+		DisplayName: m.DisplayName,
+		IsBuiltin:   m.IsBuiltin,
+		CanWrite:    m.CanWrite,
+	}
+}
+
 type UserModel struct {
 	ID           string    `gorm:"primaryKey"`
 	Username     string    `gorm:"uniqueIndex;not null"`
@@ -46,12 +73,13 @@ func userToModel(u *domain.User) *UserModel {
 	}
 }
 
-func userToDomain(m *UserModel) *domain.User {
+func userToDomain(m *UserModel, isWriteRole bool) *domain.User {
 	return &domain.User{
 		ID:           m.ID,
 		Username:     m.Username,
 		PasswordHash: m.PasswordHash,
 		Role:         domain.Role(m.Role),
+		IsWriteRole:  isWriteRole,
 		FullName:     m.FullName,
 		Division:     m.Division,
 		TOTPSecret:   m.TOTPSecret,
@@ -59,6 +87,12 @@ func userToDomain(m *UserModel) *domain.User {
 		CreatedAt:    m.CreatedAt,
 		UpdatedAt:    m.UpdatedAt,
 	}
+}
+
+// userWithRoleRow is a scan target for user + roles JOIN.
+type userWithRoleRow struct {
+	UserModel
+	RoleCanWrite bool `gorm:"column:role_can_write"`
 }
 
 func sessionToModel(s *domain.Session) *SessionModel {

@@ -19,10 +19,11 @@ type UpdateUserCommand struct {
 
 type UpdateUserHandler struct {
 	users domain.UserRepository
+	roles domain.RoleRepository
 }
 
-func NewUpdateUserHandler(users domain.UserRepository) *UpdateUserHandler {
-	return &UpdateUserHandler{users: users}
+func NewUpdateUserHandler(users domain.UserRepository, roles domain.RoleRepository) *UpdateUserHandler {
+	return &UpdateUserHandler{users: users, roles: roles}
 }
 
 func (h *UpdateUserHandler) Handle(ctx context.Context, cmd UpdateUserCommand) error {
@@ -42,9 +43,13 @@ func (h *UpdateUserHandler) Handle(ctx context.Context, cmd UpdateUserCommand) e
 		// Admin: can update all fields for any user
 		target.UpdateProfile(cmd.FullName, cmd.Division)
 		if cmd.Role != "" && cmd.Role != target.Role {
-			if err := target.ChangeRole(cmd.Role); err != nil {
+			if _, err := h.roles.FindByName(ctx, cmd.Role); err != nil {
+				if err == domain.ErrRoleNotFound {
+					return domain.ErrInvalidRole
+				}
 				return err
 			}
+			target.ChangeRole(cmd.Role)
 		}
 	} else if isSelf {
 		// Self-service: full name only; division and role stay unchanged
