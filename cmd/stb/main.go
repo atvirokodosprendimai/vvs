@@ -8,11 +8,12 @@
 //
 // Routes:
 //
-//	GET /apis/siptv/playlist/{token}   — M3U8 for SIPTV app
-//	GET /apis/tvzone/playlist/{token}  — M3U8 for generic players (VLC, Tivimate)
-//	GET /apis/tvip/playlist/{token}    — M3U8 for TVIP STBs
-//	GET /epg/{token}.xml               — XMLTV EPG (3 days default)
-//	GET /stream/{token}/{channelID}    — 302 redirect to actual stream URL
+//	GET /apis/siptv/playlist/{token}                — M3U8 for SIPTV app
+//	GET /apis/tvzone/playlist/{token}               — M3U8 for generic players (VLC, Tivimate)
+//	GET /apis/tvip/playlist/{token}                 — M3U8 for TVIP STBs
+//	GET /epg/{token}/{channelID}.xml                — XMLTV EPG for a channel (optional ?date=YYYY-MM-DD)
+//	GET /epg/{token}/{channelID}/now.json           — current+next for a channel
+//	GET /stream/{token}/{channelID}                 — 302 redirect to actual stream URL
 package main
 
 import (
@@ -133,9 +134,9 @@ func runSTB(ctx context.Context, cmd *cli.Command) error {
 	r.Get("/apis/tvzone/playlist/{token}", playlistHandler(client, baseURL, "tvzone"))
 	r.Get("/apis/tvip/playlist/{token}", playlistHandler(client, baseURL, "tvip"))
 
-	// ── EPG ─────────────────────────────────────────────────────────────────
-	r.Get("/epg/{token}.xml", epgHandler(client))
-	r.Get("/epg/{token}/now.json", epgShortHandler(client))
+	// ── EPG (per-channel; token optional — pass "-" or "" for public access) ─
+	r.Get("/epg/{token}/{channelID}.xml", epgHandler(client))
+	r.Get("/epg/{token}/{channelID}/now.json", epgShortHandler(client))
 
 	// ── Device config ────────────────────────────────────────────────────────
 	r.Get("/getconfig", getConfigHandler(client, baseURL))
@@ -205,17 +206,18 @@ func playlistHandler(client *iptvnats.STBNATSClient, baseURL, appFmt string) htt
 
 func epgHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Chi captures token from /epg/{token}.xml path.
-		// The .xml suffix is part of the wildcard so we strip it.
-		token := strings.TrimSuffix(chi.URLParam(r, "token"), ".xml")
-		days := 3
-		xmltv, err := client.GetEPG(r.Context(), token, days)
+		token := chi.URLParam(r, "token")
+		channelID := strings.TrimSuffix(chi.URLParam(r, "channelID"), ".xml")
+		date := r.URL.Query().Get("date") // optional YYYY-MM-DD
+		if token == "-" {
+			token = "" // "-" is the no-token sentinel in the URL path
+		}
+		xmltv, err := client.GetEPG(r.Context(), token, channelID, date)
 		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
 		w.Header().Set("Content-Type", "text/xml; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, xmltv)
 	}
 }
@@ -240,7 +242,7 @@ func getConfigHandler(client *iptvnats.STBNATSClient, baseURL string) http.Handl
 		json.NewEncoder(w).Encode(map[string]any{
 			"token":      cfg.Token,
 			"server_url": baseURL,
-			"epg_url":    baseURL + "/epg/" + cfg.Token + ".xml",
+			"epg_url":    baseURL + "/epg/" + cfg.Token + "/{epg_id}.xml",
 			"timezone":   "Europe/Vilnius",
 			"active":     cfg.Active,
 		})
@@ -250,13 +252,17 @@ func getConfigHandler(client *iptvnats.STBNATSClient, baseURL string) http.Handl
 func epgShortHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := chi.URLParam(r, "token")
-		entries, err := client.GetEPGShort(r.Context(), token)
+		channelID := chi.URLParam(r, "channelID")
+		if token == "-" {
+			token = ""
+		}
+		entry, err := client.GetEPGShort(r.Context(), token, channelID)
 		if err != nil {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(entries)
+		json.NewEncoder(w).Encode(entry)
 	}
 }
 
