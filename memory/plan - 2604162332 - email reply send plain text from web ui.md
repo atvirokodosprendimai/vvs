@@ -1,6 +1,6 @@
 ---
 tldr: Add SMTP send capability so users can reply to email threads from the web UI with plain text
-status: active
+status: completed
 ---
 
 # Plan: Email Reply — Send Plain Text from Web UI

@@ -1,5 +1,5 @@
 ---
-status: phase-1-complete
+status: completed
 created: 2026-04-19
 consilium: 2026-04-19 unanimous Today Dashboard + QA dunning gap
 ---

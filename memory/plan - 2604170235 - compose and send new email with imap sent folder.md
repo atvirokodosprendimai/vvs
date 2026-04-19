@@ -1,6 +1,6 @@
 ---
 tldr: Compose and send new email — SMTP send + save locally + IMAP APPEND to Sent folder
-status: active
+status: completed
 ---
 
 # Plan: Compose and send new email with IMAP Sent folder
