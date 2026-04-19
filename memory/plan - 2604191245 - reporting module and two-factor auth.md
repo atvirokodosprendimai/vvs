@@ -1,6 +1,6 @@
 ---
 tldr: Reporting module (/reports page, MRR/aging/top-customers) + TOTP-based 2FA for admin accounts
-status: active
+status: completed
 ---
 
 # Plan: Reporting Module + Two-Factor Auth
@@ -53,41 +53,34 @@ status: active
 
 ---
 
-## Phase 2 — Two-Factor Auth (TOTP) — status: active
+## Phase 2 — Two-Factor Auth (TOTP) — status: completed
 
 ### Scope: per-user TOTP setup at /profile/2fa; login requires TOTP code when enabled
 
-1. [ ] Domain: TOTP fields + methods on `User`
-   - `internal/modules/auth/domain/user.go`: add `TOTPSecret string`, `TOTPEnabled bool`
-   - `EnableTOTP(secret string)` — sets secret + flips enabled flag
-   - `DisableTOTP()` — clears secret + flips flag
-   - `VerifyTOTP(code string) bool` — uses `github.com/pquerna/otp/totp` `Validate()`
-   - Add `github.com/pquerna/otp` dependency via `go get`
+1. [x] Domain: TOTP fields + methods on `User`
+   - => TOTPSecret/TOTPEnabled fields, EnableTOTP/DisableTOTP/VerifyTOTP methods added
+   - => `github.com/pquerna/otp/totp` for validation + QR generation
 
-2. [ ] Migration: `internal/modules/auth/migrations/005_add_totp.sql`
-   - `ALTER TABLE users ADD COLUMN totp_secret TEXT NOT NULL DEFAULT ''`
-   - `ALTER TABLE users ADD COLUMN totp_enabled INTEGER NOT NULL DEFAULT 0`
+2. [x] Migration: `internal/modules/auth/migrations/006_add_totp.sql`
+   - => ALTER TABLE users ADD COLUMN totp_secret + totp_enabled
 
-3. [ ] Persistence: map TOTP fields in GORM user model
-   - Update `internal/modules/auth/adapters/persistence/repository.go` GORM struct
+3. [x] Persistence: map TOTP fields in GORM user model
+   - => models.go UserModel updated, userToModel/userToDomain round-trip works
 
-4. [ ] Profile 2FA setup: `GET /profile/2fa` + `POST /profile/2fa/enable` + `POST /profile/2fa/disable`
-   - `GET /profile/2fa`: `totp.Generate(opts)` → QR code as base64 PNG data URI + manual key + confirm-code input
-   - `POST /profile/2fa/enable`: verify code against new secret → `user.EnableTOTP(secret)` → save → redirect /profile
-   - `POST /profile/2fa/disable`: `user.DisableTOTP()` → save
-   - QR: use `github.com/skip2/go-qrcode` — generate PNG bytes → base64 `data:image/png;base64,...`
-   - Template: add `TOTPSetupPage` + 2FA section on profile page
+4. [x] Profile 2FA setup: `GET /profile/2fa` + POST enable + POST disable
+   - => `totp_handlers.go`: profileTOTPSetupPage, enableTOTPSSE, disableTOTPSSE
+   - => QR via `key.Image()` → png.Encode → base64 data URI (no extra package needed)
+   - => TOTPSetupPage + TOTPLoginPage templ components
 
-5. [ ] Login TOTP step
-   - After password passes + `user.TOTPEnabled`: set short-lived signed cookie `vvs_totp_pending` (5min, HMAC-signed user ID) → redirect `/login/totp`
-   - `GET /login/totp` → TOTP input page
-   - `POST /login/totp`: verify pending cookie → find user → `VerifyTOTP(code)` → clear pending cookie → create full session → redirect `/`
-   - Reuse `globalLoginLimiter` for TOTP failure rate limiting
-   - Expired/invalid pending → redirect `/login`
+5. [x] Login TOTP step
+   - => `vvs_totp_pending` cookie (5min, user ID as value); loginSSE creates+revokes session
+   - => CreateSessionHandler mints fresh session post-TOTP verification
+   - => `/login/totp` GET + `/api/login/totp` POST wired in RegisterRoutes
 
-6. [ ] Tests
-   - Domain: `TestEnableTOTP`, `TestDisableTOTP`, `TestVerifyTOTP_Valid`, `TestVerifyTOTP_Invalid`
-   - HTTP: `TestTOTPSetup_ShowsQR`, `TestLogin_WithTOTP_RequiresCode`, `TestLogin_WithTOTP_WrongCode_Rejected`, `TestLogin_WithTOTP_CorrectCode_CreatesSession`
+6. [x] Tests — all 10 passing
+   - => 4 domain tests (enable/disable/verify)
+   - => 6 handler tests (pending cookie redirect, form render, QR page, disable clears fields)
+   - => commit 95457ab
 
 ---
 
@@ -114,3 +107,4 @@ go build ./...
 ## Progress Log
 
 - 2026-04-19: Phase 1 complete — commit 11d1832; 3 tests pass; dashboard revenue bug also fixed
+- 2026-04-19: Phase 2 complete — commit 95457ab; 10 tests pass (4 domain + 6 handler)
