@@ -665,7 +665,37 @@ func ProfilePage(u *domain.User) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "\"><h3 class=\"text-xs font-semibold text-neutral-400 uppercase tracking-wider\">Display Name</h3><input type=\"text\" placeholder=\"Your full name\" data-bind:profile-full-name class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"><div id=\"profile-save-error\"></div><div id=\"profile-save-success\"></div><button type=\"button\" data-on:click=\"@put('/api/users/me/profile')\" class=\"bg-neutral-700 hover:bg-neutral-600 text-neutral-200 text-sm font-medium py-2 rounded transition-colors\">Save display name</button></div></div></div><!-- Change password --><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-6\"><div class=\"flex flex-col gap-3\" data-signals=\"{currentPassword:'',newPassword:''}\"><h3 class=\"text-xs font-semibold text-neutral-400 uppercase tracking-wider\">Change Password</h3><input type=\"password\" placeholder=\"Current password\" data-bind:current-password autocomplete=\"current-password\" class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"> <input type=\"password\" placeholder=\"New password\" data-bind:new-password autocomplete=\"new-password\" class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"><div id=\"change-pw-error\"></div><div id=\"change-pw-success\"></div><button type=\"button\" data-on:click=\"@post('/api/users/me/password')\" class=\"bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 rounded transition-colors\">Update password</button></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "\"><h3 class=\"text-xs font-semibold text-neutral-400 uppercase tracking-wider\">Display Name</h3><input type=\"text\" placeholder=\"Your full name\" data-bind:profile-full-name class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"><div id=\"profile-save-error\"></div><div id=\"profile-save-success\"></div><button type=\"button\" data-on:click=\"@put('/api/users/me/profile')\" class=\"bg-neutral-700 hover:bg-neutral-600 text-neutral-200 text-sm font-medium py-2 rounded transition-colors\">Save display name</button></div></div></div><!-- Two-Factor Authentication --><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-6\"><div class=\"flex items-center justify-between\"><div class=\"flex flex-col gap-1\"><h3 class=\"text-xs font-semibold text-neutral-400 uppercase tracking-wider\">Two-Factor Authentication</h3>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if u.TOTPEnabled {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<p class=\"text-xs text-lime-400\">Enabled</p>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<p class=\"text-xs text-neutral-500\">Not enabled</p>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</div><a href=\"/profile/2fa\" class=\"bg-neutral-700 hover:bg-neutral-600 text-neutral-200 text-xs font-medium py-1.5 px-3 rounded transition-colors\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if u.TOTPEnabled {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "Manage 2FA")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "Set up 2FA")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</a></div></div><!-- Change password --><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-6\"><div class=\"flex flex-col gap-3\" data-signals=\"{currentPassword:'',newPassword:''}\"><h3 class=\"text-xs font-semibold text-neutral-400 uppercase tracking-wider\">Change Password</h3><input type=\"password\" placeholder=\"Current password\" data-bind:current-password autocomplete=\"current-password\" class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"> <input type=\"password\" placeholder=\"New password\" data-bind:new-password autocomplete=\"new-password\" class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"><div id=\"change-pw-error\"></div><div id=\"change-pw-success\"></div><button type=\"button\" data-on:click=\"@post('/api/users/me/password')\" class=\"bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 rounded transition-colors\">Update password</button></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -700,20 +730,20 @@ func changePwError(msg string) templ.Component {
 			templ_7745c5c3_Var30 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<div id=\"change-pw-error\" class=\"text-red-400 text-xs\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<div id=\"change-pw-error\" class=\"text-red-400 text-xs\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 366, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 390, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -742,7 +772,7 @@ func changePwSuccess() templ.Component {
 			templ_7745c5c3_Var32 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<div id=\"change-pw-success\" class=\"text-green-400 text-xs\">Password updated.</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<div id=\"change-pw-success\" class=\"text-green-400 text-xs\">Password updated.</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -771,20 +801,20 @@ func editUserError(msg string) templ.Component {
 			templ_7745c5c3_Var33 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<div id=\"edit-user-error\" class=\"text-red-400 text-xs\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<div id=\"edit-user-error\" class=\"text-red-400 text-xs\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 374, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 398, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -813,7 +843,7 @@ func profileSaveSuccess() templ.Component {
 			templ_7745c5c3_Var35 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<div id=\"profile-save-success\" class=\"text-green-400 text-xs\">Display name saved.</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<div id=\"profile-save-success\" class=\"text-green-400 text-xs\">Display name saved.</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -862,7 +892,7 @@ func PermissionsPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, " <div id=\"permissions-grid\" data-init=\"@get('/sse/settings/permissions', {openWhenHidden: false})\"><div class=\"text-neutral-500 text-sm\">Loading…</div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, " <div id=\"permissions-grid\" data-init=\"@get('/sse/settings/permissions', {openWhenHidden: false})\"><div class=\"text-neutral-500 text-sm\">Loading…</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -897,7 +927,7 @@ func PermissionsGrid(opPerms domain.PermissionSet, viewerPerms domain.Permission
 			templ_7745c5c3_Var38 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<div id=\"permissions-grid\" class=\"flex flex-col gap-8 max-w-2xl\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "<div id=\"permissions-grid\" class=\"flex flex-col gap-8 max-w-2xl\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -909,7 +939,7 @@ func PermissionsGrid(opPerms domain.PermissionSet, viewerPerms domain.Permission
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -938,20 +968,20 @@ func permRoleSection(label string, role domain.Role, ps domain.PermissionSet) te
 			templ_7745c5c3_Var39 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<div class=\"bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden\"><div class=\"px-4 py-3 border-b border-neutral-700 bg-neutral-850\"><h3 class=\"text-sm font-semibold text-neutral-200\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<div class=\"bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden\"><div class=\"px-4 py-3 border-b border-neutral-700 bg-neutral-850\"><h3 class=\"text-sm font-semibold text-neutral-200\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var40 string
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 407, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 431, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</h3></div><table class=\"w-full text-sm\"><thead><tr class=\"text-xs text-neutral-500 uppercase tracking-wider\"><th class=\"text-left px-4 py-2 font-medium\">Module</th><th class=\"px-4 py-2 font-medium text-center\">View</th><th class=\"px-4 py-2 font-medium text-center\">Edit</th></tr></thead> <tbody class=\"divide-y divide-neutral-700\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</h3></div><table class=\"w-full text-sm\"><thead><tr class=\"text-xs text-neutral-500 uppercase tracking-wider\"><th class=\"text-left px-4 py-2 font-medium\">Module</th><th class=\"px-4 py-2 font-medium text-center\">View</th><th class=\"px-4 py-2 font-medium text-center\">Edit</th></tr></thead> <tbody class=\"divide-y divide-neutral-700\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -959,71 +989,71 @@ func permRoleSection(label string, role domain.Role, ps domain.PermissionSet) te
 			perm := ps[m]
 			canView := perm != nil && perm.CanView
 			canEdit := perm != nil && perm.CanEdit
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<tr class=\"hover:bg-neutral-750\"><td class=\"px-4 py-2.5 text-neutral-300\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<tr class=\"hover:bg-neutral-750\"><td class=\"px-4 py-2.5 text-neutral-300\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var41 string
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(moduleLabel(m))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 423, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 447, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</td><td class=\"px-4 py-2.5 text-center\"><input type=\"checkbox\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "</td><td class=\"px-4 py-2.5 text-center\"><input type=\"checkbox\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if canView {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, " checked")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, " data-on:change=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, " data-on:change=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var42 string
 			templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs("@post('/api/permissions/" + string(role) + "/" + string(m) + "?f=view&v=' + evt.target.checked)")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 428, Col: 122}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 452, Col: 122}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "\" class=\"w-4 h-4 accent-amber-500 cursor-pointer\"></td><td class=\"px-4 py-2.5 text-center\"><input type=\"checkbox\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\" class=\"w-4 h-4 accent-amber-500 cursor-pointer\"></td><td class=\"px-4 py-2.5 text-center\"><input type=\"checkbox\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if canEdit {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, " checked")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, " data-on:change=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, " data-on:change=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var43 string
 			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs("@post('/api/permissions/" + string(role) + "/" + string(m) + "?f=edit&v=' + evt.target.checked)")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 436, Col: 122}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 460, Col: 122}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "\" class=\"w-4 h-4 accent-amber-500 cursor-pointer\"></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "\" class=\"w-4 h-4 accent-amber-500 cursor-pointer\"></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</tbody></table></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "</tbody></table></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1076,35 +1106,35 @@ func TOTPLoginPage(errMsg string) templ.Component {
 			templ_7745c5c3_Var44 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<!doctype html><html lang=\"en\" class=\"dark\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Two-Factor Auth | VVS ISP Manager</title><script src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></script><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0/bundles/datastar.js\"></script></head><body class=\"bg-neutral-950 text-neutral-100 min-h-screen flex items-center justify-center\"><div class=\"w-full max-w-xs\" data-signals=\"{totpCode:''}\"><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-8\"><div class=\"text-amber-400 font-bold text-lg tracking-widest uppercase text-center mb-6\">VVS ISP</div><h2 class=\"text-neutral-300 text-sm text-center mb-6\">Enter the 6-digit code from your authenticator app.</h2><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Authenticator Code</label> <input type=\"text\" data-bind:totp-code autocomplete=\"one-time-code\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"000000\" class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 text-center tracking-widest font-mono focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500\"></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "<!doctype html><html lang=\"en\" class=\"dark\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Two-Factor Auth | VVS ISP Manager</title><script src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></script><script type=\"module\" src=\"https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.0/bundles/datastar.js\"></script></head><body class=\"bg-neutral-950 text-neutral-100 min-h-screen flex items-center justify-center\"><div class=\"w-full max-w-xs\" data-signals=\"{totpCode:''}\"><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-8\"><div class=\"text-amber-400 font-bold text-lg tracking-widest uppercase text-center mb-6\">VVS ISP</div><h2 class=\"text-neutral-300 text-sm text-center mb-6\">Enter the 6-digit code from your authenticator app.</h2><div class=\"flex flex-col gap-3\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs font-medium text-neutral-400 uppercase tracking-wider\">Authenticator Code</label> <input type=\"text\" data-bind:totp-code autocomplete=\"one-time-code\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"000000\" class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 text-center tracking-widest font-mono focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500\"></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if errMsg != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "<div id=\"totp-login-error\" class=\"text-red-400 text-xs text-center\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "<div id=\"totp-login-error\" class=\"text-red-400 text-xs text-center\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var45 string
 			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(errMsg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 501, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 525, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "<div id=\"totp-login-error\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<div id=\"totp-login-error\"></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<button data-on:click=\"@post('/api/login/totp')\" class=\"w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-2 px-4 rounded text-sm transition-colors mt-1\">Verify</button> <a href=\"/login\" class=\"text-center text-xs text-neutral-500 hover:text-neutral-300 transition-colors\">Back to login</a></div></div></div></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "<button data-on:click=\"@post('/api/login/totp')\" class=\"w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-2 px-4 rounded text-sm transition-colors mt-1\">Verify</button> <a href=\"/login\" class=\"text-center text-xs text-neutral-500 hover:text-neutral-300 transition-colors\">Back to login</a></div></div></div></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1133,20 +1163,20 @@ func totpLoginError(msg string) templ.Component {
 			templ_7745c5c3_Var46 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<div id=\"totp-login-error\" class=\"text-red-400 text-xs text-center\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<div id=\"totp-login-error\" class=\"text-red-400 text-xs text-center\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 520, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 544, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1192,61 +1222,61 @@ func TOTPSetupPage(u *domain.User, secret, qrDataURI string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, " <div class=\"max-w-md mx-auto mt-8\"><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-6\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, " <div class=\"max-w-md mx-auto mt-8\"><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-6\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if u.TOTPEnabled {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "<!-- Already enabled --> <div class=\"flex flex-col gap-4\"><div class=\"flex items-center gap-2 text-lime-400 text-sm font-medium\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"2\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> Two-factor authentication is enabled</div><p class=\"text-neutral-400 text-sm\">Your account is protected with TOTP-based two-factor authentication.</p><button data-on:click=\"@post('/api/users/me/totp/disable')\" class=\"w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-4 rounded text-sm transition-colors\">Disable Two-Factor Auth</button></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "<!-- Already enabled --> <div class=\"flex flex-col gap-4\"><div class=\"flex items-center gap-2 text-lime-400 text-sm font-medium\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"2\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg> Two-factor authentication is enabled</div><p class=\"text-neutral-400 text-sm\">Your account is protected with TOTP-based two-factor authentication.</p><button data-on:click=\"@post('/api/users/me/totp/disable')\" class=\"w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-2 px-4 rounded text-sm transition-colors\">Disable Two-Factor Auth</button></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<!-- Setup form --> <div data-signals=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "<!-- Setup form --> <div data-signals=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var50 string
 				templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("{newTotpSecret:'%s',totpCode:''}", secret))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 548, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 572, Col: 76}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "\" class=\"flex flex-col gap-5\"><div><p class=\"text-neutral-300 text-sm font-medium mb-1\">1. Scan this QR code with your authenticator app</p><p class=\"text-neutral-500 text-xs mb-3\">(Google Authenticator, Authy, 1Password, etc.)</p><div class=\"flex justify-center bg-white p-3 rounded-lg w-fit mx-auto\"><img src=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "\" class=\"flex flex-col gap-5\"><div><p class=\"text-neutral-300 text-sm font-medium mb-1\">1. Scan this QR code with your authenticator app</p><p class=\"text-neutral-500 text-xs mb-3\">(Google Authenticator, Authy, 1Password, etc.)</p><div class=\"flex justify-center bg-white p-3 rounded-lg w-fit mx-auto\"><img src=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var51 string
 				templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(qrDataURI)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 555, Col: 28}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 579, Col: 28}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "\" alt=\"TOTP QR code\" width=\"200\" height=\"200\" class=\"block\"></div></div><div><p class=\"text-neutral-300 text-sm font-medium mb-1\">Or enter the key manually:</p><code class=\"block bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-xs text-amber-400 font-mono tracking-wider text-center break-all\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\" alt=\"TOTP QR code\" width=\"200\" height=\"200\" class=\"block\"></div></div><div><p class=\"text-neutral-300 text-sm font-medium mb-1\">Or enter the key manually:</p><code class=\"block bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-xs text-amber-400 font-mono tracking-wider text-center break-all\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var52 string
 				templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(secret)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 560, Col: 164}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 584, Col: 164}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "</code></div><div class=\"flex flex-col gap-1\"><p class=\"text-neutral-300 text-sm font-medium\">2. Enter the 6-digit code to confirm</p><input type=\"text\" data-bind:totp-code autocomplete=\"one-time-code\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"000000\" class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 text-center tracking-widest font-mono focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500\"></div><div id=\"totp-setup-error\"></div><button data-on:click=\"@post('/api/users/me/totp/enable')\" class=\"w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-2 px-4 rounded text-sm transition-colors\">Enable Two-Factor Auth</button></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "</code></div><div class=\"flex flex-col gap-1\"><p class=\"text-neutral-300 text-sm font-medium\">2. Enter the 6-digit code to confirm</p><input type=\"text\" data-bind:totp-code autocomplete=\"one-time-code\" inputmode=\"numeric\" maxlength=\"6\" placeholder=\"000000\" class=\"bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 text-center tracking-widest font-mono focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500\"></div><div id=\"totp-setup-error\"></div><button data-on:click=\"@post('/api/users/me/totp/enable')\" class=\"w-full bg-amber-500 hover:bg-amber-400 text-neutral-950 font-semibold py-2 px-4 rounded text-sm transition-colors\">Enable Two-Factor Auth</button></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "</div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1281,20 +1311,20 @@ func totpSetupError(msg string) templ.Component {
 			templ_7745c5c3_Var53 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "<div id=\"totp-setup-error\" class=\"text-red-400 text-xs\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<div id=\"totp-setup-error\" class=\"text-red-400 text-xs\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var54 string
 		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 589, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 613, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1348,7 +1378,7 @@ func RolesPage(roles []domain.RoleDefinition) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, " <div class=\"flex flex-col gap-6 max-w-2xl\"><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden\"><table class=\"w-full text-sm\"><thead class=\"border-b border-neutral-800\"><tr><th class=\"text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider\">Name</th><th class=\"text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider\">Display Name</th><th class=\"px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider text-center\">Can Write</th><th class=\"px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider text-center\">Built-in</th><th class=\"px-4 py-3\"></th></tr></thead> <tbody id=\"roles-table-body\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, " <div class=\"flex flex-col gap-6 max-w-2xl\"><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden\"><table class=\"w-full text-sm\"><thead class=\"border-b border-neutral-800\"><tr><th class=\"text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider\">Name</th><th class=\"text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider\">Display Name</th><th class=\"px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider text-center\">Can Write</th><th class=\"px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider text-center\">Built-in</th><th class=\"px-4 py-3\"></th></tr></thead> <tbody id=\"roles-table-body\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1356,7 +1386,7 @@ func RolesPage(roles []domain.RoleDefinition) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "</tbody></table></div><!-- Add role form --><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-5\" data-signals=\"{roleName:'',roleDisplay:'',roleCanWrite:true}\"><h3 class=\"text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4\">Add Role</h3><div class=\"flex flex-col gap-3\"><div class=\"flex gap-3\"><input type=\"text\" placeholder=\"role-name (slug)\" data-bind:role-name class=\"flex-1 bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"> <input type=\"text\" placeholder=\"Display Name\" data-bind:role-display class=\"flex-1 bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div><label class=\"flex items-center gap-2 text-sm text-neutral-300 cursor-pointer\"><input type=\"checkbox\" data-bind:role-can-write class=\"w-4 h-4 accent-amber-500\"> Can write (allowed to make mutations)</label><div id=\"add-role-error\" class=\"text-red-400 text-xs hidden\"></div><button type=\"button\" data-on:click=\"@post('/api/roles')\" class=\"self-start bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">Create Role</button></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "</tbody></table></div><!-- Add role form --><div class=\"bg-neutral-900 border border-neutral-800 rounded-lg p-5\" data-signals=\"{roleName:'',roleDisplay:'',roleCanWrite:true}\"><h3 class=\"text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4\">Add Role</h3><div class=\"flex flex-col gap-3\"><div class=\"flex gap-3\"><input type=\"text\" placeholder=\"role-name (slug)\" data-bind:role-name class=\"flex-1 bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"> <input type=\"text\" placeholder=\"Display Name\" data-bind:role-display class=\"flex-1 bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600\"></div><label class=\"flex items-center gap-2 text-sm text-neutral-300 cursor-pointer\"><input type=\"checkbox\" data-bind:role-can-write class=\"w-4 h-4 accent-amber-500\"> Can write (allowed to make mutations)</label><div id=\"add-role-error\" class=\"text-red-400 text-xs hidden\"></div><button type=\"button\" data-on:click=\"@post('/api/roles')\" class=\"self-start bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors\">Create Role</button></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1392,20 +1422,20 @@ func RoleRows(roles []domain.RoleDefinition) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		for _, rd := range roles {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "<tr class=\"border-b border-neutral-800 last:border-0 hover:bg-neutral-800/40 transition-colors\"><td class=\"px-4 py-3 font-medium text-neutral-100\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<tr class=\"border-b border-neutral-800 last:border-0 hover:bg-neutral-800/40 transition-colors\"><td class=\"px-4 py-3 font-medium text-neutral-100\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var58 string
 			templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(string(rd.Name))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 668, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 692, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "</td><td class=\"px-4 py-3 text-neutral-400\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "</td><td class=\"px-4 py-3 text-neutral-400\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1413,72 +1443,72 @@ func RoleRows(roles []domain.RoleDefinition) templ.Component {
 				var templ_7745c5c3_Var59 string
 				templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(rd.DisplayName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 671, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 695, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<span class=\"text-neutral-600\">—</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "<span class=\"text-neutral-600\">—</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "</td><td class=\"px-4 py-3 text-center\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</td><td class=\"px-4 py-3 text-center\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if rd.CanWrite {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "<span class=\"text-green-400 text-xs\">yes</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<span class=\"text-green-400 text-xs\">yes</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "<span class=\"text-neutral-600 text-xs\">no</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "<span class=\"text-neutral-600 text-xs\">no</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</td><td class=\"px-4 py-3 text-center\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "</td><td class=\"px-4 py-3 text-center\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if rd.IsBuiltin {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<span class=\"text-amber-500 text-xs\">builtin</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "<span class=\"text-amber-500 text-xs\">builtin</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "<span class=\"text-neutral-600 text-xs\">—</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "<span class=\"text-neutral-600 text-xs\">—</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</td><td class=\"px-4 py-3 text-right\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</td><td class=\"px-4 py-3 text-right\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if !rd.IsBuiltin {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<button data-on:click=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<button data-on:click=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var60 string
 				templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs("@delete('/api/roles/" + string(rd.Name) + "')")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 693, Col: 69}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 717, Col: 69}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "\" class=\"text-red-400 hover:text-red-300 text-xs transition-colors\">Delete</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "\" class=\"text-red-400 hover:text-red-300 text-xs transition-colors\">Delete</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "</td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "</td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1508,20 +1538,20 @@ func addRoleError(msg string) templ.Component {
 			templ_7745c5c3_Var61 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "<div id=\"add-role-error\" class=\"text-red-400 text-xs\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "<div id=\"add-role-error\" class=\"text-red-400 text-xs\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var62 string
 		templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 705, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 729, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
