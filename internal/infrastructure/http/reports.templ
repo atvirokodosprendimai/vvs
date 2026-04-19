@@ -1,0 +1,165 @@
+package http
+
+import (
+	"fmt"
+	"github.com/vvs/isp/internal/infrastructure/http/templates"
+)
+
+templ ReportsPage() {
+	@templates.Layout("Reports") {
+		@templates.PageHeader("Reports", "Financial overview")
+		<div
+			id="reports-content"
+			data-init="@get('/api/reports/data', {openWhenHidden: false})"
+		>
+			<!-- Skeleton -->
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+				for i := 0; i < 2; i++ {
+					<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5 h-52 animate-pulse">
+						<div class="h-3 w-24 bg-neutral-800 rounded mb-4"></div>
+						<div class="h-32 w-full bg-neutral-800/50 rounded"></div>
+					</div>
+				}
+			</div>
+		</div>
+	}
+}
+
+templ ReportsContent(d ReportsData) {
+	<div id="reports-content">
+		<!-- Revenue charts (MRR + Payment Trend) -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+			@reportsBarChart("Revenue by Month (12 mo)", d.MRR, "#f59e0b")
+			@reportsBarChart("Payments Received (12 mo)", d.PaymentTrend, "#34d399")
+		</div>
+
+		<!-- Invoice Aging + Top Customers -->
+		<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+			@invoiceAgingPanel(d.InvoiceAging)
+			@topCustomersPanel(d.TopCustomers)
+		</div>
+	</div>
+}
+
+// reportsBarChart renders a 12-month bar chart with a custom bar colour.
+templ reportsBarChart(title string, months []MonthRevenue, color string) {
+	<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5">
+		<h3 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4">{ title }</h3>
+		if allZero(months) {
+			<div class="flex items-center justify-center h-36 text-neutral-600 text-sm">No data</div>
+		} else {
+			<svg width="100%" viewBox="0 0 540 140" class="overflow-visible">
+				for i, m := range months {
+					<!-- Bar -->
+					<rect
+						x={ fmt.Sprintf("%d", 5+i*44) }
+						y={ fmt.Sprintf("%.0f", 120-barHeight(m.Total, BarMax(months), 100)) }
+						width="28"
+						height={ fmt.Sprintf("%.0f", barHeight(m.Total, BarMax(months), 100)) }
+						rx="2"
+						fill={ color }
+						opacity="0.85"
+					/>
+					<!-- Value label -->
+					if m.Total > 0 {
+						<text
+							x={ fmt.Sprintf("%d", 19+i*44) }
+							y={ fmt.Sprintf("%.0f", 114-barHeight(m.Total, BarMax(months), 100)) }
+							text-anchor="middle" fill="#b3b3b3" font-size="8"
+						>
+							{ FormatCurrency(m.Total) }
+						</text>
+					}
+					<!-- Month label -->
+					<text
+						x={ fmt.Sprintf("%d", 19+i*44) }
+						y="135"
+						text-anchor="middle" fill="#777" font-size="8"
+					>
+						{ m.Month }
+					</text>
+				}
+			</svg>
+		}
+	</div>
+}
+
+// invoiceAgingPanel shows outstanding invoice aging buckets.
+templ invoiceAgingPanel(buckets []AgingBucket) {
+	<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5">
+		<h3 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4">Invoice Aging</h3>
+		if len(buckets) == 0 {
+			<div class="flex items-center justify-center h-36 text-neutral-600 text-sm">No outstanding invoices</div>
+		} else {
+			<div class="flex flex-col gap-2">
+				for _, b := range buckets {
+					<div class="flex items-center justify-between py-2 px-3 rounded bg-neutral-800/50">
+						<div class="flex items-center gap-3">
+							<span class={ agingLabelColor(b.Label) + " w-2 h-2 rounded-full flex-shrink-0" }></span>
+							<span class="text-sm text-neutral-300">{ b.Label }</span>
+						</div>
+						<div class="flex items-center gap-4 text-right">
+							<span class="text-xs text-neutral-500 tabular-nums">{ fmt.Sprintf("%d inv", b.Count) }</span>
+							<span class={ "text-sm font-medium tabular-nums " + agingAmountColor(b.Label) }>{ FormatCurrency(float64(b.Total) / 100) }</span>
+						</div>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}
+
+// topCustomersPanel shows top customers by paid revenue.
+templ topCustomersPanel(customers []CustomerRevenue) {
+	<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5">
+		<h3 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4">Top Customers (12 mo)</h3>
+		if len(customers) == 0 {
+			<div class="flex items-center justify-center h-36 text-neutral-600 text-sm">No paid invoices yet</div>
+		} else {
+			<div class="flex flex-col gap-1">
+				for i, c := range customers {
+					<a href={ templ.SafeURL(fmt.Sprintf("/customers/%s", c.CustomerID)) } class="flex items-center justify-between py-2 px-3 rounded hover:bg-neutral-800/50 transition-colors group">
+						<div class="flex items-center gap-3 min-w-0">
+							<span class="text-xs text-neutral-600 tabular-nums w-4 text-right flex-shrink-0">{ fmt.Sprintf("%d", i+1) }</span>
+							<span class="text-sm text-neutral-300 truncate group-hover:text-amber-400 transition-colors">{ c.CustomerName }</span>
+						</div>
+						<div class="flex items-center gap-4 text-right flex-shrink-0 ml-4">
+							<span class="text-xs text-neutral-500 tabular-nums">{ fmt.Sprintf("%d inv", c.InvoiceCount) }</span>
+							<span class="text-sm font-medium text-amber-400 tabular-nums">{ FormatCurrency(float64(c.Total) / 100) }</span>
+						</div>
+					</a>
+				}
+			</div>
+		}
+	</div>
+}
+
+func agingLabelColor(label string) string {
+	switch label {
+	case "Current":
+		return "bg-lime-400"
+	case "1-30 days":
+		return "bg-amber-400"
+	case "31-60 days":
+		return "bg-orange-400"
+	case "61-90 days":
+		return "bg-red-400"
+	default:
+		return "bg-red-600"
+	}
+}
+
+func agingAmountColor(label string) string {
+	switch label {
+	case "Current":
+		return "text-lime-400"
+	case "1-30 days":
+		return "text-amber-400"
+	case "31-60 days":
+		return "text-orange-400"
+	case "61-90 days":
+		return "text-red-400"
+	default:
+		return "text-red-500"
+	}
+}

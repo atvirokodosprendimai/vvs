@@ -90,6 +90,15 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 		r.Get("/sse", global.globalSSE)
 		r.Get("/api/dashboard/stats", newDashboardStatsHandler(reader))
 
+		// Reports
+		r.Group(func(r chi.Router) {
+			r.Use(RequireModuleAccess(authdomain.ModuleReports))
+			r.Get("/reports", func(w http.ResponseWriter, r *http.Request) {
+				ReportsPage().Render(r.Context(), w)
+			})
+			r.Get("/api/reports/data", newReportsHandler(reader))
+		})
+
 			// CRM overview
 			r.Get("/crm", func(w http.ResponseWriter, r *http.Request) {
 				CRMDashboardPage().Render(r.Context(), w)

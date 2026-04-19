@@ -133,7 +133,7 @@ func Sidebar() templ.Component {
 		ctx = templ.ClearChildren(ctx)
 		ps := authdomain.PermissionsFromCtx(ctx)
 		crmVisible := ps.CanView(authdomain.ModuleCustomers) || ps.CanView(authdomain.ModuleDeals) || ps.CanView(authdomain.ModuleTickets) || ps.CanView(authdomain.ModuleTasks)
-		financeVisible := ps.CanView(authdomain.ModuleInvoices) || ps.CanView(authdomain.ModuleProducts) || ps.CanView(authdomain.ModulePayments)
+		financeVisible := ps.CanView(authdomain.ModuleInvoices) || ps.CanView(authdomain.ModuleProducts) || ps.CanView(authdomain.ModulePayments) || ps.CanView(authdomain.ModuleReports)
 		networkVisible := ps.CanView(authdomain.ModuleNetwork)
 		systemVisible := ps.CanView(authdomain.ModuleEmail) || ps.CanView(authdomain.ModuleCron) || ps.CanView(authdomain.ModuleAuditLog) || ps.CanView(authdomain.ModuleUsers)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<nav class=\"w-56 bg-neutral-900 border-r border-neutral-800 p-3 flex flex-col justify-between h-full\" data-signals=\"{_notifOpen:false, _navCrm:true, _navFinance:true, _navNetwork:true, _navSystem:false}\" data-init=\"(function(){try{var p=JSON.parse(localStorage.getItem('navState')||'{}');$_navCrm=p.crm??$_navCrm;$_navFinance=p.finance??$_navFinance;$_navNetwork=p.network??$_navNetwork;$_navSystem=p.system??$_navSystem}catch(e){}})()\" data-effect=\"localStorage.setItem('navState',JSON.stringify({crm:$_navCrm,finance:$_navFinance,network:$_navNetwork,system:$_navSystem}))\"><div class=\"flex flex-col gap-0.5 overflow-y-auto min-h-0 flex-1\"><div class=\"flex items-center justify-between mb-4 px-2 pt-1\"><span class=\"text-amber-400 font-bold text-base tracking-widest uppercase\">VVS ISP</span><!-- Notification bell --><div id=\"notif-container\" class=\"relative\"><button data-on:click=\"($_notifOpen = !$_notifOpen) && @post('/api/notifications/read')\" class=\"relative p-1 text-neutral-500 hover:text-neutral-300 transition-colors\" title=\"Notifications\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0\"></path></svg> <span id=\"notif-badge\"></span></button></div></div><!-- Main -->")
@@ -221,6 +221,12 @@ func Sidebar() templ.Component {
 			}
 			if ps.CanView(authdomain.ModulePayments) {
 				templ_7745c5c3_Err = NavItem("/payments/import", "Pay Import", paymentsNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if ps.CanView(authdomain.ModuleReports) {
+				templ_7745c5c3_Err = NavItem("/reports", "Reports", reportsNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -366,7 +372,7 @@ func NavGroup(label string, signal string, icon string) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs("$" + signal + " = !$" + signal)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 263, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 266, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -387,7 +393,7 @@ func NavGroup(label string, signal string, icon string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 270, Col: 10}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 273, Col: 10}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -400,7 +406,7 @@ func NavGroup(label string, signal string, icon string) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("$" + signal)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 275, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 278, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -442,7 +448,7 @@ func NavItem(href string, label string, icon string) templ.Component {
 		var templ_7745c5c3_Var10 templ.SafeURL
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 285, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 288, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -463,7 +469,7 @@ func NavItem(href string, label string, icon string) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 291, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 294, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -580,6 +586,10 @@ func dealsNavIcon() string {
 
 func financeNavIcon() string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
+}
+
+func reportsNavIcon() string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>`
 }
 
 func paymentsNavIcon() string {
