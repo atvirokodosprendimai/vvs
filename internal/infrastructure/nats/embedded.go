@@ -14,9 +14,14 @@ import (
 // If listenAddr is non-empty (e.g. ":4222" or "127.0.0.1:4222"), the server
 // also exposes a TCP port so external clients can connect.
 // If listenAddr is empty the server runs silently in-process only.
-func StartEmbedded(listenAddr string) (*natsserver.Server, *nats.Conn, error) {
+// authToken, if non-empty, requires remote clients to authenticate with this token.
+func StartEmbedded(listenAddr string, authToken ...string) (*natsserver.Server, *nats.Conn, error) {
 	opts := &natsserver.Options{
 		DontListen: true,
+	}
+
+	if len(authToken) > 0 && authToken[0] != "" {
+		opts.Authorization = authToken[0]
 	}
 
 	if listenAddr != "" {

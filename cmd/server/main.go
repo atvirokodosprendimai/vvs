@@ -119,6 +119,11 @@ func serveCommand() *cli.Command {
 				Sources: cli.EnvVars("NATS_LISTEN_ADDR"),
 			},
 			&cli.StringFlag{
+				Name:    "nats-auth-token",
+				Usage:   "Auth token required by remote clients connecting to embedded NATS (optional)",
+				Sources: cli.EnvVars("NATS_AUTH_TOKEN"),
+			},
+			&cli.StringFlag{
 				Name:    "email-enc-key",
 				Usage:   "32-byte AES key (hex or raw) for encrypting IMAP passwords (optional)",
 				Sources: cli.EnvVars("VVS_EMAIL_ENC_KEY"),
@@ -188,6 +193,7 @@ func serveCommand() *cli.Command {
 				NetBoxToken:           cmd.String("netbox-token"),
 				NATSUrl:               cmd.Root().String("nats-url"),
 				NATSListenAddr:        cmd.String("nats-listen"),
+				NATSAuthToken:         cmd.String("nats-auth-token"),
 				APIToken:              cmd.Root().String("api-token"),
 				EmailEncKey:           cmd.String("email-enc-key"),
 				RouterEncKey:          cmd.String("router-enc-key"),
