@@ -16,12 +16,15 @@ import (
 // RegisterDunningActions wires dunning dependencies and registers the
 // "send-dunning-reminders" cron action. Call before RunDueJobs.
 func RegisterDunningActions(gdb *gormsqlite.DB, emailEncKey []byte) {
-	invoiceRepo := invoicepersistence.NewInvoiceRepository(gdb)
-	customerRepo := customerpersistence.NewGormCustomerRepository(gdb)
 	emailAccountRepo := emailpersistence.NewGormEmailAccountRepository(gdb)
 	smtp := smtpAdapter.NewSender(emailEncKey)
+	RegisterDunningActionsWithMailer(gdb, &dunningMailerBridge{accounts: emailAccountRepo, smtp: smtp})
+}
 
-	mailer := &dunningMailerBridge{accounts: emailAccountRepo, smtp: smtp}
+// RegisterDunningActionsWithMailer is the testable variant — accepts a pre-built mailer.
+func RegisterDunningActionsWithMailer(gdb *gormsqlite.DB, mailer invoicecommands.EmailSender) {
+	invoiceRepo := invoicepersistence.NewInvoiceRepository(gdb)
+	customerRepo := customerpersistence.NewGormCustomerRepository(gdb)
 	handler := invoicecommands.NewSendDunningRemindersHandler(invoiceRepo, customerRepo, mailer)
 
 	RegisterAction("send-dunning-reminders", func(ctx context.Context) error {
