@@ -157,6 +157,8 @@ func (h *Handlers) portalLogout(w http.ResponseWriter, r *http.Request) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   h.secureCookie,
 		MaxAge:   -1,
 	})
 	http.Redirect(w, r, "/portal/auth?expired=1", http.StatusFound)
