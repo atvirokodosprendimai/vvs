@@ -42,8 +42,9 @@ type channelsByPackageReader interface {
 	FindByID(ctx context.Context, id string) (*domain.Channel, error)
 }
 
-type epgCurrentNextReader interface {
+type epgReader interface {
 	ListCurrentAndNext(ctx context.Context, channelEPGIDs []string) (map[string][2]*domain.EPGProgramme, error)
+	ListForChannel(ctx context.Context, channelEPGID string, from, to time.Time) ([]*domain.EPGProgramme, error)
 }
 
 type stbByMACReader interface {
@@ -65,7 +66,7 @@ type STBBridge struct {
 	keys        subscriptionKeyReader
 	subs        subscriptionReader
 	channels    channelsByPackageReader
-	epg         epgCurrentNextReader
+	epg         epgReader
 	stbsByMAC   stbByMACReader
 	subsByCustomer subsByCustomerReader
 	keysBySub   keysBySubscriptionReader
@@ -78,7 +79,7 @@ func NewSTBBridge(
 	keys subscriptionKeyReader,
 	subs subscriptionReader,
 	channels channelsByPackageReader,
-	epg epgCurrentNextReader,
+	epg epgReader,
 	stbsByMAC stbByMACReader,
 	subsByCustomer subsByCustomerReader,
 	keysBySub keysBySubscriptionReader,
@@ -224,106 +225,98 @@ func (b *STBBridge) handlePlaylistGet(msg *nats.Msg) {
 
 func (b *STBBridge) handleEPGGet(msg *nats.Msg) {
 	var req struct {
-		Token string `json:"token"`
-		Days  int    `json:"days"`
+		Token     string `json:"token"`
+		ChannelID string `json:"channelID"`
+		Date      string `json:"date"` // YYYY-MM-DD; defaults to today
 	}
 	if err := json.Unmarshal(msg.Data, &req); err != nil {
 		stbBridgeReply(msg, nil, err)
 		return
 	}
-	if req.Token == "" {
-		stbBridgeReply(msg, nil, errInvalidToken)
+	if req.ChannelID == "" {
+		stbBridgeReply(msg, nil, errChannelNotFound)
 		return
 	}
-	if req.Days <= 0 {
-		req.Days = 3
+
+	// Parse date; default to today in UTC.
+	var dayStart time.Time
+	if req.Date != "" {
+		parsed, err := time.Parse("2006-01-02", req.Date)
+		if err != nil {
+			stbBridgeReply(msg, nil, fmt.Errorf("invalid date %q: use YYYY-MM-DD", req.Date))
+			return
+		}
+		dayStart = parsed.UTC()
+	} else {
+		now := time.Now().UTC()
+		dayStart = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 	}
+	dayEnd := dayStart.Add(24 * time.Hour)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	key, sub, err := b.resolveKey(ctx, req.Token)
-	if err != nil {
-		stbBridgeReply(msg, nil, err)
-		return
-	}
-	if sub.Status != domain.SubscriptionActive {
-		stbBridgeReply(msg, nil, errSuspended)
-		return
-	}
-
-	chs, err := b.channels.FindByPackage(ctx, key.PackageID)
+	ch, err := b.resolveChannelWithOptionalAuth(ctx, req.Token, req.ChannelID)
 	if err != nil {
 		stbBridgeReply(msg, nil, err)
 		return
 	}
 
-	xmltv := buildXMLTV(chs, req.Days)
+	epgID := ch.EPGSource
+	if epgID == "" {
+		epgID = ch.ID
+	}
+	progs, err := b.epg.ListForChannel(ctx, epgID, dayStart, dayEnd)
+	if err != nil {
+		stbBridgeReply(msg, nil, err)
+		return
+	}
+
 	stbBridgeReply(msg, struct {
 		XMLTV string `json:"xmltv"`
-	}{xmltv}, nil)
+	}{buildChannelXMLTV(ch, progs)}, nil)
 }
 
 func (b *STBBridge) handleEPGShort(msg *nats.Msg) {
 	var req struct {
-		Token string `json:"token"`
+		Token     string `json:"token"`
+		ChannelID string `json:"channelID"`
 	}
 	if err := json.Unmarshal(msg.Data, &req); err != nil {
 		stbBridgeReply(msg, nil, err)
 		return
 	}
-	if req.Token == "" {
-		stbBridgeReply(msg, nil, errInvalidToken)
+	if req.ChannelID == "" {
+		stbBridgeReply(msg, nil, errChannelNotFound)
 		return
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	key, sub, err := b.resolveKey(ctx, req.Token)
-	if err != nil {
-		stbBridgeReply(msg, nil, err)
-		return
-	}
-	if sub.Status != domain.SubscriptionActive {
-		stbBridgeReply(msg, nil, errSuspended)
-		return
-	}
-
-	chs, err := b.channels.FindByPackage(ctx, key.PackageID)
+	ch, err := b.resolveChannelWithOptionalAuth(ctx, req.Token, req.ChannelID)
 	if err != nil {
 		stbBridgeReply(msg, nil, err)
 		return
 	}
 
-	// Collect EPG IDs for active channels.
-	epgIDs := make([]string, 0, len(chs))
-	for _, ch := range chs {
-		if !ch.Active {
-			continue
-		}
-		epgID := ch.EPGSource
-		if epgID == "" {
-			epgID = ch.ID
-		}
-		epgIDs = append(epgIDs, epgID)
+	epgID := ch.EPGSource
+	if epgID == "" {
+		epgID = ch.ID
 	}
 
-	currentNext, err := b.epg.ListCurrentAndNext(ctx, epgIDs)
+	currentNext, err := b.epg.ListCurrentAndNext(ctx, []string{epgID})
 	if err != nil {
 		stbBridgeReply(msg, nil, err)
 		return
 	}
+
+	pair := currentNext[epgID]
 
 	type progSlot struct {
 		Title     string `json:"title"`
 		StartTime string `json:"start"`
 		StopTime  string `json:"stop"`
-	}
-	type entry struct {
-		ChannelEPGID string   `json:"channelEPGID"`
-		Current      *progSlot `json:"current,omitempty"`
-		Next         *progSlot `json:"next,omitempty"`
 	}
 
 	toSlot := func(p *domain.EPGProgramme) *progSlot {
@@ -337,19 +330,15 @@ func (b *STBBridge) handleEPGShort(msg *nats.Msg) {
 		}
 	}
 
-	items := make([]entry, 0, len(epgIDs))
-	for _, epgID := range epgIDs {
-		pair := currentNext[epgID]
-		items = append(items, entry{
-			ChannelEPGID: epgID,
-			Current:      toSlot(pair[0]),
-			Next:         toSlot(pair[1]),
-		})
-	}
-
 	stbBridgeReply(msg, struct {
-		Programmes []entry `json:"programmes"`
-	}{items}, nil)
+		ChannelEPGID string    `json:"channelEPGID"`
+		Current      *progSlot `json:"current,omitempty"`
+		Next         *progSlot `json:"next,omitempty"`
+	}{
+		ChannelEPGID: epgID,
+		Current:      toSlot(pair[0]),
+		Next:         toSlot(pair[1]),
+	}, nil)
 }
 
 func (b *STBBridge) handleChannelResolve(msg *nats.Msg) {
@@ -484,6 +473,55 @@ func (b *STBBridge) handleDVRGet(msg *nats.Msg) {
 }
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
+
+// resolveChannelWithOptionalAuth looks up a channel by ID.
+// If token is non-empty, validates the subscription and checks entitlement.
+// If token is empty, returns the channel without auth (public EPG access).
+func (b *STBBridge) resolveChannelWithOptionalAuth(ctx context.Context, token, channelID string) (*domain.Channel, error) {
+	if token != "" {
+		key, sub, err := b.resolveKey(ctx, token)
+		if err != nil {
+			return nil, err
+		}
+		if sub.Status != domain.SubscriptionActive {
+			return nil, errSuspended
+		}
+		chs, err := b.channels.FindByPackage(ctx, key.PackageID)
+		if err != nil {
+			return nil, err
+		}
+		for _, ch := range chs {
+			if ch.ID == channelID {
+				return ch, nil
+			}
+		}
+		return nil, errChannelNotFound
+	}
+	return b.channels.FindByID(ctx, channelID)
+}
+
+// buildChannelXMLTV generates a XMLTV document for a single channel with real programmes.
+func buildChannelXMLTV(ch *domain.Channel, progs []*domain.EPGProgramme) string {
+	epgID := ch.EPGSource
+	if epgID == "" {
+		epgID = ch.ID
+	}
+	var sb strings.Builder
+	sb.WriteString(`<?xml version="1.0" encoding="UTF-8"?>` + "\n<tv>")
+	sb.WriteString(fmt.Sprintf("\n  <channel id=\"%s\"><display-name>%s</display-name></channel>",
+		xmlEscape(epgID), xmlEscape(ch.Name)))
+	for _, p := range progs {
+		sb.WriteString(fmt.Sprintf(
+			"\n  <programme start=\"%s\" stop=\"%s\" channel=\"%s\"><title lang=\"lt\">%s</title></programme>",
+			p.StartTime.Format("20060102150405 +0000"),
+			p.StopTime.Format("20060102150405 +0000"),
+			xmlEscape(epgID),
+			xmlEscape(p.Title),
+		))
+	}
+	sb.WriteString("\n</tv>")
+	return sb.String()
+}
 
 // resolveKey validates a token string and returns the key + subscription.
 // Returns an error if the token is revoked, the subscription is not found, etc.

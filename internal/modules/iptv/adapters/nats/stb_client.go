@@ -82,14 +82,11 @@ func (c *STBNATSClient) GetPlaylist(ctx context.Context, token string) (*Playlis
 
 // ── EPG ───────────────────────────────────────────────────────────────────────
 
-func (c *STBNATSClient) GetEPG(ctx context.Context, token string, days int) (string, error) {
-	var resp struct {
-		XMLTV string `json:"xmltv"`
-	}
-	if err := c.rpc(ctx, SubjectEPGGet, map[string]any{"token": token, "days": days}, &resp); err != nil {
-		return "", err
-	}
-	return resp.XMLTV, nil
+// EPGShortSlot is a single programme slot in the short EPG response.
+type EPGShortSlot struct {
+	Title     string `json:"title"`
+	StartTime string `json:"start"`
+	StopTime  string `json:"stop"`
 }
 
 // EPGShortEntry is current+next programme for one channel.
@@ -99,22 +96,40 @@ type EPGShortEntry struct {
 	Next         *EPGShortSlot `json:"next,omitempty"`
 }
 
-// EPGShortSlot is a single programme slot in the short EPG response.
-type EPGShortSlot struct {
-	Title     string `json:"title"`
-	StartTime string `json:"start"`
-	StopTime  string `json:"stop"`
+// EPGDeviceAPI is the 2-method EPG interface for STB devices.
+// token may be empty for public/unauthenticated EPG access.
+type EPGDeviceAPI interface {
+	// GetEPGShort returns the current+next programme for a channel.
+	GetEPGShort(ctx context.Context, token, channelID string) (*EPGShortEntry, error)
+
+	// GetEPG returns a XMLTV document for the given channel and date (YYYY-MM-DD).
+	// date may be empty — defaults to today (UTC).
+	GetEPG(ctx context.Context, token, channelID, date string) (string, error)
 }
 
-// GetEPGShort returns current+next programme per channel for the subscriber.
-func (c *STBNATSClient) GetEPGShort(ctx context.Context, token string) ([]EPGShortEntry, error) {
-	var resp struct {
-		Programmes []EPGShortEntry `json:"programmes"`
-	}
-	if err := c.rpc(ctx, SubjectEPGShort, map[string]string{"token": token}, &resp); err != nil {
+// Compile-time check: STBNATSClient implements EPGDeviceAPI.
+var _ EPGDeviceAPI = (*STBNATSClient)(nil)
+
+// GetEPGShort returns current+next programme for a single channel.
+// token may be empty for unauthenticated access.
+func (c *STBNATSClient) GetEPGShort(ctx context.Context, token, channelID string) (*EPGShortEntry, error) {
+	var resp EPGShortEntry
+	if err := c.rpc(ctx, SubjectEPGShort, map[string]string{"token": token, "channelID": channelID}, &resp); err != nil {
 		return nil, err
 	}
-	return resp.Programmes, nil
+	return &resp, nil
+}
+
+// GetEPG returns a XMLTV document for a single channel on the given date (YYYY-MM-DD).
+// token may be empty for unauthenticated access. date may be empty for today.
+func (c *STBNATSClient) GetEPG(ctx context.Context, token, channelID, date string) (string, error) {
+	var resp struct {
+		XMLTV string `json:"xmltv"`
+	}
+	if err := c.rpc(ctx, SubjectEPGGet, map[string]string{"token": token, "channelID": channelID, "date": date}, &resp); err != nil {
+		return "", err
+	}
+	return resp.XMLTV, nil
 }
 
 // ── Config ────────────────────────────────────────────────────────────────────
