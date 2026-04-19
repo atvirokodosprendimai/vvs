@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/dchest/captcha"
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
 	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
@@ -65,6 +67,12 @@ type portalBotClient interface {
 	BotClose(ctx context.Context, customerID, sessionID string, createTicket bool) (ticketID string, err error)
 }
 
+// portalLoginClient supports self-service login: find customer by email + create token.
+type portalLoginClient interface {
+	FindCustomerByEmail(ctx context.Context, email string) (customerID string, err error)
+	CreatePortalToken(ctx context.Context, customerID string, ttl time.Duration) (plain string, expiresAt time.Time, err error)
+}
+
 // PortalService is the service view presented in the portal.
 type PortalService struct {
 	ID               string
@@ -95,6 +103,7 @@ type Handlers struct {
 	tickets      portalTicketClient
 	services     portalServiceClient
 	bot          portalBotClient
+	loginClient  portalLoginClient
 	baseURL      string
 	secureCookie bool
 }
@@ -146,6 +155,11 @@ func (h *Handlers) WithBot(bc portalBotClient) *Handlers {
 	return h
 }
 
+func (h *Handlers) WithLoginClient(lc portalLoginClient) *Handlers {
+	h.loginClient = lc
+	return h
+}
+
 // RegisterRoutes registers admin routes (protected by RequireAuth in the router).
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/customers/{id}/portal-link", h.generatePortalLink)
@@ -158,6 +172,9 @@ var authLimiter = infrahttp.NewIPRateLimiter(10, 15*time.Minute)
 // Implements infrastructure/http.PublicModuleRoutes.
 func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 	r.With(authLimiter.Middleware()).Get("/portal/auth", h.portalAuth)
+	r.With(authLimiter.Middleware()).Get("/portal/login", h.portalLogin)
+	r.With(authLimiter.Middleware()).Post("/portal/login", h.portalLoginSubmit)
+	r.Get("/portal/captcha/{id}.png", h.portalCaptchaImage)
 	r.Post("/portal/logout", h.portalLogout)
 	r.Group(func(r chi.Router) {
 		r.Use(h.requirePortalAuth)
@@ -184,12 +201,12 @@ func (h *Handlers) requirePortalAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(portalCookieName)
 		if err != nil {
-			http.Redirect(w, r, "/portal/auth?expired=1", http.StatusFound)
+			http.Redirect(w, r, "/portal/login?expired=1", http.StatusFound)
 			return
 		}
 		tok, err := h.tokenRepo.FindByHash(r.Context(), domain.HashOf(cookie.Value))
 		if err != nil || tok == nil || tok.IsExpired() {
-			http.Redirect(w, r, "/portal/auth?expired=1", http.StatusFound)
+			http.Redirect(w, r, "/portal/login?expired=1", http.StatusFound)
 			return
 		}
 		ctx := context.WithValue(r.Context(), portalCustomerKey{}, tok.CustomerID)
@@ -251,7 +268,7 @@ func (h *Handlers) portalLogout(w http.ResponseWriter, r *http.Request) {
 		Secure:   h.secureCookie,
 		MaxAge:   -1,
 	})
-	http.Redirect(w, r, "/portal/auth?expired=1", http.StatusFound)
+	http.Redirect(w, r, "/portal/login?expired=1", http.StatusFound)
 }
 
 // invoiceList renders the customer's invoice list.
@@ -335,19 +352,19 @@ func (h *Handlers) generatePortalLink(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) serviceList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	customerID := PortalCustomerIDFromContext(r.Context())
+	cust := h.resolveCustomer(r.Context(), customerID)
 	if h.services == nil {
-		http.Error(w, "service information not available", http.StatusServiceUnavailable)
+		PortalErrorPage(cust, "Services Unavailable", "Service information is not available right now. Please try again later.").Render(r.Context(), w)
 		return
 	}
 
 	services, err := h.services.ListServices(r.Context(), customerID)
 	if err != nil {
 		log.Printf("portal serviceList: %v", err)
-		http.Error(w, "error loading services", http.StatusInternalServerError)
+		PortalErrorPage(cust, "Error", "Could not load services. Please try again later.").Render(r.Context(), w)
 		return
 	}
 
-	cust := h.resolveCustomer(r.Context(), customerID)
 	PortalServiceListPage(cust, services).Render(r.Context(), w)
 }
 
@@ -355,19 +372,19 @@ func (h *Handlers) serviceList(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ticketList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	customerID := PortalCustomerIDFromContext(r.Context())
+	cust := h.resolveCustomer(r.Context(), customerID)
 	if h.tickets == nil {
-		http.Error(w, "support tickets not available", http.StatusServiceUnavailable)
+		PortalErrorPage(cust, "Support Unavailable", "Support tickets are not available right now. Please try again later.").Render(r.Context(), w)
 		return
 	}
 
 	tickets, err := h.tickets.ListTickets(r.Context(), customerID)
 	if err != nil {
 		log.Printf("portal ticketList: %v", err)
-		http.Error(w, "error loading tickets", http.StatusInternalServerError)
+		PortalErrorPage(cust, "Error", "Could not load tickets. Please try again later.").Render(r.Context(), w)
 		return
 	}
 
-	cust := h.resolveCustomer(r.Context(), customerID)
 	PortalTicketListPage(cust, tickets).Render(r.Context(), w)
 }
 
@@ -413,15 +430,16 @@ func (h *Handlers) ticketDetail(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	customerID := PortalCustomerIDFromContext(r.Context())
 	id := chi.URLParam(r, "id")
+	cust := h.resolveCustomer(r.Context(), customerID)
 	if h.tickets == nil {
-		http.Error(w, "support tickets not available", http.StatusServiceUnavailable)
+		PortalErrorPage(cust, "Support Unavailable", "Support tickets are not available right now. Please try again later.").Render(r.Context(), w)
 		return
 	}
 
 	tickets, err := h.tickets.ListTickets(r.Context(), customerID)
 	if err != nil {
 		log.Printf("portal ticketDetail: %v", err)
-		http.Error(w, "error loading ticket", http.StatusInternalServerError)
+		PortalErrorPage(cust, "Error", "Could not load ticket. Please try again later.").Render(r.Context(), w)
 		return
 	}
 	var found *ticketqueries.TicketReadModel
@@ -432,11 +450,10 @@ func (h *Handlers) ticketDetail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if found == nil {
-		http.Error(w, "ticket not found", http.StatusNotFound)
+		PortalErrorPage(cust, "Not Found", "This ticket could not be found.").Render(r.Context(), w)
 		return
 	}
 
-	cust := h.resolveCustomer(r.Context(), customerID)
 	PortalTicketDetailPage(cust, found, "").Render(r.Context(), w)
 }
 
@@ -579,6 +596,65 @@ func (h *Handlers) botClose(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{"ticketID": ticketID}) //nolint:errcheck
+}
+
+// portalCaptchaImage serves a captcha PNG image.
+func (h *Handlers) portalCaptchaImage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Cache-Control", "no-store")
+	if err := captcha.WriteImage(w, id, 240, 80); err != nil {
+		http.NotFound(w, r)
+	}
+}
+
+// portalLogin renders the self-service login form.
+func (h *Handlers) portalLogin(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	id := captcha.New()
+	errMsg := ""
+	if r.URL.Query().Get("expired") == "1" {
+		errMsg = "Your session has expired. Please log in again."
+	}
+	PortalLoginPage(id, errMsg).Render(r.Context(), w)
+}
+
+// portalLoginSubmit handles the self-service login form POST.
+func (h *Handlers) portalLoginSubmit(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		id := captcha.New()
+		PortalLoginPage(id, "Invalid request.").Render(r.Context(), w)
+		return
+	}
+	captchaID := r.FormValue("captchaID")
+	captchaCode := r.FormValue("captchaCode")
+	email := strings.TrimSpace(r.FormValue("email"))
+
+	if !captcha.VerifyString(captchaID, captchaCode) {
+		newID := captcha.New()
+		PortalLoginPage(newID, "Incorrect captcha. Please try again.").Render(r.Context(), w)
+		return
+	}
+	if h.loginClient == nil || email == "" {
+		newID := captcha.New()
+		PortalLoginPage(newID, "Login is not available at this time.").Render(r.Context(), w)
+		return
+	}
+	customerID, err := h.loginClient.FindCustomerByEmail(r.Context(), email)
+	if err != nil {
+		// Always show the same message to avoid email enumeration.
+		newID := captcha.New()
+		PortalLoginPage(newID, "If that email is registered, you will be redirected to your portal shortly.").Render(r.Context(), w)
+		return
+	}
+	plain, _, err := h.loginClient.CreatePortalToken(r.Context(), customerID, 15*time.Minute)
+	if err != nil {
+		log.Printf("portal loginSubmit: create token: %v", err)
+		newID := captcha.New()
+		PortalLoginPage(newID, "Could not generate login link. Please try again.").Render(r.Context(), w)
+		return
+	}
+	http.Redirect(w, r, "/portal/auth?token="+plain, http.StatusFound)
 }
 
 // resolveCustomer fetches customer info for the portal header, returning a fallback on error.

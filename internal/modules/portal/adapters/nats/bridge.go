@@ -44,12 +44,21 @@ const (
 	SubjectBotHandoff     = "isp.portal.rpc.bot.handoff"
 	SubjectBotLiveMessage = "isp.portal.rpc.bot.livemessage"
 	SubjectBotClose       = "isp.portal.rpc.bot.close"
+
+	SubjectCustomerFindByEmail = "isp.portal.rpc.customer.findByEmail"
+	SubjectPortalTokenCreate   = "isp.portal.rpc.token.create"
 )
 
-// portalTokenReader reads and updates portal tokens from the DB.
-type portalTokenReader interface {
+// portalTokenStore reads, creates, and updates portal tokens from the DB.
+type portalTokenStore interface {
 	FindByHash(ctx context.Context, hash string) (*portaldomain.PortalToken, error)
 	MarkUsed(ctx context.Context, tokenHash string) error
+	Save(ctx context.Context, token *portaldomain.PortalToken) error
+}
+
+// bridgeCustomerEmailFinder looks up a customer by email address.
+type bridgeCustomerEmailFinder interface {
+	FindByEmail(ctx context.Context, email string) (customerID string, err error)
 }
 
 // invoiceTokenStore persists and retrieves invoice PDF tokens.
@@ -117,11 +126,12 @@ type BridgeCustomer struct {
 // Runs on vvs-core — has direct access to SQLite via the injected handlers/repos.
 type PortalBridge struct {
 	nc             *nats.Conn
-	tokenRepo      portalTokenReader
+	tokenRepo      portalTokenStore
 	invoiceToken   invoiceTokenStore
 	listInvoices   invoicesByCustomerLister
 	getInvoice     invoiceByIDGetter
 	custReader     bridgeCustomerReader
+	emailFinder    bridgeCustomerEmailFinder
 	ticketLister   ticketListerForCustomer
 	openTicket     ticketOpener
 	addComment     ticketCommenter
@@ -136,7 +146,7 @@ type PortalBridge struct {
 // NewPortalBridge creates a bridge. Call Register() to start serving.
 func NewPortalBridge(
 	nc *nats.Conn,
-	tokenRepo portalTokenReader,
+	tokenRepo portalTokenStore,
 	invoiceToken invoiceTokenStore,
 	listInvoices invoicesByCustomerLister,
 	getInvoice invoiceByIDGetter,
@@ -158,6 +168,13 @@ func (b *PortalBridge) WithBot(sessions *bot.Sessions, ollama *bot.OllamaClient,
 	b.botSessions = sessions
 	b.botOllama   = ollama
 	b.chatStore    = cs
+	return b
+}
+
+// WithEmailFinder wires the customer email lookup into the bridge.
+// Call before Register() to enable the findByEmail and token.create RPC subjects.
+func (b *PortalBridge) WithEmailFinder(finder bridgeCustomerEmailFinder) *PortalBridge {
+	b.emailFinder = finder
 	return b
 }
 
@@ -200,6 +217,8 @@ func (b *PortalBridge) Register() error {
 		{SubjectBotHandoff, b.handleBotHandoff},
 		{SubjectBotLiveMessage, b.handleBotLiveMessage},
 		{SubjectBotClose, b.handleBotClose},
+		{SubjectCustomerFindByEmail, b.handleCustomerFindByEmail},
+		{SubjectPortalTokenCreate, b.handlePortalTokenCreate},
 	}
 	for _, e := range entries {
 		sub, err := b.nc.Subscribe(e.subject, e.handler)
@@ -996,4 +1015,58 @@ func bridgeReply(msg *nats.Msg, data any, err error) {
 	if err := msg.Respond(b); err != nil {
 		log.Printf("portal bridge: respond: %v", err)
 	}
+}
+
+// ── Self-service login subjects ───────────────────────────────────────────────
+
+func (b *PortalBridge) handleCustomerFindByEmail(msg *nats.Msg) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil || req.Email == "" {
+		bridgeReply(msg, nil, fmt.Errorf("invalid request"))
+		return
+	}
+	if b.emailFinder == nil {
+		bridgeReply(msg, nil, fmt.Errorf("email lookup not configured"))
+		return
+	}
+	customerID, err := b.emailFinder.FindByEmail(ctx, req.Email)
+	if err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	bridgeReply(msg, map[string]string{"customerID": customerID}, nil)
+}
+
+func (b *PortalBridge) handlePortalTokenCreate(msg *nats.Msg) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var req struct {
+		CustomerID string `json:"customerID"`
+		TTLSeconds int    `json:"ttlSeconds"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil || req.CustomerID == "" {
+		bridgeReply(msg, nil, fmt.Errorf("invalid request"))
+		return
+	}
+	ttl := time.Duration(req.TTLSeconds) * time.Second
+	if ttl <= 0 {
+		ttl = 15 * time.Minute
+	}
+	tok, plain, err := portaldomain.NewPortalToken(req.CustomerID, ttl)
+	if err != nil {
+		bridgeReply(msg, nil, fmt.Errorf("generate token: %w", err))
+		return
+	}
+	if err := b.tokenRepo.Save(ctx, tok); err != nil {
+		bridgeReply(msg, nil, fmt.Errorf("save token: %w", err))
+		return
+	}
+	bridgeReply(msg, map[string]any{
+		"plain":     plain,
+		"expiresAt": tok.ExpiresAt,
+	}, nil)
 }

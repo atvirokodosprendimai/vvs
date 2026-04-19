@@ -354,6 +354,19 @@ func (b *natsPortalCustomerBridge) GetPortalCustomer(ctx context.Context, id str
 	}, nil
 }
 
+// portalEmailFinderBridge adapts CustomerRepository.FindByEmail to portalnats.bridgeCustomerEmailFinder.
+type portalEmailFinderBridge struct {
+	repo customerdomain.CustomerRepository
+}
+
+func (b *portalEmailFinderBridge) FindByEmail(ctx context.Context, email string) (string, error) {
+	c, err := b.repo.FindByEmail(ctx, email)
+	if err != nil {
+		return "", err
+	}
+	return c.ID, nil
+}
+
 // portalServiceBridge adapts servicedomain.ServiceRepository to portalnats.bridgeServiceLister.
 type portalServiceBridge struct {
 	repo servicedomain.ServiceRepository

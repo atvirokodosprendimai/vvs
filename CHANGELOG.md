@@ -77,3 +77,4 @@
 - 2026-04-19 `bfa267b` feat(demo): suppress outbound email in demo mode + bind-mount data dirs
 - 2026-04-19 `c7cce1b` chore: update CHANGELOG and regenerate cron templ
 - 2026-04-19 `614132c` chore: rename module github.com/vvs/isp → github.com/atvirokodosprendimai/vvs
+- 2026-04-19 `263b2f9` chore: update CHANGELOG
