@@ -20,6 +20,7 @@ import (
 	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
 	"github.com/vvs/isp/internal/modules/email/domain"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 // attachmentFinder fetches a single attachment by ID.
@@ -1035,3 +1036,5 @@ func (h *Handlers) downloadAttachment(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(att.Data)
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleEmail }

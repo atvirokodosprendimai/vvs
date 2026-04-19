@@ -42,6 +42,12 @@ type ModuleRoutes interface {
 	RegisterRoutes(r chi.Router)
 }
 
+// ModuleNamed is optionally implemented by module handlers that map to a named permission module.
+// When implemented, all routes for that module are wrapped in RequireModuleAccess(ModuleName()).
+type ModuleNamed interface {
+	ModuleName() authdomain.Module
+}
+
 // PublicModuleRoutes is optionally implemented by module handlers that have public (unauthenticated) routes.
 type PublicModuleRoutes interface {
 	RegisterPublicRoutes(r chi.Router)
@@ -107,9 +113,16 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 		r.Post("/api/chat/threads/{threadID}/members", chatHandler.addMember)
 		r.Post("/api/chat/threads/{threadID}/read", chatHandler.markRead)
 
-		// Register all module routes
+		// Register all module routes; wrap named modules in RequireModuleAccess
 		for _, m := range modules {
-			m.RegisterRoutes(r)
+			if named, ok := m.(ModuleNamed); ok {
+				r.Group(func(r chi.Router) {
+					r.Use(RequireModuleAccess(named.ModuleName()))
+					m.RegisterRoutes(r)
+				})
+			} else {
+				m.RegisterRoutes(r)
+			}
 		}
 	})
 

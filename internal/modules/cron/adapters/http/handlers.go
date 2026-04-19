@@ -12,6 +12,7 @@ import (
 	croncommands "github.com/vvs/isp/internal/modules/cron/app/commands"
 	cronqueries "github.com/vvs/isp/internal/modules/cron/app/queries"
 	"github.com/vvs/isp/internal/modules/cron/domain"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 type CronHandlers struct {
@@ -306,3 +307,5 @@ func jsonString(s string) string {
 	b, _ := json.Marshal(s)
 	return string(b)
 }
+
+func (h *CronHandlers) ModuleName() authdomain.Module { return authdomain.ModuleCron }

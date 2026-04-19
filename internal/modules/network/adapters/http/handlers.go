@@ -12,6 +12,7 @@ import (
 	"github.com/vvs/isp/internal/modules/network/app/queries"
 	"github.com/vvs/isp/internal/modules/network/domain"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 type Handlers struct {
@@ -217,3 +218,5 @@ func parsePort(s, routerType string) int {
 	}
 	return 8728
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleNetwork }

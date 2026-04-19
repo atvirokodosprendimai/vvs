@@ -14,6 +14,7 @@ import (
 	"github.com/vvs/isp/internal/modules/task/app/queries"
 	"github.com/vvs/isp/internal/modules/task/domain"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 // Handlers holds all dependencies for task HTTP handlers.
@@ -368,3 +369,5 @@ func parseDueDate(s string) *time.Time {
 	}
 	return &t
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleTasks }

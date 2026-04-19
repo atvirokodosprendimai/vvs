@@ -14,6 +14,7 @@ import (
 	"github.com/vvs/isp/internal/modules/device/app/queries"
 	"github.com/vvs/isp/internal/modules/device/domain"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 type DeviceHandlers struct {
@@ -261,3 +262,5 @@ func (h *DeviceHandlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 	// For now redirect back to list
 	sse.ExecuteScript(`window.location.href='/devices'`)
 }
+
+func (h *DeviceHandlers) ModuleName() authdomain.Module { return authdomain.ModuleNetwork }

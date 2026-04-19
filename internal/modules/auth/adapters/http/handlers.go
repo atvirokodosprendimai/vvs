@@ -248,3 +248,5 @@ func (h *Handlers) changeSelfPasswordSSE(w http.ResponseWriter, r *http.Request)
 	}
 	sse.PatchElementTempl(changePwSuccess())
 }
+
+func (h *Handlers) ModuleName() domain.Module { return domain.ModuleUsers }

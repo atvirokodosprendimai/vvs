@@ -19,6 +19,7 @@ import (
 	"github.com/vvs/isp/internal/modules/invoice/domain"
 	"github.com/vvs/isp/internal/shared/audit"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
 )
 
@@ -602,3 +603,5 @@ func (h *Handlers) publicInvoiceByToken(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	InvoicePrintPage(*inv).Render(r.Context(), w)
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleInvoices }

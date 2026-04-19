@@ -15,6 +15,7 @@ import (
 	"github.com/vvs/isp/internal/modules/ticket/domain"
 	"github.com/vvs/isp/internal/shared/audit"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
 )
 
@@ -591,3 +592,5 @@ func (h *Handlers) ticketCustomerSearch(w http.ResponseWriter, r *http.Request) 
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElementTempl(ticketCustomerSearchResults(results))
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleTickets }

@@ -32,6 +32,7 @@ import (
 	"github.com/vvs/isp/internal/shared/audit"
 	"github.com/vvs/isp/internal/shared/events"
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 // RouterSummary is the minimal router data needed for the customer form dropdown.
@@ -662,3 +663,5 @@ func (h *Handlers) loadRouterName(ctx context.Context, c *domain.Customer) strin
 	h.reader.WithContext(ctx).Raw("SELECT name FROM routers WHERE id = ?", *c.RouterID).Scan(&row)
 	return row.Name
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleCustomers }

@@ -16,6 +16,7 @@ import (
 	"github.com/vvs/isp/internal/modules/service/app/queries"
 	"github.com/vvs/isp/internal/shared/audit"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 type ServiceHandlers struct {
@@ -237,3 +238,5 @@ func parsePriceCents(s string) (int64, error) {
 	}
 	return int64(f * 100), nil
 }
+
+func (h *ServiceHandlers) ModuleName() authdomain.Module { return authdomain.ModuleNetwork }
