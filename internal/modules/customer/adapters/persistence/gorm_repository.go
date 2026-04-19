@@ -108,6 +108,20 @@ func (r *GormCustomerRepository) FindAll(ctx context.Context, filter domain.Cust
 	return customers, total, err
 }
 
+func (r *GormCustomerRepository) FindByEmail(ctx context.Context, email string) (*domain.Customer, error) {
+	var model CustomerModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("LOWER(email) = LOWER(?)", email).First(&model).Error
+	})
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, domain.ErrCustomerNotFound
+		}
+		return nil, err
+	}
+	return toDomain(&model), nil
+}
+
 func (r *GormCustomerRepository) Delete(ctx context.Context, id string) error {
 	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
 		return tx.Delete(&CustomerModel{}, "id = ?", id).Error

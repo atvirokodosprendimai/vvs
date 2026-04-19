@@ -170,6 +170,7 @@ func wireInfra(
 	).
 		WithTickets(crm.listTickets, crm.openTicket, crm.addComment).
 		WithServices(&portalServiceBridge{repo: svc.repo}).
+		WithEmailFinder(&portalEmailFinderBridge{repo: cust.repo}).
 		WithBot(botSessions, botOllama, chatStore)
 	if err := portalBridge.Register(); err != nil {
 		return nil, fmt.Errorf("portal nats bridge: %w", err)

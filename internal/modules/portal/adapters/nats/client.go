@@ -212,6 +212,34 @@ func (c *PortalNATSClient) AddTicketComment(ctx context.Context, ticketID, custo
 	return resp.CommentID, nil
 }
 
+// ── self-service login ────────────────────────────────────────────────────────
+
+// FindCustomerByEmail looks up a customer ID by email address via NATS.
+func (c *PortalNATSClient) FindCustomerByEmail(ctx context.Context, email string) (string, error) {
+	var resp struct {
+		CustomerID string `json:"customerID"`
+	}
+	if err := c.rpc(ctx, SubjectCustomerFindByEmail, map[string]string{"email": email}, &resp); err != nil {
+		return "", err
+	}
+	return resp.CustomerID, nil
+}
+
+// CreatePortalToken generates a new single-use portal token for the customer via NATS.
+func (c *PortalNATSClient) CreatePortalToken(ctx context.Context, customerID string, ttl time.Duration) (plain string, expiresAt time.Time, err error) {
+	var resp struct {
+		Plain     string    `json:"plain"`
+		ExpiresAt time.Time `json:"expiresAt"`
+	}
+	if err := c.rpc(ctx, SubjectPortalTokenCreate, map[string]any{
+		"customerID": customerID,
+		"ttlSeconds": int(ttl.Seconds()),
+	}, &resp); err != nil {
+		return "", time.Time{}, err
+	}
+	return resp.Plain, resp.ExpiresAt, nil
+}
+
 // ── bot ───────────────────────────────────────────────────────────────────────
 
 // BotMessage sends a user message to the portal chat bot.

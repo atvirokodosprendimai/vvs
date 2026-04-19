@@ -17,5 +17,6 @@ type CustomerRepository interface {
 	FindByID(ctx context.Context, id string) (*Customer, error)
 	FindByCode(ctx context.Context, code string) (*Customer, error)
 	FindAll(ctx context.Context, filter CustomerFilter, page shareddomain.Pagination) ([]*Customer, int64, error)
+	FindByEmail(ctx context.Context, email string) (*Customer, error)
 	Delete(ctx context.Context, id string) error
 }

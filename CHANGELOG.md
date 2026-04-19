@@ -23,7 +23,6 @@
 - 2026-04-19 `c22b130` feat(dunning): send payment reminder emails for overdue invoices
 - 2026-04-19 `f6132b7` test(dunning): integration tests for send-dunning-reminders cron action
 - 2026-04-19 `24dd0a1` feat(rbac): add viewer (read-only) role with server-side enforcement
-- 2026-04-19 `24dd0a1` feat(rbac): add viewer (read-only) role with server-side enforcement
 - 2026-04-19 `76774f3` test(auth): RBAC middleware tests — RequireWrite blocks viewer on mutations
 - 2026-04-19 `7bda379` feat(auth): self-service change password — profile page + POST /api/users/me/password
 - 2026-04-19 `49c49e9` feat(invoice): PDF portal link — invoice_tokens table, public GET /i/{token} handler, SHA-256 token, 48h TTL
@@ -52,8 +51,35 @@
 - 2026-04-19 `5aa68e7` feat(portal+dunning): embed portal access link in dunning reminder emails
 - 2026-04-19 `99468ed` chore(plan): mark customer portal plan as completed
 - 2026-04-19 `e135a63` fix(portal): add SameSite+Secure flags to logout Set-Cookie
+- 2026-04-19 `aa69c52` test(e2e): customer portal Playwright tests — auth flow, session, logout
 - 2026-04-19 `fec7c00` plan: reporting module + two-factor auth (TOTP)
 - 2026-04-19 `11d1832` feat(reports): /reports page — MRR, invoice aging, top customers, payment trend
+- 2026-04-19 `95457ab` feat(auth): TOTP two-factor authentication
+- 2026-04-19 `873bb8f` chore(plan): mark reporting + 2FA plan as completed
+- 2026-04-19 `5c1bddd` plan: core/portal deployment split — 8 phases, 24 actions
+- 2026-04-19 `7fdd44b` fix(security): harden TOTP login + reports error checking
+- 2026-04-19 `26e05fe` feat(portal): two-binary split — vvs-core + vvs-portal over NATS RPC
+- 2026-04-19 `212ca4e` feat(portal): NATS auth token + deployment artifacts
+- 2026-04-19 `e9b8c22` test(portal): admin route isolation — portal binary serves only /portal/* + /i/*
+- 2026-04-19 `dff410f` chore(plan): mark core/portal split plan as completed
+- 2026-04-19 `f601772` fix(portal): harden NATS bridge ownership + context propagation
+- 2026-04-19 `a103095` test(e2e): portal PDF token + ownership isolation coverage
+- 2026-04-19 `982ea64` fix(portal): nil guards + mandatory customerID in invoices list
+- 2026-04-19 `6c320c9` fix(portal): secure-cookie default true + cross-customer isolation test
+- 2026-04-19 `52ad85e` chore(make): build-all + run-all + run-core/portal targets
+- 2026-04-19 `39294d4` feat(iptv): scaffold IPTV module — domain, persistence, migrations, HTTP, nav
+- 2026-04-19 `b9d2a6a` feat(iptv): CQRS commands, queries, SSE handlers, full CRUD pages
+- 2026-04-19 `44bad1a` feat(iptv): Phase 6 — STB NATS bridge + cmd/stb binary + deploy artifacts
+- 2026-04-19 `41ab944` test(iptv): Phase 7 — domain + STB bridge tests (23 pass)
+- 2026-04-19 `be290c7` fix(iptv): Codex security hardening — token log redaction, channel entitlement bypass, XML injection
+- 2026-04-19 `d0aa934` feat(iptv): Phase 2 — EPG persistence, XMLTV parser, import command, admin endpoint
+- 2026-04-19 `003c42c` feat(iptv): Phase 3 — EPG short subject + real ListCurrentAndNext wiring
+- 2026-04-19 `d6453d8` feat(iptv): Phase 4 — getConfig with MAC→STB→subscription→key lookup
+- 2026-04-19 `7cd66f7` feat(iptv): Phase 5+6 — HLS transparent proxy + DVR stub
+- 2026-04-19 `88195a1` refactor(iptv): define STBDeviceAPI interface, rename ResolveChannel→GetChannel, wire GetDVR, drop Stalker
+- 2026-04-19 `a0d7a1d` feat(iptv): DVRUrl on Channel + per-package channel ordering
+- 2026-04-19 `68e1c13` refactor(app): split 621-line New() into per-module wire functions
+- 2026-04-19 `9fe9948` feat(gomine): incremental reindex — only re-embed changed Go files on commit
 - 2026-04-19 `eb9da86` chore(plans): add 3 security+provisioning plans from Consilium backlog
 - 2026-04-19 `86f933a` chore(plan): customer portal support ticket submission
 - 2026-04-19 `078a5da` chore(plan): customer portal service status + usage summary
@@ -70,10 +96,12 @@
 - 2026-04-19 `9d89926` feat(observability): Prometheus metrics endpoint + instrumentation
 - 2026-04-19 `a60fd59` feat(portal): chat bot + live handoff via NATS bridge
 - 2026-04-19 `75736f5` chore(plans): mark portal+metrics+chatbot plans as completed
-- 2026-04-19 `75736f5` chore(plans): mark portal+metrics+chatbot plans as completed
 - 2026-04-19 `30fad32` fix(portal): bot cross-session security + mutex safety + comment UX
 - 2026-04-19 `6515c73` feat(docker): multi-target Dockerfile + compose + Caddyfile
 - 2026-04-19 `2a468a9` feat(cron): VVS_DEMO_MODE env var disables shell and url job types
 - 2026-04-19 `bfa267b` feat(demo): suppress outbound email in demo mode + bind-mount data dirs
 - 2026-04-19 `c7cce1b` chore: update CHANGELOG and regenerate cron templ
 - 2026-04-19 `614132c` chore: rename module github.com/vvs/isp → github.com/atvirokodosprendimai/vvs
+- 2026-04-19 `263b2f9` chore: update CHANGELOG
+- 2026-04-19 `07028ee` feat(portal): self-service login with image captcha + fix templ module paths
+- 2026-04-19 `4ac04f4` chore: update CHANGELOG — add missing TOTP, portal split, IPTV, gomine entries + dedup
