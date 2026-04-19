@@ -481,6 +481,7 @@ func New(cfg Config) (*App, error) {
 
 	// Invoice module
 	invoiceRepo := invoicepersistence.NewInvoiceRepository(gdb)
+	invoiceTokenRepo := invoicepersistence.NewInvoiceTokenRepository(gdb)
 
 	createInvoiceCmd := invoicecommands.NewCreateInvoiceHandler(invoiceRepo, publisher)
 	finalizeInvoiceCmd := invoicecommands.NewFinalizeInvoiceHandler(invoiceRepo, publisher)
@@ -505,6 +506,7 @@ func New(cfg Config) (*App, error) {
 	)
 	invoiceRoutes.WithGenerateCmd(generateInvoiceCmd)
 	invoiceRoutes.WithCustomerSearch(&customerSearchBridge{handler: listCustomersQuery})
+	invoiceRoutes.WithTokenRepo(invoiceTokenRepo)
 	vatRate := cfg.DefaultVATRate
 	if vatRate <= 0 {
 		vatRate = 21

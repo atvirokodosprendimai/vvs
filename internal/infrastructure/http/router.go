@@ -41,6 +41,11 @@ type ModuleRoutes interface {
 	RegisterRoutes(r chi.Router)
 }
 
+// PublicModuleRoutes is optionally implemented by module handlers that have public (unauthenticated) routes.
+type PublicModuleRoutes interface {
+	RegisterPublicRoutes(r chi.Router)
+}
+
 // APIRoutes is implemented by module handlers that expose REST JSON endpoints.
 type APIRoutes interface {
 	RegisterAPIRoutes(r chi.Router)
@@ -55,6 +60,13 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 
 	// Static files (unauthenticated)
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+	// Module public routes (unauthenticated)
+	for _, m := range modules {
+		if p, ok := m.(PublicModuleRoutes); ok {
+			p.RegisterPublicRoutes(r)
+		}
+	}
 
 	// Protected routes behind auth middleware
 	r.Group(func(r chi.Router) {

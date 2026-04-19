@@ -2,6 +2,8 @@ package http
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"log"
 	"math"
 	"net/http"
@@ -14,6 +16,7 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 	"github.com/vvs/isp/internal/modules/invoice/app/commands"
 	"github.com/vvs/isp/internal/modules/invoice/app/queries"
+	"github.com/vvs/isp/internal/modules/invoice/domain"
 	"github.com/vvs/isp/internal/shared/audit"
 	"github.com/vvs/isp/internal/shared/events"
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
@@ -47,6 +50,7 @@ type Handlers struct {
 	custSearch     CustomerSearcher
 	defaultVATRate int
 	auditLogger    audit.Logger
+	tokenRepo      domain.InvoiceTokenRepository
 }
 
 func NewHandlers(
@@ -113,6 +117,12 @@ func (h *Handlers) WithDefaultVATRate(rate int) *Handlers {
 	return h
 }
 
+// WithTokenRepo adds the invoice token repository for public PDF link support.
+func (h *Handlers) WithTokenRepo(repo domain.InvoiceTokenRepository) *Handlers {
+	h.tokenRepo = repo
+	return h
+}
+
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/invoices", h.listPage)
 	r.Get("/invoices/new", h.createPage)
@@ -130,6 +140,14 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/invoices/{id}/lines", h.addLine)
 	r.Put("/api/invoices/{id}/lines/{lineID}", h.updateLine)
 	r.Delete("/api/invoices/{id}/lines/{lineID}", h.removeLine)
+}
+
+// RegisterPublicRoutes registers routes that do not require authentication.
+// Must be called on a router that is NOT wrapped by RequireAuth.
+func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
+	if h.tokenRepo != nil {
+		r.Get("/i/{token}", h.publicInvoiceByToken)
+	}
 }
 
 // --- Page handlers ---
@@ -558,4 +576,29 @@ func (h *Handlers) customerSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sse.PatchElementTempl(customerSearchResults(results))
+}
+
+// publicInvoiceByToken handles GET /i/{token} — no authentication required.
+// It validates the token, checks expiry, then renders the invoice as printable HTML.
+func (h *Handlers) publicInvoiceByToken(w http.ResponseWriter, r *http.Request) {
+	plain := chi.URLParam(r, "token")
+	sum := sha256.Sum256([]byte(plain))
+	hashHex := hex.EncodeToString(sum[:])
+
+	tok, err := h.tokenRepo.FindByHash(r.Context(), hashHex)
+	if err != nil || tok.IsExpired() {
+		http.Error(w, "Link expired or not found", http.StatusNotFound)
+		return
+	}
+
+	inv, err := h.getQuery.Handle(r.Context(), tok.InvoiceID)
+	if err != nil {
+		http.Error(w, "Invoice not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Referrer-Policy", "no-referrer")
+	InvoicePrintPage(*inv).Render(r.Context(), w)
 }
