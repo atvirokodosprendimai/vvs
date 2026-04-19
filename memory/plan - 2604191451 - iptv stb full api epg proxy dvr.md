@@ -26,11 +26,11 @@ Every IPTV STB integration (Tivimate, Smarters, SIPTV, MAG, Formuler, IPTV Playe
 
 ---
 
-## Phase 1 — EPG Domain Layer — status: open
+## Phase 1 — EPG Domain Layer — status: completed
 
 Real programme data is the highest-value addition. Everything EPG-related depends on this domain layer.
 
-1. [ ] `internal/modules/iptv/domain/epg_programme.go`
+1. [x] `internal/modules/iptv/domain/epg_programme.go`
    ```go
    type EPGProgramme struct {
        ID           string
@@ -52,7 +52,7 @@ Real programme data is the highest-value addition. Everything EPG-related depend
    }
    ```
 
-2. [ ] `internal/modules/iptv/migrations/002_epg_programmes.sql`
+2. [x] `internal/modules/iptv/migrations/002_epg_programmes.sql`
    ```sql
    CREATE TABLE iptv_epg_programmes (
      id TEXT PRIMARY KEY,
@@ -70,27 +70,28 @@ Real programme data is the highest-value addition. Everything EPG-related depend
 
 ---
 
-## Phase 2 — EPG Persistence + XMLTV Import — status: open
+## Phase 2 — EPG Persistence + XMLTV Import — status: completed
 
-3. [ ] `internal/modules/iptv/adapters/persistence/epg_programme_repository.go`
+3. [x] `internal/modules/iptv/adapters/persistence/epg_programme_repository.go`
    - GORM model with `TableName() = "iptv_epg_programmes"`
    - `ListForChannel`: `WHERE channel_epg_id=? AND start_time >= ? AND stop_time <= ? ORDER BY start_time`
    - `ListCurrentAndNext`: `WHERE channel_epg_id IN (?) AND stop_time >= now() ORDER BY start_time LIMIT 2 per channel` (use subquery or Go-side grouping)
    - `BulkSave`: upsert on `(channel_epg_id, start_time)` unique pair
 
-4. [ ] XMLTV parser `internal/modules/iptv/adapters/xmltv/parser.go`
+4. [x] XMLTV parser `internal/modules/iptv/adapters/xmltv/parser.go`
    - Parse standard XMLTV format (`<channel>`, `<programme start= stop= channel=>`)
    - Returns `[]EPGProgramme` slices
    - Handle timezone offsets in XMLTV timestamps (`20060102150405 +0200`)
 
-5. [ ] EPG import command `internal/modules/iptv/app/commands/epg_import.go`
+5. [x] EPG import command `internal/modules/iptv/app/commands/epg_import.go`
    ```go
    type ImportEPGFromURLHandler struct { epgRepo domain.EPGProgrammeRepository }
    type ImportEPGCommand struct { URL string; DaysAhead int }
    // Fetches XMLTV from URL, parses, bulk-saves
    ```
 
-6. [ ] Admin endpoint: `POST /iptv/epg/import` in `adapters/http/handlers.go`
+6. [x] Admin endpoint: `POST /api/iptv/epg/import` in `adapters/http/handlers.go`
+   - => JSON body {url, days_ahead}; returns {Imported, Skipped}; 202-style synchronous for now
    - Form field: EPG URL + days ahead (default 7)
    - Fires import in goroutine → streams progress via SSE or just returns 202 Accepted
    - Add "EPG Import" button to IPTV settings/admin page
@@ -236,3 +237,4 @@ go test ./internal/modules/iptv/...
 ## Progress Log
 
 - 2026-04-19: Plan created — 6 phases, 21 actions; builds on completed IPTV module
+- 2026-04-19: Phase 1+2 complete (commit d0aa934) — EPG domain, migration, persistence, XMLTV parser (6 tests), import command, admin endpoint; `go build ./...` clean
