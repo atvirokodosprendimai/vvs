@@ -13,7 +13,14 @@ type Config struct {
 	// NATS options — mutually exclusive
 	NATSUrl        string // if set, connect to external NATS instead of starting embedded
 	NATSListenAddr string // if set (and NATSUrl empty), embedded NATS exposes TCP on this addr
-	NATSAuthToken  string // optional auth token required by remote clients connecting to embedded NATS
+	NATSAuthToken  string // deprecated: use NATSCorePassword + NATSPortalPassword instead
+
+	// Per-user NATS credentials (preferred over NATSAuthToken).
+	// When both are set, embedded NATS uses per-user permissions:
+	//   core   → full access (">")
+	//   portal → isp.portal.rpc.> and _INBOX.> only
+	NATSCorePassword   string // VVS_NATS_CORE_PASSWORD env var
+	NATSPortalPassword string // VVS_NATS_PORTAL_PASSWORD env var
 
 	// EmailEncKey is 32 bytes (hex or raw) used to AES-256-GCM encrypt IMAP passwords.
 	// Empty = dev mode (passwords stored in plaintext — not for production).

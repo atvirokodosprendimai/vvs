@@ -74,9 +74,15 @@ func serveCommand() *cli.Command {
 				Required: true,
 			},
 			&cli.StringFlag{
+				Name:    "nats-portal-password",
+				Usage:   "Password for the 'portal' NATS user (required when vvs-core uses per-user auth)",
+				Sources: cli.EnvVars("NATS_PORTAL_PASSWORD"),
+			},
+			&cli.StringFlag{
 				Name:    "nats-auth-token",
-				Usage:   "NATS auth token",
+				Usage:   "Deprecated: use --nats-portal-password instead",
 				Sources: cli.EnvVars("NATS_AUTH_TOKEN"),
+				Hidden:  true,
 			},
 			&cli.StringFlag{
 				Name:    "base-url",
@@ -103,7 +109,9 @@ func runSTB(ctx context.Context, cmd *cli.Command) error {
 	proxyEnabled := cmd.Bool("proxy-enabled")
 
 	opts := []nats.Option{nats.Name("vvs-stb")}
-	if natsToken != "" {
+	if portalPwd := cmd.String("nats-portal-password"); portalPwd != "" {
+		opts = append(opts, nats.UserInfo("portal", portalPwd))
+	} else if natsToken != "" {
 		opts = append(opts, nats.Token(natsToken))
 	}
 	nc, err := nats.Connect(natsURL, opts...)

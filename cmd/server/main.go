@@ -120,8 +120,19 @@ func serveCommand() *cli.Command {
 			},
 			&cli.StringFlag{
 				Name:    "nats-auth-token",
-				Usage:   "Auth token required by remote clients connecting to embedded NATS (optional)",
+				Usage:   "Deprecated: use --nats-core-password instead",
 				Sources: cli.EnvVars("NATS_AUTH_TOKEN"),
+				Hidden:  true,
+			},
+			&cli.StringFlag{
+				Name:    "nats-core-password",
+				Usage:   "Password for the 'core' NATS user (full access); enables per-user auth when set with --nats-portal-password",
+				Sources: cli.EnvVars("VVS_NATS_CORE_PASSWORD"),
+			},
+			&cli.StringFlag{
+				Name:    "nats-portal-password",
+				Usage:   "Password for the 'portal' NATS user (isp.portal.rpc.> only)",
+				Sources: cli.EnvVars("VVS_NATS_PORTAL_PASSWORD"),
 			},
 			&cli.StringFlag{
 				Name:    "email-enc-key",
@@ -194,6 +205,8 @@ func serveCommand() *cli.Command {
 				NATSUrl:               cmd.Root().String("nats-url"),
 				NATSListenAddr:        cmd.String("nats-listen"),
 				NATSAuthToken:         cmd.String("nats-auth-token"),
+				NATSCorePassword:      cmd.String("nats-core-password"),
+				NATSPortalPassword:    cmd.String("nats-portal-password"),
 				APIToken:              cmd.Root().String("api-token"),
 				EmailEncKey:           cmd.String("email-enc-key"),
 				RouterEncKey:          cmd.String("router-enc-key"),

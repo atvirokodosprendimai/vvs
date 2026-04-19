@@ -104,7 +104,7 @@ type bridgeFixture struct {
 
 func startSTBBridge(t *testing.T) *bridgeFixture {
 	t.Helper()
-	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0")
+	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0", "", "")
 	require.NoError(t, err)
 	t.Cleanup(func() { ns.Shutdown() })
 	t.Cleanup(func() { serverNC.Close() })

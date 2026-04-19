@@ -72,9 +72,15 @@ func serveCommand() *cli.Command {
 				Required: true,
 			},
 			&cli.StringFlag{
+				Name:    "nats-portal-password",
+				Usage:   "Password for the 'portal' NATS user (required when vvs-core uses per-user auth)",
+				Sources: cli.EnvVars("NATS_PORTAL_PASSWORD"),
+			},
+			&cli.StringFlag{
 				Name:    "nats-auth-token",
-				Usage:   "NATS auth token (optional, for plain-auth NATS connections)",
+				Usage:   "Deprecated: use --nats-portal-password instead",
 				Sources: cli.EnvVars("NATS_AUTH_TOKEN"),
+				Hidden:  true,
 			},
 			&cli.StringFlag{
 				Name:    "base-url",
@@ -94,14 +100,16 @@ func serveCommand() *cli.Command {
 func runPortal(ctx context.Context, cmd *cli.Command) error {
 	addr := cmd.String("addr")
 	natsURL := cmd.String("nats-url")
-	natsToken := cmd.String("nats-auth-token")
 	baseURL := cmd.String("base-url")
 	secureCookie := !cmd.Bool("insecure-cookie") // secure by default; opt out for local dev
 
 	// Connect to NATS (vvs-core side)
 	opts := []nats.Option{nats.Name("vvs-portal")}
-	if natsToken != "" {
-		opts = append(opts, nats.Token(natsToken))
+	// Per-user auth takes precedence; fall back to legacy token for backward compat.
+	if portalPwd := cmd.String("nats-portal-password"); portalPwd != "" {
+		opts = append(opts, nats.UserInfo("portal", portalPwd))
+	} else if legacyToken := cmd.String("nats-auth-token"); legacyToken != "" {
+		opts = append(opts, nats.Token(legacyToken))
 	}
 	nc, err := nats.Connect(natsURL, opts...)
 	if err != nil {
