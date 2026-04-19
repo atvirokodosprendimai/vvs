@@ -21,6 +21,7 @@ type Handlers struct {
 	createUserCmd         *commands.CreateUserHandler
 	deleteUserCmd         *commands.DeleteUserHandler
 	changeSelfPasswordCmd *commands.ChangeSelfPasswordHandler
+	updateUserCmd         *commands.UpdateUserHandler
 	listUsersQuery        *queries.ListUsersHandler
 	currentUser           *queries.GetCurrentUserHandler
 	permRepo              domain.RolePermissionsRepository
@@ -37,17 +38,19 @@ func NewHandlers(
 	createUserCmd *commands.CreateUserHandler,
 	deleteUserCmd *commands.DeleteUserHandler,
 	changeSelfPasswordCmd *commands.ChangeSelfPasswordHandler,
+	updateUserCmd *commands.UpdateUserHandler,
 	listUsersQuery *queries.ListUsersHandler,
 	currentUser *queries.GetCurrentUserHandler,
 ) *Handlers {
 	return &Handlers{
-		loginCmd:             loginCmd,
-		logoutCmd:            logoutCmd,
-		createUserCmd:        createUserCmd,
-		deleteUserCmd:        deleteUserCmd,
+		loginCmd:              loginCmd,
+		logoutCmd:             logoutCmd,
+		createUserCmd:         createUserCmd,
+		deleteUserCmd:         deleteUserCmd,
 		changeSelfPasswordCmd: changeSelfPasswordCmd,
-		listUsersQuery:       listUsersQuery,
-		currentUser:          currentUser,
+		updateUserCmd:         updateUserCmd,
+		listUsersQuery:        listUsersQuery,
+		currentUser:           currentUser,
 	}
 }
 
@@ -59,8 +62,10 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/api/users", h.listUsersSSE)
 	r.Post("/api/users", h.createUserSSE)
 	r.Delete("/api/users/{id}", h.deleteUserSSE)
+	r.Put("/api/users/{id}", h.updateUserSSE)
 	r.Get("/profile", h.profilePage)
 	r.Post("/api/users/me/password", h.changeSelfPasswordSSE)
+	r.Put("/api/users/me/profile", h.updateSelfProfileSSE)
 	r.Get("/settings/permissions", h.permissionsPage)
 	r.Get("/sse/settings/permissions", h.permissionsSSE)
 	r.Post("/api/permissions/{role}/{module}", h.savePermission)
@@ -358,6 +363,78 @@ func (h *Handlers) savePermission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handlers) updateUserSSE(w http.ResponseWriter, r *http.Request) {
+	actor := userFromContext(r)
+	if actor == nil || !actor.IsAdmin() {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	id := chi.URLParam(r, "id")
+	var signals struct {
+		EditFullName string `json:"editFullName"`
+		EditDivision string `json:"editDivision"`
+		EditRole     string `json:"editRole"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("updateUserSSE: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+	err := h.updateUserCmd.Handle(r.Context(), commands.UpdateUserCommand{
+		ActorID:  actor.ID,
+		UserID:   id,
+		FullName: signals.EditFullName,
+		Division: signals.EditDivision,
+		Role:     domain.Role(signals.EditRole),
+	})
+	if err != nil {
+		sse.PatchElementTempl(editUserError(err.Error()))
+		return
+	}
+
+	rows, err := h.listUsersQuery.Handle(r.Context())
+	if err != nil {
+		log.Printf("updateUserSSE: listUsersQuery: %v", err)
+		return
+	}
+	sse.PatchElementTempl(UserTable(rows, actor.ID))
+}
+
+func (h *Handlers) updateSelfProfileSSE(w http.ResponseWriter, r *http.Request) {
+	current := userFromContext(r)
+	if current == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var signals struct {
+		ProfileFullName string `json:"profileFullName"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("updateSelfProfileSSE: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	sse := datastar.NewSSE(w, r)
+	// Self-service: full name only, division stays unchanged
+	err := h.updateUserCmd.Handle(r.Context(), commands.UpdateUserCommand{
+		ActorID:  current.ID,
+		UserID:   current.ID,
+		FullName: signals.ProfileFullName,
+		Division: current.Division,
+		Role:     current.Role,
+	})
+	if err != nil {
+		sse.PatchElementTempl(changePwError(err.Error()))
+		return
+	}
+	sse.PatchElementTempl(profileSaveSuccess())
 }
 
 // Note: auth Handlers intentionally does NOT implement ModuleNamed.

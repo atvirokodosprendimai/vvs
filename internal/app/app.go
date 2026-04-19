@@ -199,9 +199,10 @@ func New(cfg Config) (*App, error) {
 	createUserCmd := authcommands.NewCreateUserHandler(userRepo)
 	deleteUserCmd := authcommands.NewDeleteUserHandler(userRepo, sessionRepo)
 	changeSelfPasswordCmd := authcommands.NewChangeSelfPasswordHandler(userRepo)
+	updateUserCmd := authcommands.NewUpdateUserHandler(userRepo)
 	listUsersQuery := authqueries.NewListUsersHandler(userRepo)
 	getCurrentUserQuery := authqueries.NewGetCurrentUserHandler(userRepo, sessionRepo)
-	authRoutes := authhttp.NewHandlers(loginCmd, logoutCmd, createUserCmd, deleteUserCmd, changeSelfPasswordCmd, listUsersQuery, getCurrentUserQuery).WithPermRepo(permRepo)
+	authRoutes := authhttp.NewHandlers(loginCmd, logoutCmd, createUserCmd, deleteUserCmd, changeSelfPasswordCmd, updateUserCmd, listUsersQuery, getCurrentUserQuery).WithPermRepo(permRepo)
 
 	if cfg.AdminUser != "" && cfg.AdminPassword != "" {
 		if err := seedAdmin(context.Background(), userRepo, cfg.AdminUser, cfg.AdminPassword); err != nil {
