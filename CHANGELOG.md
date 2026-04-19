@@ -104,3 +104,4 @@
 - 2026-04-19 `614132c` chore: rename module github.com/vvs/isp → github.com/atvirokodosprendimai/vvs
 - 2026-04-19 `263b2f9` chore: update CHANGELOG
 - 2026-04-19 `07028ee` feat(portal): self-service login with image captcha + fix templ module paths
+- 2026-04-19 `4ac04f4` chore: update CHANGELOG — add missing TOTP, portal split, IPTV, gomine entries + dedup
