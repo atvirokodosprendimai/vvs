@@ -11,11 +11,12 @@ import (
 )
 
 type portalTokenModel struct {
-	ID         string    `gorm:"primaryKey;type:text"`
-	CustomerID string    `gorm:"column:customer_id;type:text;not null;index"`
-	TokenHash  string    `gorm:"column:token_hash;type:text;uniqueIndex;not null"`
-	ExpiresAt  time.Time `gorm:"column:expires_at"`
-	CreatedAt  time.Time `gorm:"column:created_at"`
+	ID         string     `gorm:"primaryKey;type:text"`
+	CustomerID string     `gorm:"column:customer_id;type:text;not null;index"`
+	TokenHash  string     `gorm:"column:token_hash;type:text;uniqueIndex;not null"`
+	ExpiresAt  time.Time  `gorm:"column:expires_at"`
+	CreatedAt  time.Time  `gorm:"column:created_at"`
+	UsedAt     *time.Time `gorm:"column:used_at"`
 }
 
 func (portalTokenModel) TableName() string { return "portal_tokens" }
@@ -59,7 +60,17 @@ func (r *GormPortalTokenRepository) FindByHash(ctx context.Context, hash string)
 		TokenHash:  m.TokenHash,
 		ExpiresAt:  m.ExpiresAt,
 		CreatedAt:  m.CreatedAt,
+		UsedAt:     m.UsedAt,
 	}, nil
+}
+
+func (r *GormPortalTokenRepository) MarkUsed(ctx context.Context, tokenHash string) error {
+	now := time.Now().UTC()
+	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Model(&portalTokenModel{}).
+			Where("token_hash = ? AND used_at IS NULL", tokenHash).
+			Update("used_at", now).Error
+	})
 }
 
 func (r *GormPortalTokenRepository) DeleteByCustomerID(ctx context.Context, customerID string) error {

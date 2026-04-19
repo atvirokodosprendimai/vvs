@@ -29,6 +29,8 @@ func (s *stubPortalTokenReader) FindByHash(_ context.Context, _ string) (*portal
 	return s.tok, nil
 }
 
+func (s *stubPortalTokenReader) MarkUsed(_ context.Context, _ string) error { return nil }
+
 type stubInvoiceTokenStore struct {
 	tokens map[string]*invoicedomain.InvoiceToken
 }

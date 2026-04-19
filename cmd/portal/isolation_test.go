@@ -23,6 +23,7 @@ type stubTokenRepo struct{}
 func (s *stubTokenRepo) FindByHash(_ context.Context, _ string) (*portaldomain.PortalToken, error) {
 	return nil, nil
 }
+func (s *stubTokenRepo) MarkUsed(_ context.Context, _ string) error                { return nil }
 func (s *stubTokenRepo) Save(_ context.Context, _ *portaldomain.PortalToken) error { return nil }
 func (s *stubTokenRepo) DeleteByCustomerID(_ context.Context, _ string) error      { return nil }
 func (s *stubTokenRepo) PruneExpired(_ context.Context) error                      { return nil }
@@ -52,6 +53,7 @@ func (s *stubAuthTokenRepo) FindByHash(_ context.Context, _ string) (*portaldoma
 		ExpiresAt:  time.Now().Add(time.Hour),
 	}, nil
 }
+func (s *stubAuthTokenRepo) MarkUsed(_ context.Context, _ string) error                { return nil }
 func (s *stubAuthTokenRepo) Save(_ context.Context, _ *portaldomain.PortalToken) error { return nil }
 func (s *stubAuthTokenRepo) DeleteByCustomerID(_ context.Context, _ string) error      { return nil }
 func (s *stubAuthTokenRepo) PruneExpired(_ context.Context) error                      { return nil }
