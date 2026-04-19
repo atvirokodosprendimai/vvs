@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"context"
+	"time"
 
 	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
 	"github.com/vvs/isp/internal/modules/service/domain"
@@ -53,6 +54,18 @@ func (r *GormServiceRepository) ListForProduct(ctx context.Context, productID st
 	var models []ServiceModel
 	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
 		return tx.Where("product_id = ?", productID).Order("created_at DESC").Find(&models).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+	return modelsToServices(models), nil
+}
+
+func (r *GormServiceRepository) ListDueForBilling(ctx context.Context, asOf time.Time) ([]*domain.Service, error) {
+	var models []ServiceModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("status = ? AND next_billing_date IS NOT NULL AND next_billing_date <= ?", domain.StatusActive, asOf).
+			Order("next_billing_date ASC").Find(&models).Error
 	})
 	if err != nil {
 		return nil, err

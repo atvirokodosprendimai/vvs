@@ -65,3 +65,46 @@ func (h *RemoveTagHandler) Handle(ctx context.Context, cmd RemoveTagCommand) err
 	})
 	return nil
 }
+
+// ToggleStarHandler toggles the "starred" system tag on a thread.
+type ToggleStarHandler struct {
+	tags      domain.EmailTagRepository
+	publisher events.EventPublisher
+}
+
+func NewToggleStarHandler(tags domain.EmailTagRepository, pub events.EventPublisher) *ToggleStarHandler {
+	return &ToggleStarHandler{tags: tags, publisher: pub}
+}
+
+func (h *ToggleStarHandler) Handle(ctx context.Context, threadID string) error {
+	starTag, err := h.tags.FindSystemTag(ctx, domain.TagStarred)
+	if err != nil {
+		return err
+	}
+	current, err := h.tags.ListForThread(ctx, threadID)
+	if err != nil {
+		return err
+	}
+	for _, t := range current {
+		if t.ID == starTag.ID {
+			// already starred — remove
+			if err := h.tags.RemoveFromThread(ctx, threadID, starTag.ID); err != nil {
+				return err
+			}
+			h.publisher.Publish(ctx, events.EmailThreadUntagged.String(), events.DomainEvent{
+				ID: uuid.Must(uuid.NewV7()).String(), Type: "email.thread_untagged",
+				AggregateID: threadID, OccurredAt: time.Now().UTC(),
+			})
+			return nil
+		}
+	}
+	// not starred — apply
+	if err := h.tags.ApplyToThread(ctx, domain.EmailThreadTag{ThreadID: threadID, TagID: starTag.ID}); err != nil {
+		return err
+	}
+	h.publisher.Publish(ctx, events.EmailThreadTagged.String(), events.DomainEvent{
+		ID: uuid.Must(uuid.NewV7()).String(), Type: "email.thread_tagged",
+		AggregateID: threadID, OccurredAt: time.Now().UTC(),
+	})
+	return nil
+}

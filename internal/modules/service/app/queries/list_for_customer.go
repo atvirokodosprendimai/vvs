@@ -26,15 +26,17 @@ func (h *ListServicesForCustomerHandler) Handle(ctx context.Context, q ListServi
 	out := make([]ServiceReadModel, len(svcs))
 	for i, s := range svcs {
 		out[i] = ServiceReadModel{
-			ID:          s.ID,
-			CustomerID:  s.CustomerID,
-			ProductID:   s.ProductID,
-			ProductName: s.ProductName,
-			PriceAmount: s.PriceAmount,
-			Currency:    s.Currency,
-			StartDate:   s.StartDate,
-			Status:      s.Status,
-			CreatedAt:   s.CreatedAt,
+			ID:              s.ID,
+			CustomerID:      s.CustomerID,
+			ProductID:       s.ProductID,
+			ProductName:     s.ProductName,
+			PriceAmount:     s.PriceAmount,
+			Currency:        s.Currency,
+			StartDate:       s.StartDate,
+			Status:          s.Status,
+			BillingCycle:    s.BillingCycle,
+			NextBillingDate: s.NextBillingDate,
+			CreatedAt:       s.CreatedAt,
 		}
 	}
 	return out, nil

@@ -10,6 +10,8 @@ type ThreadReadModel struct {
 	Subject              string
 	ParticipantAddresses string
 	CustomerID           string
+	CustomerName         string // enriched by HTTP layer via customerInfoResolver
+	CustomerCode         string // enriched by HTTP layer via customerInfoResolver
 	MessageCount         int
 	LastMessageAt        time.Time
 	PreviewText          string // first ~120 chars of last message body
@@ -20,7 +22,10 @@ type ThreadReadModel struct {
 // ThreadDetailReadModel is a thread with all its messages and attachments.
 type ThreadDetailReadModel struct {
 	ThreadReadModel
-	Messages []MessageReadModel
+	Messages              []MessageReadModel
+	SuggestedCustomerID   string // set when participant email matches a contact (no explicit link yet)
+	SuggestedCustomerName string
+	SuggestedCustomerCode string
 }
 
 // MessageReadModel is a single message in a thread detail view.

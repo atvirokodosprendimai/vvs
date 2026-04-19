@@ -97,10 +97,19 @@ import (
 	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
 
 	invoicehttp "github.com/vvs/isp/internal/modules/invoice/adapters/http"
+	paymenthttp "github.com/vvs/isp/internal/modules/payment/adapters/http"
+	paymentcommands "github.com/vvs/isp/internal/modules/payment/app/commands"
 	invoicepersistence "github.com/vvs/isp/internal/modules/invoice/adapters/persistence"
 	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
 	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
 	invoicemigrations "github.com/vvs/isp/internal/modules/invoice/migrations"
+	invoiceworkers "github.com/vvs/isp/internal/modules/invoice/app/workers"
+
+	auditloghttp "github.com/vvs/isp/internal/modules/audit_log/adapters/http"
+	auditlogpersistence "github.com/vvs/isp/internal/modules/audit_log/adapters/persistence"
+	auditlogcommands "github.com/vvs/isp/internal/modules/audit_log/app/commands"
+	auditlogqueries "github.com/vvs/isp/internal/modules/audit_log/app/queries"
+	auditlogmigrations "github.com/vvs/isp/internal/modules/audit_log/migrations"
 
 	devicehttp "github.com/vvs/isp/internal/modules/device/adapters/http"
 	devicepersistence "github.com/vvs/isp/internal/modules/device/adapters/persistence"
@@ -154,6 +163,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "task", FS: taskmigrations.FS, TableName: "goose_task"},
 		{Name: "email", FS: emailmigrations.FS, TableName: "goose_email"},
 		{Name: "invoice", FS: invoicemigrations.FS, TableName: "goose_invoice"},
+		{Name: "audit_log", FS: auditlogmigrations.FS, TableName: "goose_audit_log"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -233,7 +243,7 @@ func New(cfg Config) (*App, error) {
 	}
 
 	// 7. Network module
-	routerRepo := networkpersistence.NewGormRouterRepository(gdb)
+	routerRepo := networkpersistence.NewGormRouterRepository(gdb, []byte(cfg.RouterEncKey))
 	createRouterCmd := networkcommands.NewCreateRouterHandler(routerRepo, publisher)
 	updateRouterCmd := networkcommands.NewUpdateRouterHandler(routerRepo, publisher)
 	deleteRouterCmd := networkcommands.NewDeleteRouterHandler(routerRepo, publisher)
@@ -443,6 +453,8 @@ func New(cfg Config) (*App, error) {
 		return listFoldersQuery.Handle(ctx, accountID)
 	}
 
+	toggleStarCmd := emailcommands.NewToggleStarHandler(emailTagRepo, publisher)
+
 	emailRoutes := emailhttp.NewHandlers(
 		configureAccountCmd, deleteAccountCmd, pauseAccountCmd, resumeAccountCmd,
 		applyTagCmd, removeTagCmd, markReadCmd, linkCustomerCmd, sendReplyCmd,
@@ -450,7 +462,12 @@ func New(cfg Config) (*App, error) {
 		listEmailAccountsQuery, listFoldersQuery, emailFolderRepo, discoverFn,
 		emailAttachmentRepo,
 		subscriber, publisher,
-	).WithPageSize(cfg.EmailPageSize).WithSearchAttachments(searchAttachmentsQuery).WithComposeCmd(composeEmailCmd)
+	).WithPageSize(cfg.EmailPageSize).
+		WithSearchAttachments(searchAttachmentsQuery).
+		WithComposeCmd(composeEmailCmd).
+		WithCustomerInfo(&emailCustomerInfoBridge{repo: customerRepo}).
+		WithContactEmailLookup(&emailContactLookupBridge{db: gdb}).
+		WithStarToggler(toggleStarCmd)
 	moduleRoutes = append(moduleRoutes, emailRoutes)
 	if customerRoutes != nil {
 		customerRoutes.WithEmailThreadsQuery(listEmailForCustomerQuery)
@@ -494,10 +511,36 @@ func New(cfg Config) (*App, error) {
 	invoiceRoutes.WithDefaultVATRate(vatRate)
 	moduleRoutes = append(moduleRoutes, invoiceRoutes)
 	if customerRoutes != nil {
-		// TODO(dev3): WithInvoicesQuery is being added by Dev 3
 		customerRoutes.WithInvoicesQuery(listInvoicesForCustomerQuery)
 	}
 	log.Printf("module wired: invoice")
+
+	// Invoice delivery worker — sends invoice email on isp.invoice.finalized
+	if nc != nil {
+		deliveryWorker := invoiceworkers.NewInvoiceDeliveryWorker(
+			&emailAccountMailerBridge{accounts: emailAccountRepo, smtp: smtpSender},
+			&customerEmailBridge{query: getCustomerQuery},
+		)
+		go deliveryWorker.Run(context.Background(), subscriber)
+		log.Printf("module wired: invoice delivery worker")
+	}
+
+	// Audit Log module
+	auditLogRepo := auditlogpersistence.NewGormAuditLogRepository(gdb)
+	createAuditLogCmd := auditlogcommands.NewCreateAuditLogHandler(auditLogRepo)
+	listAuditLogsQuery := auditlogqueries.NewListAuditLogsHandler(auditLogRepo)
+	listForResourceQuery := auditlogqueries.NewListForResourceHandler(auditLogRepo)
+	auditRoutes := auditloghttp.NewHandlers(listAuditLogsQuery, subscriber)
+	auditRoutes.WithListForResource(listForResourceQuery)
+	moduleRoutes = append(moduleRoutes, auditRoutes)
+	if customerRoutes != nil {
+		customerRoutes.WithAuditLogger(createAuditLogCmd)
+	}
+	if ticketRoutes != nil {
+		ticketRoutes.WithAuditLogger(createAuditLogCmd)
+	}
+	invoiceRoutes.WithAuditLogger(createAuditLogCmd)
+	log.Printf("module wired: audit_log")
 
 	// 10. Service module — commands + route registration
 	assignServiceCmd := servicecommands.NewAssignServiceHandler(serviceRepo, publisher)
@@ -510,6 +553,7 @@ func New(cfg Config) (*App, error) {
 			assignServiceCmd, suspendServiceCmd, reactivateServiceCmd, cancelServiceCmd,
 			listServicesQuery, subscriber, publisher,
 		)
+		serviceRoutes.WithAuditLogger(createAuditLogCmd)
 		moduleRoutes = append(moduleRoutes, serviceRoutes)
 		log.Printf("module enabled: service")
 	}
@@ -573,6 +617,18 @@ func New(cfg Config) (*App, error) {
 		PauseJob:  croncommands.NewPauseJobHandler(cronRepo),
 		ResumeJob: croncommands.NewResumeJobHandler(cronRepo),
 		DeleteJob: croncommands.NewDeleteJobHandler(cronRepo),
+
+		ListAllInvoices:     listAllInvoicesQuery,
+		GetInvoice:          getInvoiceQuery,
+		ListInvoicesForCust: listInvoicesForCustomerQuery,
+		CreateInvoice:       createInvoiceCmd,
+		FinalizeInvoice:     finalizeInvoiceCmd,
+		MarkPaidInvoice:     markPaidCmd,
+		VoidInvoice:         voidInvoiceCmd,
+		GenerateInvoice:     generateInvoiceCmd,
+		AddInvoiceLine:      addLineItemCmd,
+		UpdateInvoiceLine:   updateLineItemCmd,
+		RemoveInvoiceLine:   removeLineItemCmd,
 	})
 
 	// Cron web UI (always enabled)
@@ -586,6 +642,15 @@ func New(cfg Config) (*App, error) {
 		croncommands.NewDeleteJobHandler(cronRepo),
 	)
 	moduleRoutes = append(moduleRoutes, cronRoutes)
+
+	// Payment import module
+	paymentRoutes := paymenthttp.NewHandlers(
+		paymentcommands.NewPreviewImportHandler(invoiceRepo),
+		paymentcommands.NewConfirmImportHandler(markPaidCmd),
+	)
+	moduleRoutes = append(moduleRoutes, paymentRoutes)
+	log.Printf("module wired: payment import")
+
 	if err := rpcServer.Register(); err != nil {
 		return nil, fmt.Errorf("nats rpc: %w", err)
 	}
@@ -774,6 +839,52 @@ func (b *dealCustomerNameBridge) ResolveCustomerName(ctx context.Context, id str
 	return c.CompanyName
 }
 
+// emailCustomerInfoBridge adapts the customer repo to the email module's customerInfoResolver.
+type emailCustomerInfoBridge struct {
+	repo customerdomain.CustomerRepository
+}
+
+func (b *emailCustomerInfoBridge) ResolveCustomerName(ctx context.Context, id string) string {
+	c, err := b.repo.FindByID(ctx, id)
+	if err != nil {
+		return ""
+	}
+	return c.CompanyName
+}
+
+func (b *emailCustomerInfoBridge) ResolveCustomerCode(ctx context.Context, id string) string {
+	c, err := b.repo.FindByID(ctx, id)
+	if err != nil {
+		return ""
+	}
+	return c.Code.String()
+}
+
+// emailContactLookupBridge finds a customer ID from a contact email address.
+type emailContactLookupBridge struct {
+	db *gormsqlite.DB
+}
+
+func (b *emailContactLookupBridge) FindCustomerByContactEmail(ctx context.Context, email string) (customerID, customerName, customerCode string, err error) {
+	var row struct {
+		CustomerID  string
+		CompanyName string
+		Code        string
+	}
+	result := b.db.R.WithContext(ctx).Raw(
+		`SELECT c.id AS customer_id, c.company_name, c.code
+		 FROM contacts ct
+		 JOIN customers c ON c.id = ct.customer_id
+		 WHERE ct.email = ?
+		 LIMIT 1`,
+		email,
+	).Scan(&row)
+	if result.Error != nil {
+		return "", "", "", result.Error
+	}
+	return row.CustomerID, row.CompanyName, row.Code, nil
+}
+
 // provisionerDispatcher picks the right RouterProvisioner based on conn.RouterType.
 // Lives here (composition root) so neither infrastructure package imports the other.
 type provisionerDispatcher struct {
@@ -798,6 +909,33 @@ func (d *provisionerDispatcher) pick(conn networkdomain.RouterConn) networkdomai
 		return d.arista
 	}
 	return d.mikrotik
+}
+
+// emailAccountMailerBridge implements invoiceworkers.Mailer using the first active email account.
+type emailAccountMailerBridge struct {
+	accounts *emailpersistence.GormEmailAccountRepository
+	smtp     *smtpAdapter.Sender
+}
+
+func (b *emailAccountMailerBridge) Send(ctx context.Context, to, subject, body string) error {
+	accounts, err := b.accounts.ListActive(ctx)
+	if err != nil || len(accounts) == 0 {
+		return fmt.Errorf("invoice delivery: no active email account")
+	}
+	return b.smtp.Send(ctx, accounts[0], to, subject, body, "", "")
+}
+
+// customerEmailBridge implements invoiceworkers.CustomerEmailGetter via the GetCustomer query.
+type customerEmailBridge struct {
+	query *customerqueries.GetCustomerHandler
+}
+
+func (b *customerEmailBridge) GetCustomerEmail(ctx context.Context, customerID string) (string, error) {
+	c, err := b.query.Handle(ctx, customerqueries.GetCustomerQuery{ID: customerID})
+	if err != nil {
+		return "", err
+	}
+	return c.Email, nil
 }
 
 // seedGeneralChannel ensures the #general channel exists.

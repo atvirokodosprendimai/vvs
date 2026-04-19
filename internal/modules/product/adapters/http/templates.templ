@@ -11,40 +11,37 @@ import (
 
 templ ProductListPage() {
 	@templates.Layout("Products") {
-		@templates.PageHeader("Products", "Manage your product catalog")
+		@templates.PageHeaderRow("Products", "Manage your product catalog") {
+			<input
+				type="text"
+				data-bind:search
+				data-on:input__debounce.500ms="($page = 1) && @get('/api/products', {openWhenHidden: false})"
+				placeholder="Search products..."
+				class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-56 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+			/>
+			<select
+				data-bind:filter-type
+				data-on:change="($page = 1) && @get('/api/products', {openWhenHidden: false})"
+				class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+			>
+				<option value="">All Types</option>
+				<option value="internet">Internet</option>
+				<option value="voip">VoIP</option>
+				<option value="hosting">Hosting</option>
+				<option value="custom">Custom</option>
+			</select>
+			<a
+				href="/products/new"
+				class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+			>
+				+ New Product
+			</a>
+		}
 		<div
 			id="product-content"
 			data-signals="{search: '', filterType: '', page: 1, pageSize: 25}"
 			data-init="@get('/api/products', {openWhenHidden: false})"
 		>
-			<div class="flex items-center justify-between mb-4">
-				<div class="flex items-center gap-2">
-					<input
-						type="text"
-						data-bind:search
-						data-on:input__debounce.500ms="($page = 1) && @get('/api/products', {openWhenHidden: false})"
-						placeholder="Search products..."
-						class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-60 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
-					/>
-					<select
-						data-bind:filter-type
-						data-on:change="($page = 1) && @get('/api/products', {openWhenHidden: false})"
-						class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-					>
-						<option value="">All Types</option>
-						<option value="internet">Internet</option>
-						<option value="voip">VoIP</option>
-						<option value="hosting">Hosting</option>
-						<option value="custom">Custom</option>
-					</select>
-				</div>
-				<a
-					href="/products/new"
-					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-				>
-					+ New Product
-				</a>
-			</div>
 			<div id="product-table">
 				<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
 			</div>
@@ -145,7 +142,8 @@ templ productStatusBadge(active bool) {
 
 templ ProductFormPage(product *domain.Product) {
 	@templates.Layout(prodFormTitle(product)) {
-		@templates.PageHeader(prodFormTitle(product), prodFormSubtitle(product))
+		@templates.PageHeaderBack(prodFormTitle(product), prodFormSubtitle(product), "/products", "Products") {
+		}
 		<div class="max-w-xl">
 			@templates.Card() {
 				<div
@@ -227,24 +225,23 @@ templ ProductFormPage(product *domain.Product) {
 
 templ ProductDetailPage(p *domain.Product) {
 	@templates.Layout(p.Name) {
-		@templates.PageHeader(p.Name, "Product details")
+		@templates.PageHeaderBack(p.Name, "Product details", "/products", "Products") {
+			@productStatusBadge(p.IsActive)
+			@productTypeBadge(p.Type)
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/products/%s/edit", p.ID)) }
+				class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+			>
+				Edit
+			</a>
+			<button
+				data-on:click={ fmt.Sprintf("@delete('/api/products/%s')", p.ID) }
+				class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
+			>
+				Delete
+			</button>
+		}
 		<div class="max-w-2xl">
-			<div class="flex items-center gap-2 mb-5">
-				@productStatusBadge(p.IsActive)
-				@productTypeBadge(p.Type)
-				<a
-					href={ templ.SafeURL(fmt.Sprintf("/products/%s/edit", p.ID)) }
-					class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
-				>
-					Edit
-				</a>
-				<button
-					data-on:click={ fmt.Sprintf("@delete('/api/products/%s')", p.ID) }
-					class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
-				>
-					Delete
-				</button>
-			</div>
 			@templates.Card() {
 				<div class="grid grid-cols-2 gap-5">
 					@prodDetailField("Name", p.Name)

@@ -16,7 +16,8 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, folders []emailqueries
 		<div
 			id="email-inbox"
 			class="flex gap-4"
-			data-signals={ fmt.Sprintf("{emailAccountID: %q, emailTagFilter: '', emailSearch: '', emailFolder: %q, emailPage: 0, composeOpen: false, composeTo: '', composeSubject: '', composeBody: '', composeError: ''}", selected, folder) }
+			data-signals={ fmt.Sprintf("{emailAccountID: %q, emailTagFilter: '', emailSearch: '', emailFolder: %q, emailPage: 0, composeOpen: false, composeTo: '', composeSubject: '', composeBody: '', composeError: '', emailThreadID: ''}", selected, folder) }
+			data-on:keydown__window="evt.key === 'Escape' ? ($emailThreadID = '') : (evt.key === 'r' && $emailThreadID != '' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName) && document.querySelector('#email-inline-reply textarea') && document.querySelector('#email-inline-reply textarea').focus())"
 		>
 			<!-- Sidebar: accounts + tags + folders -->
 			<div class="w-56 flex-shrink-0 flex flex-col gap-3">
@@ -57,7 +58,10 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, folders []emailqueries
 			</div>
 
 			<!-- Thread list -->
-			<div class="flex-1 min-w-0 flex flex-col gap-2">
+			<div
+				class="min-w-0 flex flex-col gap-2"
+				data-style:flex="$emailThreadID != '' ? '0 0 360px' : '1 1 auto'"
+			>
 				<!-- Search + Compose row -->
 				<div class="flex items-center gap-2">
 					<input
@@ -84,6 +88,26 @@ templ EmailPage(accounts []emailqueries.AccountReadModel, folders []emailqueries
 				>
 					<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
 				</div>
+			</div>
+
+			<!-- Inline thread detail panel -->
+			<div
+				data-show="$emailThreadID != ''"
+				class="flex-1 min-w-0 flex flex-col gap-2"
+				style="display:none"
+			>
+				<div class="flex items-center justify-between mb-1">
+					<span class="text-xs text-neutral-500">Thread</span>
+					<button
+						type="button"
+						data-on:click="$emailThreadID = ''"
+						class="text-neutral-500 hover:text-neutral-300 text-xs px-2 py-1 rounded hover:bg-neutral-800 transition-colors"
+					>Close ×</button>
+				</div>
+				<div id="email-thread-detail">
+					<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-8 text-center text-neutral-600 text-sm">Select a thread</div>
+				</div>
+				@inlineReplyForm()
 			</div>
 
 			<!-- Compose modal -->
@@ -155,7 +179,8 @@ templ tagFilterButton(name, color, label string) {
 	<button
 		type="button"
 		data-on:click={ fmt.Sprintf("$emailTagFilter = $emailTagFilter == %q ? '' : %q; $emailPage = 0; @get('/sse/emails', {openWhenHidden: false})", name, name) }
-		class="w-full text-left px-4 py-2 text-sm text-neutral-400 hover:bg-neutral-800/60 transition-colors flex items-center gap-2"
+		data-class={ fmt.Sprintf(`{"text-amber-400 bg-neutral-800/60": $emailTagFilter == %q, "text-neutral-400": $emailTagFilter != %q}`, name, name) }
+		class="w-full text-left px-4 py-2 text-sm hover:bg-neutral-800/60 transition-colors flex items-center gap-2"
 	>
 		<span class="w-2 h-2 rounded-full flex-shrink-0" style={ fmt.Sprintf("background-color:%s", color) }></span>
 		{ label }
@@ -218,18 +243,34 @@ templ ThreadList(result emailqueries.ThreadListResult) {
 templ threadRow(t emailqueries.ThreadReadModel) {
 	<a
 		href={ templ.SafeURL(fmt.Sprintf("/emails/threads/%s", t.ID)) }
-		target="_blank"
-		rel="noopener noreferrer"
+		data-on:click__prevent={ fmt.Sprintf("$emailThreadID = %q; @get('/sse/emails/%s', {openWhenHidden: false})", t.ID, t.ID) }
 		class="block w-full text-left px-4 py-3 hover:bg-neutral-800/60 transition-colors flex flex-col gap-0.5 no-underline"
 	>
 		<div class="flex items-center justify-between gap-2">
 			<span class={ "text-sm font-medium truncate", templ.KV("text-white", t.Unread), templ.KV("text-neutral-400", !t.Unread) }>
 				{ t.Subject }
 			</span>
-			<span class="text-xs text-neutral-500 flex-shrink-0">{ formatRelTime(t.LastMessageAt) }</span>
+			<div class="flex items-center gap-2 flex-shrink-0">
+				<span class="text-xs text-neutral-500">{ formatRelTime(t.LastMessageAt) }</span>
+				<span
+					data-on:click__stop__prevent={ fmt.Sprintf("@put('/api/email-threads/%s/star')", t.ID) }
+					class={ "text-sm leading-none transition-colors cursor-pointer", templ.KV("text-amber-400", isStarred(t.Tags)), templ.KV("text-neutral-600 hover:text-neutral-400", !isStarred(t.Tags)) }
+					title="Toggle star"
+				>
+					if isStarred(t.Tags) {
+						★
+					} else {
+						☆
+					}
+				</span>
+			</div>
 		</div>
 		<div class="flex items-center gap-2 justify-between">
-			<span class="text-xs text-neutral-500 truncate">{ firstParticipant(t.ParticipantAddresses) }</span>
+			if t.CustomerName != "" {
+				<span class="text-xs text-amber-400 font-medium truncate">{ t.CustomerCode } · { t.CustomerName }</span>
+			} else {
+				<span class="text-xs text-neutral-500 truncate">{ firstParticipant(t.ParticipantAddresses) }</span>
+			}
 			<div class="flex items-center gap-1">
 				if t.Unread {
 					<span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
@@ -257,8 +298,8 @@ templ EmailThreadPage(thread emailqueries.ThreadDetailReadModel) {
 				Back to Inbox
 			</a>
 		</div>
-		@replyForm(thread.ID)
 		@ThreadDetail(thread)
+		@replyForm(thread.ID)
 	}
 }
 
@@ -298,26 +339,39 @@ templ replyForm(threadID string) {
 templ ThreadDetail(thread emailqueries.ThreadDetailReadModel) {
 	<div id="email-thread-detail" class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
 		<!-- Header -->
-		<div class="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
-			<div class="flex items-center gap-3 min-w-0">
-				<h3 class="text-sm font-semibold text-neutral-200 truncate">{ thread.Subject }</h3>
-				<span class="text-xs text-neutral-600 flex-shrink-0">{ fmt.Sprintf("%d msg", len(thread.Messages)) }</span>
-			</div>
-			<div class="flex items-center gap-3 flex-shrink-0">
-				@customerLinkBadge(thread.ID, thread.CustomerID, "")
-				if thread.CustomerID != "" {
+		<div class="flex flex-col border-b border-neutral-800">
+			<div class="flex items-center justify-between px-4 py-3">
+				<div class="flex items-center gap-3 min-w-0">
+					<h3 class="text-sm font-semibold text-neutral-200 truncate">{ thread.Subject }</h3>
+					<span class="text-xs text-neutral-600 flex-shrink-0">{ fmt.Sprintf("%d msg", len(thread.Messages)) }</span>
+				</div>
+				<div class="flex items-center gap-3 flex-shrink-0">
+					@customerLinkBadge(thread.ID, thread.CustomerID, customerBadgeLabel(thread.CustomerName, thread.CustomerCode))
+					if thread.CustomerID != "" {
+						<button
+							type="button"
+							data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/to-ticket')", thread.ID) }
+							class="text-xs text-amber-500 hover:text-amber-400 transition-colors"
+						>Create Ticket</button>
+					}
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/to-ticket')", thread.ID) }
-						class="text-xs text-amber-500 hover:text-amber-400 transition-colors"
-					>Create Ticket</button>
-				}
-				<button
-					type="button"
-					data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/read')", thread.ID) }
-					class="text-xs text-neutral-500 hover:text-neutral-300"
-				>Mark read</button>
+						data-on:click={ fmt.Sprintf("@post('/api/email-threads/%s/read')", thread.ID) }
+						class="text-xs text-neutral-500 hover:text-neutral-300"
+					>Mark read</button>
+				</div>
 			</div>
+			if thread.SuggestedCustomerID != "" {
+				<div class="px-4 pb-3 flex items-center gap-2">
+					<span class="text-xs text-neutral-500">Suggested:</span>
+					<span class="text-xs text-yellow-400 font-medium">{ thread.SuggestedCustomerCode } · { thread.SuggestedCustomerName }</span>
+					<button
+						type="button"
+						data-on:click={ fmt.Sprintf("$customerID = %q; @post('/api/email-threads/%s/link')", thread.SuggestedCustomerID, thread.ID) }
+						class="text-xs bg-yellow-900/40 text-yellow-400 hover:bg-yellow-900/60 px-2 py-0.5 rounded transition-colors"
+					>Link</button>
+				</div>
+			}
 		</div>
 		<!-- Messages -->
 		<div class="divide-y divide-neutral-800">
@@ -836,6 +890,16 @@ templ EmailThreadsSection(customerID string, threads []emailqueries.ThreadReadMo
 
 // --- helpers ---
 
+func customerBadgeLabel(name, code string) string {
+	if name == "" {
+		return ""
+	}
+	if code != "" {
+		return code + " · " + name
+	}
+	return name
+}
+
 func accountActiveClass(id, selected string) string {
 	if id == selected {
 		return "text-amber-400 bg-neutral-800/60"
@@ -885,6 +949,50 @@ func nonSystemTags(tags []emailqueries.TagReadModel) []emailqueries.TagReadModel
 		}
 	}
 	return out
+}
+
+func isStarred(tags []emailqueries.TagReadModel) bool {
+	for _, t := range tags {
+		if t.Name == "starred" {
+			return true
+		}
+	}
+	return false
+}
+
+// inlineReplyForm is the reply textarea rendered beside the thread detail panel in the inbox.
+// It uses $emailThreadID to build the POST URL. Lives OUTSIDE #email-thread-detail so it
+// is never overwritten when the SSE patches thread content.
+templ inlineReplyForm() {
+	<div
+		id="email-inline-reply"
+		class="mt-2 bg-neutral-900 border border-neutral-800 rounded-lg p-4 flex flex-col gap-3"
+		data-signals="{emailReplyBody:'',emailReplyError:''}"
+	>
+		<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Reply</h3>
+		<textarea
+			data-bind="emailReplyBody"
+			placeholder="Write your reply..."
+			rows="4"
+			class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500 resize-y placeholder-neutral-600"
+		></textarea>
+		<div
+			data-show="$emailReplyError != ''"
+			class="text-xs text-red-400"
+			style="display:none"
+			data-text="$emailReplyError"
+		></div>
+		<div class="flex items-center gap-3">
+			<button
+				type="button"
+				data-on:click="!$emailSending && $emailReplyBody.trim() != '' && @post('/api/email-threads/' + $emailThreadID + '/reply')"
+				data-indicator:email-sending
+				data-class:opacity-50="$emailSending"
+				class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+			>Send Reply</button>
+			<span data-show="$emailSending" class="text-xs text-neutral-500" style="display:none">Sending...</span>
+		</div>
+	</div>
 }
 
 func formatRelTime(t time.Time) string {

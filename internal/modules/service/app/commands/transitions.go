@@ -2,12 +2,20 @@ package commands
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/vvs/isp/internal/modules/service/domain"
 	"github.com/vvs/isp/internal/shared/events"
 )
+
+// serviceEventPayload is the JSON payload embedded in service transition events.
+type serviceEventPayload struct {
+	ID         string `json:"id"`
+	CustomerID string `json:"customer_id"`
+	Status     string `json:"status"`
+}
 
 // SuspendServiceHandler
 
@@ -33,9 +41,10 @@ func (h *SuspendServiceHandler) Handle(ctx context.Context, cmd SuspendServiceCo
 	if err := h.repo.Save(ctx, svc); err != nil {
 		return err
 	}
+	data, _ := json.Marshal(serviceEventPayload{ID: svc.ID, CustomerID: svc.CustomerID, Status: svc.Status})
 	h.publisher.Publish(ctx, events.ServiceSuspended.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "service.suspended",
-		AggregateID: svc.ID, OccurredAt: time.Now().UTC(),
+		AggregateID: svc.ID, OccurredAt: time.Now().UTC(), Data: data,
 	})
 	return nil
 }
@@ -64,9 +73,10 @@ func (h *ReactivateServiceHandler) Handle(ctx context.Context, cmd ReactivateSer
 	if err := h.repo.Save(ctx, svc); err != nil {
 		return err
 	}
+	data, _ := json.Marshal(serviceEventPayload{ID: svc.ID, CustomerID: svc.CustomerID, Status: svc.Status})
 	h.publisher.Publish(ctx, events.ServiceReactivated.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "service.reactivated",
-		AggregateID: svc.ID, OccurredAt: time.Now().UTC(),
+		AggregateID: svc.ID, OccurredAt: time.Now().UTC(), Data: data,
 	})
 	return nil
 }
@@ -95,9 +105,10 @@ func (h *CancelServiceHandler) Handle(ctx context.Context, cmd CancelServiceComm
 	if err := h.repo.Save(ctx, svc); err != nil {
 		return err
 	}
+	data, _ := json.Marshal(serviceEventPayload{ID: svc.ID, CustomerID: svc.CustomerID, Status: svc.Status})
 	h.publisher.Publish(ctx, events.ServiceCancelled.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: "service.cancelled",
-		AggregateID: svc.ID, OccurredAt: time.Now().UTC(),
+		AggregateID: svc.ID, OccurredAt: time.Now().UTC(), Data: data,
 	})
 	return nil
 }

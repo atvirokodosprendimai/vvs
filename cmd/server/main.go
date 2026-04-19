@@ -60,6 +60,7 @@ func main() {
 					userCommands(),
 					deviceCommands(),
 					cronCommands(),
+					invoiceCommands(),
 				},
 			},
 		},
@@ -118,6 +119,11 @@ func serveCommand() *cli.Command {
 				Sources: cli.EnvVars("VVS_EMAIL_ENC_KEY"),
 			},
 			&cli.StringFlag{
+				Name:    "router-enc-key",
+				Usage:   "32-byte AES key (hex or raw) for encrypting router passwords (optional)",
+				Sources: cli.EnvVars("VVS_ROUTER_ENC_KEY"),
+			},
+			&cli.StringFlag{
 				Name:    "modules",
 				Usage:   "Comma-separated list of modules to enable (default: all)",
 				Sources: cli.EnvVars("VVS_MODULES"),
@@ -168,6 +174,7 @@ func serveCommand() *cli.Command {
 				NATSListenAddr:        cmd.String("nats-listen"),
 				APIToken:              cmd.Root().String("api-token"),
 				EmailEncKey:           cmd.String("email-enc-key"),
+				RouterEncKey:          cmd.String("router-enc-key"),
 				EmailSyncIntervalSecs: int(cmd.Int("email-sync-interval")),
 				EmailPageSize:         int(cmd.Int("email-page-size")),
 				EnabledModules:        enabledModules,

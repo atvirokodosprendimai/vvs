@@ -13,13 +13,10 @@ import (
 
 templ CronListPage(jobs []queries.JobReadModel) {
 	@templates.Layout("Cron Jobs") {
-		@templates.PageHeader("Cron Jobs", "Scheduled tasks")
 		<div
 			data-signals="{_addOpen: false, jobType: 'action', name: '', schedule: '', action: '', command: '', subject: '', url: '', method: 'GET', headers: '{}', _editOpen: false, editId: '', editName: '', editSchedule: '', editJobType: 'action', editAction: '', editCommand: '', editSubject: '', editUrl: '', editMethod: 'GET', editHeaders: '{}'}"
 		>
-			<!-- Toolbar -->
-			<div class="flex items-center justify-between mb-4">
-				<div></div>
+			@templates.PageHeaderRow("Cron Jobs", "Scheduled tasks") {
 				<button
 					type="button"
 					data-on:click="$_addOpen = true"
@@ -27,7 +24,7 @@ templ CronListPage(jobs []queries.JobReadModel) {
 				>
 					+ Add Job
 				</button>
-			</div>
+			}
 
 			<!-- Live table -->
 			<div

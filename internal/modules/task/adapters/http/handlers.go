@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -62,27 +63,31 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 
 // listPage renders the standalone tasks page.
 func (h *Handlers) listPage(w http.ResponseWriter, r *http.Request) {
-	tasks, err := h.listAll.Handle(r.Context())
-	if err != nil {
-		log.Printf("task handler: listPage: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-	TasksPage(tasks).Render(r.Context(), w)
+	TasksPage().Render(r.Context(), w)
 }
 
-// listAllSSE streams all tasks via SSE.
+// listAllSSE streams all tasks via SSE, filtered by taskStatusFilter and taskSearch signals.
 func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
+	var signals struct {
+		StatusFilter string `json:"taskStatusFilter"`
+		Search       string `json:"taskSearch"`
+	}
+	_ = datastar.ReadSignals(r, &signals)
+	if signals.StatusFilter == "" {
+		signals.StatusFilter = "active"
+	}
+
 	sse := datastar.NewSSE(w, r)
 
 	ch, cancel := h.subscriber.ChanSubscription(events.TaskAll.String())
 	defer cancel()
 
-	current, err := h.listAll.Handle(r.Context())
+	all, err := h.listAll.Handle(r.Context())
 	if err != nil {
 		log.Printf("task handler: listAllSSE: %v", err)
 		return
 	}
+	current := filterTasks(all, signals.StatusFilter, signals.Search)
 	sse.PatchElementTempl(TasksTable(current))
 
 	for {
@@ -91,11 +96,12 @@ func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				return
 			}
-			next, err := h.listAll.Handle(r.Context())
+			all, err := h.listAll.Handle(r.Context())
 			if err != nil {
 				log.Printf("task handler: listAllSSE refresh: %v", err)
 				continue
 			}
+			next := filterTasks(all, signals.StatusFilter, signals.Search)
 			if !reflect.DeepEqual(current, next) {
 				sse.PatchElementTempl(TasksTable(next))
 				current = next
@@ -104,6 +110,32 @@ func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+}
+
+func filterTasks(tasks []queries.TaskReadModel, statusFilter, search string) []queries.TaskReadModel {
+	search = strings.ToLower(strings.TrimSpace(search))
+	var out []queries.TaskReadModel
+	for _, t := range tasks {
+		terminal := t.Status == domain.StatusDone || t.Status == domain.StatusCancelled
+		switch statusFilter {
+		case "done":
+			if !terminal {
+				continue
+			}
+		default: // "active"
+			if terminal {
+				continue
+			}
+		}
+		if search != "" {
+			if !strings.Contains(strings.ToLower(t.Title), search) &&
+				!strings.Contains(strings.ToLower(t.CustomerID), search) {
+				continue
+			}
+		}
+		out = append(out, t)
+	}
+	return out
 }
 
 // listForCustomerSSE streams tasks for a customer via SSE.

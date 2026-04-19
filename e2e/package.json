@@ -1,0 +1,14 @@
+{
+  "name": "vvs-e2e",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test --config playwright.config.js",
+    "test:headed": "playwright test --config playwright.config.js --headed",
+    "test:ui": "playwright test --config playwright.config.js --ui",
+    "setup": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.43.0"
+  }
+}

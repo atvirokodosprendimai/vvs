@@ -24,27 +24,26 @@ import (
 
 templ CustomerListPage() {
 	@templates.Layout("Customers") {
-		@templates.PageHeader("Customers", "Manage your customer base")
+		@templates.PageHeaderRow("Customers", "Manage your customer base") {
+			<input
+				type="text"
+				data-bind:search
+				data-on:input__debounce.500ms="($page = 1) && @get('/api/customers')"
+				placeholder="Search customers..."
+				class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-72 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+			/>
+			<a
+				href="/customers/new"
+				class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+			>
+				+ New Customer
+			</a>
+		}
 		<div
 			id="customer-content"
 			data-signals="{search: '', page: 1, pageSize: 25}"
 			data-init="@get('/api/customers')"
 		>
-			<div class="flex items-center justify-between mb-4">
-				<input
-					type="text"
-					data-bind:search
-					data-on:input__debounce.500ms="($page = 1) && @get('/api/customers')"
-					placeholder="Search customers..."
-					class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-72 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
-				/>
-				<a
-					href="/customers/new"
-					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-				>
-					+ New Customer
-				</a>
-			</div>
 			<div id="customer-table">
 				<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
 			</div>
@@ -132,7 +131,8 @@ templ customerStatusBadge(status domain.CustomerStatus) {
 
 templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones []string) {
 	@templates.Layout(formTitle(customer)) {
-		@templates.PageHeader(formTitle(customer), formSubtitle(customer))
+		@templates.PageHeaderBack(formTitle(customer), formSubtitle(customer), "/customers", "Customers") {
+		}
 		<div class="max-w-xl">
 			@templates.Card() {
 				<div
@@ -227,8 +227,8 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 
 templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel, routerName string, notes []queries.NoteReadModel, contacts []contactQueries.ContactReadModel, deals []dealQueries.DealReadModel, tickets []ticketQueries.TicketReadModel, tasks []taskQueries.TaskReadModel, emailThreads []emailQueries.ThreadReadModel, invoices []invoiceQueries.InvoiceReadModel) {
 	@templates.Layout(c.CompanyName) {
-		@templates.PageHeader(c.CompanyName, fmt.Sprintf("Customer %s", c.Code.String()))
-		<div class="flex items-center gap-2 mb-5" data-signals="{statusAction:''}">
+		<div data-signals="{statusAction:''}">
+		@templates.PageHeaderBack(c.CompanyName, fmt.Sprintf("Customer %s", c.Code.String()), "/customers", "Customers") {
 			@customerStatusBadge(c.Status)
 			<a
 				href={ templ.SafeURL(fmt.Sprintf("/customers/%s/edit", c.ID)) }
@@ -272,8 +272,8 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 			>
 				Delete
 			</button>
-			<div id="status-error"></div>
-		</div>
+		}
+		<div id="status-error" class="mb-2"></div>
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 			<!-- Left column: info + notes -->
 			<div class="lg:col-span-1 flex flex-col gap-4">
@@ -394,7 +394,18 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 				<div data-show="$_crmTab === 'invoices'" style="display:none">
 					@InvoiceSection(c.ID, invoices)
 				</div>
+				<div data-show="$_crmTab === 'auditlog'" style="display:none">
+					<div class="mt-4"
+						data-init={ fmt.Sprintf("@get('/sse/customers/%s/audit-logs', {openWhenHidden: false})", c.ID) }>
+						<div id="audit-logs-list">
+							<div class="flex items-center justify-center py-10 text-neutral-600">
+								<p class="text-sm">Loading audit log…</p>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
+		</div>
 		</div>
 	}
 }
@@ -434,6 +445,7 @@ templ CRMTabBar(serviceCount, contactCount, dealCount, ticketCount, taskCount, e
 		@crmTab("tasks", "Tasks", taskCount)
 		@crmTab("emails", "Emails", emailCount)
 		@crmTab("invoices", "Invoices", invoiceCount)
+		@crmTab("auditlog", "Audit Log", 0)
 	</div>
 }
 

@@ -48,6 +48,10 @@ import (
 	croncommands "github.com/vvs/isp/internal/modules/cron/app/commands"
 	cronqueries "github.com/vvs/isp/internal/modules/cron/app/queries"
 	crondomain "github.com/vvs/isp/internal/modules/cron/domain"
+
+	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
+	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
+	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
 )
 
 type envelope struct {
@@ -111,6 +115,19 @@ type Server struct {
 	pauseJob   *croncommands.PauseJobHandler
 	resumeJob  *croncommands.ResumeJobHandler
 	deleteJob  *croncommands.DeleteJobHandler
+
+	// invoice
+	listAllInvoices        *invoicequeries.ListAllInvoicesHandler
+	getInvoice             *invoicequeries.GetInvoiceHandler
+	listInvoicesForCust    *invoicequeries.ListInvoicesForCustomerHandler
+	createInvoice          *invoicecommands.CreateInvoiceHandler
+	finalizeInvoice        *invoicecommands.FinalizeInvoiceHandler
+	markPaidInvoice        *invoicecommands.MarkPaidHandler
+	voidInvoice            *invoicecommands.VoidInvoiceHandler
+	generateInvoice        *invoicecommands.GenerateFromSubscriptionsHandler
+	addInvoiceLine         *invoicecommands.AddLineItemHandler
+	updateInvoiceLine      *invoicecommands.UpdateLineItemHandler
+	removeInvoiceLine      *invoicecommands.RemoveLineItemHandler
 }
 
 type Config struct {
@@ -157,6 +174,19 @@ type Config struct {
 	PauseJob  *croncommands.PauseJobHandler
 	ResumeJob *croncommands.ResumeJobHandler
 	DeleteJob *croncommands.DeleteJobHandler
+
+	// invoice
+	ListAllInvoices        *invoicequeries.ListAllInvoicesHandler
+	GetInvoice             *invoicequeries.GetInvoiceHandler
+	ListInvoicesForCust    *invoicequeries.ListInvoicesForCustomerHandler
+	CreateInvoice          *invoicecommands.CreateInvoiceHandler
+	FinalizeInvoice        *invoicecommands.FinalizeInvoiceHandler
+	MarkPaidInvoice        *invoicecommands.MarkPaidHandler
+	VoidInvoice            *invoicecommands.VoidInvoiceHandler
+	GenerateInvoice        *invoicecommands.GenerateFromSubscriptionsHandler
+	AddInvoiceLine         *invoicecommands.AddLineItemHandler
+	UpdateInvoiceLine      *invoicecommands.UpdateLineItemHandler
+	RemoveInvoiceLine      *invoicecommands.RemoveLineItemHandler
 }
 
 func New(nc *nats.Conn, cfg Config) *Server {
@@ -201,6 +231,18 @@ func New(nc *nats.Conn, cfg Config) *Server {
 		pauseJob:  cfg.PauseJob,
 		resumeJob: cfg.ResumeJob,
 		deleteJob: cfg.DeleteJob,
+
+		listAllInvoices:     cfg.ListAllInvoices,
+		getInvoice:          cfg.GetInvoice,
+		listInvoicesForCust: cfg.ListInvoicesForCust,
+		createInvoice:       cfg.CreateInvoice,
+		finalizeInvoice:     cfg.FinalizeInvoice,
+		markPaidInvoice:     cfg.MarkPaidInvoice,
+		voidInvoice:         cfg.VoidInvoice,
+		generateInvoice:     cfg.GenerateInvoice,
+		addInvoiceLine:      cfg.AddInvoiceLine,
+		updateInvoiceLine:   cfg.UpdateInvoiceLine,
+		removeInvoiceLine:   cfg.RemoveInvoiceLine,
 	}
 }
 
@@ -251,6 +293,18 @@ func (s *Server) handlers() map[string]func(context.Context, []byte) (any, error
 		"isp.rpc.cron.pause":  s.handleCronPause,
 		"isp.rpc.cron.resume": s.handleCronResume,
 		"isp.rpc.cron.delete": s.handleCronDelete,
+		// invoice
+		"isp.rpc.invoice.list":              s.handleInvoiceList,
+		"isp.rpc.invoice.get":               s.handleInvoiceGet,
+		"isp.rpc.invoice.list-for-customer": s.handleInvoiceListForCustomer,
+		"isp.rpc.invoice.create":            s.handleInvoiceCreate,
+		"isp.rpc.invoice.finalize":          s.handleInvoiceFinalize,
+		"isp.rpc.invoice.mark-paid":         s.handleInvoiceMarkPaid,
+		"isp.rpc.invoice.void":              s.handleInvoiceVoid,
+		"isp.rpc.invoice.generate":          s.handleInvoiceGenerate,
+		"isp.rpc.invoice.add-line":          s.handleInvoiceAddLine,
+		"isp.rpc.invoice.update-line":       s.handleInvoiceUpdateLine,
+		"isp.rpc.invoice.remove-line":       s.handleInvoiceRemoveLine,
 	}
 }
 
@@ -716,4 +770,106 @@ func (s *Server) handleCronDelete(ctx context.Context, payload []byte) (any, err
 		return nil, errors.New("not found")
 	}
 	return nil, err
+}
+
+// ── invoice ──────────────────────────────────────────────────────────────────
+
+func (s *Server) handleInvoiceList(ctx context.Context, payload []byte) (any, error) {
+	var req invoicequeries.ListAllInvoicesQuery
+	if len(payload) > 0 {
+		_ = json.Unmarshal(payload, &req)
+	}
+	return s.listAllInvoices.Handle(ctx, req)
+}
+
+func (s *Server) handleInvoiceGet(ctx context.Context, payload []byte) (any, error) {
+	var req struct{ ID string `json:"id"` }
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	return s.getInvoice.Handle(ctx, req.ID)
+}
+
+func (s *Server) handleInvoiceListForCustomer(ctx context.Context, payload []byte) (any, error) {
+	var req invoicequeries.ListInvoicesForCustomerQuery
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	return s.listInvoicesForCust.Handle(ctx, req)
+}
+
+func (s *Server) handleInvoiceCreate(ctx context.Context, payload []byte) (any, error) {
+	var req invoicecommands.CreateInvoiceCommand
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	return s.createInvoice.Handle(ctx, req)
+}
+
+func (s *Server) handleInvoiceFinalize(ctx context.Context, payload []byte) (any, error) {
+	var req struct{ ID string `json:"id"` }
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	inv, err := s.finalizeInvoice.Handle(ctx, invoicecommands.FinalizeInvoiceCommand{InvoiceID: req.ID})
+	if errors.Is(err, invoicedomain.ErrInvalidTransition) {
+		return nil, errors.New("invalid status transition")
+	}
+	return inv, err
+}
+
+func (s *Server) handleInvoiceMarkPaid(ctx context.Context, payload []byte) (any, error) {
+	var req struct{ ID string `json:"id"` }
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	inv, err := s.markPaidInvoice.Handle(ctx, invoicecommands.MarkPaidCommand{InvoiceID: req.ID})
+	if errors.Is(err, invoicedomain.ErrInvalidTransition) {
+		return nil, errors.New("invalid status transition")
+	}
+	return inv, err
+}
+
+func (s *Server) handleInvoiceVoid(ctx context.Context, payload []byte) (any, error) {
+	var req struct{ ID string `json:"id"` }
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	inv, err := s.voidInvoice.Handle(ctx, invoicecommands.VoidInvoiceCommand{InvoiceID: req.ID})
+	if errors.Is(err, invoicedomain.ErrInvalidTransition) {
+		return nil, errors.New("invalid status transition")
+	}
+	return inv, err
+}
+
+func (s *Server) handleInvoiceGenerate(ctx context.Context, payload []byte) (any, error) {
+	var req invoicecommands.GenerateFromSubscriptionsCommand
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	return s.generateInvoice.Handle(ctx, req)
+}
+
+func (s *Server) handleInvoiceAddLine(ctx context.Context, payload []byte) (any, error) {
+	var req invoicecommands.AddLineItemCommand
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	return s.addInvoiceLine.Handle(ctx, req)
+}
+
+func (s *Server) handleInvoiceUpdateLine(ctx context.Context, payload []byte) (any, error) {
+	var req invoicecommands.UpdateLineItemCommand
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	return s.updateInvoiceLine.Handle(ctx, req)
+}
+
+func (s *Server) handleInvoiceRemoveLine(ctx context.Context, payload []byte) (any, error) {
+	var req invoicecommands.RemoveLineItemCommand
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	return s.removeInvoiceLine.Handle(ctx, req)
 }

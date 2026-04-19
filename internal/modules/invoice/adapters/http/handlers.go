@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"log"
+	"math"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -13,7 +14,9 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 	"github.com/vvs/isp/internal/modules/invoice/app/commands"
 	"github.com/vvs/isp/internal/modules/invoice/app/queries"
+	"github.com/vvs/isp/internal/shared/audit"
 	"github.com/vvs/isp/internal/shared/events"
+	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
 )
 
 // CustomerSearchResult is returned by CustomerSearcher for the autocomplete dropdown.
@@ -43,6 +46,7 @@ type Handlers struct {
 	subscriber     events.EventSubscriber
 	custSearch     CustomerSearcher
 	defaultVATRate int
+	auditLogger    audit.Logger
 }
 
 func NewHandlers(
@@ -85,6 +89,24 @@ func (h *Handlers) WithCustomerSearch(cs CustomerSearcher) *Handlers {
 	return h
 }
 
+func (h *Handlers) WithAuditLogger(l audit.Logger) *Handlers {
+	h.auditLogger = l
+	return h
+}
+
+func (h *Handlers) audit(r *http.Request, action, resourceID string) {
+	if h.auditLogger == nil {
+		return
+	}
+	user := authhttp.UserFromContext(r.Context())
+	actorID, actorName := "", ""
+	if user != nil {
+		actorID = user.ID
+		actorName = user.Username
+	}
+	go func() { _ = h.auditLogger.Log(context.Background(), actorID, actorName, action, "invoice", resourceID, nil) }()
+}
+
 // WithDefaultVATRate sets the default VAT rate for new line items.
 func (h *Handlers) WithDefaultVATRate(rate int) *Handlers {
 	h.defaultVATRate = rate
@@ -95,6 +117,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/invoices", h.listPage)
 	r.Get("/invoices/new", h.createPage)
 	r.Get("/invoices/{id}", h.detailPage)
+	r.Get("/invoices/{id}/pdf", h.pdfPage)
 
 	r.Get("/sse/invoices", h.listSSE)
 	r.Get("/sse/invoices/{id}", h.detailSSE)
@@ -128,6 +151,17 @@ func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	InvoiceDetailPage(*inv).Render(r.Context(), w)
+}
+
+func (h *Handlers) pdfPage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	inv, err := h.getQuery.Handle(r.Context(), id)
+	if err != nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	InvoicePrintPage(*inv).Render(r.Context(), w)
 }
 
 func (h *Handlers) createPage(w http.ResponseWriter, r *http.Request) {
@@ -290,6 +324,7 @@ func (h *Handlers) create(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(invoiceFormError(err.Error()))
 		return
 	}
+	h.audit(r, "invoice.created", inv.ID)
 
 	sse.Redirect("/invoices/" + inv.ID)
 }
@@ -309,6 +344,7 @@ func (h *Handlers) finalize(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(invoiceFormError(err.Error()))
 		return
 	}
+	h.audit(r, "invoice.finalized", id)
 
 	sse.Redirect("/invoices/" + id)
 }
@@ -328,6 +364,7 @@ func (h *Handlers) markPaid(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(invoiceFormError(err.Error()))
 		return
 	}
+	h.audit(r, "invoice.paid", id)
 
 	sse.Redirect("/invoices/" + id)
 }
@@ -347,6 +384,7 @@ func (h *Handlers) voidInvoice(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(invoiceFormError(err.Error()))
 		return
 	}
+	h.audit(r, "invoice.voided", id)
 
 	sse.Redirect("/invoices/" + id)
 }
@@ -477,7 +515,7 @@ func parseValueCents(s string) int64 {
 	if err != nil {
 		return 0
 	}
-	return int64(f * 100)
+	return int64(math.Round(f * 100))
 }
 
 // parseVATRate parses a VAT rate string. Returns defaultRate if empty/invalid.

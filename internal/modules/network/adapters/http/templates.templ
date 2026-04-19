@@ -10,20 +10,18 @@ import (
 
 templ RouterListPage() {
 	@templates.Layout("Routers") {
-		@templates.PageHeader("Routers", "Manage network routers")
+		@templates.PageHeaderRow("Routers", "Manage network routers") {
+			<a
+				href="/routers/new"
+				class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+			>
+				+ New Router
+			</a>
+		}
 		<div
 			id="router-content"
 			data-init="@get('/api/routers', {openWhenHidden: false})"
 		>
-			<div class="flex items-center justify-between mb-4">
-				<div></div>
-				<a
-					href="/routers/new"
-					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-				>
-					+ New Router
-				</a>
-			</div>
 			<div id="router-table">
 				<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
 			</div>
@@ -89,7 +87,8 @@ templ RouterRow(r queries.RouterReadModel) {
 
 templ RouterFormPage(router *queries.RouterReadModel) {
 	@templates.Layout(routerFormTitle(router)) {
-		@templates.PageHeader(routerFormTitle(router), routerFormSubtitle(router))
+		@templates.PageHeaderBack(routerFormTitle(router), routerFormSubtitle(router), "/routers", "Routers") {
+		}
 		<div class="max-w-xl">
 			@templates.Card() {
 				<div
@@ -160,18 +159,17 @@ templ RouterFormPage(router *queries.RouterReadModel) {
 
 templ RouterDetailPage(r queries.RouterReadModel) {
 	@templates.Layout(r.Name) {
-		@templates.PageHeader(r.Name, "Router details")
+		@templates.PageHeaderBack(r.Name, "Router details", "/routers", "Routers") {
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/routers/%s/edit", r.ID)) }
+				class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+			>Edit</a>
+			<button
+				data-on:click={ fmt.Sprintf("@delete('/api/routers/%s')", r.ID) }
+				class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
+			>Delete</button>
+		}
 		<div class="max-w-2xl">
-			<div class="flex items-center gap-2 mb-5">
-				<a
-					href={ templ.SafeURL(fmt.Sprintf("/routers/%s/edit", r.ID)) }
-					class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
-				>Edit</a>
-				<button
-					data-on:click={ fmt.Sprintf("@delete('/api/routers/%s')", r.ID) }
-					class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded text-xs font-medium transition-colors border border-red-500/20"
-				>Delete</button>
-			</div>
 			@templates.Card() {
 				<div class="grid grid-cols-2 gap-5">
 					@routerDetailField("Name", r.Name)

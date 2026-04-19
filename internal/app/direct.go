@@ -107,7 +107,7 @@ func NewDirect(dbPath string) (*natsrpc.Server, func(), error) {
 	getProductQuery := productqueries.NewGetProductHandler(gdb)
 
 	// network
-	routerRepo := networkpersistence.NewGormRouterRepository(gdb)
+	routerRepo := networkpersistence.NewGormRouterRepository(gdb, nil)
 	createRouterCmd := networkcommands.NewCreateRouterHandler(routerRepo, pub)
 	updateRouterCmd := networkcommands.NewUpdateRouterHandler(routerRepo, pub)
 	deleteRouterCmd := networkcommands.NewDeleteRouterHandler(routerRepo, pub)

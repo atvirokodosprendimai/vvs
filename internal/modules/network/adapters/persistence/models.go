@@ -7,16 +7,17 @@ import (
 )
 
 type RouterModel struct {
-	ID         string `gorm:"primaryKey;type:text"`
-	Name       string `gorm:"type:text;not null"`
-	RouterType string `gorm:"type:text;not null;default:mikrotik"`
-	Host       string `gorm:"type:text;not null"`
-	Port       int    `gorm:"not null;default:8728"`
-	Username   string `gorm:"type:text"`
-	Password   string `gorm:"type:text"`
-	Notes      string `gorm:"type:text"`
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID          string `gorm:"primaryKey;type:text"`
+	Name        string `gorm:"type:text;not null"`
+	RouterType  string `gorm:"type:text;not null;default:mikrotik"`
+	Host        string `gorm:"type:text;not null"`
+	Port        int    `gorm:"not null;default:8728"`
+	Username    string `gorm:"type:text"`
+	Password    string `gorm:"type:text"`
+	PasswordEnc []byte `gorm:"column:password_enc"`
+	Notes       string `gorm:"type:text"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 func (RouterModel) TableName() string { return "routers" }

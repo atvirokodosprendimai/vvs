@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os/signal"
 	"strings"
 	"syscall"
@@ -11,6 +12,8 @@ import (
 	"github.com/urfave/cli/v3"
 	"github.com/vvs/isp/internal/app"
 	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
+	infranats "github.com/vvs/isp/internal/infrastructure/nats"
+	"github.com/vvs/isp/internal/shared/events"
 	cronpersistence "github.com/vvs/isp/internal/modules/cron/adapters/persistence"
 )
 
@@ -157,6 +160,19 @@ func cronRunCommand() *cli.Command {
 			}
 			defer cleanup()
 
+			natsURL := cmd.Root().String("nats-url")
+			var pub events.EventPublisher = noopPublisher{}
+			if natsURL != "" {
+				nc, err := infranats.ConnectExternal(natsURL)
+				if err != nil {
+					log.Printf("warn: cron NATS connect failed: %v — events will be dropped", err)
+				} else {
+					defer nc.Close()
+					pub = infranats.NewPublisher(nc)
+				}
+			}
+			RegisterBillingActions(gdb, pub)
+
 			repo := cronpersistence.NewGormJobRepository(gdb)
 			RunDueJobs(ctx, repo, rpcServer)
 			return nil
@@ -240,3 +256,8 @@ func buildCronPayload(jobType, action, command, subject, rawURL, method string, 
 		return "", fmt.Errorf("unknown type %q: must be action|shell|rpc|url", jobType)
 	}
 }
+
+// noopPublisher discards all events. Used by the cron runner when NATS is not configured.
+type noopPublisher struct{}
+
+func (noopPublisher) Publish(_ context.Context, _ string, _ events.DomainEvent) error { return nil }

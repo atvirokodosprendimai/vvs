@@ -12,26 +12,47 @@ import (
 // TicketsPage is the standalone tickets list page at /tickets.
 templ TicketsPage() {
 	@templates.Layout("Tickets") {
-		@templates.PageHeader("Tickets", "All tickets across customers")
+		@templates.PageHeaderRow("Tickets", "All tickets across customers") {
+			<!-- Status filter tabs -->
+			<button
+				data-on:click="($ticketStatusFilter = 'active') && @get('/sse/tickets')"
+				class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
+				data-class:bg-amber-600={ "$ticketStatusFilter === 'active'" }
+				data-class:text-white={ "$ticketStatusFilter === 'active'" }
+				data-class:border-amber-600={ "$ticketStatusFilter === 'active'" }
+				data-class:bg-neutral-800={ "$ticketStatusFilter !== 'active'" }
+				data-class:text-neutral-400={ "$ticketStatusFilter !== 'active'" }
+				data-class:border-neutral-700={ "$ticketStatusFilter !== 'active'" }
+			>Active</button>
+			<button
+				data-on:click="($ticketStatusFilter = 'closed') && @get('/sse/tickets')"
+				class="px-3 py-1.5 rounded text-xs font-medium transition-colors border"
+				data-class:bg-amber-600={ "$ticketStatusFilter === 'closed'" }
+				data-class:text-white={ "$ticketStatusFilter === 'closed'" }
+				data-class:border-amber-600={ "$ticketStatusFilter === 'closed'" }
+				data-class:bg-neutral-800={ "$ticketStatusFilter !== 'closed'" }
+				data-class:text-neutral-400={ "$ticketStatusFilter !== 'closed'" }
+				data-class:border-neutral-700={ "$ticketStatusFilter !== 'closed'" }
+			>Closed</button>
+			<input
+				type="text"
+				data-bind:ticket-search
+				data-on:input__debounce.300ms="@get('/sse/tickets')"
+				placeholder="Search tickets..."
+				class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-1.5 text-sm w-48 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+			/>
+			<button
+				type="button"
+				data-on:click="$_newTicketOpen = true"
+				class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+			>+ New Ticket</button>
+		}
 		<div
 			id="tickets-page"
-			data-signals="{ticketSearch: '', commentBody: '', ticketAction: '', _newTicketOpen: false, newTicketCustomerID: '', newTicketCustomerName: '', newTicketCustomerSearch: '', _showTicketCustResults: false, newTicketSubject: '', newTicketBody: '', newTicketPriority: 'normal'}"
+			data-signals="{ticketSearch: '', ticketStatusFilter: 'active', commentBody: '', ticketAction: '', _newTicketOpen: false, newTicketCustomerID: '', newTicketCustomerName: '', newTicketCustomerSearch: '', _showTicketCustResults: false, newTicketSubject: '', newTicketBody: '', newTicketPriority: 'normal'}"
 			data-init="@get('/sse/tickets')"
 		>
-			<div class="mb-4 flex items-center gap-3">
-				<input
-					type="text"
-					data-bind:ticket-search
-					data-on:input__debounce.300ms="@get('/sse/tickets')"
-					placeholder="Search tickets..."
-					class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm flex-1 max-w-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
-				/>
-				<button
-					type="button"
-					data-on:click="$_newTicketOpen = true"
-					class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
-				>+ New Ticket</button>
-			</div>
+
 
 			<!-- New ticket modal -->
 			<div
@@ -151,7 +172,7 @@ templ AllTicketList(tickets []queries.TicketReadModel) {
 								<td class="px-4 py-3 text-sm">
 									if tk.CustomerName != "" {
 										<a
-											href={ templ.SafeURL(fmt.Sprintf("/customers/%s", tk.CustomerID)) }
+											href={ templ.SafeURL(fmt.Sprintf("/customers/%s?tab=tickets", tk.CustomerID)) }
 											class="text-amber-400 hover:text-amber-300"
 										>{ tk.CustomerName }</a>
 									} else {
