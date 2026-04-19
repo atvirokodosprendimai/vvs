@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -37,8 +38,33 @@ type User struct {
 	Role         Role
 	FullName     string
 	Division     string
+	TOTPSecret   string
+	TOTPEnabled  bool
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+}
+
+// EnableTOTP sets the TOTP secret and marks 2FA as active.
+func (u *User) EnableTOTP(secret string) {
+	u.TOTPSecret = secret
+	u.TOTPEnabled = true
+	u.UpdatedAt = time.Now().UTC()
+}
+
+// DisableTOTP clears the TOTP secret and turns off 2FA.
+func (u *User) DisableTOTP() {
+	u.TOTPSecret = ""
+	u.TOTPEnabled = false
+	u.UpdatedAt = time.Now().UTC()
+}
+
+// VerifyTOTP checks a 6-digit code against the user's TOTP secret.
+// Returns false if TOTP is not enabled or the code is invalid.
+func (u *User) VerifyTOTP(code string) bool {
+	if !u.TOTPEnabled || u.TOTPSecret == "" {
+		return false
+	}
+	return totp.Validate(code, u.TOTPSecret)
 }
 
 func NewUser(username, plainPassword string, role Role) (*User, error) {

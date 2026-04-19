@@ -53,3 +53,4 @@
 - 2026-04-19 `99468ed` chore(plan): mark customer portal plan as completed
 - 2026-04-19 `e135a63` fix(portal): add SameSite+Secure flags to logout Set-Cookie
 - 2026-04-19 `fec7c00` plan: reporting module + two-factor auth (TOTP)
+- 2026-04-19 `11d1832` feat(reports): /reports page — MRR, invoice aging, top customers, payment trend

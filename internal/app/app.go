@@ -211,12 +211,15 @@ func New(cfg Config) (*App, error) {
 	deleteUserCmd := authcommands.NewDeleteUserHandler(userRepo, sessionRepo)
 	changeSelfPasswordCmd := authcommands.NewChangeSelfPasswordHandler(userRepo)
 	updateUserCmd := authcommands.NewUpdateUserHandler(userRepo)
+	createSessionCmd := authcommands.NewCreateSessionHandler(sessionRepo)
 	listUsersQuery := authqueries.NewListUsersHandler(userRepo)
 	getCurrentUserQuery := authqueries.NewGetCurrentUserHandler(userRepo, sessionRepo)
 	authRoutes := authhttp.NewHandlers(loginCmd, logoutCmd, createUserCmd, deleteUserCmd, changeSelfPasswordCmd, updateUserCmd, listUsersQuery, getCurrentUserQuery).
 		WithPermRepo(permRepo).
 		WithMaxAge(cfg.SessionLifetime()).
-		WithSecureCookie(cfg.SecureCookie)
+		WithSecureCookie(cfg.SecureCookie).
+		WithTOTPUsers(userRepo).
+		WithCreateSession(createSessionCmd)
 
 	if cfg.AdminUser != "" && cfg.AdminPassword != "" {
 		if err := seedAdmin(context.Background(), userRepo, cfg.AdminUser, cfg.AdminPassword); err != nil {

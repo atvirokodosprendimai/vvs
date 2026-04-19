@@ -14,11 +14,11 @@ status: active
 
 ---
 
-## Phase 1 — Reporting Module — status: open
+## Phase 1 — Reporting Module — status: completed
 
 ### Scope: `/reports` page with MRR trend, invoice aging, top-customers-by-revenue, payment trend
 
-1. [ ] Reports handler: `internal/infrastructure/http/reports_handler.go`
+1. [x] Reports handler: `internal/infrastructure/http/reports_handler.go`
    - New `ReportsData` struct with: `MRR []MonthRevenue` (12 months), `InvoiceAging []AgingBucket`, `TopCustomers []CustomerRevenue`, `PaymentTrend []MonthRevenue`
    - `AgingBucket`: `{Label string, Count int64, Total float64}` — buckets: current (not yet due), 1-30d, 31-60d, 61-90d, 90d+
    - `CustomerRevenue`: `{CustomerID, CustomerName string, Total float64, InvoiceCount int64}`
@@ -29,7 +29,7 @@ status: active
    - Register route: `GET /reports` → `newReportsHandler(gorm.DB)`
    - Gate with `RequireAuth` (already on all non-public routes)
 
-2. [ ] Reports template: `internal/infrastructure/http/reports.templ`
+2. [x] Reports template: `internal/infrastructure/http/reports.templ`
    - Page title "Reports" with `PageHeaderRow` component
    - MRR bar chart (12 months) — reuse `BarMax` + existing bar chart pattern from dashboard
    - Invoice aging stacked/grouped bar or table — buckets with count + total
@@ -38,20 +38,22 @@ status: active
    - All-clear state when no data
    - Colors: amber for primary bars, neutral shades for secondary
 
-3. [ ] Nav + RBAC wiring
+3. [x] Nav + RBAC wiring
    - Add "Reports" to Finance nav group in sidebar nav
    - Ensure `ModuleNamed()` returns `"reports"` so per-module RBAC works
    - Wire route in `internal/app/app.go` or router setup
    - Add to `DefaultPermissions` map in auth domain
 
-4. [ ] Tests: `internal/infrastructure/http/reports_handler_test.go`
+4. [x] Tests: `internal/infrastructure/http/reports_handler_test.go`
+   - => 3 tests pass: EmptyDB renders 200, SSE no error, paid invoice shows customer name
+   - => fixed dashboard SUM(total) → SUM(total_amount)/100 bug (was silently showing $0)
    - `TestReportsPage_RequiresAuth` — unauthenticated → redirect
    - `TestReportsPage_EmptyDB_Renders` — empty DB → 200, no panic
    - `TestReportsPage_WithData_ContainsCustomer` — seed paid invoice → customer name appears
 
 ---
 
-## Phase 2 — Two-Factor Auth (TOTP) — status: open
+## Phase 2 — Two-Factor Auth (TOTP) — status: active
 
 ### Scope: per-user TOTP setup at /profile/2fa; login requires TOTP code when enabled
 
@@ -111,4 +113,4 @@ go build ./...
 
 ## Progress Log
 
-<!-- Timestamped entries tracking work done. Updated after every action. -->
+- 2026-04-19: Phase 1 complete — commit 11d1832; 3 tests pass; dashboard revenue bug also fixed
