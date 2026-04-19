@@ -193,6 +193,7 @@ func New(cfg Config) (*App, error) {
 	// 4. Auth module — always wired (session middleware depends on it)
 	userRepo := authpersistence.NewGormUserRepository(gdb)
 	sessionRepo := authpersistence.NewGormSessionRepository(gdb)
+	permRepo := authpersistence.NewGormRolePermissionsRepository(gdb)
 	loginCmd := authcommands.NewLoginHandler(userRepo, sessionRepo)
 	logoutCmd := authcommands.NewLogoutHandler(sessionRepo)
 	createUserCmd := authcommands.NewCreateUserHandler(userRepo)
@@ -659,7 +660,7 @@ func New(cfg Config) (*App, error) {
 	}
 
 	// 13. HTTP router — pass gdb.R to dashboard handler
-	router := infrahttp.NewRouter(gdb.R, getCurrentUserQuery, notifHandler, chatHandler, globalHandler, cfg.APIToken, rpcServer, moduleRoutes...)
+	router := infrahttp.NewRouter(gdb.R, getCurrentUserQuery, permRepo, notifHandler, chatHandler, globalHandler, cfg.APIToken, rpcServer, moduleRoutes...)
 	httpServer := infrahttp.NewServer(cfg.ListenAddr, router)
 
 	enabled := cfg.EnabledModules

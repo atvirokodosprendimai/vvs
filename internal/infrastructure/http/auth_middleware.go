@@ -7,7 +7,76 @@ import (
 
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
 	"github.com/vvs/isp/internal/modules/auth/app/queries"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
+
+// ── Module permission context ──────────────────────────────────────────────
+
+type permContextKey struct{}
+
+// WithPermissions stores a PermissionSet in the context.
+func WithPermissions(ctx context.Context, ps authdomain.PermissionSet) context.Context {
+	return context.WithValue(ctx, permContextKey{}, ps)
+}
+
+// PermissionsFromCtx retrieves the PermissionSet from context.
+// Returns an empty (deny-all) set if not found.
+func PermissionsFromCtx(ctx context.Context) authdomain.PermissionSet {
+	ps, _ := ctx.Value(permContextKey{}).(authdomain.PermissionSet)
+	if ps == nil {
+		return authdomain.PermissionSet{}
+	}
+	return ps
+}
+
+// InjectModulePermissions loads the role's PermissionSet from DB into the request context.
+// Admin role gets a hardcoded full-access set (no DB hit).
+// Must run after RequireAuth.
+func InjectModulePermissions(permRepo authdomain.RolePermissionsRepository) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			u := authhttp.UserFromContext(r.Context())
+			if u == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+			var ps authdomain.PermissionSet
+			if u.Role == authdomain.RoleAdmin {
+				ps = authdomain.AdminPermissionSet()
+			} else {
+				var err error
+				ps, err = permRepo.FindByRole(r.Context(), u.Role)
+				if err != nil || len(ps) == 0 {
+					// Fallback to defaults if DB is empty (e.g. fresh install before migration)
+					ps = authdomain.DefaultPermissions(u.Role)
+				}
+			}
+			next.ServeHTTP(w, r.WithContext(WithPermissions(r.Context(), ps)))
+		})
+	}
+}
+
+// RequireModuleAccess returns a middleware that enforces view/edit access for a specific module.
+// View access is required for all methods; edit access is required for mutating methods.
+func RequireModuleAccess(module authdomain.Module) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ps := PermissionsFromCtx(r.Context())
+			if !ps.CanView(module) {
+				http.Error(w, "Forbidden", http.StatusForbidden)
+				return
+			}
+			switch r.Method {
+			case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
+				if !ps.CanEdit(module) {
+					http.Error(w, "Forbidden", http.StatusForbidden)
+					return
+				}
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
 
 // selfServicePaths lists mutating routes that all authenticated users (including viewers) may access.
 var selfServicePaths = map[string]bool{

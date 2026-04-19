@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 	authqueries "github.com/vvs/isp/internal/modules/auth/app/queries"
 	"github.com/vvs/isp/internal/infrastructure/http/apimw"
 	"gorm.io/gorm"
@@ -51,7 +52,7 @@ type APIRoutes interface {
 	RegisterAPIRoutes(r chi.Router)
 }
 
-func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, notif *NotifHandler, chatHandler *ChatHandler, global *GlobalHandler, apiToken string, rpc RPCDispatcher, modules ...ModuleRoutes) http.Handler {
+func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, permRepo authdomain.RolePermissionsRepository, notif *NotifHandler, chatHandler *ChatHandler, global *GlobalHandler, apiToken string, rpc RPCDispatcher, modules ...ModuleRoutes) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Recoverer)
@@ -71,6 +72,7 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 	// Protected routes behind auth middleware
 	r.Group(func(r chi.Router) {
 		r.Use(RequireAuth(currentUser))
+		r.Use(InjectModulePermissions(permRepo))
 		r.Use(RequireWrite) // blocks viewer role from all mutations
 
 		// Dashboard

@@ -107,3 +107,64 @@ func TestRequireWrite_ViewerAllowed_OnSelfServicePasswordChange(t *testing.T) {
 	handler.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code, "viewer must be allowed to POST to self-service password route")
 }
+
+// ── RequireModuleAccess tests ──────────────────────────────────────────────
+
+func withPermissions(ps authdomain.PermissionSet, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := infrahttp.WithPermissions(r.Context(), ps)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func TestRequireModuleAccess_ViewDenied_Returns403(t *testing.T) {
+	ps := authdomain.PermissionSet{} // no modules allowed
+	handler := withPermissions(ps, infrahttp.RequireModuleAccess(authdomain.ModuleInvoices)(okHandler()))
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/invoices", nil)
+	handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestRequireModuleAccess_ViewAllowed_EditDenied_OnMutation(t *testing.T) {
+	ps := authdomain.PermissionSet{
+		authdomain.ModuleInvoices: {Module: authdomain.ModuleInvoices, CanView: true, CanEdit: false},
+	}
+	handler := withPermissions(ps, infrahttp.RequireModuleAccess(authdomain.ModuleInvoices)(okHandler()))
+
+	// GET passes
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/invoices", nil)
+	handler.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	// POST blocked
+	rec2 := httptest.NewRecorder()
+	req2 := httptest.NewRequest(http.MethodPost, "/api/invoices", nil)
+	handler.ServeHTTP(rec2, req2)
+	assert.Equal(t, http.StatusForbidden, rec2.Code)
+}
+
+func TestRequireModuleAccess_FullAccess_AllMethodsPass(t *testing.T) {
+	ps := authdomain.PermissionSet{
+		authdomain.ModuleInvoices: {Module: authdomain.ModuleInvoices, CanView: true, CanEdit: true},
+	}
+	handler := withPermissions(ps, infrahttp.RequireModuleAccess(authdomain.ModuleInvoices)(okHandler()))
+	for _, method := range []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete} {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(method, "/invoices", nil)
+		handler.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code, "method %s should pass with full access", method)
+	}
+}
+
+func TestRequireModuleAccess_AdminPermissionSet_AlwaysPasses(t *testing.T) {
+	ps := authdomain.AdminPermissionSet()
+	handler := withPermissions(ps, infrahttp.RequireModuleAccess(authdomain.ModuleNetwork)(okHandler()))
+	for _, method := range []string{http.MethodGet, http.MethodPost, http.MethodDelete} {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(method, "/network", nil)
+		handler.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code, "admin should pass on %s", method)
+	}
+}
