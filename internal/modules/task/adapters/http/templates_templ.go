@@ -15,6 +15,7 @@ import (
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
 	"github.com/vvs/isp/internal/modules/task/app/queries"
 	"github.com/vvs/isp/internal/modules/task/domain"
+	"github.com/vvs/isp/internal/shared/jsutil"
 )
 
 // TaskSection renders the full tasks panel for a customer detail page.
@@ -56,7 +57,7 @@ func TaskSection(customerID string, tasks []queries.TaskReadModel) templ.Compone
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$_taskId ? @put('/api/tasks/' + $_taskId) : @post('/api/customers/%s/tasks')", customerID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 110, Col: 125}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 111, Col: 125}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -153,7 +154,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("task-%s", t.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 157, Col: 88}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 158, Col: 88}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -166,7 +167,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(t.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 158, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 159, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -195,7 +196,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(formatDueDate(t.DueDate))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 166, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 167, Col: 29}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -213,7 +214,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='start') && @put('/api/tasks/%s/status')", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 173, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 174, Col: 96}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -232,7 +233,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='complete') && @put('/api/tasks/%s/status')", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 183, Col: 99}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 184, Col: 99}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -251,7 +252,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='reopen') && @put('/api/tasks/%s/status')", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 193, Col: 97}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 194, Col: 97}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -270,7 +271,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='cancel') && @put('/api/tasks/%s/status')", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 203, Col: 97}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 204, Col: 97}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -288,7 +289,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(editTaskSignals(t))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 212, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 213, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -301,7 +302,7 @@ func taskRow(t queries.TaskReadModel) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/tasks/%s')", t.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 219, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 220, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -368,7 +369,7 @@ func TasksPage() templ.Component {
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs("$taskStatusFilter === 'active'")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 237, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 238, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -381,7 +382,7 @@ func TasksPage() templ.Component {
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs("$taskStatusFilter === 'active'")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 238, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 239, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -394,7 +395,7 @@ func TasksPage() templ.Component {
 				var templ_7745c5c3_Var19 string
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs("$taskStatusFilter === 'active'")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 239, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 240, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {
@@ -407,7 +408,7 @@ func TasksPage() templ.Component {
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs("$taskStatusFilter !== 'active'")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 240, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 241, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {
@@ -420,7 +421,7 @@ func TasksPage() templ.Component {
 				var templ_7745c5c3_Var21 string
 				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs("$taskStatusFilter !== 'active'")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 241, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 242, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 				if templ_7745c5c3_Err != nil {
@@ -433,7 +434,7 @@ func TasksPage() templ.Component {
 				var templ_7745c5c3_Var22 string
 				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs("$taskStatusFilter !== 'active'")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 242, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 243, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
@@ -446,7 +447,7 @@ func TasksPage() templ.Component {
 				var templ_7745c5c3_Var23 string
 				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs("$taskStatusFilter === 'done'")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 247, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 248, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 				if templ_7745c5c3_Err != nil {
@@ -459,7 +460,7 @@ func TasksPage() templ.Component {
 				var templ_7745c5c3_Var24 string
 				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs("$taskStatusFilter === 'done'")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 248, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 249, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 				if templ_7745c5c3_Err != nil {
@@ -472,7 +473,7 @@ func TasksPage() templ.Component {
 				var templ_7745c5c3_Var25 string
 				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs("$taskStatusFilter === 'done'")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 249, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 250, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 				if templ_7745c5c3_Err != nil {
@@ -485,7 +486,7 @@ func TasksPage() templ.Component {
 				var templ_7745c5c3_Var26 string
 				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs("$taskStatusFilter !== 'done'")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 250, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 251, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 				if templ_7745c5c3_Err != nil {
@@ -498,7 +499,7 @@ func TasksPage() templ.Component {
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs("$taskStatusFilter !== 'done'")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 251, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 252, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
@@ -511,7 +512,7 @@ func TasksPage() templ.Component {
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs("$taskStatusFilter !== 'done'")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 252, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 253, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -624,7 +625,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("task-%s", t.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 396, Col: 88}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 397, Col: 88}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -642,7 +643,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var32 templ.SafeURL
 			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/customers/%s?tab=tasks", t.CustomerID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 399, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 400, Col: 80}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 			if templ_7745c5c3_Err != nil {
@@ -655,7 +656,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var33 string
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(t.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 399, Col: 139}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 400, Col: 139}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 			if templ_7745c5c3_Err != nil {
@@ -669,7 +670,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var34 string
 			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(t.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 401, Col: 12}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 402, Col: 12}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
@@ -688,7 +689,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var35 templ.SafeURL
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/customers/%s?tab=tasks", t.CustomerID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 406, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 407, Col: 81}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -701,7 +702,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(t.CustomerID[:8])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 406, Col: 141}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 407, Col: 141}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -740,7 +741,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(formatDueDate(t.DueDate))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 418, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 419, Col: 29}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
@@ -758,7 +759,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var38 string
 			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='start') && @put('/api/tasks/%s/status')", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 425, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 426, Col: 96}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
@@ -777,7 +778,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var39 string
 			templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='complete') && @put('/api/tasks/%s/status')", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 435, Col: 99}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 436, Col: 99}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 			if templ_7745c5c3_Err != nil {
@@ -796,7 +797,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var40 string
 			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='reopen') && @put('/api/tasks/%s/status')", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 445, Col: 97}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 446, Col: 97}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 			if templ_7745c5c3_Err != nil {
@@ -815,7 +816,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 			var templ_7745c5c3_Var41 string
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($taskAction='cancel') && @put('/api/tasks/%s/status')", t.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 455, Col: 97}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 456, Col: 97}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 			if templ_7745c5c3_Err != nil {
@@ -833,7 +834,7 @@ func globalTaskRow(t queries.TaskReadModel) templ.Component {
 		var templ_7745c5c3_Var42 string
 		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/tasks/%s')", t.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 464, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 465, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 		if templ_7745c5c3_Err != nil {
@@ -939,7 +940,7 @@ func taskStatusBadge(status string) templ.Component {
 			var templ_7745c5c3_Var45 string
 			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 496, Col: 126}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 497, Col: 126}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 			if templ_7745c5c3_Err != nil {
@@ -982,7 +983,7 @@ func taskFormError(id string, message string) templ.Component {
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 501, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 502, Col: 13}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {
@@ -995,7 +996,7 @@ func taskFormError(id string, message string) templ.Component {
 		var templ_7745c5c3_Var48 string
 		templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(message)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 502, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/task/adapters/http/templates.templ`, Line: 503, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 		if templ_7745c5c3_Err != nil {
@@ -1024,21 +1025,8 @@ func editTaskSignals(t queries.TaskReadModel) string {
 	}
 	return fmt.Sprintf(
 		"($_taskModalOpen=true) && ($_taskId='%s') && ($taskTitle='%s') && ($taskDescription='%s') && ($taskPriority='%s') && ($taskDueDate='%s')",
-		t.ID, escapeJS(t.Title), escapeJS(t.Description), t.Priority, dueDate,
+		t.ID, jsutil.EscapeJS(t.Title), jsutil.EscapeJS(t.Description), t.Priority, dueDate,
 	)
-}
-
-// escapeJS escapes single quotes for inline JS string literals.
-func escapeJS(s string) string {
-	result := ""
-	for _, c := range s {
-		if c == '\'' {
-			result += "\\'"
-		} else {
-			result += string(c)
-		}
-	}
-	return result
 }
 
 var _ = templruntime.GeneratedTemplate

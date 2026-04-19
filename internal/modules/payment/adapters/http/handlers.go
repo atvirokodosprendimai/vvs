@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
 	"github.com/vvs/isp/internal/modules/payment/app/commands"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 // Handlers wires the payment import HTTP endpoints.
@@ -112,3 +113,5 @@ func (h *Handlers) confirmImport(w http.ResponseWriter, r *http.Request) {
 	sse.PatchElementTempl(PaymentImportSuccess(len(result.MarkedPaid)))
 	sse.Redirect("/payments/import")
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModulePayments }

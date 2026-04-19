@@ -1,5 +1,7 @@
 package templates
 
+import authdomain "github.com/vvs/isp/internal/modules/auth/domain"
+
 templ Layout(title string) {
 	<!DOCTYPE html>
 	<html lang="en" class="dark">
@@ -93,6 +95,13 @@ templ chatWidget() {
 }
 
 templ Sidebar() {
+	{{
+		ps := authdomain.PermissionsFromCtx(ctx)
+		crmVisible    := ps.CanView(authdomain.ModuleCustomers) || ps.CanView(authdomain.ModuleDeals) || ps.CanView(authdomain.ModuleTickets) || ps.CanView(authdomain.ModuleTasks)
+		financeVisible := ps.CanView(authdomain.ModuleInvoices) || ps.CanView(authdomain.ModuleProducts) || ps.CanView(authdomain.ModulePayments)
+		networkVisible := ps.CanView(authdomain.ModuleNetwork)
+		systemVisible  := ps.CanView(authdomain.ModuleEmail) || ps.CanView(authdomain.ModuleCron) || ps.CanView(authdomain.ModuleAuditLog) || ps.CanView(authdomain.ModuleUsers)
+	}}
 	<nav
 		class="w-56 bg-neutral-900 border-r border-neutral-800 p-3 flex flex-col justify-between h-full"
 		data-signals="{_notifOpen:false, _navCrm:true, _navFinance:true, _navNetwork:true, _navSystem:false}"
@@ -125,40 +134,71 @@ templ Sidebar() {
 			@NavItem("/chat", "Chat", chatNavIcon())
 
 			<!-- CRM -->
-			@NavGroup("CRM", "_navCrm", crmIcon())
-			<div data-show="$_navCrm" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
-				@NavItem("/crm", "Overview", crmIcon())
-				@NavItem("/customers", "Customers", customersIcon())
-				@NavItem("/deals", "Deals", dealsNavIcon())
-				@NavItem("/tickets", "Tickets", ticketsNavIcon())
-				@NavItem("/tasks", "Tasks", taskNavIcon())
-			</div>
+			if crmVisible {
+				@NavGroup("CRM", "_navCrm", crmIcon())
+				<div data-show="$_navCrm" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
+					@NavItem("/crm", "Overview", crmIcon())
+					if ps.CanView(authdomain.ModuleCustomers) {
+						@NavItem("/customers", "Customers", customersIcon())
+					}
+					if ps.CanView(authdomain.ModuleDeals) {
+						@NavItem("/deals", "Deals", dealsNavIcon())
+					}
+					if ps.CanView(authdomain.ModuleTickets) {
+						@NavItem("/tickets", "Tickets", ticketsNavIcon())
+					}
+					if ps.CanView(authdomain.ModuleTasks) {
+						@NavItem("/tasks", "Tasks", taskNavIcon())
+					}
+				</div>
+			}
 
 			<!-- Finance -->
-			@NavGroup("Finance", "_navFinance", financeNavIcon())
-			<div data-show="$_navFinance" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
-				@NavItem("/invoices", "Invoices", invoicesNavIcon())
-				@NavItem("/products", "Products", productsIcon())
-				@NavItem("/payments/import", "Pay Import", paymentsNavIcon())
-			</div>
+			if financeVisible {
+				@NavGroup("Finance", "_navFinance", financeNavIcon())
+				<div data-show="$_navFinance" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
+					if ps.CanView(authdomain.ModuleInvoices) {
+						@NavItem("/invoices", "Invoices", invoicesNavIcon())
+					}
+					if ps.CanView(authdomain.ModuleProducts) {
+						@NavItem("/products", "Products", productsIcon())
+					}
+					if ps.CanView(authdomain.ModulePayments) {
+						@NavItem("/payments/import", "Pay Import", paymentsNavIcon())
+					}
+				</div>
+			}
 
 			<!-- Network -->
-			@NavGroup("Network", "_navNetwork", networkNavIcon())
-			<div data-show="$_navNetwork" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
-				@NavItem("/routers", "Routers", routersIcon())
-				@NavItem("/prefixes", "Prefixes", prefixesIcon())
-				@NavItem("/devices", "Devices", devicesIcon())
-			</div>
+			if networkVisible {
+				@NavGroup("Network", "_navNetwork", networkNavIcon())
+				<div data-show="$_navNetwork" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
+					@NavItem("/routers", "Routers", routersIcon())
+					@NavItem("/prefixes", "Prefixes", prefixesIcon())
+					@NavItem("/devices", "Devices", devicesIcon())
+				</div>
+			}
 
 			<!-- System -->
-			@NavGroup("System", "_navSystem", systemNavIcon())
-			<div data-show="$_navSystem" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
-				@NavItem("/users", "Users", usersIcon())
-				@NavItem("/cron", "Cron", cronIcon())
-				@NavItem("/emails", "Email", emailNavIcon())
-				@NavItem("/attachments", "Attachments", attachmentsNavIcon())
-				@NavItem("/audit-logs", "Audit Log", auditLogIcon())
-			</div>
+			if systemVisible {
+				@NavGroup("System", "_navSystem", systemNavIcon())
+				<div data-show="$_navSystem" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
+					if ps.CanView(authdomain.ModuleUsers) {
+						@NavItem("/users", "Users", usersIcon())
+						@NavItem("/settings/permissions", "Permissions", permissionsNavIcon())
+					}
+					if ps.CanView(authdomain.ModuleCron) {
+						@NavItem("/cron", "Cron", cronIcon())
+					}
+					if ps.CanView(authdomain.ModuleEmail) {
+						@NavItem("/emails", "Email", emailNavIcon())
+					}
+					@NavItem("/attachments", "Attachments", attachmentsNavIcon())
+					if ps.CanView(authdomain.ModuleAuditLog) {
+						@NavItem("/audit-logs", "Audit Log", auditLogIcon())
+					}
+				</div>
+			}
 		</div>
 
 		<!-- Notification panel — shown when $_notifOpen is true -->
@@ -200,6 +240,13 @@ templ Sidebar() {
 			>
 				--:--:--
 			</div>
+			<a
+				href="/profile"
+				class="flex items-center gap-2.5 px-2 py-1.5 rounded text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors text-sm w-full"
+			>
+				<span class="w-4 h-4">@templ.Raw(profileIcon())</span>
+				Profile
+			</a>
 			<button
 				data-on:click="@post('/api/logout')"
 				class="flex items-center gap-2.5 px-2 py-1.5 rounded text-neutral-500 hover:text-red-400 hover:bg-neutral-800 transition-colors text-sm w-full"
@@ -266,6 +313,10 @@ func usersIcon() string {
 
 func logoutIcon() string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/></svg>`
+}
+
+func profileIcon() string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>`
 }
 
 func taskNavIcon() string {
@@ -346,4 +397,8 @@ func systemNavIcon() string {
 
 func auditLogIcon() string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg>`
+}
+
+func permissionsNavIcon() string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>`
 }

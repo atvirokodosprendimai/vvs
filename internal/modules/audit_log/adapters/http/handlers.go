@@ -8,6 +8,7 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 	"github.com/vvs/isp/internal/modules/audit_log/app/queries"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 func (h *Handlers) customerAuditLogsSSE(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +77,9 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	var signals struct {
 		AuditResourceFilter string `json:"auditResourceFilter"`
 	}
-	_ = datastar.ReadSignals(r, &signals)
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("audit_log listSSE: ReadSignals: %v", err)
+	}
 
 	q := queries.ListAuditLogsQuery{
 		Resource: signals.AuditResourceFilter,
@@ -91,3 +94,5 @@ func (h *Handlers) listSSE(w http.ResponseWriter, r *http.Request) {
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElementTempl(AuditLogList(logs))
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleAuditLog }

@@ -16,6 +16,7 @@ import (
 	"github.com/vvs/isp/internal/modules/service/app/queries"
 	"github.com/vvs/isp/internal/shared/audit"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 type ServiceHandlers struct {
@@ -64,7 +65,13 @@ func (h *ServiceHandlers) audit(r *http.Request, action, resourceID string) {
 		actorID = user.ID
 		actorName = user.Username
 	}
-	go func() { _ = h.auditLogger.Log(context.Background(), actorID, actorName, action, "service", resourceID, nil) }()
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := h.auditLogger.Log(ctx, actorID, actorName, action, "service", resourceID, nil); err != nil {
+			log.Printf("audit: service %s %s: %v", action, resourceID, err)
+		}
+	}()
 }
 
 func (h *ServiceHandlers) RegisterRoutes(r chi.Router) {
@@ -237,3 +244,5 @@ func parsePriceCents(s string) (int64, error) {
 	}
 	return int64(f * 100), nil
 }
+
+func (h *ServiceHandlers) ModuleName() authdomain.Module { return authdomain.ModuleNetwork }

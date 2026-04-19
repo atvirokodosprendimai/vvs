@@ -12,6 +12,7 @@ import (
 	"fmt"
 
 	"github.com/vvs/isp/internal/modules/contact/app/queries"
+	"github.com/vvs/isp/internal/shared/jsutil"
 )
 
 // ContactSection renders the contacts panel on a customer detail page.
@@ -51,7 +52,7 @@ func ContactSection(customerID string, contacts []queries.ContactReadModel) temp
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$_contactId == '' ? @post('/api/customers/%s/contacts') : @put('/api/contacts/' + $_contactId)", customerID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 121, Col: 143}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 122, Col: 143}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -148,7 +149,7 @@ func contactRow(c queries.ContactReadModel) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("contact-%s", c.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 168, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 169, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -161,7 +162,7 @@ func contactRow(c queries.ContactReadModel) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(c.FullName())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 169, Col: 75}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 170, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -174,7 +175,7 @@ func contactRow(c queries.ContactReadModel) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(c.Role)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 170, Col: 57}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 171, Col: 57}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -187,7 +188,7 @@ func contactRow(c queries.ContactReadModel) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(c.Email)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 171, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 172, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -200,7 +201,7 @@ func contactRow(c queries.ContactReadModel) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(c.Phone)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 172, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 173, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -211,9 +212,9 @@ func contactRow(c queries.ContactReadModel) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$_contactId='%s';$contactFirstName='%s';$contactLastName='%s';$contactEmail='%s';$contactPhone='%s';$contactRole='%s';$contactNotes='%s';$_contactModalOpen=true", c.ID, c.FirstName, c.LastName, c.Email, c.Phone, c.Role, c.Notes))
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$_contactId='%s';$contactFirstName='%s';$contactLastName='%s';$contactEmail='%s';$contactPhone='%s';$contactRole='%s';$contactNotes='%s';$_contactModalOpen=true", c.ID, jsutil.EscapeJS(c.FirstName), jsutil.EscapeJS(c.LastName), jsutil.EscapeJS(c.Email), jsutil.EscapeJS(c.Phone), jsutil.EscapeJS(c.Role), jsutil.EscapeJS(c.Notes)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 177, Col: 262}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 178, Col: 364}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -226,7 +227,7 @@ func contactRow(c queries.ContactReadModel) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/contacts/%s')", c.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 184, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/contact/adapters/http/templates.templ`, Line: 185, Col: 69}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {

@@ -35,6 +35,8 @@ type User struct {
 	Username     string
 	PasswordHash string
 	Role         Role
+	FullName     string
+	Division     string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -80,6 +82,24 @@ func (u *User) ChangePassword(plain string) error {
 		return err
 	}
 	u.PasswordHash = string(hash)
+	u.UpdatedAt = time.Now().UTC()
+	return nil
+}
+
+// UpdateProfile sets display name and division fields. Division may only be
+// changed by an admin — callers are responsible for enforcing that guard.
+func (u *User) UpdateProfile(fullName, division string) {
+	u.FullName = strings.TrimSpace(fullName)
+	u.Division = strings.TrimSpace(division)
+	u.UpdatedAt = time.Now().UTC()
+}
+
+// ChangeRole updates the user's role. Callers must ensure the actor is admin.
+func (u *User) ChangeRole(r Role) error {
+	if !ValidRole(r) {
+		return ErrInvalidRole
+	}
+	u.Role = r
 	u.UpdatedAt = time.Now().UTC()
 	return nil
 }

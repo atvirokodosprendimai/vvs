@@ -10,6 +10,8 @@ import (
 type UserRow struct {
 	ID        string
 	Username  string
+	FullName  string
+	Division  string
 	Role      domain.Role
 	CreatedAt time.Time
 }
@@ -32,6 +34,8 @@ func (h *ListUsersHandler) Handle(ctx context.Context) ([]UserRow, error) {
 		rows[i] = UserRow{
 			ID:        u.ID,
 			Username:  u.Username,
+			FullName:  u.FullName,
+			Division:  u.Division,
 			Role:      u.Role,
 			CreatedAt: u.CreatedAt,
 		}

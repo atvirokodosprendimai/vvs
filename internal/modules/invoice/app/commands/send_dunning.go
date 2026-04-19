@@ -17,6 +17,12 @@ type EmailSender interface {
 	SendPlain(ctx context.Context, to, subject, body string) error
 }
 
+// PortalLinkGenerator optionally creates a portal access URL for a customer.
+// When nil, no portal link is included in dunning emails.
+type PortalLinkGenerator interface {
+	GeneratePortalLink(ctx context.Context, customerID string, ttl time.Duration) (url string, err error)
+}
+
 // SendDunningRemindersCommand triggers the dunning run.
 type SendDunningRemindersCommand struct {
 	// Interval overrides DunningInterval when non-zero (useful for testing).
@@ -31,9 +37,10 @@ type SendDunningRemindersResult struct {
 
 // SendDunningRemindersHandler finds overdue invoices and sends email reminders.
 type SendDunningRemindersHandler struct {
-	invoices  domain.InvoiceRepository
-	customers customerdomain.CustomerRepository
-	mailer    EmailSender
+	invoices   domain.InvoiceRepository
+	customers  customerdomain.CustomerRepository
+	mailer     EmailSender
+	portalGen  PortalLinkGenerator // optional; nil = no portal link in email
 }
 
 func NewSendDunningRemindersHandler(
@@ -46,6 +53,12 @@ func NewSendDunningRemindersHandler(
 		customers: customers,
 		mailer:    mailer,
 	}
+}
+
+// WithPortalAccess wires in optional portal link generation for dunning emails.
+func (h *SendDunningRemindersHandler) WithPortalAccess(gen PortalLinkGenerator) *SendDunningRemindersHandler {
+	h.portalGen = gen
+	return h
 }
 
 func (h *SendDunningRemindersHandler) Handle(ctx context.Context, cmd SendDunningRemindersCommand) (SendDunningRemindersResult, error) {
@@ -76,7 +89,14 @@ func (h *SendDunningRemindersHandler) Handle(ctx context.Context, cmd SendDunnin
 		}
 
 		subject := fmt.Sprintf("Payment reminder: %s (due %s)", inv.Code, inv.DueDate.Format("2006-01-02"))
-		body := buildReminderBody(inv, customer)
+
+		var portalURL string
+		if h.portalGen != nil {
+			if u, err := h.portalGen.GeneratePortalLink(ctx, inv.CustomerID, 7*24*time.Hour); err == nil {
+				portalURL = u
+			}
+		}
+		body := buildReminderBody(inv, customer, portalURL)
 
 		if err := h.mailer.SendPlain(ctx, customer.Email, subject, body); err != nil {
 			result.Errors = append(result.Errors, fmt.Sprintf("%s: send email: %v", inv.Code, err))
@@ -98,9 +118,9 @@ func (h *SendDunningRemindersHandler) Handle(ctx context.Context, cmd SendDunnin
 	return result, nil
 }
 
-func buildReminderBody(inv *domain.Invoice, customer *customerdomain.Customer) string {
+func buildReminderBody(inv *domain.Invoice, customer *customerdomain.Customer, portalURL string) string {
 	overdueDays := int(time.Since(inv.DueDate).Hours() / 24)
-	return fmt.Sprintf(`Dear %s,
+	body := fmt.Sprintf(`Dear %s,
 
 This is a friendly reminder that invoice %s for %.2f %s was due on %s (%d day(s) ago) and remains unpaid.
 
@@ -109,11 +129,7 @@ Please arrange payment at your earliest convenience.
 Invoice details:
   Code:    %s
   Amount:  %.2f %s
-  Due:     %s
-
-If you have already made payment, please disregard this message.
-
-Thank you.`,
+  Due:     %s`,
 		customer.ContactName,
 		inv.Code,
 		float64(inv.TotalAmount)/100, inv.Currency,
@@ -123,4 +139,9 @@ Thank you.`,
 		float64(inv.TotalAmount)/100, inv.Currency,
 		inv.DueDate.Format("2006-01-02"),
 	)
+	if portalURL != "" {
+		body += fmt.Sprintf("\n\nView and download your invoice online:\n  %s", portalURL)
+	}
+	body += "\n\nIf you have already made payment, please disregard this message.\n\nThank you."
+	return body
 }

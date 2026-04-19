@@ -72,8 +72,9 @@ func Open(file string) (*DB, error) {
 		Logger:      newLogger,
 	}
 
-	// Shared pragmas: WAL journal, 5 s busy timeout, foreign keys
-	pragmas := "?_pragma=journal_mode(wal)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
+	// Shared pragmas: WAL journal, 5 s busy timeout, foreign keys, performance tuning
+	pragmas := "?_pragma=journal_mode(wal)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)" +
+		"&_pragma=synchronous(NORMAL)&_pragma=cache_size(-65536)&_pragma=temp_store(MEMORY)"
 
 	// Reader — read-only, many connections
 	rdb, err := gorm.Open(sqlite.Open(file+pragmas+"&mode=ro"), cfg)

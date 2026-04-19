@@ -16,6 +16,7 @@ import (
 	"github.com/vvs/isp/internal/modules/deal/app/queries"
 	"github.com/vvs/isp/internal/modules/deal/domain"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 // CustomerNameResolver resolves customer ID → name.
@@ -405,3 +406,5 @@ func parseValueCents(s string) (int64, error) {
 	}
 	return int64(f * 100), nil
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleDeals }

@@ -12,6 +12,7 @@ import (
 	"github.com/vvs/isp/internal/modules/contact/app/commands"
 	"github.com/vvs/isp/internal/modules/contact/app/queries"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 type Handlers struct {
@@ -177,3 +178,5 @@ func (h *Handlers) deleteSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleContacts }

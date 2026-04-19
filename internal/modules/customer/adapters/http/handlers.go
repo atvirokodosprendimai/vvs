@@ -32,6 +32,7 @@ import (
 	"github.com/vvs/isp/internal/shared/audit"
 	"github.com/vvs/isp/internal/shared/events"
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 // RouterSummary is the minimal router data needed for the customer form dropdown.
@@ -151,7 +152,13 @@ func (h *Handlers) audit(r *http.Request, action, resourceID string) {
 		actorID = user.ID
 		actorName = user.Username
 	}
-	go func() { _ = h.auditLogger.Log(context.Background(), actorID, actorName, action, "customer", resourceID, nil) }()
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := h.auditLogger.Log(ctx, actorID, actorName, action, "customer", resourceID, nil); err != nil {
+			log.Printf("audit: customer %s %s: %v", action, resourceID, err)
+		}
+	}()
 }
 
 func (h *Handlers) RegisterRoutes(r chi.Router) {
@@ -662,3 +669,5 @@ func (h *Handlers) loadRouterName(ctx context.Context, c *domain.Customer) strin
 	h.reader.WithContext(ctx).Raw("SELECT name FROM routers WHERE id = ?", *c.RouterID).Scan(&row)
 	return row.Name
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleCustomers }

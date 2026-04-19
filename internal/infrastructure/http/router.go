@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 	authqueries "github.com/vvs/isp/internal/modules/auth/app/queries"
 	"github.com/vvs/isp/internal/infrastructure/http/apimw"
 	"gorm.io/gorm"
@@ -41,12 +42,23 @@ type ModuleRoutes interface {
 	RegisterRoutes(r chi.Router)
 }
 
+// ModuleNamed is optionally implemented by module handlers that map to a named permission module.
+// When implemented, all routes for that module are wrapped in RequireModuleAccess(ModuleName()).
+type ModuleNamed interface {
+	ModuleName() authdomain.Module
+}
+
+// PublicModuleRoutes is optionally implemented by module handlers that have public (unauthenticated) routes.
+type PublicModuleRoutes interface {
+	RegisterPublicRoutes(r chi.Router)
+}
+
 // APIRoutes is implemented by module handlers that expose REST JSON endpoints.
 type APIRoutes interface {
 	RegisterAPIRoutes(r chi.Router)
 }
 
-func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, notif *NotifHandler, chatHandler *ChatHandler, global *GlobalHandler, apiToken string, rpc RPCDispatcher, modules ...ModuleRoutes) http.Handler {
+func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, permRepo authdomain.RolePermissionsRepository, notif *NotifHandler, chatHandler *ChatHandler, global *GlobalHandler, apiToken string, rpc RPCDispatcher, modules ...ModuleRoutes) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Recoverer)
@@ -56,9 +68,17 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 	// Static files (unauthenticated)
 	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
+	// Module public routes (unauthenticated)
+	for _, m := range modules {
+		if p, ok := m.(PublicModuleRoutes); ok {
+			p.RegisterPublicRoutes(r)
+		}
+	}
+
 	// Protected routes behind auth middleware
 	r.Group(func(r chi.Router) {
 		r.Use(RequireAuth(currentUser))
+		r.Use(InjectModulePermissions(permRepo))
 		r.Use(RequireWrite) // blocks viewer role from all mutations
 
 		// Dashboard
@@ -93,9 +113,16 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 		r.Post("/api/chat/threads/{threadID}/members", chatHandler.addMember)
 		r.Post("/api/chat/threads/{threadID}/read", chatHandler.markRead)
 
-		// Register all module routes
+		// Register all module routes; wrap named modules in RequireModuleAccess
 		for _, m := range modules {
-			m.RegisterRoutes(r)
+			if named, ok := m.(ModuleNamed); ok {
+				r.Group(func(r chi.Router) {
+					r.Use(RequireModuleAccess(named.ModuleName()))
+					m.RegisterRoutes(r)
+				})
+			} else {
+				m.RegisterRoutes(r)
+			}
 		}
 	})
 

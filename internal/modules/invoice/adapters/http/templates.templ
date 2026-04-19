@@ -2,12 +2,12 @@ package http
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
 	"github.com/vvs/isp/internal/modules/invoice/app/queries"
 	"github.com/vvs/isp/internal/modules/invoice/domain"
+	"github.com/vvs/isp/internal/shared/jsutil"
 )
 
 // InvoiceListPage is the standalone invoices list page at /invoices.
@@ -348,7 +348,7 @@ templ invoiceDetailContent(inv queries.InvoiceReadModel) {
 							if inv.Status == string(domain.StatusDraft) {
 								<tr
 									class="hover:bg-neutral-800/40 transition-colors cursor-pointer"
-									data-on:click={ fmt.Sprintf("$_editLineID = '%s'; $editProductName = '%s'; $editDescription = '%s'; $editQuantity = '%d'; $editUnitPrice = '%s'; $editUnitPriceNet = '%s'; $editVATRate = '%d'; $_editPriceMode = 'gross'; $_editOpen = true", li.ID, escapeJS(li.ProductName), escapeJS(li.Description), li.Quantity, formatCentsPlain(li.UnitPriceGross), formatCentsPlain(li.UnitPrice), li.VATRate) }
+									data-on:click={ fmt.Sprintf("$_editLineID = '%s'; $editProductName = '%s'; $editDescription = '%s'; $editQuantity = '%d'; $editUnitPrice = '%s'; $editUnitPriceNet = '%s'; $editVATRate = '%d'; $_editPriceMode = 'gross'; $_editOpen = true", li.ID, jsutil.EscapeJS(li.ProductName), jsutil.EscapeJS(li.Description), li.Quantity, formatCentsPlain(li.UnitPriceGross), formatCentsPlain(li.UnitPrice), li.VATRate) }
 								>
 									<td class="px-4 py-3 text-sm text-neutral-200">{ li.ProductName }</td>
 									<td class="px-4 py-3 text-sm text-neutral-400">{ li.Description }</td>
@@ -626,7 +626,7 @@ templ customerSearchResults(results []CustomerSearchResult) {
 				for _, c := range results {
 					<button
 						type="button"
-						data-on:click={ fmt.Sprintf("$customerID = '%s'; $customerName = '%s'; $customerCode = '%s'; $customerSearch = '%s'; $_showCustomerResults = false", c.ID, escapeJS(c.CompanyName), escapeJS(c.Code), escapeJS(c.CompanyName)) }
+						data-on:click={ fmt.Sprintf("$customerID = '%s'; $customerName = '%s'; $customerCode = '%s'; $customerSearch = '%s'; $_showCustomerResults = false", c.ID, jsutil.EscapeJS(c.CompanyName), jsutil.EscapeJS(c.Code), jsutil.EscapeJS(c.CompanyName)) }
 						class="w-full text-left px-3 py-2 hover:bg-neutral-700 transition-colors flex items-center gap-2 text-sm"
 					>
 						<span class="text-amber-400 font-mono text-xs">{ c.Code }</span>
@@ -749,10 +749,6 @@ func isOverdue(inv queries.InvoiceReadModel) bool {
 	return inv.Status == string(domain.StatusFinalized) && time.Now().After(inv.DueDate)
 }
 
-// escapeJS escapes single quotes for safe embedding in JS string literals.
-func escapeJS(s string) string {
-	return strings.ReplaceAll(s, "'", "\\'")
-}
 
 // InvoicePrintPage is a minimal print-friendly HTML page at /invoices/{id}/pdf.
 templ InvoicePrintPage(inv queries.InvoiceReadModel) {

@@ -10,11 +10,11 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
 	"github.com/vvs/isp/internal/modules/ticket/app/queries"
 	"github.com/vvs/isp/internal/modules/ticket/domain"
+	"github.com/vvs/isp/internal/shared/jsutil"
 )
 
 // TicketsPage is the standalone tickets list page at /tickets.
@@ -1769,10 +1769,6 @@ func newTicketError(message string) templ.Component {
 	})
 }
 
-func escapeJS(s string) string {
-	return strings.ReplaceAll(s, "'", "\\'")
-}
-
 func ticketCustomerSearchResults(results []CustomerSearchResult) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -1809,9 +1805,9 @@ func ticketCustomerSearchResults(results []CustomerSearchResult) templ.Component
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var84 string
-				templ_7745c5c3_Var84, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$newTicketCustomerID = '%s'; $newTicketCustomerName = '%s'; $newTicketCustomerSearch = '%s'; $_showTicketCustResults = false", c.ID, escapeJS(c.CompanyName), escapeJS(c.CompanyName)))
+				templ_7745c5c3_Var84, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$newTicketCustomerID = '%s'; $newTicketCustomerName = '%s'; $newTicketCustomerSearch = '%s'; $_showTicketCustResults = false", c.ID, jsutil.EscapeJS(c.CompanyName), jsutil.EscapeJS(c.CompanyName)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 755, Col: 217}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 752, Col: 231}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var84))
 				if templ_7745c5c3_Err != nil {
@@ -1824,7 +1820,7 @@ func ticketCustomerSearchResults(results []CustomerSearchResult) templ.Component
 				var templ_7745c5c3_Var85 string
 				templ_7745c5c3_Var85, templ_7745c5c3_Err = templ.JoinStringErrs(c.Code)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 758, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 755, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var85))
 				if templ_7745c5c3_Err != nil {
@@ -1837,7 +1833,7 @@ func ticketCustomerSearchResults(results []CustomerSearchResult) templ.Component
 				var templ_7745c5c3_Var86 string
 				templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.JoinStringErrs(c.CompanyName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 759, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/ticket/adapters/http/templates.templ`, Line: 756, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var86))
 				if templ_7745c5c3_Err != nil {

@@ -38,8 +38,26 @@ type Config struct {
 	// DefaultVATRate is the default VAT percentage for new invoice line items (default 21).
 	DefaultVATRate int // VVS_DEFAULT_VAT_RATE env var
 
+	// SessionLifetimeSecs is the session cookie MaxAge in seconds (default 86400 = 1 day).
+	SessionLifetimeSecs int // VVS_SESSION_LIFETIME env var
+
+	// SecureCookie sets the Secure flag on the session cookie. Enable in production (HTTPS only).
+	SecureCookie bool // VVS_SECURE_COOKIE env var
+
+	// BaseURL is the public base URL used in generated links (e.g. portal access links).
+	// Example: "https://isp.example.com". Defaults to http://host when empty.
+	BaseURL string // VVS_BASE_URL env var
+
 	// Debug enables verbose debug logging (slog DEBUG level).
 	Debug bool
+}
+
+// SessionLifetime returns SessionLifetimeSecs, defaulting to 86400 when unset.
+func (c Config) SessionLifetime() int {
+	if c.SessionLifetimeSecs > 0 {
+		return c.SessionLifetimeSecs
+	}
+	return 86400
 }
 
 // IsEnabled reports whether module name is enabled.

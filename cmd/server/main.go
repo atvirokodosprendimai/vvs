@@ -45,6 +45,11 @@ func main() {
 				Usage:   "Bearer token for REST API (/api/v1/*)",
 				Sources: cli.EnvVars("VVS_API_TOKEN"),
 			},
+			&cli.StringFlag{
+				Name:    "base-url",
+				Usage:   "Public base URL for generated links, e.g. https://isp.example.com (no trailing slash)",
+				Sources: cli.EnvVars("VVS_BASE_URL"),
+			},
 		},
 		Commands: []*cli.Command{
 			serveCommand(),
@@ -140,6 +145,17 @@ func serveCommand() *cli.Command {
 				Value:   50,
 				Sources: cli.EnvVars("VVS_EMAIL_PAGE_SIZE"),
 			},
+			&cli.IntFlag{
+				Name:    "session-lifetime",
+				Usage:   "Session cookie lifetime in seconds (default 86400 = 1 day)",
+				Value:   86400,
+				Sources: cli.EnvVars("VVS_SESSION_LIFETIME"),
+			},
+			&cli.BoolFlag{
+				Name:    "secure-cookie",
+				Usage:   "Set Secure flag on session cookie (enable for HTTPS-only production deployments)",
+				Sources: cli.EnvVars("VVS_SECURE_COOKIE"),
+			},
 			&cli.BoolFlag{
 				Name:    "debug",
 				Usage:   "Enable verbose debug logging",
@@ -177,6 +193,9 @@ func serveCommand() *cli.Command {
 				RouterEncKey:          cmd.String("router-enc-key"),
 				EmailSyncIntervalSecs: int(cmd.Int("email-sync-interval")),
 				EmailPageSize:         int(cmd.Int("email-page-size")),
+				SessionLifetimeSecs:   int(cmd.Int("session-lifetime")),
+				SecureCookie:          cmd.Bool("secure-cookie"),
+				BaseURL:               cmd.Root().String("base-url"),
 				EnabledModules:        enabledModules,
 				Debug:                 cmd.Bool("debug"),
 			}

@@ -7,6 +7,7 @@ import (
 	"github.com/vvs/isp/internal/infrastructure/http/templates"
 	"github.com/vvs/isp/internal/modules/auth/app/queries"
 	"github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/vvs/isp/internal/shared/jsutil"
 )
 
 templ LoginPage(errMsg string) {
@@ -71,7 +72,7 @@ templ loginError(msg string) {
 templ UserListPage() {
 	@templates.Layout("User Management") {
 		<div
-			data-signals="{showCreate:false,newUsername:'',newPassword:'',newRole:'operator'}"
+			data-signals="{showCreate:false,newUsername:'',newPassword:'',newRole:'operator',_editOpen:false,_editID:'',editFullName:'',editDivision:'',editRole:'operator'}"
 			data-init="@get('/api/users', {openWhenHidden: false})"
 		>
 		@templates.PageHeaderRow("Users", "Manage system users") {
@@ -83,7 +84,9 @@ templ UserListPage() {
 			</button>
 		}
 			<div id="user-table"></div>
-			<div data-show="$showCreate" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+			<!-- Create modal -->
+			<div data-show="$showCreate" style="display:none" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
 				<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6 w-full max-w-sm">
 					<h2 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4">New User</h2>
 					<div class="flex flex-col gap-3">
@@ -127,6 +130,57 @@ templ UserListPage() {
 					</div>
 				</div>
 			</div>
+
+			<!-- Edit modal -->
+			<div data-show="$_editOpen" style="display:none" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+				<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6 w-full max-w-sm">
+					<div class="flex items-center justify-between mb-4">
+						<h2 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider">Edit User</h2>
+						<button type="button" data-on:click="$_editOpen=false" class="text-neutral-500 hover:text-neutral-300">
+							<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+						</button>
+					</div>
+					<div class="flex flex-col gap-3">
+						<input
+							type="text"
+							placeholder="Full name"
+							data-bind:edit-full-name
+							class="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+						/>
+						<input
+							type="text"
+							placeholder="Division / department"
+							data-bind:edit-division
+							class="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+						/>
+						<select
+							data-bind:edit-role
+							class="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+						>
+							<option value="operator">Operator</option>
+							<option value="admin">Admin</option>
+							<option value="viewer">Viewer (read-only)</option>
+						</select>
+						<div id="edit-user-error"></div>
+						<div class="flex gap-2 mt-1">
+							<button
+								type="button"
+								data-on:click="$_editOpen=false"
+								class="flex-1 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 py-2 rounded text-sm transition-colors border border-neutral-700"
+							>
+								Cancel
+							</button>
+							<button
+								type="button"
+								data-on:click="@put('/api/users/'+$_editID)"
+								class="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-2 rounded text-sm font-medium transition-colors"
+							>
+								Save
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
 		</div>
 	}
 }
@@ -140,6 +194,8 @@ templ UserTable(rows []queries.UserRow, currentUserID string) {
 				<thead class="border-b border-neutral-800">
 					<tr>
 						<th class="text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Username</th>
+						<th class="text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Full Name</th>
+						<th class="text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Division</th>
 						<th class="text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Role</th>
 						<th class="text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Created</th>
 						<th class="px-4 py-3"></th>
@@ -158,29 +214,51 @@ templ UserTable(rows []queries.UserRow, currentUserID string) {
 templ userRow(row queries.UserRow, currentUserID string) {
 	<tr class="border-b border-neutral-800 last:border-0 hover:bg-neutral-800/40 transition-colors">
 		<td class="px-4 py-3 font-medium text-neutral-100">{ row.Username }</td>
+		<td class="px-4 py-3 text-neutral-300">
+			if row.FullName != "" {
+				{ row.FullName }
+			} else {
+				<span class="text-neutral-600">—</span>
+			}
+		</td>
+		<td class="px-4 py-3 text-neutral-400">
+			if row.Division != "" {
+				{ row.Division }
+			} else {
+				<span class="text-neutral-600">—</span>
+			}
+		</td>
 		<td class="px-4 py-3">
 			@roleBadge(row.Role)
 		</td>
 		<td class="px-4 py-3 text-neutral-500">{ formatDate(row.CreatedAt) }</td>
-		<td class="px-4 py-3 text-right flex items-center justify-end gap-3">
-			if row.ID != currentUserID {
+		<td class="px-4 py-3 text-right">
+			<div class="flex items-center justify-end gap-3">
 				<button
-					data-signals={ fmt.Sprintf("{targetuserid:'%s'}", row.ID) }
-					data-on:click="@post('/api/chat/threads/direct')"
-					class="text-amber-500 hover:text-amber-400 text-xs transition-colors"
-					title="Message"
+					data-on:click={ fmt.Sprintf("($editFullName='%s')&&($editDivision='%s')&&($editRole='%s')&&($_editID='%s')&&($_editOpen=true)", jsutil.EscapeJS(row.FullName), jsutil.EscapeJS(row.Division), string(row.Role), row.ID) }
+					class="text-neutral-400 hover:text-amber-400 text-xs transition-colors"
 				>
-					Message
+					Edit
 				</button>
-				<button
-					data-on:click={ fmt.Sprintf("@delete('/api/users/%s')", row.ID) }
-					class="text-red-400 hover:text-red-300 text-xs transition-colors"
-				>
-					Delete
-				</button>
-			} else {
-				<span class="text-neutral-700 text-xs">you</span>
-			}
+				if row.ID != currentUserID {
+					<button
+						data-signals={ fmt.Sprintf("{targetuserid:'%s'}", row.ID) }
+						data-on:click="@post('/api/chat/threads/direct')"
+						class="text-amber-500 hover:text-amber-400 text-xs transition-colors"
+						title="Message"
+					>
+						Msg
+					</button>
+					<button
+						data-on:click={ fmt.Sprintf("@delete('/api/users/%s')", row.ID) }
+						class="text-red-400 hover:text-red-300 text-xs transition-colors"
+					>
+						Delete
+					</button>
+				} else {
+					<span class="text-neutral-700 text-xs">you</span>
+				}
+			</div>
 		</td>
 	</tr>
 }
@@ -200,6 +278,190 @@ templ createUserError(msg string) {
 	<div id="create-user-error" class="text-red-400 text-xs">{ msg }</div>
 }
 
+templ ProfilePage(u *domain.User) {
+	@templates.Layout("Profile") {
+		@templates.PageHeaderBack("Profile", "Manage your account", "/", "Back") {
+		}
+		<div class="max-w-sm flex flex-col gap-4">
+			<!-- Profile info -->
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+				<div class="flex flex-col gap-4">
+					<div class="flex flex-col gap-1">
+						<span class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Username</span>
+						<span class="text-sm text-neutral-100">{ u.Username }</span>
+					</div>
+					<div class="flex flex-col gap-1">
+						<span class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Role</span>
+						@roleBadge(u.Role)
+					</div>
+					if u.Division != "" {
+						<div class="flex flex-col gap-1">
+							<span class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Division</span>
+							<span class="text-sm text-neutral-300">{ u.Division }</span>
+						</div>
+					}
+					<hr class="border-neutral-800"/>
+					<!-- Full name self-edit -->
+					<div
+						class="flex flex-col gap-3"
+						data-signals={ fmt.Sprintf("{profileFullName:'%s'}", u.FullName) }
+					>
+						<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Display Name</h3>
+						<input
+							type="text"
+							placeholder="Your full name"
+							data-bind:profile-full-name
+							class="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+						/>
+						<div id="profile-save-error"></div>
+						<div id="profile-save-success"></div>
+						<button
+							type="button"
+							data-on:click="@put('/api/users/me/profile')"
+							class="bg-neutral-700 hover:bg-neutral-600 text-neutral-200 text-sm font-medium py-2 rounded transition-colors"
+						>
+							Save display name
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Change password -->
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+				<div
+					class="flex flex-col gap-3"
+					data-signals="{currentPassword:'',newPassword:''}"
+				>
+					<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Change Password</h3>
+					<input
+						type="password"
+						placeholder="Current password"
+						data-bind:current-password
+						autocomplete="current-password"
+						class="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+					/>
+					<input
+						type="password"
+						placeholder="New password"
+						data-bind:new-password
+						autocomplete="new-password"
+						class="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+					/>
+					<div id="change-pw-error"></div>
+					<div id="change-pw-success"></div>
+					<button
+						type="button"
+						data-on:click="@post('/api/users/me/password')"
+						class="bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 rounded transition-colors"
+					>
+						Update password
+					</button>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ changePwError(msg string) {
+	<div id="change-pw-error" class="text-red-400 text-xs">{ msg }</div>
+}
+
+templ changePwSuccess() {
+	<div id="change-pw-success" class="text-green-400 text-xs">Password updated.</div>
+}
+
+templ editUserError(msg string) {
+	<div id="edit-user-error" class="text-red-400 text-xs">{ msg }</div>
+}
+
+templ profileSaveSuccess() {
+	<div id="profile-save-success" class="text-green-400 text-xs">Display name saved.</div>
+}
+
 func formatDate(t time.Time) string {
 	return t.Format("2006-01-02")
+}
+
+templ PermissionsPage() {
+	@templates.Layout("Permissions") {
+		@templates.PageHeaderRow("Module Permissions", "Configure which modules each role can view and edit")
+		<div
+			id="permissions-grid"
+			data-init="@get('/sse/settings/permissions', {openWhenHidden: false})"
+		>
+			<div class="text-neutral-500 text-sm">Loading…</div>
+		</div>
+	}
+}
+
+templ PermissionsGrid(opPerms domain.PermissionSet, viewerPerms domain.PermissionSet) {
+	<div id="permissions-grid" class="flex flex-col gap-8 max-w-2xl">
+		@permRoleSection("Operator", domain.RoleOperator, opPerms)
+		@permRoleSection("Viewer", domain.RoleViewer, viewerPerms)
+	</div>
+}
+
+templ permRoleSection(label string, role domain.Role, ps domain.PermissionSet) {
+	<div class="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden">
+		<div class="px-4 py-3 border-b border-neutral-700 bg-neutral-850">
+			<h3 class="text-sm font-semibold text-neutral-200">{ label }</h3>
+		</div>
+		<table class="w-full text-sm">
+			<thead>
+				<tr class="text-xs text-neutral-500 uppercase tracking-wider">
+					<th class="text-left px-4 py-2 font-medium">Module</th>
+					<th class="px-4 py-2 font-medium text-center">View</th>
+					<th class="px-4 py-2 font-medium text-center">Edit</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-neutral-700">
+				for _, m := range domain.AllModules {
+					{{ perm := ps[m] }}
+					{{ canView := perm != nil && perm.CanView }}
+					{{ canEdit := perm != nil && perm.CanEdit }}
+					<tr class="hover:bg-neutral-750">
+						<td class="px-4 py-2.5 text-neutral-300">{ moduleLabel(m) }</td>
+						<td class="px-4 py-2.5 text-center">
+							<input
+								type="checkbox"
+								checked?={ canView }
+								data-on:change={ "@post('/api/permissions/" + string(role) + "/" + string(m) + "?f=view&v=' + evt.target.checked)" }
+								class="w-4 h-4 accent-amber-500 cursor-pointer"
+							/>
+						</td>
+						<td class="px-4 py-2.5 text-center">
+							<input
+								type="checkbox"
+								checked?={ canEdit }
+								data-on:change={ "@post('/api/permissions/" + string(role) + "/" + string(m) + "?f=edit&v=' + evt.target.checked)" }
+								class="w-4 h-4 accent-amber-500 cursor-pointer"
+							/>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+func moduleLabel(m domain.Module) string {
+	labels := map[domain.Module]string{
+		domain.ModuleCustomers: "Customers",
+		domain.ModuleTickets:   "Tickets",
+		domain.ModuleDeals:     "Deals",
+		domain.ModuleTasks:     "Tasks",
+		domain.ModuleContacts:  "Contacts",
+		domain.ModuleInvoices:  "Invoices",
+		domain.ModuleProducts:  "Products",
+		domain.ModulePayments:  "Payments",
+		domain.ModuleNetwork:   "Network",
+		domain.ModuleEmail:     "Email",
+		domain.ModuleCron:      "Cron",
+		domain.ModuleAuditLog:  "Audit Log",
+		domain.ModuleUsers:     "Users",
+	}
+	if l, ok := labels[m]; ok {
+		return l
+	}
+	return string(m)
 }

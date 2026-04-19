@@ -14,6 +14,7 @@ import (
 	"github.com/vvs/isp/internal/modules/task/app/queries"
 	"github.com/vvs/isp/internal/modules/task/domain"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
 // Handlers holds all dependencies for task HTTP handlers.
@@ -72,7 +73,9 @@ func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
 		StatusFilter string `json:"taskStatusFilter"`
 		Search       string `json:"taskSearch"`
 	}
-	_ = datastar.ReadSignals(r, &signals)
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("task listAllSSE: ReadSignals: %v", err)
+	}
 	if signals.StatusFilter == "" {
 		signals.StatusFilter = "active"
 	}
@@ -368,3 +371,5 @@ func parseDueDate(s string) *time.Time {
 	}
 	return &t
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleTasks }

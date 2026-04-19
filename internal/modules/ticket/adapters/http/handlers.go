@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
@@ -15,6 +16,7 @@ import (
 	"github.com/vvs/isp/internal/modules/ticket/domain"
 	"github.com/vvs/isp/internal/shared/audit"
 	"github.com/vvs/isp/internal/shared/events"
+	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
 )
 
@@ -99,7 +101,13 @@ func (h *Handlers) audit(r *http.Request, action, resourceID string) {
 		actorID = user.ID
 		actorName = user.Username
 	}
-	go func() { _ = h.auditLogger.Log(context.Background(), actorID, actorName, action, "ticket", resourceID, nil) }()
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := h.auditLogger.Log(ctx, actorID, actorName, action, "ticket", resourceID, nil); err != nil {
+			log.Printf("audit: ticket %s %s: %v", action, resourceID, err)
+		}
+	}()
 }
 
 func (h *Handlers) WithCustomerSearch(cs CustomerSearcher) *Handlers {
@@ -408,7 +416,9 @@ func (h *Handlers) listAllSSE(w http.ResponseWriter, r *http.Request) {
 		TicketSearch       string `json:"ticketSearch"`
 		TicketStatusFilter string `json:"ticketStatusFilter"`
 	}
-	_ = datastar.ReadSignals(r, &signals)
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("ticket listSSE: ReadSignals: %v", err)
+	}
 	if signals.TicketStatusFilter == "" {
 		signals.TicketStatusFilter = "active"
 	}
@@ -576,7 +586,9 @@ func (h *Handlers) ticketCustomerSearch(w http.ResponseWriter, r *http.Request) 
 	var signals struct {
 		Search string `json:"newTicketCustomerSearch"`
 	}
-	_ = datastar.ReadSignals(r, &signals)
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("ticket customerSearch: ReadSignals: %v", err)
+	}
 	q := strings.TrimSpace(signals.Search)
 	if len(q) < 2 {
 		return
@@ -591,3 +603,5 @@ func (h *Handlers) ticketCustomerSearch(w http.ResponseWriter, r *http.Request) 
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElementTempl(ticketCustomerSearchResults(results))
 }
+
+func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleTickets }
