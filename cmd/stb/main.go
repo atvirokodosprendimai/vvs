@@ -1,0 +1,302 @@
+// vvs-stb — IPTV Set-Top Box device API binary.
+//
+// Runs on a public-facing VPS. Zero DB access.
+// All data fetched from vvs-core via NATS RPC over WireGuard.
+//
+// Authentication: every URL contains an opaque subscription token (64-char hex).
+// Revoke a token by marking the SubscriptionKey revoked in vvs-core admin.
+//
+// Routes:
+//
+//	GET /apis/siptv/playlist/{token}   — M3U8 for SIPTV app
+//	GET /apis/tvzone/playlist/{token}  — M3U8 for generic players (VLC, Tivimate)
+//	GET /apis/tvip/playlist/{token}    — M3U8 for TVIP STBs
+//	GET /epg/{token}.xml               — XMLTV EPG (3 days default)
+//	GET /stream/{token}/{channelID}    — 302 redirect to actual stream URL
+//	GET /portal/server.php             — Stalker/MAG protocol (?token=&action=)
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"log"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/joho/godotenv"
+	"github.com/nats-io/nats.go"
+	"github.com/urfave/cli/v3"
+	iptvnats "github.com/vvs/isp/internal/modules/iptv/adapters/nats"
+)
+
+func main() {
+	if err := godotenv.Load(); err == nil {
+		log.Println("Loaded config from .env")
+	}
+
+	cmd := &cli.Command{
+		Name:  "vvs-stb",
+		Usage: "VVS IPTV STB Device API (public-facing, no DB)",
+		Commands: []*cli.Command{
+			serveCommand(),
+		},
+	}
+
+	if err := cmd.Run(context.Background(), os.Args); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func serveCommand() *cli.Command {
+	return &cli.Command{
+		Name:  "serve",
+		Usage: "Start the STB device API HTTP server",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "addr",
+				Usage:   "HTTP listen address",
+				Value:   ":8082",
+				Sources: cli.EnvVars("STB_ADDR"),
+			},
+			&cli.StringFlag{
+				Name:     "nats-url",
+				Usage:    "NATS URL for vvs-core bridge (e.g. nats://10.0.0.1:4222)",
+				Sources:  cli.EnvVars("NATS_URL"),
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:    "nats-auth-token",
+				Usage:   "NATS auth token",
+				Sources: cli.EnvVars("NATS_AUTH_TOKEN"),
+			},
+			&cli.StringFlag{
+				Name:    "base-url",
+				Usage:   "Public base URL for generating stream redirect URLs (e.g. https://stb.example.com)",
+				Sources: cli.EnvVars("VVS_BASE_URL"),
+				Value:   "http://localhost:8082",
+			},
+		},
+		Action: runSTB,
+	}
+}
+
+func runSTB(ctx context.Context, cmd *cli.Command) error {
+	addr := cmd.String("addr")
+	natsURL := cmd.String("nats-url")
+	natsToken := cmd.String("nats-auth-token")
+	baseURL := strings.TrimRight(cmd.String("base-url"), "/")
+
+	opts := []nats.Option{nats.Name("vvs-stb")}
+	if natsToken != "" {
+		opts = append(opts, nats.Token(natsToken))
+	}
+	nc, err := nats.Connect(natsURL, opts...)
+	if err != nil {
+		return fmt.Errorf("connect nats: %w", err)
+	}
+	defer nc.Close()
+	slog.Info("connected to NATS", "url", natsURL)
+
+	client := iptvnats.NewSTBNATSClient(nc, 5*time.Second)
+
+	r := chi.NewRouter()
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+
+	// ── M3U8 playlist endpoints ─────────────────────────────────────────────
+	r.Get("/apis/siptv/playlist/{token}", playlistHandler(client, baseURL, "siptv"))
+	r.Get("/apis/tvzone/playlist/{token}", playlistHandler(client, baseURL, "tvzone"))
+	r.Get("/apis/tvip/playlist/{token}", playlistHandler(client, baseURL, "tvip"))
+
+	// ── EPG ─────────────────────────────────────────────────────────────────
+	r.Get("/epg/{token}.xml", epgHandler(client))
+
+	// ── Stream redirect ──────────────────────────────────────────────────────
+	r.Get("/stream/{token}/{channelID}", streamHandler(client))
+
+	// ── Stalker/MAG protocol ─────────────────────────────────────────────────
+	r.Get("/portal/server.php", stalkerHandler(client))
+
+	srv := &http.Server{Addr: addr, Handler: r}
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+
+	errCh := make(chan error, 1)
+	go func() {
+		slog.Info("vvs-stb listening", "addr", addr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errCh <- err
+		}
+	}()
+
+	select {
+	case <-sigCh:
+		slog.Info("shutting down")
+	case err := <-errCh:
+		return err
+	}
+
+	shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	return srv.Shutdown(shutCtx)
+}
+
+// ── M3U8 generation ───────────────────────────────────────────────────────────
+
+func playlistHandler(client *iptvnats.STBNATSClient, baseURL, appFmt string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := chi.URLParam(r, "token")
+		playlist, err := client.GetPlaylist(r.Context(), token)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		w.Header().Set("Content-Type", "application/x-mpegURL")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "#EXTM3U")
+		for _, ch := range playlist.Channels {
+			streamURL := fmt.Sprintf("%s/stream/%s/%s", baseURL, token, ch.ID)
+			switch appFmt {
+			case "siptv":
+				fmt.Fprintf(w, "#EXTINF:-1 tvg-id=%q tvg-logo=%q group-title=%q,%s\n%s\n",
+					ch.EPGSource, ch.LogoURL, ch.Category, ch.Name, streamURL)
+			case "tvip":
+				fmt.Fprintf(w, "#EXTINF:-1 tvg-name=%q tvg-logo=%q group-title=%q,%s\n%s\n",
+					ch.Name, ch.LogoURL, ch.Category, ch.Name, streamURL)
+			default: // tvzone / generic
+				fmt.Fprintf(w, "#EXTINF:-1 tvg-id=%q tvg-logo=%q group-title=%q,%s\n%s\n",
+					ch.EPGSource, ch.LogoURL, ch.Category, ch.Name, streamURL)
+			}
+		}
+	}
+}
+
+// ── EPG ───────────────────────────────────────────────────────────────────────
+
+func epgHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Chi captures token from /epg/{token}.xml path.
+		// The .xml suffix is part of the wildcard so we strip it.
+		token := strings.TrimSuffix(chi.URLParam(r, "token"), ".xml")
+		days := 3
+		xmltv, err := client.GetEPG(r.Context(), token, days)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		w.Header().Set("Content-Type", "text/xml; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, xmltv)
+	}
+}
+
+// ── Stream redirect ───────────────────────────────────────────────────────────
+
+func streamHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := chi.URLParam(r, "token")
+		channelID := chi.URLParam(r, "channelID")
+		streamURL, err := client.ResolveChannel(r.Context(), token, channelID)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		http.Redirect(w, r, streamURL, http.StatusFound)
+	}
+}
+
+// ── Stalker/MAG protocol ──────────────────────────────────────────────────────
+// Minimal implementation — MAG boxes call /portal/server.php?token=X&action=Y
+
+func stalkerHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := r.URL.Query().Get("token")
+		action := r.URL.Query().Get("action")
+		if action == "" {
+			action = r.URL.Query().Get("type")
+		}
+
+		// Validate token for every request.
+		kv, err := client.ValidateKey(r.Context(), token)
+		if err != nil || !kv.Active {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+
+		switch action {
+		case "handshake", "":
+			writeJSON(w, map[string]any{
+				"js": map[string]any{
+					"token":           token,
+					"random":          "AAAAAAAAAAAAAAAA",
+					"blocked":         "0",
+					"keep_alive_time": "30",
+					"servertime":      time.Now().Unix(),
+					"status":          1,
+				},
+			})
+		case "get_profile":
+			writeJSON(w, map[string]any{
+				"js": map[string]any{
+					"id":       kv.SubscriptionID,
+					"login":    kv.CustomerID,
+					"password": "",
+					"status":   1,
+				},
+			})
+		case "get_all_channels", "itv":
+			playlist, err := client.GetPlaylist(r.Context(), token)
+			if err != nil {
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+			type stalkerCh struct {
+				ID   string `json:"id"`
+				Name string `json:"name"`
+				Logo string `json:"logo"`
+				CMD  string `json:"cmd"`
+			}
+			channels := make([]stalkerCh, len(playlist.Channels))
+			for i, ch := range playlist.Channels {
+				channels[i] = stalkerCh{
+					ID:   ch.ID,
+					Name: ch.Name,
+					Logo: ch.LogoURL,
+					CMD:  fmt.Sprintf("ffrt http://%s", ch.ID), // placeholder
+				}
+			}
+			writeJSON(w, map[string]any{
+				"js": map[string]any{
+					"data":  channels,
+					"total_items": len(channels),
+					"max_page_items": len(channels),
+					"cur_page": 1,
+					"selected_item": 0,
+				},
+			})
+		default:
+			writeJSON(w, map[string]any{"js": map[string]any{"status": 1}})
+		}
+	}
+}
+
+func writeJSON(w http.ResponseWriter, v any) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	w.Write(b)
+}

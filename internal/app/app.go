@@ -130,6 +130,7 @@ import (
 	portalmigrations "github.com/vvs/isp/internal/modules/portal/migrations"
 
 	iptvhttp "github.com/vvs/isp/internal/modules/iptv/adapters/http"
+	iptvnats "github.com/vvs/isp/internal/modules/iptv/adapters/nats"
 	iptvpersistence "github.com/vvs/isp/internal/modules/iptv/adapters/persistence"
 	iptvcommands "github.com/vvs/isp/internal/modules/iptv/app/commands"
 	iptvqueries "github.com/vvs/isp/internal/modules/iptv/app/queries"
@@ -733,6 +734,13 @@ func New(cfg Config) (*App, error) {
 	)
 	moduleRoutes = append(moduleRoutes, iptvRoutes)
 	log.Printf("module wired: iptv")
+
+	// IPTV STB NATS bridge — serves isp.stb.rpc.* for vvs-stb binary
+	stbBridge := iptvnats.NewSTBBridge(nc, iptvKeyRepo, iptvSubRepo, iptvChannelRepo)
+	if err := stbBridge.Register(); err != nil {
+		return nil, fmt.Errorf("stb nats bridge: %w", err)
+	}
+	log.Printf("STB NATS bridge registered")
 
 	if err := rpcServer.Register(); err != nil {
 		return nil, fmt.Errorf("nats rpc: %w", err)
