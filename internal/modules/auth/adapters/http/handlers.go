@@ -135,13 +135,14 @@ func (h *Handlers) usersPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) listUsersSSE(w http.ResponseWriter, r *http.Request) {
-	sse := datastar.NewSSE(w, r)
-
 	currentUser := userFromContext(r)
-	currentID := ""
-	if currentUser != nil {
-		currentID = currentUser.ID
+	if currentUser == nil || !currentUser.IsAdmin() {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
 	}
+
+	sse := datastar.NewSSE(w, r)
+	currentID := currentUser.ID
 
 	rows, err := h.listUsersQuery.Handle(r.Context())
 	if err != nil {
@@ -286,6 +287,9 @@ func (h *Handlers) permissionsSSE(w http.ResponseWriter, r *http.Request) {
 	sse.PatchElementTempl(PermissionsGrid(opPerms, viewerPerms))
 }
 
+// validRoles is the set of configurable roles (admin is hardcoded, never in DB).
+var validRoles = map[domain.Role]bool{domain.RoleOperator: true, domain.RoleViewer: true}
+
 func (h *Handlers) savePermission(w http.ResponseWriter, r *http.Request) {
 	u := userFromContext(r)
 	if u == nil || !u.IsAdmin() {
@@ -300,7 +304,36 @@ func (h *Handlers) savePermission(w http.ResponseWriter, r *http.Request) {
 	role := domain.Role(chi.URLParam(r, "role"))
 	module := domain.Module(chi.URLParam(r, "module"))
 	field := r.URL.Query().Get("f")
-	val := r.URL.Query().Get("v") == "true"
+	rawVal := r.URL.Query().Get("v")
+
+	// Validate role
+	if !validRoles[role] {
+		http.Error(w, "invalid role", http.StatusBadRequest)
+		return
+	}
+	// Validate module
+	validModule := false
+	for _, m := range domain.AllModules {
+		if m == module {
+			validModule = true
+			break
+		}
+	}
+	if !validModule {
+		http.Error(w, "invalid module", http.StatusBadRequest)
+		return
+	}
+	// Validate field
+	if field != "view" && field != "edit" {
+		http.Error(w, "invalid field", http.StatusBadRequest)
+		return
+	}
+	// Validate value (strict — not "true"/"false" → 400)
+	if rawVal != "true" && rawVal != "false" {
+		http.Error(w, "invalid value", http.StatusBadRequest)
+		return
+	}
+	val := rawVal == "true"
 
 	// Load current row (or build default) to preserve the other field
 	ps, err := h.permRepo.FindByRole(r.Context(), role)
@@ -317,9 +350,6 @@ func (h *Handlers) savePermission(w http.ResponseWriter, r *http.Request) {
 		perm.CanView = val
 	case "edit":
 		perm.CanEdit = val
-	default:
-		http.Error(w, "invalid field", http.StatusBadRequest)
-		return
 	}
 
 	if err := h.permRepo.Save(r.Context(), perm); err != nil {
@@ -330,4 +360,6 @@ func (h *Handlers) savePermission(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (h *Handlers) ModuleName() domain.Module { return domain.ModuleUsers }
+// Note: auth Handlers intentionally does NOT implement ModuleNamed.
+// Login/logout/profile/change-password must never be wrapped in RequireModuleAccess.
+// User management routes are guarded by explicit IsAdmin() checks in each handler.

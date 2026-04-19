@@ -47,18 +47,28 @@ func TestAdminPermissionSet_CanViewAll(t *testing.T) {
 	}
 }
 
-func TestDefaultOperatorPermissions_AllViewAndEdit(t *testing.T) {
+func TestDefaultOperatorPermissions_ViewAndEdit_ExceptUsers(t *testing.T) {
 	perms := domain.DefaultPermissions(domain.RoleOperator)
 	for _, m := range domain.AllModules {
-		assert.True(t, perms[m].CanView, "operator should view %s", m)
-		assert.True(t, perms[m].CanEdit, "operator should edit %s", m)
+		if m == domain.ModuleUsers {
+			assert.False(t, perms[m].CanView, "operator must not view users by default")
+			assert.False(t, perms[m].CanEdit, "operator must not edit users by default")
+		} else {
+			assert.True(t, perms[m].CanView, "operator should view %s", m)
+			assert.True(t, perms[m].CanEdit, "operator should edit %s", m)
+		}
 	}
 }
 
-func TestDefaultViewerPermissions_ViewOnlyNoEdit(t *testing.T) {
+func TestDefaultViewerPermissions_ViewOnly_ExceptUsers(t *testing.T) {
 	perms := domain.DefaultPermissions(domain.RoleViewer)
 	for _, m := range domain.AllModules {
-		assert.True(t, perms[m].CanView, "viewer should view %s", m)
-		assert.False(t, perms[m].CanEdit, "viewer must not edit %s", m)
+		if m == domain.ModuleUsers {
+			assert.False(t, perms[m].CanView, "viewer must not view users by default")
+			assert.False(t, perms[m].CanEdit, "viewer must not edit users by default")
+		} else {
+			assert.True(t, perms[m].CanView, "viewer should view %s", m)
+			assert.False(t, perms[m].CanEdit, "viewer must not edit %s", m)
+		}
 	}
 }

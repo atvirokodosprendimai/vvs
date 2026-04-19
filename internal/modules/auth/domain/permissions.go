@@ -80,13 +80,14 @@ func AdminPermissionSet() PermissionSet {
 	return ps
 }
 
-// DefaultPermissions returns the seed permissions for a role.
-// Operator: all modules view + edit. Viewer: all modules view-only.
+// DefaultPermissions returns the seed permissions for a role (mirrors 003_role_module_permissions.sql).
+// Operator: all modules view+edit except users (0/0). Viewer: all modules view-only except users (0/0).
 func DefaultPermissions(role Role) PermissionSet {
 	ps := make(PermissionSet, len(AllModules))
 	for _, m := range AllModules {
-		canEdit := role == RoleOperator
-		ps[m] = &RoleModulePermission{Role: role, Module: m, CanView: true, CanEdit: canEdit}
+		canView := m != ModuleUsers
+		canEdit := m != ModuleUsers && role == RoleOperator
+		ps[m] = &RoleModulePermission{Role: role, Module: m, CanView: canView, CanEdit: canEdit}
 	}
 	return ps
 }
