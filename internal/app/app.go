@@ -96,6 +96,7 @@ import (
 	"github.com/vvs/isp/internal/modules/email/worker"
 	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
 
+	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
 	invoicehttp "github.com/vvs/isp/internal/modules/invoice/adapters/http"
 	paymenthttp "github.com/vvs/isp/internal/modules/payment/adapters/http"
 	paymentcommands "github.com/vvs/isp/internal/modules/payment/app/commands"
@@ -124,6 +125,7 @@ import (
 	cronmigrations "github.com/vvs/isp/internal/modules/cron/migrations"
 
 	portalhttp "github.com/vvs/isp/internal/modules/portal/adapters/http"
+	portalnats "github.com/vvs/isp/internal/modules/portal/adapters/nats"
 	portalpersistence "github.com/vvs/isp/internal/modules/portal/adapters/persistence"
 	portalmigrations "github.com/vvs/isp/internal/modules/portal/migrations"
 )
@@ -676,12 +678,23 @@ func New(cfg Config) (*App, error) {
 	// Portal module — customer self-service invoice access
 	portalTokenRepo := portalpersistence.NewGormPortalTokenRepository(gdb)
 	portalRoutes := portalhttp.NewHandlers(portalTokenRepo, listInvoicesForCustomerQuery, getInvoiceQuery).
-		WithPDFTokens(invoiceTokenRepo).
+		WithPDFTokens(&invoiceTokenMinter{tokenRepo: invoiceTokenRepo}).
 		WithCustomerReader(&portalCustomerBridge{query: getCustomerQuery}).
 		WithBaseURL(cfg.BaseURL).
 		WithSecureCookie(cfg.SecureCookie)
 	moduleRoutes = append(moduleRoutes, portalRoutes)
 	log.Printf("module wired: portal")
+
+	// Portal NATS bridge — serves isp.portal.rpc.* for vvs-portal binary
+	portalBridge := portalnats.NewPortalBridge(
+		nc, portalTokenRepo, invoiceTokenRepo,
+		listInvoicesForCustomerQuery, getInvoiceQuery,
+		&natsPortalCustomerBridge{query: getCustomerQuery},
+	)
+	if err := portalBridge.Register(); err != nil {
+		return nil, fmt.Errorf("portal nats bridge: %w", err)
+	}
+	log.Printf("portal NATS bridge registered")
 
 	if err := rpcServer.Register(); err != nil {
 		return nil, fmt.Errorf("nats rpc: %w", err)
@@ -997,6 +1010,36 @@ func (b *portalCustomerBridge) GetPortalCustomer(ctx context.Context, id string)
 		return nil, err
 	}
 	return &portalhttp.PortalCustomer{
+		ID:          c.ID,
+		CompanyName: c.CompanyName,
+		Email:       c.Email,
+	}, nil
+}
+
+// invoiceTokenMinter implements portalhttp.pdfTokenMinter using the invoice token repository.
+type invoiceTokenMinter struct {
+	tokenRepo invoicedomain.InvoiceTokenRepository
+}
+
+func (m *invoiceTokenMinter) MintToken(ctx context.Context, invoiceID string) (string, error) {
+	tok, plain, err := invoicedomain.NewInvoiceToken(invoiceID, 48*time.Hour)
+	if err != nil {
+		return "", err
+	}
+	return plain, m.tokenRepo.Save(ctx, tok)
+}
+
+// natsPortalCustomerBridge adapts portalCustomerBridge to portalnats.bridgeCustomerReader.
+type natsPortalCustomerBridge struct {
+	query *customerqueries.GetCustomerHandler
+}
+
+func (b *natsPortalCustomerBridge) GetPortalCustomer(ctx context.Context, id string) (*portalnats.BridgeCustomer, error) {
+	c, err := b.query.Handle(ctx, customerqueries.GetCustomerQuery{ID: id})
+	if err != nil {
+		return nil, err
+	}
+	return &portalnats.BridgeCustomer{
 		ID:          c.ID,
 		CompanyName: c.CompanyName,
 		Email:       c.Email,

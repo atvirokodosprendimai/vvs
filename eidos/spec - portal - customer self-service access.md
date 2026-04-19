@@ -55,3 +55,33 @@ Customer can only see:
 - Header: "VVS Customer Portal" + customer name + logout button
 - Tailwind + dark theme consistent with admin UI
 - No Datastar required (static server-rendered pages)
+
+## Standalone Deployment (cmd/portal)
+
+In production, the portal runs as a separate binary (`cmd/portal`) on a public VPS with no access to the admin dashboard.
+
+### Data access via NATS RPC
+All data is fetched from `cmd/server` (core) via NATS request/reply over WireGuard VPN. Portal binary has no database connection.
+
+| Subject | Request | Reply |
+|---------|---------|-------|
+| `isp.portal.rpc.token.validate` | `{hash}` | `{customerID, expiresAt}` |
+| `isp.portal.rpc.invoices.list` | `{customerID}` | `{invoices: []}` |
+| `isp.portal.rpc.invoice.get` | `{invoiceID, customerID}` | `{invoice}` — ownership checked server-side |
+| `isp.portal.rpc.invoice.token.validate` | `{tokenHash}` | `{invoiceID}` |
+| `isp.portal.rpc.invoice.token.mint` | `{invoiceID}` | `{plain}` |
+| `isp.portal.rpc.customer.get` | `{customerID}` | `{id, name, email}` |
+
+### Route ownership
+- `GET /portal/*` — portal binary (VPS)
+- `GET /i/{token}` — portal binary (VPS); validates token + fetches invoice via NATS; renders `InvoicePrintPage` locally
+- `POST /api/customers/{id}/portal-link` — **stays on core only** (admin action, writes to core's DB)
+
+### cmd/portal flags
+```
+--addr             HTTP listen address (default :8081)
+--nats-url         NATS server URL (required, e.g. nats://10.8.0.1:4222)
+--base-url         Public base URL for /i/{token} links
+--secure-cookie    Set Secure flag on portal cookies
+--nats-token       NATS auth token (optional)
+```

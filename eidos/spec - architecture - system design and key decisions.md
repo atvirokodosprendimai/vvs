@@ -1,5 +1,5 @@
 ---
-tldr: ISP business management system — single Go binary, hexagonal architecture, CQRS, embedded SQLite + NATS, reactive SSE frontend
+tldr: ISP business management system — hexagonal architecture, CQRS, embedded SQLite + NATS, reactive SSE frontend; deployable as single binary or split core+portal
 category: core
 ---
 
@@ -59,6 +59,47 @@ Goose runs automatically at startup per module with isolated version tables (`go
 - `infrastructure/itaxtlt.DebtorProvider` is a port; `StubDebtorProvider` is active until real credentials are configured; swap one line in `app.go`
 - Modules communicate exclusively through NATS events — no direct function calls across module boundaries
 
+## Deployment Modes
+
+### Single binary (default, development)
+One process, one port. Admin dashboard + customer portal on the same host. Suitable when internal access only or during development.
+
+### Split deployment (production with public portal)
+Two binaries on separate hosts — hard network boundary:
+
+```
+[ Office / NATed LAN ]                    [ Public VPS ]
+┌─────────────────────────┐               ┌───────────────────────────────┐
+│  cmd/server (vvs-core)  │◄──WireGuard──►│  cmd/portal (vvs-portal)      │
+│  - admin HTTP :8080      │    NATS RPC   │  - portal HTTP :8081           │
+│  - SQLite (all data)     │               │  - NO DB                       │
+│  - embedded NATS :4222   │               │  - NATS client only            │
+│  - NOT internet-facing   │               │  - /portal/* + /i/{token}      │
+└─────────────────────────┘               └───────────────────────────────┘
+```
+
+**`cmd/server` (core)** — all admin logic, SQLite, embedded NATS exposed on WireGuard interface. Never internet-facing.
+
+**`cmd/portal`** — customer portal only. No DB. Connects to core's NATS as a client. Serves `/portal/*` and `/i/{token}`. All data fetched from core via NATS request/reply.
+
+### NATS Portal RPC
+
+The portal binary communicates with core using 6 request/reply subjects (`isp.portal.rpc.*`), served by `PortalBridge` in core:
+
+| Subject | What it does |
+|---------|-------------|
+| `isp.portal.rpc.token.validate` | Validate portal session token hash → customerID |
+| `isp.portal.rpc.invoices.list` | List invoices for a customer |
+| `isp.portal.rpc.invoice.get` | Get invoice detail (with ownership check) |
+| `isp.portal.rpc.invoice.token.validate` | Validate public PDF token → invoiceID |
+| `isp.portal.rpc.invoice.token.mint` | Mint a new public PDF token |
+| `isp.portal.rpc.customer.get` | Get customer name/email for portal header |
+
+### Security (split mode)
+- NATS bound to WireGuard interface only (`10.8.0.1:4222`) — never public internet
+- Optional `--nats-auth-token` for additional protection
+- Nginx on VPS terminates TLS; rate-limits `/portal/auth`
+
 ## Mapping
 > [[internal/app/app.go]]
 > [[internal/infrastructure/database/writer.go]]
@@ -69,4 +110,7 @@ Goose runs automatically at startup per module with isolated version tables (`go
 > [[internal/infrastructure/itaxtlt/provider.go]]
 > [[internal/shared/events/event.go]]
 > [[internal/shared/cqrs/command.go]]
+> [[cmd/portal/main.go]]
+> [[internal/modules/portal/adapters/nats/bridge.go]]
+> [[internal/modules/portal/adapters/nats/client.go]]
 > [[AGENTS.md]]
