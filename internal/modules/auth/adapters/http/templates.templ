@@ -262,3 +262,87 @@ templ changePwSuccess() {
 func formatDate(t time.Time) string {
 	return t.Format("2006-01-02")
 }
+
+templ PermissionsPage() {
+	@templates.Layout("Permissions") {
+		@templates.PageHeaderRow("Module Permissions", "Configure which modules each role can view and edit")
+		<div
+			id="permissions-grid"
+			data-init="@get('/sse/settings/permissions', {openWhenHidden: false})"
+		>
+			<div class="text-neutral-500 text-sm">Loading…</div>
+		</div>
+	}
+}
+
+templ PermissionsGrid(opPerms domain.PermissionSet, viewerPerms domain.PermissionSet) {
+	<div id="permissions-grid" class="flex flex-col gap-8 max-w-2xl">
+		@permRoleSection("Operator", domain.RoleOperator, opPerms)
+		@permRoleSection("Viewer", domain.RoleViewer, viewerPerms)
+	</div>
+}
+
+templ permRoleSection(label string, role domain.Role, ps domain.PermissionSet) {
+	<div class="bg-neutral-800 border border-neutral-700 rounded-lg overflow-hidden">
+		<div class="px-4 py-3 border-b border-neutral-700 bg-neutral-850">
+			<h3 class="text-sm font-semibold text-neutral-200">{ label }</h3>
+		</div>
+		<table class="w-full text-sm">
+			<thead>
+				<tr class="text-xs text-neutral-500 uppercase tracking-wider">
+					<th class="text-left px-4 py-2 font-medium">Module</th>
+					<th class="px-4 py-2 font-medium text-center">View</th>
+					<th class="px-4 py-2 font-medium text-center">Edit</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-neutral-700">
+				for _, m := range domain.AllModules {
+					{{ perm := ps[m] }}
+					{{ canView := perm != nil && perm.CanView }}
+					{{ canEdit := perm != nil && perm.CanEdit }}
+					<tr class="hover:bg-neutral-750">
+						<td class="px-4 py-2.5 text-neutral-300">{ moduleLabel(m) }</td>
+						<td class="px-4 py-2.5 text-center">
+							<input
+								type="checkbox"
+								checked?={ canView }
+								data-on:change={ "@post('/api/permissions/" + string(role) + "/" + string(m) + "?f=view&v=' + evt.target.checked)" }
+								class="w-4 h-4 accent-amber-500 cursor-pointer"
+							/>
+						</td>
+						<td class="px-4 py-2.5 text-center">
+							<input
+								type="checkbox"
+								checked?={ canEdit }
+								data-on:change={ "@post('/api/permissions/" + string(role) + "/" + string(m) + "?f=edit&v=' + evt.target.checked)" }
+								class="w-4 h-4 accent-amber-500 cursor-pointer"
+							/>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+func moduleLabel(m domain.Module) string {
+	labels := map[domain.Module]string{
+		domain.ModuleCustomers: "Customers",
+		domain.ModuleTickets:   "Tickets",
+		domain.ModuleDeals:     "Deals",
+		domain.ModuleTasks:     "Tasks",
+		domain.ModuleContacts:  "Contacts",
+		domain.ModuleInvoices:  "Invoices",
+		domain.ModuleProducts:  "Products",
+		domain.ModulePayments:  "Payments",
+		domain.ModuleNetwork:   "Network",
+		domain.ModuleEmail:     "Email",
+		domain.ModuleCron:      "Cron",
+		domain.ModuleAuditLog:  "Audit Log",
+		domain.ModuleUsers:     "Users",
+	}
+	if l, ok := labels[m]; ok {
+		return l
+	}
+	return string(m)
+}

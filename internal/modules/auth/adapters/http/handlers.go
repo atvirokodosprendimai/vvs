@@ -16,13 +16,19 @@ import (
 const cookieName = "vvs_session"
 
 type Handlers struct {
-	loginCmd             *commands.LoginHandler
-	logoutCmd            *commands.LogoutHandler
-	createUserCmd        *commands.CreateUserHandler
-	deleteUserCmd        *commands.DeleteUserHandler
+	loginCmd              *commands.LoginHandler
+	logoutCmd             *commands.LogoutHandler
+	createUserCmd         *commands.CreateUserHandler
+	deleteUserCmd         *commands.DeleteUserHandler
 	changeSelfPasswordCmd *commands.ChangeSelfPasswordHandler
-	listUsersQuery       *queries.ListUsersHandler
-	currentUser          *queries.GetCurrentUserHandler
+	listUsersQuery        *queries.ListUsersHandler
+	currentUser           *queries.GetCurrentUserHandler
+	permRepo              domain.RolePermissionsRepository
+}
+
+func (h *Handlers) WithPermRepo(r domain.RolePermissionsRepository) *Handlers {
+	h.permRepo = r
+	return h
 }
 
 func NewHandlers(
@@ -55,6 +61,9 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Delete("/api/users/{id}", h.deleteUserSSE)
 	r.Get("/profile", h.profilePage)
 	r.Post("/api/users/me/password", h.changeSelfPasswordSSE)
+	r.Get("/settings/permissions", h.permissionsPage)
+	r.Get("/sse/settings/permissions", h.permissionsSSE)
+	r.Post("/api/permissions/{role}/{module}", h.savePermission)
 }
 
 func (h *Handlers) loginPage(w http.ResponseWriter, r *http.Request) {
@@ -247,6 +256,78 @@ func (h *Handlers) changeSelfPasswordSSE(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	sse.PatchElementTempl(changePwSuccess())
+}
+
+func (h *Handlers) permissionsPage(w http.ResponseWriter, r *http.Request) {
+	u := userFromContext(r)
+	if u == nil || !u.IsAdmin() {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+	PermissionsPage().Render(r.Context(), w)
+}
+
+func (h *Handlers) permissionsSSE(w http.ResponseWriter, r *http.Request) {
+	if h.permRepo == nil {
+		http.Error(w, "not configured", http.StatusInternalServerError)
+		return
+	}
+	opPerms, err := h.permRepo.FindByRole(r.Context(), domain.RoleOperator)
+	if err != nil {
+		log.Printf("permissionsSSE: operator: %v", err)
+		opPerms = domain.DefaultPermissions(domain.RoleOperator)
+	}
+	viewerPerms, err := h.permRepo.FindByRole(r.Context(), domain.RoleViewer)
+	if err != nil {
+		log.Printf("permissionsSSE: viewer: %v", err)
+		viewerPerms = domain.DefaultPermissions(domain.RoleViewer)
+	}
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElementTempl(PermissionsGrid(opPerms, viewerPerms))
+}
+
+func (h *Handlers) savePermission(w http.ResponseWriter, r *http.Request) {
+	u := userFromContext(r)
+	if u == nil || !u.IsAdmin() {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+	if h.permRepo == nil {
+		http.Error(w, "not configured", http.StatusInternalServerError)
+		return
+	}
+
+	role := domain.Role(chi.URLParam(r, "role"))
+	module := domain.Module(chi.URLParam(r, "module"))
+	field := r.URL.Query().Get("f")
+	val := r.URL.Query().Get("v") == "true"
+
+	// Load current row (or build default) to preserve the other field
+	ps, err := h.permRepo.FindByRole(r.Context(), role)
+	if err != nil || len(ps) == 0 {
+		ps = domain.DefaultPermissions(role)
+	}
+	perm, ok := ps[module]
+	if !ok {
+		perm = &domain.RoleModulePermission{Role: role, Module: module}
+	}
+
+	switch field {
+	case "view":
+		perm.CanView = val
+	case "edit":
+		perm.CanEdit = val
+	default:
+		http.Error(w, "invalid field", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.permRepo.Save(r.Context(), perm); err != nil {
+		log.Printf("savePermission: %v", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handlers) ModuleName() domain.Module { return domain.ModuleUsers }
