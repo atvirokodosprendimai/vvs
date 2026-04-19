@@ -23,6 +23,7 @@ const (
 	SubjectEPGGet         = "isp.stb.rpc.epg.get"
 	SubjectEPGShort       = "isp.stb.rpc.epg.short"
 	SubjectChannelResolve = "isp.stb.rpc.channel.resolve"
+	SubjectConfigGet      = "isp.stb.rpc.config.get"
 )
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
@@ -44,15 +45,30 @@ type epgCurrentNextReader interface {
 	ListCurrentAndNext(ctx context.Context, channelEPGIDs []string) (map[string][2]*domain.EPGProgramme, error)
 }
 
+type stbByMACReader interface {
+	FindByMAC(ctx context.Context, mac string) (*domain.STB, error)
+}
+
+type subsByCustomerReader interface {
+	ListForCustomer(ctx context.Context, customerID string) ([]*domain.Subscription, error)
+}
+
+type keysBySubscriptionReader interface {
+	FindBySubscriptionID(ctx context.Context, subscriptionID string) ([]*domain.SubscriptionKey, error)
+}
+
 // STBBridge subscribes to isp.stb.rpc.* subjects and serves STB data.
 // Runs on vvs-core — has direct access to SQLite via the injected repos.
 type STBBridge struct {
-	nc       *nats.Conn
-	keys     subscriptionKeyReader
-	subs     subscriptionReader
-	channels channelsByPackageReader
-	epg      epgCurrentNextReader
-	nSubs    []*nats.Subscription
+	nc          *nats.Conn
+	keys        subscriptionKeyReader
+	subs        subscriptionReader
+	channels    channelsByPackageReader
+	epg         epgCurrentNextReader
+	stbsByMAC   stbByMACReader
+	subsByCustomer subsByCustomerReader
+	keysBySub   keysBySubscriptionReader
+	nSubs       []*nats.Subscription
 }
 
 // NewSTBBridge creates a bridge. Call Register() to start serving.
@@ -62,8 +78,20 @@ func NewSTBBridge(
 	subs subscriptionReader,
 	channels channelsByPackageReader,
 	epg epgCurrentNextReader,
+	stbsByMAC stbByMACReader,
+	subsByCustomer subsByCustomerReader,
+	keysBySub keysBySubscriptionReader,
 ) *STBBridge {
-	return &STBBridge{nc: nc, keys: keys, subs: subs, channels: channels, epg: epg}
+	return &STBBridge{
+		nc:             nc,
+		keys:           keys,
+		subs:           subs,
+		channels:       channels,
+		epg:            epg,
+		stbsByMAC:      stbsByMAC,
+		subsByCustomer: subsByCustomer,
+		keysBySub:      keysBySub,
+	}
 }
 
 // Register subscribes to all STB RPC subjects.
@@ -77,6 +105,7 @@ func (b *STBBridge) Register() error {
 		{SubjectEPGGet, b.handleEPGGet},
 		{SubjectEPGShort, b.handleEPGShort},
 		{SubjectChannelResolve, b.handleChannelResolve},
+		{SubjectConfigGet, b.handleConfigGet},
 	}
 	for _, e := range entries {
 		sub, err := b.nc.Subscribe(e.subject, e.handler)
@@ -373,6 +402,81 @@ func (b *STBBridge) handleChannelResolve(msg *nats.Msg) {
 	}{ch.StreamURL}, nil)
 }
 
+func (b *STBBridge) handleConfigGet(msg *nats.Msg) {
+	var req struct {
+		Token string `json:"token"`
+		MAC   string `json:"mac"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil {
+		stbBridgeReply(msg, nil, err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var token string
+	var active bool
+
+	if req.Token != "" {
+		// Token path: validate directly.
+		key, sub, err := b.resolveKey(ctx, req.Token)
+		if err != nil {
+			stbBridgeReply(msg, nil, err)
+			return
+		}
+		token = key.Token
+		active = sub.Status == domain.SubscriptionActive
+	} else if req.MAC != "" {
+		// MAC path: STB → customer → subscription → key.
+		stb, err := b.stbsByMAC.FindByMAC(ctx, req.MAC)
+		if err != nil {
+			stbBridgeReply(msg, nil, errConfigNotFound)
+			return
+		}
+		customerSubs, err := b.subsByCustomer.ListForCustomer(ctx, stb.CustomerID)
+		if err != nil {
+			stbBridgeReply(msg, nil, err)
+			return
+		}
+		var sub *domain.Subscription
+		for _, s := range customerSubs {
+			if s.Status == domain.SubscriptionActive {
+				sub = s
+				break
+			}
+		}
+		if sub == nil {
+			stbBridgeReply(msg, nil, errConfigNotFound)
+			return
+		}
+		keys, err := b.keysBySub.FindBySubscriptionID(ctx, sub.ID)
+		if err != nil {
+			stbBridgeReply(msg, nil, err)
+			return
+		}
+		for _, k := range keys {
+			if k.IsActive() {
+				token = k.Token
+				active = true
+				break
+			}
+		}
+		if token == "" {
+			stbBridgeReply(msg, nil, errConfigNotFound)
+			return
+		}
+	} else {
+		stbBridgeReply(msg, nil, errInvalidToken)
+		return
+	}
+
+	stbBridgeReply(msg, struct {
+		Token  string `json:"token"`
+		Active bool   `json:"active"`
+	}{token, active}, nil)
+}
+
 // ── Internal helpers ──────────────────────────────────────────────────────────
 
 // resolveKey validates a token string and returns the key + subscription.
@@ -451,9 +555,10 @@ type stbEnvelope struct {
 }
 
 var (
-	errInvalidToken   = &stbBridgeError{"invalid or revoked token"}
-	errSuspended      = &stbBridgeError{"subscription suspended"}
+	errInvalidToken    = &stbBridgeError{"invalid or revoked token"}
+	errSuspended       = &stbBridgeError{"subscription suspended"}
 	errChannelNotFound = &stbBridgeError{"channel not found"}
+	errConfigNotFound  = &stbBridgeError{"device or subscription not found"}
 )
 
 type stbBridgeError struct{ msg string }

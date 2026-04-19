@@ -122,6 +122,9 @@ func runSTB(ctx context.Context, cmd *cli.Command) error {
 	r.Get("/epg/{token}.xml", epgHandler(client))
 	r.Get("/epg/{token}/now.json", epgShortHandler(client))
 
+	// ── Device config ────────────────────────────────────────────────────────
+	r.Get("/getconfig", getConfigHandler(client, baseURL))
+
 	// ── Stream redirect ──────────────────────────────────────────────────────
 	r.Get("/stream/{token}/{channelID}", streamHandler(client))
 
@@ -199,6 +202,33 @@ func epgHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/xml; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, xmltv)
+	}
+}
+
+// ── Device config ─────────────────────────────────────────────────────────────
+
+func getConfigHandler(client *iptvnats.STBNATSClient, baseURL string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := r.URL.Query().Get("token")
+		mac := r.URL.Query().Get("mac")
+		if mac == "" {
+			mac = r.Header.Get("X-STB-MAC") // MAG boxes send this header
+		}
+
+		cfg, err := client.GetConfig(r.Context(), token, mac)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"token":      cfg.Token,
+			"server_url": baseURL,
+			"epg_url":    baseURL + "/epg/" + cfg.Token + ".xml",
+			"timezone":   "Europe/Vilnius",
+			"active":     cfg.Active,
+		})
 	}
 }
 

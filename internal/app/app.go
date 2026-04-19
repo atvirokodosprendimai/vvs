@@ -738,7 +738,8 @@ func New(cfg Config) (*App, error) {
 	log.Printf("module wired: iptv")
 
 	// IPTV STB NATS bridge — serves isp.stb.rpc.* for vvs-stb binary
-	stbBridge := iptvnats.NewSTBBridge(nc, iptvKeyRepo, iptvSubRepo, iptvChannelRepo, iptvEPGRepo)
+	stbBridge := iptvnats.NewSTBBridge(nc, iptvKeyRepo, iptvSubRepo, iptvChannelRepo, iptvEPGRepo,
+		iptvSTBRepo, iptvSubRepo, iptvKeyRepo)
 	if err := stbBridge.Register(); err != nil {
 		return nil, fmt.Errorf("stb nats bridge: %w", err)
 	}

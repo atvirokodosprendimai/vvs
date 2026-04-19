@@ -100,6 +100,24 @@ func (c *STBNATSClient) GetEPGShort(ctx context.Context, token string) ([]EPGSho
 	return resp.Programmes, nil
 }
 
+// ── Config ────────────────────────────────────────────────────────────────────
+
+// ConfigResult holds the device configuration returned by the bridge.
+type ConfigResult struct {
+	Token  string `json:"token"`
+	Active bool   `json:"active"`
+}
+
+// GetConfig looks up config by token or MAC address (one must be non-empty).
+func (c *STBNATSClient) GetConfig(ctx context.Context, token, mac string) (*ConfigResult, error) {
+	var resp ConfigResult
+	req := map[string]string{"token": token, "mac": mac}
+	if err := c.rpc(ctx, SubjectConfigGet, req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // ── Channel resolve ───────────────────────────────────────────────────────────
 
 func (c *STBNATSClient) ResolveChannel(ctx context.Context, token, channelID string) (string, error) {

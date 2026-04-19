@@ -48,6 +48,31 @@ func (s *stubEPGReader) ListCurrentAndNext(_ context.Context, _ []string) (map[s
 	return s.data, nil
 }
 
+type stubSTBByMACReader struct {
+	stb *domain.STB
+	err error
+}
+
+func (s *stubSTBByMACReader) FindByMAC(_ context.Context, _ string) (*domain.STB, error) {
+	return s.stb, s.err
+}
+
+type stubSubsByCustomerReader struct {
+	subs []*domain.Subscription
+}
+
+func (s *stubSubsByCustomerReader) ListForCustomer(_ context.Context, _ string) ([]*domain.Subscription, error) {
+	return s.subs, nil
+}
+
+type stubKeysBySubReader struct {
+	keys []*domain.SubscriptionKey
+}
+
+func (s *stubKeysBySubReader) FindBySubscriptionID(_ context.Context, _ string) ([]*domain.SubscriptionKey, error) {
+	return s.keys, nil
+}
+
 func newStubChannelReader() *stubChannelReader {
 	return &stubChannelReader{byID: make(map[string]*domain.Channel)}
 }
@@ -67,11 +92,14 @@ func (s *stubChannelReader) FindByID(_ context.Context, id string) (*domain.Chan
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 type bridgeFixture struct {
-	clientNC *natsgo.Conn
-	keys     *stubKeyReader
-	subs     *stubSubReader
-	channels *stubChannelReader
-	epg      *stubEPGReader
+	clientNC    *natsgo.Conn
+	keys        *stubKeyReader
+	subs        *stubSubReader
+	channels    *stubChannelReader
+	epg         *stubEPGReader
+	stbsByMAC   *stubSTBByMACReader
+	subsByCustomer *stubSubsByCustomerReader
+	keysBySub   *stubKeysBySubReader
 }
 
 func startSTBBridge(t *testing.T) *bridgeFixture {
@@ -82,13 +110,17 @@ func startSTBBridge(t *testing.T) *bridgeFixture {
 	t.Cleanup(func() { serverNC.Close() })
 
 	fix := &bridgeFixture{
-		keys:     &stubKeyReader{},
-		subs:     &stubSubReader{},
-		channels: newStubChannelReader(),
-		epg:      &stubEPGReader{},
+		keys:           &stubKeyReader{},
+		subs:           &stubSubReader{},
+		channels:       newStubChannelReader(),
+		epg:            &stubEPGReader{},
+		stbsByMAC:      &stubSTBByMACReader{},
+		subsByCustomer: &stubSubsByCustomerReader{},
+		keysBySub:      &stubKeysBySubReader{},
 	}
 
-	bridge := iptvnats.NewSTBBridge(serverNC, fix.keys, fix.subs, fix.channels, fix.epg)
+	bridge := iptvnats.NewSTBBridge(serverNC, fix.keys, fix.subs, fix.channels, fix.epg,
+		fix.stbsByMAC, fix.subsByCustomer, fix.keysBySub)
 	require.NoError(t, bridge.Register())
 	t.Cleanup(bridge.Close)
 
@@ -317,4 +349,47 @@ func TestSTBBridge_EPGGet_ReturnsXMLTV(t *testing.T) {
 	require.True(t, ok)
 	assert.Contains(t, xmltv, `<tv>`)
 	assert.Contains(t, xmltv, `bbc.co.uk`)
+}
+
+// ── ConfigGet ─────────────────────────────────────────────────────────────────
+
+func TestSTBBridge_ConfigGet_ByToken(t *testing.T) {
+	fix := startSTBBridge(t)
+	fix.keys.key = activeKey()
+	fix.subs.sub = activeSub()
+
+	env := rpcSTB(t, fix.clientNC, iptvnats.SubjectConfigGet, map[string]string{"token": "abc123"})
+	assert.Empty(t, env["error"])
+	data := env["data"].(map[string]any)
+	assert.Equal(t, "abc123", data["token"])
+	assert.Equal(t, true, data["active"])
+}
+
+func TestSTBBridge_ConfigGet_ByMAC(t *testing.T) {
+	fix := startSTBBridge(t)
+	fix.stbsByMAC.stb = &domain.STB{ID: "stb-1", CustomerID: "cust-1", MAC: "00:1A:2B:3C:4D:5E"}
+	fix.subsByCustomer.subs = []*domain.Subscription{activeSub()}
+	fix.keysBySub.keys = []*domain.SubscriptionKey{activeKey()}
+	fix.keys.key = activeKey() // needed for subsequent resolveKey after finding by MAC
+	fix.subs.sub = activeSub()
+
+	env := rpcSTB(t, fix.clientNC, iptvnats.SubjectConfigGet, map[string]string{"mac": "00:1A:2B:3C:4D:5E"})
+	assert.Empty(t, env["error"])
+	data := env["data"].(map[string]any)
+	assert.Equal(t, "abc123", data["token"])
+	assert.Equal(t, true, data["active"])
+}
+
+func TestSTBBridge_ConfigGet_MACNotFound(t *testing.T) {
+	fix := startSTBBridge(t)
+	fix.stbsByMAC.err = fmt.Errorf("not found")
+
+	env := rpcSTB(t, fix.clientNC, iptvnats.SubjectConfigGet, map[string]string{"mac": "00:1A:2B:3C:4D:5E"})
+	assert.NotEmpty(t, env["error"])
+}
+
+func TestSTBBridge_ConfigGet_EmptyRequest(t *testing.T) {
+	fix := startSTBBridge(t)
+	env := rpcSTB(t, fix.clientNC, iptvnats.SubjectConfigGet, map[string]string{})
+	assert.NotEmpty(t, env["error"])
 }
