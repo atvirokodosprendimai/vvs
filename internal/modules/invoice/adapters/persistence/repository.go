@@ -26,7 +26,8 @@ type invoiceModel struct {
 	TotalAmount  int64      `gorm:"column:total_amount;not null;default:0"`
 	Currency     string     `gorm:"type:text;not null;default:'EUR'"`
 	Notes        string     `gorm:"type:text;not null;default:''"`
-	PaidAt       *time.Time `gorm:"column:paid_at"`
+	PaidAt          *time.Time `gorm:"column:paid_at"`
+	ReminderSentAt  *time.Time `gorm:"column:reminder_sent_at"`
 	CreatedAt    time.Time  `gorm:"column:created_at"`
 	UpdatedAt    time.Time  `gorm:"column:updated_at"`
 
@@ -205,8 +206,9 @@ func toModel(inv *domain.Invoice) *invoiceModel {
 		TotalAmount:  inv.TotalAmount,
 		Currency:     inv.Currency,
 		Notes:        inv.Notes,
-		PaidAt:       inv.PaidAt,
-		CreatedAt:    inv.CreatedAt,
+		PaidAt:          inv.PaidAt,
+		ReminderSentAt:  inv.ReminderSentAt,
+		CreatedAt:       inv.CreatedAt,
 		UpdatedAt:    inv.UpdatedAt,
 		LineItems:    items,
 	}
@@ -244,8 +246,27 @@ func toDomain(m *invoiceModel) *domain.Invoice {
 		TotalAmount:  m.TotalAmount,
 		Currency:     m.Currency,
 		Notes:        m.Notes,
-		PaidAt:       m.PaidAt,
-		CreatedAt:    m.CreatedAt,
+		PaidAt:          m.PaidAt,
+		ReminderSentAt:  m.ReminderSentAt,
+		CreatedAt:       m.CreatedAt,
 		UpdatedAt:    m.UpdatedAt,
 	}
+}
+
+// ListOverdue returns all finalized invoices past their due date.
+func (r *InvoiceRepository) ListOverdue(ctx context.Context) ([]*domain.Invoice, error) {
+	var models []invoiceModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Preload("LineItems").
+			Where("status = ? AND due_date < ?", string(domain.StatusFinalized), time.Now().UTC()).
+			Find(&models).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+	invoices := make([]*domain.Invoice, len(models))
+	for i := range models {
+		invoices[i] = toDomain(&models[i])
+	}
+	return invoices, nil
 }

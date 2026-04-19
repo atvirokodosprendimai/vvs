@@ -54,7 +54,8 @@ type Invoice struct {
 	TotalAmount  int64  // cents, grand total (SubTotal + VATTotal)
 	Currency     string // default "EUR"
 	Notes        string
-	PaidAt       *time.Time
+	PaidAt          *time.Time
+	ReminderSentAt  *time.Time // set when dunning reminder was last sent
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
@@ -191,4 +192,31 @@ func (inv *Invoice) Void() error {
 // IsOverdue returns true if the invoice is finalized (not paid/void) and past its due date.
 func (inv *Invoice) IsOverdue() bool {
 	return inv.Status == StatusFinalized && time.Now().After(inv.DueDate)
+}
+
+// ReminderSentAt is set when a dunning reminder email is sent for this invoice.
+// Added to Invoice struct — see field definition in struct body.
+
+// MarkReminderSent records the current time as the last reminder sent.
+// Returns ErrInvalidTransition if the invoice is not finalized and overdue.
+func (inv *Invoice) MarkReminderSent() error {
+	if !inv.IsOverdue() {
+		return ErrInvalidTransition
+	}
+	now := time.Now().UTC()
+	inv.ReminderSentAt = &now
+	inv.UpdatedAt = now
+	return nil
+}
+
+// NeedsReminder returns true if the invoice is overdue and either no reminder
+// has been sent, or the last reminder was sent more than minInterval ago.
+func (inv *Invoice) NeedsReminder(minInterval time.Duration) bool {
+	if !inv.IsOverdue() {
+		return false
+	}
+	if inv.ReminderSentAt == nil {
+		return true
+	}
+	return time.Since(*inv.ReminderSentAt) >= minInterval
 }
