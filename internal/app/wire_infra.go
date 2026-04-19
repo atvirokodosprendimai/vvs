@@ -153,16 +153,29 @@ func wireInfra(
 
 	// ── Portal — customer self-service invoice access ─────────────────────────
 	portalTokenRepo := portalpersistence.NewGormPortalTokenRepository(gdb)
+	botSessions := bot.NewSessions(0)
+	botOllama   := bot.NewOllamaClient(cfg.OllamaURL, cfg.BotModel)
+	coreBotBridge := &corePortalBotBridge{
+		sessions:     botSessions,
+		ollama:       botOllama,
+		chatStore:    chatStore,
+		openTicket:   crm.openTicket,
+		custQuery:    cust.getQuery,
+		svcRepo:      svc.repo,
+		listInvoices: inv.listForCustomer,
+	}
 	portalRoutes := portalhttp.NewHandlers(portalTokenRepo, inv.listForCustomer, inv.get).
 		WithPDFTokens(&invoiceTokenMinter{tokenRepo: inv.tokenRepo}).
 		WithCustomerReader(&portalCustomerBridge{query: cust.getQuery}).
+		WithTickets(&corePortalTicketBridge{list: crm.listTickets, open: crm.openTicket, comment: crm.addComment}).
+		WithServices(&corePortalHTTPServiceBridge{repo: svc.repo}).
+		WithLoginClient(&corePortalLoginBridge{custRepo: cust.repo, tokenRepo: portalTokenRepo}).
+		WithBot(coreBotBridge).
 		WithBaseURL(cfg.BaseURL).
 		WithSecureCookie(cfg.SecureCookie)
 	log.Printf("module wired: portal")
 
 	// ── Portal NATS bridge (serves isp.portal.rpc.* for vvs-portal binary) ───
-	botSessions := bot.NewSessions(0)
-	botOllama   := bot.NewOllamaClient(cfg.OllamaURL, cfg.BotModel)
 	portalBridge := portalnats.NewPortalBridge(
 		nc, portalTokenRepo, inv.tokenRepo,
 		inv.listForCustomer, inv.get,
