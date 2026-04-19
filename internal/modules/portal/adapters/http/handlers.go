@@ -275,17 +275,17 @@ func (h *Handlers) portalLogout(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) invoiceList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	customerID := PortalCustomerIDFromContext(r.Context())
+	cust := h.resolveCustomer(r.Context(), customerID)
 
 	invoices, err := h.listInvoices.Handle(r.Context(), invoicequeries.ListInvoicesForCustomerQuery{
 		CustomerID: customerID,
 	})
 	if err != nil {
 		log.Printf("portal invoiceList: %v", err)
-		http.Error(w, "error loading invoices", http.StatusInternalServerError)
+		PortalErrorPage(cust, "Error", "Could not load invoices. Please try again later.").Render(r.Context(), w)
 		return
 	}
 
-	cust := h.resolveCustomer(r.Context(), customerID)
 	PortalInvoiceListPage(cust, invoices).Render(r.Context(), w)
 }
 
@@ -294,15 +294,16 @@ func (h *Handlers) invoiceDetail(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	customerID := PortalCustomerIDFromContext(r.Context())
 	id := chi.URLParam(r, "id")
+	cust := h.resolveCustomer(r.Context(), customerID)
 
 	inv, err := h.getInvoice.Handle(r.Context(), id)
 	if err != nil || inv == nil {
-		http.Error(w, "invoice not found", http.StatusNotFound)
+		PortalErrorPage(cust, "Not Found", "This invoice could not be found.").Render(r.Context(), w)
 		return
 	}
 	// Ownership check — customer can only view their own invoices.
 	if inv.CustomerID != customerID {
-		http.Error(w, "not found", http.StatusNotFound)
+		PortalErrorPage(cust, "Not Found", "This invoice could not be found.").Render(r.Context(), w)
 		return
 	}
 
@@ -313,7 +314,6 @@ func (h *Handlers) invoiceDetail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	cust := h.resolveCustomer(r.Context(), customerID)
 	PortalInvoiceDetailPage(cust, inv, pdfURL).Render(r.Context(), w)
 }
 
@@ -393,18 +393,23 @@ func (h *Handlers) ticketNew(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	customerID := PortalCustomerIDFromContext(r.Context())
 	cust := h.resolveCustomer(r.Context(), customerID)
+	if h.tickets == nil {
+		PortalErrorPage(cust, "Support Unavailable", "Support tickets are not available right now. Please try again later.").Render(r.Context(), w)
+		return
+	}
 	PortalTicketNewPage(cust, "").Render(r.Context(), w)
 }
 
 // ticketCreate opens a new support ticket.
 func (h *Handlers) ticketCreate(w http.ResponseWriter, r *http.Request) {
+	customerID := PortalCustomerIDFromContext(r.Context())
+	cust := h.resolveCustomer(r.Context(), customerID)
 	if h.tickets == nil {
-		http.Error(w, "support tickets not available", http.StatusServiceUnavailable)
+		PortalErrorPage(cust, "Support Unavailable", "Support tickets are not available right now. Please try again later.").Render(r.Context(), w)
 		return
 	}
-	customerID := PortalCustomerIDFromContext(r.Context())
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		http.Redirect(w, r, "/portal/tickets/new", http.StatusSeeOther)
 		return
 	}
 	subject := r.FormValue("subject")
@@ -459,14 +464,14 @@ func (h *Handlers) ticketDetail(w http.ResponseWriter, r *http.Request) {
 
 // ticketCommentAdd adds a comment to an existing support ticket.
 func (h *Handlers) ticketCommentAdd(w http.ResponseWriter, r *http.Request) {
-	if h.tickets == nil {
-		http.Error(w, "support tickets not available", http.StatusServiceUnavailable)
-		return
-	}
 	customerID := PortalCustomerIDFromContext(r.Context())
 	id := chi.URLParam(r, "id")
+	if h.tickets == nil {
+		http.Redirect(w, r, "/portal/tickets", http.StatusSeeOther)
+		return
+	}
 	if err := r.ParseForm(); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		http.Redirect(w, r, fmt.Sprintf("/portal/tickets/%s", id), http.StatusSeeOther)
 		return
 	}
 	body := r.FormValue("body")
