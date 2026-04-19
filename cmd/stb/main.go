@@ -13,7 +13,6 @@
 //	GET /apis/tvip/playlist/{token}    — M3U8 for TVIP STBs
 //	GET /epg/{token}.xml               — XMLTV EPG (3 days default)
 //	GET /stream/{token}/{channelID}    — 302 redirect to actual stream URL
-//	GET /portal/server.php             — Stalker/MAG protocol (?token=&action=)
 package main
 
 import (
@@ -26,6 +25,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -135,11 +135,8 @@ func runSTB(ctx context.Context, cmd *cli.Command) error {
 	// ── Stream (redirect or transparent proxy) ──────────────────────────────
 	r.Get("/stream/{token}/{channelID}", streamHandler(client, proxyEnabled))
 
-	// ── DVR (stub — not yet implemented) ────────────────────────────────────
-	r.Get("/dvr/{token}/{channelID}/{startUnix}", dvrHandler())
-
-	// ── Stalker/MAG protocol ─────────────────────────────────────────────────
-	r.Get("/portal/server.php", stalkerHandler(client, baseURL))
+	// ── DVR ──────────────────────────────────────────────────────────────────
+	r.Get("/dvr/{token}/{channelID}/{startUnix}", dvrHandler(client))
 
 	srv := &http.Server{Addr: addr, Handler: r}
 
@@ -268,7 +265,7 @@ func streamHandler(client *iptvnats.STBNATSClient, proxy bool) http.HandlerFunc 
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := chi.URLParam(r, "token")
 		channelID := chi.URLParam(r, "channelID")
-		streamURL, err := client.ResolveChannel(r.Context(), token, channelID)
+		streamURL, err := client.GetChannel(r.Context(), token, channelID)
 		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
@@ -318,101 +315,32 @@ func streamHandler(client *iptvnats.STBNATSClient, proxy bool) http.HandlerFunc 
 	}
 }
 
-// ── DVR stub ─────────────────────────────────────────────────────────────────
+// ── DVR ───────────────────────────────────────────────────────────────────────
 
-func dvrHandler() http.HandlerFunc {
+func dvrHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotImplemented)
-		json.NewEncoder(w).Encode(map[string]string{"error": "dvr not enabled"})
-	}
-}
+		token := chi.URLParam(r, "token")
+		channelID := chi.URLParam(r, "channelID")
+		startUnixStr := chi.URLParam(r, "startUnix")
 
-// ── Stalker/MAG protocol ──────────────────────────────────────────────────────
-// Minimal implementation — MAG boxes call /portal/server.php?token=X&action=Y
-
-func stalkerHandler(client *iptvnats.STBNATSClient, baseURL string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		token := r.URL.Query().Get("token")
-		action := r.URL.Query().Get("action")
-		if action == "" {
-			action = r.URL.Query().Get("type")
-		}
-
-		// Validate token for every request.
-		kv, err := client.ValidateKey(r.Context(), token)
-		if err != nil || !kv.Active {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		startUnix, err := strconv.ParseInt(startUnixStr, 10, 64)
+		if err != nil {
+			http.Error(w, "invalid startUnix", http.StatusBadRequest)
 			return
 		}
+		startAt := time.Unix(startUnix, 0).UTC()
 
-		w.Header().Set("Content-Type", "application/json")
-
-		switch action {
-		case "handshake", "":
-			writeJSON(w, map[string]any{
-				"js": map[string]any{
-					"token":           token,
-					"random":          "AAAAAAAAAAAAAAAA",
-					"blocked":         "0",
-					"keep_alive_time": "30",
-					"servertime":      time.Now().Unix(),
-					"status":          1,
-				},
-			})
-		case "get_profile":
-			writeJSON(w, map[string]any{
-				"js": map[string]any{
-					"id":       kv.SubscriptionID,
-					"login":    kv.CustomerID,
-					"password": "",
-					"status":   1,
-				},
-			})
-		case "get_all_channels", "itv":
-			playlist, err := client.GetPlaylist(r.Context(), token)
-			if err != nil {
-				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-				return
-			}
-			type stalkerCh struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-				Logo string `json:"logo"`
-				CMD  string `json:"cmd"`
-			}
-			channels := make([]stalkerCh, len(playlist.Channels))
-			for i, ch := range playlist.Channels {
-				channels[i] = stalkerCh{
-					ID:   ch.ID,
-					Name: ch.Name,
-					Logo: ch.LogoURL,
-					CMD:  fmt.Sprintf("ffrt %s/stream/%s/%s", baseURL, token, ch.ID),
-				}
-			}
-			writeJSON(w, map[string]any{
-				"js": map[string]any{
-					"data":  channels,
-					"total_items": len(channels),
-					"max_page_items": len(channels),
-					"cur_page": 1,
-					"selected_item": 0,
-				},
-			})
-		default:
-			writeJSON(w, map[string]any{"js": map[string]any{"status": 1}})
+		streamURL, err := client.GetDVR(r.Context(), token, channelID, startAt)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotImplemented)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
+		http.Redirect(w, r, streamURL, http.StatusFound)
 	}
 }
 
-func writeJSON(w http.ResponseWriter, v any) {
-	b, err := json.Marshal(v)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-	w.Write(b)
-}
 
 // ── Token-redacting request logger ───────────────────────────────────────────
 // Tokens are 64-char hex strings embedded in URL paths.

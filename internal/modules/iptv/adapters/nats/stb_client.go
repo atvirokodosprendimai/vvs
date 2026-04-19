@@ -9,6 +9,23 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
+// STBDeviceAPI is the canonical 3-method STB device interface.
+// Every STB app (Tivimate, Smarters, SIPTV, MAG, Formuler) uses this contract.
+type STBDeviceAPI interface {
+	// GetConfig authenticates the device and returns server config.
+	// Pass token OR mac; one must be non-empty.
+	GetConfig(ctx context.Context, token, mac string) (*ConfigResult, error)
+
+	// GetChannel returns the live stream URL for the requested channel.
+	GetChannel(ctx context.Context, token, channelID string) (string, error)
+
+	// GetDVR returns the DVR playback URL for a channel starting at startAt UTC.
+	GetDVR(ctx context.Context, token, channelID string, startAt time.Time) (string, error)
+}
+
+// Compile-time check: STBNATSClient implements STBDeviceAPI.
+var _ STBDeviceAPI = (*STBNATSClient)(nil)
+
 // STBNATSClient calls isp.stb.rpc.* subjects on vvs-core.
 // Runs in vvs-stb — no DB, NATS client only.
 type STBNATSClient struct {
@@ -118,13 +135,27 @@ func (c *STBNATSClient) GetConfig(ctx context.Context, token, mac string) (*Conf
 	return &resp, nil
 }
 
-// ── Channel resolve ───────────────────────────────────────────────────────────
+// ── Channel + DVR ─────────────────────────────────────────────────────────────
 
-func (c *STBNATSClient) ResolveChannel(ctx context.Context, token, channelID string) (string, error) {
+// GetChannel returns the live stream URL for the requested channel.
+func (c *STBNATSClient) GetChannel(ctx context.Context, token, channelID string) (string, error) {
 	var resp struct {
 		StreamURL string `json:"streamURL"`
 	}
 	if err := c.rpc(ctx, SubjectChannelResolve, map[string]string{"token": token, "channelID": channelID}, &resp); err != nil {
+		return "", err
+	}
+	return resp.StreamURL, nil
+}
+
+// GetDVR returns the DVR playback URL for a channel recording starting at startAt UTC.
+// Returns an error if DVR is not enabled.
+func (c *STBNATSClient) GetDVR(ctx context.Context, token, channelID string, startAt time.Time) (string, error) {
+	var resp struct {
+		StreamURL string `json:"streamURL"`
+	}
+	req := map[string]any{"token": token, "channelID": channelID, "startAt": startAt.UTC().Unix()}
+	if err := c.rpc(ctx, SubjectDVRGet, req, &resp); err != nil {
 		return "", err
 	}
 	return resp.StreamURL, nil
