@@ -3,11 +3,14 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	natsserver "github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/bot"
 	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/chat"
 	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
 	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
@@ -30,10 +33,14 @@ import (
 	invoicecommands "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/commands"
 	invoicehttp "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/adapters/http"
 	invoicedomain "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
+	invoicequeries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
 
 	tickethttp "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/adapters/http"
+	ticketcommands "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/commands"
+	ticketqueries "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/queries"
 
 	portalhttp "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/http"
+	portaldomain "github.com/atvirokodosprendimai/vvs/internal/modules/portal/domain"
 	portalnats "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/nats"
 )
 
@@ -390,6 +397,306 @@ func (b *portalServiceBridge) ListForCustomer(ctx context.Context, customerID st
 		}
 	}
 	return out, nil
+}
+
+// ── Core in-process portal bridges ──────────────────────────────────────────
+
+// corePortalTicketBridge implements portalhttp.portalTicketClient in-process.
+type corePortalTicketBridge struct {
+	list    *ticketqueries.ListTicketsForCustomerHandler
+	open    *ticketcommands.OpenTicketHandler
+	comment *ticketcommands.AddCommentHandler
+}
+
+func (b *corePortalTicketBridge) ListTickets(ctx context.Context, customerID string) ([]ticketqueries.TicketReadModel, error) {
+	return b.list.Handle(ctx, ticketqueries.ListTicketsForCustomerQuery{CustomerID: customerID})
+}
+
+func (b *corePortalTicketBridge) OpenTicket(ctx context.Context, customerID, subject, body string) (string, error) {
+	tk, err := b.open.Handle(ctx, ticketcommands.OpenTicketCommand{
+		CustomerID: customerID,
+		Subject:    subject,
+		Body:       body,
+		Priority:   "normal",
+	})
+	if err != nil {
+		return "", err
+	}
+	return tk.ID, nil
+}
+
+func (b *corePortalTicketBridge) AddTicketComment(ctx context.Context, ticketID, customerID, body string) (string, error) {
+	c, err := b.comment.Handle(ctx, ticketcommands.AddCommentCommand{
+		TicketID: ticketID,
+		Body:     body,
+		AuthorID: customerID,
+	})
+	if err != nil {
+		return "", err
+	}
+	return c.ID, nil
+}
+
+// corePortalHTTPServiceBridge implements portalhttp.portalServiceClient in-process.
+type corePortalHTTPServiceBridge struct {
+	repo servicedomain.ServiceRepository
+}
+
+func (b *corePortalHTTPServiceBridge) ListServices(ctx context.Context, customerID string) ([]*portalhttp.PortalService, error) {
+	svcs, err := b.repo.ListForCustomer(ctx, customerID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*portalhttp.PortalService, len(svcs))
+	for i, s := range svcs {
+		out[i] = &portalhttp.PortalService{
+			ID:               s.ID,
+			ProductName:      s.ProductName,
+			PriceAmountCents: s.PriceAmount,
+			Currency:         s.Currency,
+			Status:           s.Status,
+			BillingCycle:     s.BillingCycle,
+			NextBillingDate:  s.NextBillingDate,
+		}
+	}
+	return out, nil
+}
+
+// corePortalLoginBridge implements portalhttp.portalLoginClient in-process.
+type corePortalLoginBridge struct {
+	custRepo  customerdomain.CustomerRepository
+	tokenRepo portaldomain.PortalTokenRepository
+}
+
+func (b *corePortalLoginBridge) FindCustomerByEmail(ctx context.Context, email string) (string, error) {
+	c, err := b.custRepo.FindByEmail(ctx, email)
+	if err != nil {
+		return "", err
+	}
+	return c.ID, nil
+}
+
+func (b *corePortalLoginBridge) CreatePortalToken(ctx context.Context, customerID string, ttl time.Duration) (string, time.Time, error) {
+	tok, plain, err := portaldomain.NewPortalToken(customerID, ttl)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	if err := b.tokenRepo.Save(ctx, tok); err != nil {
+		return "", time.Time{}, err
+	}
+	return plain, tok.ExpiresAt, nil
+}
+
+// corePortalBotBridge implements portalhttp.portalBotClient in-process.
+// Mirrors the logic of portalnats.PortalBridge bot handlers.
+type corePortalBotBridge struct {
+	sessions    *bot.Sessions
+	ollama      *bot.OllamaClient
+	chatStore   *chat.Store
+	openTicket  *ticketcommands.OpenTicketHandler
+	custQuery   *customerqueries.GetCustomerHandler
+	svcRepo     servicedomain.ServiceRepository
+	listInvoices *invoicequeries.ListInvoicesForCustomerHandler
+}
+
+func (b *corePortalBotBridge) buildRuleContext(ctx context.Context, customerID string) *bot.RuleContext {
+	rc := &bot.RuleContext{CustomerID: customerID}
+	if b.custQuery != nil {
+		if c, err := b.custQuery.Handle(ctx, customerqueries.GetCustomerQuery{ID: customerID}); err == nil {
+			rc.Customer = &bot.CustomerInfo{
+				CompanyName: c.CompanyName,
+				Email:       c.Email,
+				IPAddress:   c.IPAddress,
+			}
+		}
+	}
+	if b.svcRepo != nil {
+		if svcs, err := b.svcRepo.ListForCustomer(ctx, customerID); err == nil {
+			for _, s := range svcs {
+				rc.Services = append(rc.Services, &bot.ServiceInfo{
+					ID:               s.ID,
+					ProductName:      s.ProductName,
+					PriceAmountCents: s.PriceAmount,
+					Status:           s.Status,
+					NextBillingDate:  s.NextBillingDate,
+				})
+			}
+		}
+	}
+	if b.listInvoices != nil {
+		if invoices, err := b.listInvoices.Handle(ctx, invoicequeries.ListInvoicesForCustomerQuery{CustomerID: customerID}); err == nil {
+			for _, inv := range invoices {
+				info := bot.InvoiceInfo{
+					Code:        inv.Code,
+					Status:      inv.Status,
+					TotalAmount: inv.TotalAmount,
+					IssueDate:   inv.IssueDate,
+				}
+				if inv.PaidAt != nil {
+					info.PaidAt = inv.PaidAt
+				}
+				rc.Invoices = append(rc.Invoices, info)
+				if inv.Status == "finalized" {
+					rc.OverdueCount++
+					rc.OverdueTotal += inv.TotalAmount
+				}
+			}
+		}
+	}
+	return rc
+}
+
+func (b *corePortalBotBridge) ollamaFallback(ctx context.Context, history []bot.BotMessage, userMsg string, rc *bot.RuleContext) string {
+	sysPrompt := bot.BuildSystemPrompt(rc.Customer, rc.Services, rc.Invoices)
+	msgs := []bot.OllamaMessage{{Role: "system", Content: sysPrompt}}
+	for _, m := range history {
+		msgs = append(msgs, bot.OllamaMessage{Role: m.Role, Content: m.Content})
+	}
+	msgs = append(msgs, bot.OllamaMessage{Role: "user", Content: userMsg})
+	reply, err := b.ollama.Chat(ctx, msgs)
+	if err != nil {
+		return "I'm not sure how to answer that. Would you like to speak with a staff member?"
+	}
+	return reply
+}
+
+func (b *corePortalBotBridge) BotMessage(ctx context.Context, customerID, sessionID, message string) (reply, newSessionID, state string, suggestHandoff bool, err error) {
+	if sessionID == "" {
+		sessionID = uuid.Must(uuid.NewV7()).String()
+	}
+	sess := b.sessions.GetOrCreate(sessionID, customerID)
+	if sess.CustomerID != customerID {
+		return "", sessionID, "", false, fmt.Errorf("forbidden")
+	}
+	if sess.State == bot.StateClosed {
+		return "This conversation has ended.", sessionID, sess.State, false, nil
+	}
+	if sess.State == bot.StateLive {
+		return "You are connected to a staff member. Use the live chat to send messages.", sessionID, sess.State, false, nil
+	}
+	rc := b.buildRuleContext(ctx, customerID)
+	var matched bool
+	reply, matched, suggestHandoff = bot.MatchRules(ctx, message, rc)
+	if !matched {
+		if b.ollama != nil {
+			history := b.sessions.MessagesSnapshot(sessionID)
+			reply = b.ollamaFallback(ctx, history, message, rc)
+		} else {
+			reply = "I'm not sure how to answer that. Would you like to speak with a staff member?"
+			suggestHandoff = true
+		}
+	}
+	now := time.Now()
+	b.sessions.AppendMessages(sessionID,
+		bot.BotMessage{Role: "user", Content: message, At: now},
+		bot.BotMessage{Role: "assistant", Content: reply, At: now},
+	)
+	return reply, sessionID, sess.State, suggestHandoff, nil
+}
+
+func (b *corePortalBotBridge) BotHandoff(ctx context.Context, customerID, sessionID string) (threadID, state string, err error) {
+	if b.chatStore == nil {
+		return "", "", fmt.Errorf("chat not available")
+	}
+	sess := b.sessions.Get(sessionID)
+	if sess == nil || sess.CustomerID != customerID {
+		return "", "", fmt.Errorf("forbidden")
+	}
+	threadID = fmt.Sprintf("portal-%s", sessionID)
+	exists, err := b.chatStore.ThreadExists(ctx, threadID)
+	if err != nil {
+		return "", "", err
+	}
+	customerName := customerID
+	if b.custQuery != nil {
+		if c, err := b.custQuery.Handle(ctx, customerqueries.GetCustomerQuery{ID: customerID}); err == nil {
+			customerName = c.CompanyName
+		}
+	}
+	if !exists {
+		if err := b.chatStore.CreateThread(ctx, chat.Thread{
+			ID:        threadID,
+			Type:      "portal-support",
+			Name:      fmt.Sprintf("Portal: %s", customerName),
+			CreatedBy: "system",
+			CreatedAt: time.Now().UTC(),
+		}); err != nil {
+			return "", "", err
+		}
+		history := buildBotHistoryText(b.sessions.MessagesSnapshot(sessionID))
+		_ = b.chatStore.Save(ctx, chat.Message{
+			ID:        uuid.Must(uuid.NewV7()).String(),
+			ThreadID:  threadID,
+			UserID:    "system",
+			Username:  "Bot",
+			Body:      fmt.Sprintf("Customer %s connected via portal chat.\n\n%s", customerName, history),
+			CreatedAt: time.Now().UTC(),
+		})
+	}
+	b.sessions.UpdateState(sessionID, bot.StateHandoff, threadID)
+	return threadID, bot.StateHandoff, nil
+}
+
+func (b *corePortalBotBridge) BotLiveMessage(ctx context.Context, customerID, sessionID, message string) (staffReply, state string, err error) {
+	if b.chatStore == nil {
+		return "", "", fmt.Errorf("chat not available")
+	}
+	sess := b.sessions.Get(sessionID)
+	if sess == nil || sess.CustomerID != customerID || sess.ThreadID == "" {
+		return "", "", fmt.Errorf("forbidden")
+	}
+	if message != "" {
+		_ = b.chatStore.Save(ctx, chat.Message{
+			ID:        uuid.Must(uuid.NewV7()).String(),
+			ThreadID:  sess.ThreadID,
+			UserID:    customerID,
+			Username:  "Customer",
+			Body:      message,
+			CreatedAt: time.Now().UTC(),
+		})
+		b.sessions.UpdateState(sessionID, bot.StateLive, "")
+	}
+	msgs, err := b.chatStore.Recent(ctx, sess.ThreadID, 1)
+	if err != nil {
+		return "", sess.State, nil
+	}
+	for _, m := range msgs {
+		if m.UserID != customerID && m.UserID != "system" {
+			staffReply = m.Body
+			break
+		}
+	}
+	return staffReply, sess.State, nil
+}
+
+func (b *corePortalBotBridge) BotClose(ctx context.Context, customerID, sessionID string, createTicket bool) (ticketID string, err error) {
+	sess := b.sessions.Get(sessionID)
+	if sess != nil && sess.CustomerID != customerID {
+		return "", fmt.Errorf("forbidden")
+	}
+	if createTicket && b.openTicket != nil && sess != nil {
+		subject := "Portal chat — unresolved question"
+		body := buildBotHistoryText(b.sessions.MessagesSnapshot(sessionID))
+		if tk, err := b.openTicket.Handle(ctx, ticketcommands.OpenTicketCommand{
+			CustomerID: customerID,
+			Subject:    subject,
+			Body:       body,
+			Priority:   "normal",
+		}); err == nil {
+			ticketID = tk.ID
+		}
+	}
+	b.sessions.UpdateState(sessionID, bot.StateClosed, "")
+	return ticketID, nil
+}
+
+// buildBotHistoryText formats bot session history for display in chat threads.
+func buildBotHistoryText(messages []bot.BotMessage) string {
+	var sb strings.Builder
+	for _, m := range messages {
+		sb.WriteString(fmt.Sprintf("[%s] %s: %s\n", m.At.Format("15:04"), m.Role, m.Content))
+	}
+	return sb.String()
 }
 
 // seedGeneralChannel ensures the #general channel exists.
