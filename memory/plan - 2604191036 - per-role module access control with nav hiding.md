@@ -1,6 +1,6 @@
 ---
 tldr: Per-role module access control — each role has view/edit permissions per module; hidden from nav + 403 on direct URL
-status: active
+status: completed
 ---
 
 # Plan: Per-Role Module Access Control
@@ -19,7 +19,7 @@ status: active
 
 ## Phases
 
-### Phase 1 — Domain + Migration + Repository - status: open
+### Phase 1 — Domain + Migration + Repository - status: completed
 
 1. [ ] Define `Module` type + constants + `RoleModulePermission` struct in `internal/modules/auth/domain/permissions.go`
    - `type Module string` with 13 constants (customers, tickets, deals, tasks, contacts, invoices, products, payments, network, email, cron, audit_log, users)
@@ -43,7 +43,7 @@ status: active
    - Admin role always returns true (bypass)
    - `PermissionSet.CanEdit` respects can_edit flag
 
-### Phase 2 — Permission Injection Middleware - status: open
+### Phase 2 — Permission Injection Middleware - status: completed
 
 1. [ ] `InjectModulePermissions(permRepo)` middleware in `internal/infrastructure/http/auth_middleware.go`
    - After `RequireAuth` stores user in context, this middleware loads the role's `PermissionSet` from DB
@@ -59,7 +59,7 @@ status: active
    - InjectModulePermissions stores PermissionSet in context for non-admin
    - Admin gets full-access set regardless of DB
 
-### Phase 3 — RequireModuleAccess Middleware + Route Wiring - status: open
+### Phase 3 — RequireModuleAccess Middleware + Route Wiring - status: completed
 
 1. [ ] `RequireModuleAccess(module Module)` middleware in `internal/infrastructure/http/auth_middleware.go`
    - Reads `PermissionSet` from context
@@ -89,7 +89,7 @@ status: active
    - can_view=true, can_edit=true → GET 200, POST 200
    - admin bypasses all
 
-### Phase 4 — Nav Hiding (Server-Side via Context) - status: open
+### Phase 4 — Nav Hiding (Server-Side via Context) - status: completed
 
 1. [ ] Thread `PermissionSet` into nav rendering in `internal/infrastructure/http/templates/layout.templ`
    - Add `PermissionsFromCtx(ctx)` call inside `Sidebar` templ (ctx is already available as first param)
@@ -105,7 +105,7 @@ status: active
 3. [ ] Hide entire nav group if all its modules are hidden
    - `NavGroup` renders only if at least one child module is visible
 
-### Phase 5 — Admin Configuration UI - status: open
+### Phase 5 — Admin Configuration UI - status: completed
 
 1. [ ] Add `GET /settings/permissions` page + `GET /sse/permissions` + `POST /api/permissions/:role/:module` handlers to auth module
    - Page: `PermissionsPage()` templ — admin-only
@@ -155,3 +155,4 @@ go build ./...
 ## Progress Log
 
 - 2026-04-19 10:36 — Plan created. Per-role model chosen; admin hardcoded full access; hide+block approach.
+- 2026-04-19 — All 5 phases complete. Key decisions: context helpers moved to authdomain (avoids circular import from templates); ModuleNamed interface for per-module route wrapping; checkboxes post with URL query params (no signal complexity). Commits: 6ff4971, 5304025, 28b05fe, 3463161.
