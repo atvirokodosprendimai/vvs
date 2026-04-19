@@ -15,12 +15,13 @@ import (
 	smtpAdapter "github.com/vvs/isp/internal/modules/email/adapters/smtp"
 	emailcommands "github.com/vvs/isp/internal/modules/email/app/commands"
 	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
+	emaildomain "github.com/vvs/isp/internal/modules/email/domain"
 	"github.com/vvs/isp/internal/modules/email/worker"
 )
 
 type emailWired struct {
 	accountRepo          *emailpersistence.GormEmailAccountRepository
-	smtpSender           *smtpAdapter.Sender
+	smtpSender           emaildomain.EmailSender
 	listEmailForCustomer *emailqueries.ListThreadsForCustomerHandler
 	worker               *worker.SyncWorker
 	routes               *emailhttp.Handlers
@@ -52,7 +53,12 @@ func wireEmail(
 	linkCustomerCmd     := emailcommands.NewLinkCustomerHandler(emailThreadRepo, pub)
 	toggleStarCmd       := emailcommands.NewToggleStarHandler(emailTagRepo, pub)
 
-	smtpSender   := smtpAdapter.NewSender(emailEncKey)
+	var smtpSender emaildomain.EmailSender
+	if cfg.DemoMode {
+		smtpSender = smtpAdapter.NewNoopSender()
+	} else {
+		smtpSender = smtpAdapter.NewSender(emailEncKey)
+	}
 	imapAppender := imapAdapter.NewAppender(emailEncKey)
 
 	sendReplyCmd    := emailcommands.NewSendReplyHandler(emailThreadRepo, emailMessageRepo, emailAccountRepo, smtpSender, pub)

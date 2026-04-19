@@ -172,7 +172,7 @@ func cronRunCommand() *cli.Command {
 				}
 			}
 			RegisterBillingActions(gdb, pub)
-			RegisterDunningActions(gdb, []byte(cmd.Root().String("email-enc-key")), cmd.Root().String("base-url"))
+			RegisterDunningActions(gdb, []byte(cmd.Root().String("email-enc-key")), cmd.Root().String("base-url"), cmd.Root().Bool("demo-mode"))
 			RegisterSessionActions(gdb)
 
 			repo := cronpersistence.NewGormJobRepository(gdb)
