@@ -416,9 +416,9 @@ func userRow(row queries.UserRow, currentUserID string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("($editFullName='%s')&&($editDivision='%s')&&($editRole='%s')&&($_editID='%s')&&($_editOpen=true)", jsutil.EscapeJS(row.FullName), jsutil.EscapeJS(row.Division), string(row.Role), row.ID))
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("$editFullName='%s';$editDivision='%s';$editRole='%s';$_editID='%s';$_editOpen=true", jsutil.EscapeJS(row.FullName), jsutil.EscapeJS(row.Division), string(row.Role), row.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 238, Col: 220}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 238, Col: 206}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {

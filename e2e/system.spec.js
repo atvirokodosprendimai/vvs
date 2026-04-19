@@ -39,8 +39,8 @@ test.describe('Users', () => {
     await page.click('button:has-text("Add User")');
     await expect(page.locator('input[placeholder="Username"]')).toBeVisible();
     await expect(page.locator('input[placeholder="Password"]')).toBeVisible();
-    // Role select inside modal
-    await expect(page.locator('.fixed.inset-0 select')).toBeVisible();
+    // Role select inside create modal
+    await expect(page.locator('[data-bind\\:new-role]')).toBeVisible();
   });
 
   test('user table shows Full Name and Division columns', async ({ page }) => {
