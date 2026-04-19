@@ -1,6 +1,6 @@
 ---
 tldr: Portal floating chat widget — rule-based FAQ → AI (Ollama) fallback → "talk to human" live handoff → auto-create ticket on close
-status: active
+status: completed
 ---
 
 # Plan: Customer Portal Chat Bot + Live Human Handoff
@@ -153,4 +153,12 @@ go build ./cmd/portal/ ./cmd/vvs-core/
 
 ## Adjustments
 
+- Used vanilla JS for chat widget instead of Datastar (simpler for stateful chat widget state machine)
+- Used `chat.Store.Save` not `SendMessage` (correct method name for chat message persistence)
+- Bot package uses own local types (ServiceInfo/CustomerInfo/InvoiceInfo) to avoid import cycles with portalnats package
+- Widget uses sessionStorage (not Datastar signals) for session ID persistence across page navigations
+- Bot endpoints return JSON (not SSE) — chat is synchronous request/reply, not streaming
+
 ## Progress Log
+
+- 2026-04-19: All 6 phases complete; commit a60fd59; all portal tests pass

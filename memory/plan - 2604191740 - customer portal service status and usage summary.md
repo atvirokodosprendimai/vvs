@@ -1,6 +1,6 @@
 ---
 tldr: Portal shows customer's active services, status, billing cycle, next billing date, and network info — answers "what am I paying for?"
-status: active
+status: completed
 ---
 
 # Plan: Customer Portal — Service Status + Usage Summary

@@ -1,6 +1,6 @@
 ---
 tldr: Customers open and track support tickets from vvs-portal via NATS RPC bridge — 3 new subjects, portal HTTP + templates
-status: active
+status: completed
 ---
 
 # Plan: Customer Portal — Support Ticket Submission
