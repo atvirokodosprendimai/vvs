@@ -69,7 +69,7 @@ templ loginError(msg string) {
 	<div id="login-error" class="text-red-400 text-xs text-center">{ msg }</div>
 }
 
-templ UserListPage() {
+templ UserListPage(roles []domain.RoleDefinition) {
 	@templates.Layout("User Management") {
 		<div
 			data-signals="{showCreate:false,newUsername:'',newPassword:'',newRole:'operator',_editOpen:false,_editID:'',editFullName:'',editDivision:'',editRole:'operator'}"
@@ -106,9 +106,9 @@ templ UserListPage() {
 							data-bind:new-role
 							class="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
 						>
-							<option value="operator">Operator</option>
-							<option value="admin">Admin</option>
-							<option value="viewer">Viewer (read-only)</option>
+							for _, rd := range roles {
+								<option value={ string(rd.Name) }>{ roleOptionLabel(rd) }</option>
+							}
 						</select>
 						<div id="create-user-error"></div>
 						<div class="flex gap-2 mt-1">
@@ -157,9 +157,9 @@ templ UserListPage() {
 							data-bind:edit-role
 							class="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
 						>
-							<option value="operator">Operator</option>
-							<option value="admin">Admin</option>
-							<option value="viewer">Viewer (read-only)</option>
+							for _, rd := range roles {
+								<option value={ string(rd.Name) }>{ roleOptionLabel(rd) }</option>
+							}
 						</select>
 						<div id="edit-user-error"></div>
 						<div class="flex gap-2 mt-1">
@@ -235,7 +235,7 @@ templ userRow(row queries.UserRow, currentUserID string) {
 		<td class="px-4 py-3 text-right">
 			<div class="flex items-center justify-end gap-3">
 				<button
-					data-on:click={ fmt.Sprintf("($editFullName='%s')&&($editDivision='%s')&&($editRole='%s')&&($_editID='%s')&&($_editOpen=true)", jsutil.EscapeJS(row.FullName), jsutil.EscapeJS(row.Division), string(row.Role), row.ID) }
+					data-on:click={ fmt.Sprintf("$editFullName='%s';$editDivision='%s';$editRole='%s';$_editID='%s';$_editOpen=true", jsutil.EscapeJS(row.FullName), jsutil.EscapeJS(row.Division), string(row.Role), row.ID) }
 					class="text-neutral-400 hover:text-amber-400 text-xs transition-colors"
 				>
 					Edit
@@ -587,4 +587,120 @@ templ TOTPSetupPage(u *domain.User, secret, qrDataURI string) {
 
 templ totpSetupError(msg string) {
 	<div id="totp-setup-error" class="text-red-400 text-xs">{ msg }</div>
+}
+
+// ── Roles management ──────────────────────────────────────────────────────────
+
+func roleOptionLabel(rd domain.RoleDefinition) string {
+	if rd.DisplayName != "" {
+		return rd.DisplayName
+	}
+	return string(rd.Name)
+}
+
+templ RolesPage(roles []domain.RoleDefinition) {
+	@templates.Layout("Roles") {
+		@templates.PageHeaderRow("Roles", "Manage roles and their write permissions")
+		<div class="flex flex-col gap-6 max-w-2xl">
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
+				<table class="w-full text-sm">
+					<thead class="border-b border-neutral-800">
+						<tr>
+							<th class="text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Name</th>
+							<th class="text-left px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider">Display Name</th>
+							<th class="px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider text-center">Can Write</th>
+							<th class="px-4 py-3 text-xs font-medium text-neutral-400 uppercase tracking-wider text-center">Built-in</th>
+							<th class="px-4 py-3"></th>
+						</tr>
+					</thead>
+					<tbody id="roles-table-body">
+						@RoleRows(roles)
+					</tbody>
+				</table>
+			</div>
+
+			<!-- Add role form -->
+			<div
+				class="bg-neutral-900 border border-neutral-800 rounded-lg p-5"
+				data-signals="{roleName:'',roleDisplay:'',roleCanWrite:true}"
+			>
+				<h3 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4">Add Role</h3>
+				<div class="flex flex-col gap-3">
+					<div class="flex gap-3">
+						<input
+							type="text"
+							placeholder="role-name (slug)"
+							data-bind:role-name
+							class="flex-1 bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+						/>
+						<input
+							type="text"
+							placeholder="Display Name"
+							data-bind:role-display
+							class="flex-1 bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 placeholder-neutral-600"
+						/>
+					</div>
+					<label class="flex items-center gap-2 text-sm text-neutral-300 cursor-pointer">
+						<input
+							type="checkbox"
+							data-bind:role-can-write
+							class="w-4 h-4 accent-amber-500"
+						/>
+						Can write (allowed to make mutations)
+					</label>
+					<div id="add-role-error" class="text-red-400 text-xs hidden"></div>
+					<button
+						type="button"
+						data-on:click="@post('/api/roles')"
+						class="self-start bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+					>
+						Create Role
+					</button>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ RoleRows(roles []domain.RoleDefinition) {
+	for _, rd := range roles {
+		<tr class="border-b border-neutral-800 last:border-0 hover:bg-neutral-800/40 transition-colors">
+			<td class="px-4 py-3 font-medium text-neutral-100">{ string(rd.Name) }</td>
+			<td class="px-4 py-3 text-neutral-400">
+				if rd.DisplayName != "" {
+					{ rd.DisplayName }
+				} else {
+					<span class="text-neutral-600">—</span>
+				}
+			</td>
+			<td class="px-4 py-3 text-center">
+				if rd.CanWrite {
+					<span class="text-green-400 text-xs">yes</span>
+				} else {
+					<span class="text-neutral-600 text-xs">no</span>
+				}
+			</td>
+			<td class="px-4 py-3 text-center">
+				if rd.IsBuiltin {
+					<span class="text-amber-500 text-xs">builtin</span>
+				} else {
+					<span class="text-neutral-600 text-xs">—</span>
+				}
+			</td>
+			<td class="px-4 py-3 text-right">
+				if !rd.IsBuiltin {
+					<button
+						data-on:click={ "@delete('/api/roles/" + string(rd.Name) + "')" }
+						class="text-red-400 hover:text-red-300 text-xs transition-colors"
+					>
+						Delete
+					</button>
+				}
+			</td>
+		</tr>
+	}
+}
+
+templ addRoleError(msg string) {
+	<div id="add-role-error" class="text-red-400 text-xs">{ msg }</div>
 }

@@ -137,9 +137,12 @@ type Handlers struct {
 	changeSelfPasswordCmd *commands.ChangeSelfPasswordHandler
 	updateUserCmd         *commands.UpdateUserHandler
 	createSessionCmd      *commands.CreateSessionHandler
+	createRoleCmd         *commands.CreateRoleHandler
+	deleteRoleCmd         *commands.DeleteRoleHandler
 	listUsersQuery        *queries.ListUsersHandler
 	currentUser           *queries.GetCurrentUserHandler
 	permRepo              domain.RolePermissionsRepository
+	roleRepo              domain.RoleRepository
 	totpUsers             totpUserStore
 	maxAge                int
 	secureCookie          bool
@@ -147,6 +150,13 @@ type Handlers struct {
 
 func (h *Handlers) WithPermRepo(r domain.RolePermissionsRepository) *Handlers {
 	h.permRepo = r
+	return h
+}
+
+func (h *Handlers) WithRoleHandlers(create *commands.CreateRoleHandler, delete *commands.DeleteRoleHandler, repo domain.RoleRepository) *Handlers {
+	h.createRoleCmd = create
+	h.deleteRoleCmd = delete
+	h.roleRepo = repo
 	return h
 }
 
@@ -214,6 +224,9 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/settings/permissions", h.permissionsPage)
 	r.Get("/sse/settings/permissions", h.permissionsSSE)
 	r.Post("/api/permissions/{role}/{module}", h.savePermission)
+	r.Get("/settings/roles", h.rolesPage)
+	r.Post("/api/roles", h.createRoleSSE)
+	r.Delete("/api/roles/{name}", h.deleteRoleSSE)
 }
 
 func (h *Handlers) loginPage(w http.ResponseWriter, r *http.Request) {
@@ -323,7 +336,20 @@ func (h *Handlers) usersPage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
-	UserListPage().Render(r.Context(), w)
+	var roles []domain.RoleDefinition
+	if h.roleRepo != nil {
+		if rs, err := h.roleRepo.List(r.Context()); err == nil {
+			roles = rs
+		}
+	}
+	if roles == nil {
+		roles = []domain.RoleDefinition{
+			{Name: domain.RoleAdmin, DisplayName: "Administrator"},
+			{Name: domain.RoleOperator, DisplayName: "Operator"},
+			{Name: domain.RoleViewer, DisplayName: "Viewer (read-only)"},
+		}
+	}
+	UserListPage(roles).Render(r.Context(), w)
 }
 
 func (h *Handlers) listUsersSSE(w http.ResponseWriter, r *http.Request) {
@@ -477,6 +503,76 @@ func (h *Handlers) permissionsSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElementTempl(PermissionsGrid(opPerms, viewerPerms))
+}
+
+func (h *Handlers) rolesPage(w http.ResponseWriter, r *http.Request) {
+	u := userFromContext(r)
+	if u == nil || !u.IsAdmin() {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+	var roles []domain.RoleDefinition
+	if h.roleRepo != nil {
+		if rs, err := h.roleRepo.List(r.Context()); err == nil {
+			roles = rs
+		}
+	}
+	RolesPage(roles).Render(r.Context(), w)
+}
+
+func (h *Handlers) createRoleSSE(w http.ResponseWriter, r *http.Request) {
+	u := userFromContext(r)
+	if u == nil || !u.IsAdmin() {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+	var signals struct {
+		RoleName     string `json:"roleName"`
+		RoleDisplay  string `json:"roleDisplay"`
+		RoleCanWrite bool   `json:"roleCanWrite"`
+	}
+	if err := datastar.ReadSignals(r, &signals); err != nil {
+		log.Printf("createRoleSSE: ReadSignals: %v", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	if h.createRoleCmd == nil {
+		sse.PatchElementTempl(addRoleError("role management not configured"))
+		return
+	}
+	if _, err := h.createRoleCmd.Handle(r.Context(), commands.CreateRoleCommand{
+		Name:        signals.RoleName,
+		DisplayName: signals.RoleDisplay,
+		CanWrite:    signals.RoleCanWrite,
+	}); err != nil {
+		sse.PatchElementTempl(addRoleError(err.Error()))
+		return
+	}
+	roles, _ := h.roleRepo.List(r.Context())
+	sse.PatchElementTempl(RoleRows(roles))
+	sse.PatchSignals([]byte(`{"roleName":"","roleDisplay":""}`))
+}
+
+func (h *Handlers) deleteRoleSSE(w http.ResponseWriter, r *http.Request) {
+	u := userFromContext(r)
+	if u == nil || !u.IsAdmin() {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+	name := domain.Role(chi.URLParam(r, "name"))
+	if h.deleteRoleCmd == nil {
+		http.Error(w, "not configured", http.StatusInternalServerError)
+		return
+	}
+	if err := h.deleteRoleCmd.Handle(r.Context(), commands.DeleteRoleCommand{Name: name}); err != nil {
+		log.Printf("deleteRoleSSE: %v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	roles, _ := h.roleRepo.List(r.Context())
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElementTempl(RoleRows(roles))
 }
 
 // validRoles is the set of configurable roles (admin is hardcoded, never in DB).

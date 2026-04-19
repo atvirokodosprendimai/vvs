@@ -25,6 +25,7 @@ func wireAuth(gdb *gormsqlite.DB, cfg Config) *authWired {
 	userRepo    := authpersistence.NewGormUserRepository(gdb)
 	sessionRepo := authpersistence.NewGormSessionRepository(gdb)
 	permRepo    := authpersistence.NewGormRolePermissionsRepository(gdb)
+	roleRepo    := authpersistence.NewGormRoleRepository(gdb)
 
 	if err := sessionRepo.PruneExpired(context.Background()); err != nil {
 		log.Printf("warn: prune sessions on startup: %v", err)
@@ -32,10 +33,12 @@ func wireAuth(gdb *gormsqlite.DB, cfg Config) *authWired {
 
 	loginCmd             := authcommands.NewLoginHandler(userRepo, sessionRepo)
 	logoutCmd            := authcommands.NewLogoutHandler(sessionRepo)
-	createUserCmd        := authcommands.NewCreateUserHandler(userRepo)
+	createUserCmd        := authcommands.NewCreateUserHandler(userRepo, roleRepo)
 	deleteUserCmd        := authcommands.NewDeleteUserHandler(userRepo, sessionRepo)
 	changeSelfPasswordCmd := authcommands.NewChangeSelfPasswordHandler(userRepo)
-	updateUserCmd        := authcommands.NewUpdateUserHandler(userRepo)
+	updateUserCmd        := authcommands.NewUpdateUserHandler(userRepo, roleRepo)
+	createRoleCmd        := authcommands.NewCreateRoleHandler(roleRepo)
+	deleteRoleCmd        := authcommands.NewDeleteRoleHandler(roleRepo)
 	createSessionCmd     := authcommands.NewCreateSessionHandler(sessionRepo)
 	listUsersQuery       := authqueries.NewListUsersHandler(userRepo)
 	getCurrentUserQuery  := authqueries.NewGetCurrentUserHandler(userRepo, sessionRepo)
@@ -46,6 +49,7 @@ func wireAuth(gdb *gormsqlite.DB, cfg Config) *authWired {
 		listUsersQuery, getCurrentUserQuery,
 	).
 		WithPermRepo(permRepo).
+		WithRoleHandlers(createRoleCmd, deleteRoleCmd, roleRepo).
 		WithMaxAge(cfg.SessionLifetime()).
 		WithSecureCookie(cfg.SecureCookie).
 		WithTOTPUsers(userRepo).

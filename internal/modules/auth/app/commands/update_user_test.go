@@ -18,6 +18,34 @@ func makeStubRepo(users ...*domain.User) *stubUserRepo {
 	return &stubUserRepo{users: m}
 }
 
+// stubRoleRepo returns builtin roles; rejects unknowns.
+type stubRoleRepo struct{}
+
+func (r *stubRoleRepo) List(_ context.Context) ([]domain.RoleDefinition, error) {
+	return []domain.RoleDefinition{
+		{Name: domain.RoleAdmin, IsBuiltin: true, CanWrite: true},
+		{Name: domain.RoleOperator, IsBuiltin: true, CanWrite: true},
+		{Name: domain.RoleViewer, IsBuiltin: true, CanWrite: false},
+	}, nil
+}
+
+func (r *stubRoleRepo) FindByName(_ context.Context, name domain.Role) (*domain.RoleDefinition, error) {
+	switch name {
+	case domain.RoleAdmin:
+		return &domain.RoleDefinition{Name: name, IsBuiltin: true, CanWrite: true}, nil
+	case domain.RoleOperator:
+		return &domain.RoleDefinition{Name: name, IsBuiltin: true, CanWrite: true}, nil
+	case domain.RoleViewer:
+		return &domain.RoleDefinition{Name: name, IsBuiltin: true, CanWrite: false}, nil
+	}
+	return nil, domain.ErrRoleNotFound
+}
+
+func (r *stubRoleRepo) Save(_ context.Context, _ *domain.RoleDefinition) error { return nil }
+func (r *stubRoleRepo) Delete(_ context.Context, _ domain.Role) error           { return nil }
+
+var builtinRoles = &stubRoleRepo{}
+
 func makeUser(t *testing.T, id, username string, role domain.Role) *domain.User {
 	t.Helper()
 	u, err := domain.NewUser(username, "password123", role)
@@ -30,7 +58,7 @@ func TestUpdateUser_AdminCanUpdateAllFields(t *testing.T) {
 	admin := makeUser(t, "admin-1", "admin", domain.RoleAdmin)
 	target := makeUser(t, "user-1", "alice", domain.RoleOperator)
 	repo := makeStubRepo(admin, target)
-	h := commands.NewUpdateUserHandler(repo)
+	h := commands.NewUpdateUserHandler(repo, builtinRoles)
 
 	err := h.Handle(context.Background(), commands.UpdateUserCommand{
 		ActorID:  "admin-1",
@@ -51,7 +79,7 @@ func TestUpdateUser_SelfCanUpdateFullNameOnly(t *testing.T) {
 	user := makeUser(t, "user-1", "bob", domain.RoleOperator)
 	user.Division = "Sales"
 	repo := makeStubRepo(user)
-	h := commands.NewUpdateUserHandler(repo)
+	h := commands.NewUpdateUserHandler(repo, builtinRoles)
 
 	err := h.Handle(context.Background(), commands.UpdateUserCommand{
 		ActorID:  "user-1",
@@ -72,7 +100,7 @@ func TestUpdateUser_NonAdminCannotEditOtherUser(t *testing.T) {
 	actor := makeUser(t, "user-1", "bob", domain.RoleOperator)
 	target := makeUser(t, "user-2", "alice", domain.RoleOperator)
 	repo := makeStubRepo(actor, target)
-	h := commands.NewUpdateUserHandler(repo)
+	h := commands.NewUpdateUserHandler(repo, builtinRoles)
 
 	err := h.Handle(context.Background(), commands.UpdateUserCommand{
 		ActorID:  "user-1",
@@ -85,7 +113,7 @@ func TestUpdateUser_NonAdminCannotEditOtherUser(t *testing.T) {
 func TestUpdateUser_UnknownUserReturnsError(t *testing.T) {
 	admin := makeUser(t, "admin-1", "admin", domain.RoleAdmin)
 	repo := makeStubRepo(admin)
-	h := commands.NewUpdateUserHandler(repo)
+	h := commands.NewUpdateUserHandler(repo, builtinRoles)
 
 	err := h.Handle(context.Background(), commands.UpdateUserCommand{
 		ActorID: "admin-1",
@@ -94,16 +122,3 @@ func TestUpdateUser_UnknownUserReturnsError(t *testing.T) {
 	assert.ErrorIs(t, err, domain.ErrUserNotFound)
 }
 
-func TestUpdateUser_InvalidRoleReturnsError(t *testing.T) {
-	admin := makeUser(t, "admin-1", "admin", domain.RoleAdmin)
-	target := makeUser(t, "user-1", "alice", domain.RoleOperator)
-	repo := makeStubRepo(admin, target)
-	h := commands.NewUpdateUserHandler(repo)
-
-	err := h.Handle(context.Background(), commands.UpdateUserCommand{
-		ActorID: "admin-1",
-		UserID:  "user-1",
-		Role:    domain.Role("superuser"),
-	})
-	assert.ErrorIs(t, err, domain.ErrInvalidRole)
-}

@@ -107,3 +107,10 @@
 - 2026-04-19 `4ac04f4` chore: update CHANGELOG — add missing TOTP, portal split, IPTV, gomine entries + dedup
 - 2026-04-19 `8fc4754` feat(portal): self-service login with image captcha + templ module path fix
 - 2026-04-19 `f0caf72` fix(email): email account modal overflow on short screens
+- 2026-04-19 `b84c024` fix(portal): finish customer-facing error handling + active nav
+- 2026-04-19 `1dbc4a3` plan: dynamic roles assignable at runtime — 6 phases, DB-backed roles table
+- 2026-04-19 `f6ef48a` feat(rbac): dynamic roles — DB-managed roles assignable at runtime
+- 2026-04-19 `2a30057` chore(plan): mark dynamic roles plan as completed
+- 2026-04-19 `f024f76` fix(users): edit button modal not opening when FullName/Division empty
+- 2026-04-19 `0702053` revert: restore ()&& pattern for edit button signal chain
+- 2026-04-19 `6ed38be` fix(users): edit button modal — semicolons replace ()&& short-circuit; fix strict E2E selector

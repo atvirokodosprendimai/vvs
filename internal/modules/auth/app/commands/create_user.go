@@ -14,13 +14,21 @@ type CreateUserCommand struct {
 
 type CreateUserHandler struct {
 	users domain.UserRepository
+	roles domain.RoleRepository
 }
 
-func NewCreateUserHandler(users domain.UserRepository) *CreateUserHandler {
-	return &CreateUserHandler{users: users}
+func NewCreateUserHandler(users domain.UserRepository, roles domain.RoleRepository) *CreateUserHandler {
+	return &CreateUserHandler{users: users, roles: roles}
 }
 
 func (h *CreateUserHandler) Handle(ctx context.Context, cmd CreateUserCommand) (*domain.User, error) {
+	if _, err := h.roles.FindByName(ctx, cmd.Role); err != nil {
+		if err == domain.ErrRoleNotFound {
+			return nil, domain.ErrInvalidRole
+		}
+		return nil, err
+	}
+
 	existing, err := h.users.FindByUsername(ctx, cmd.Username)
 	if err != nil && err != domain.ErrUserNotFound {
 		return nil, err

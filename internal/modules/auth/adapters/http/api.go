@@ -57,10 +57,6 @@ func (h *Handlers) apiCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	role := domain.Role(body.Role)
-	if !domain.ValidRole(role) {
-		jsonapi.WriteBadRequest(w, "role must be admin or operator")
-		return
-	}
 
 	u, err := h.createUserCmd.Handle(r.Context(), commands.CreateUserCommand{
 		Username: body.Username,
