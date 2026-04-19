@@ -30,10 +30,11 @@ type invoiceGetter interface {
 
 // pdfTokenMinter mints a public PDF access token for an invoice.
 // Returns the plain token string to embed in the URL.
+// customerID is required so the bridge can verify ownership before minting.
 // Satisfied by a core-side adapter wrapping invoicedomain.NewInvoiceToken+Save,
 // and by the NATS portal client calling isp.portal.rpc.invoice.token.mint.
 type pdfTokenMinter interface {
-	MintToken(ctx context.Context, invoiceID string) (plain string, err error)
+	MintToken(ctx context.Context, invoiceID, customerID string) (plain string, err error)
 }
 
 // customerReader fetches customer info for the portal header.
@@ -131,7 +132,9 @@ func (h *Handlers) requirePortalAuth(next http.Handler) http.Handler {
 
 type portalCustomerKey struct{}
 
-func portalCustomerIDFromContext(ctx context.Context) string {
+// PortalCustomerIDFromContext returns the authenticated customer ID stored in ctx
+// by requirePortalAuth. Returns "" if not set.
+func PortalCustomerIDFromContext(ctx context.Context) string {
 	v, _ := ctx.Value(portalCustomerKey{}).(string)
 	return v
 }
@@ -181,7 +184,7 @@ func (h *Handlers) portalLogout(w http.ResponseWriter, r *http.Request) {
 // invoiceList renders the customer's invoice list.
 func (h *Handlers) invoiceList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	customerID := portalCustomerIDFromContext(r.Context())
+	customerID := PortalCustomerIDFromContext(r.Context())
 
 	invoices, err := h.listInvoices.Handle(r.Context(), invoicequeries.ListInvoicesForCustomerQuery{
 		CustomerID: customerID,
@@ -199,7 +202,7 @@ func (h *Handlers) invoiceList(w http.ResponseWriter, r *http.Request) {
 // invoiceDetail renders a single invoice detail with a PDF link.
 func (h *Handlers) invoiceDetail(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	customerID := portalCustomerIDFromContext(r.Context())
+	customerID := PortalCustomerIDFromContext(r.Context())
 	id := chi.URLParam(r, "id")
 
 	inv, err := h.getInvoice.Handle(r.Context(), id)
@@ -215,7 +218,7 @@ func (h *Handlers) invoiceDetail(w http.ResponseWriter, r *http.Request) {
 
 	pdfURL := ""
 	if h.pdfTokens != nil {
-		if plain, err := h.pdfTokens.MintToken(r.Context(), inv.ID); err == nil {
+		if plain, err := h.pdfTokens.MintToken(r.Context(), inv.ID, customerID); err == nil {
 			pdfURL = fmt.Sprintf("/i/%s", plain)
 		}
 	}

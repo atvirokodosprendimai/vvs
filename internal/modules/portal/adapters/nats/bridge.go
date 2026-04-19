@@ -20,6 +20,7 @@ const (
 	SubjectTokenValidate        = "isp.portal.rpc.token.validate"
 	SubjectInvoicesList         = "isp.portal.rpc.invoices.list"
 	SubjectInvoiceGet           = "isp.portal.rpc.invoice.get"
+	SubjectInvoiceGetByToken    = "isp.portal.rpc.invoice.token.get"
 	SubjectInvoiceTokenValidate = "isp.portal.rpc.invoice.token.validate"
 	SubjectInvoiceTokenMint     = "isp.portal.rpc.invoice.token.mint"
 	SubjectCustomerGet          = "isp.portal.rpc.customer.get"
@@ -41,6 +42,16 @@ type bridgeCustomerReader interface {
 	GetPortalCustomer(ctx context.Context, id string) (*BridgeCustomer, error)
 }
 
+// invoicesByCustomerLister lists invoices for a customer.
+type invoicesByCustomerLister interface {
+	Handle(ctx context.Context, q invoicequeries.ListInvoicesForCustomerQuery) ([]invoicequeries.InvoiceReadModel, error)
+}
+
+// invoiceByIDGetter retrieves a single invoice by its ID.
+type invoiceByIDGetter interface {
+	Handle(ctx context.Context, id string) (*invoicequeries.InvoiceReadModel, error)
+}
+
 // BridgeCustomer is the minimal customer data exposed over NATS.
 type BridgeCustomer struct {
 	ID          string
@@ -54,8 +65,8 @@ type PortalBridge struct {
 	nc           *nats.Conn
 	tokenRepo    portalTokenReader
 	invoiceToken invoiceTokenStore
-	listInvoices *invoicequeries.ListInvoicesForCustomerHandler
-	getInvoice   *invoicequeries.GetInvoiceHandler
+	listInvoices invoicesByCustomerLister
+	getInvoice   invoiceByIDGetter
 	custReader   bridgeCustomerReader
 	subs         []*nats.Subscription
 }
@@ -65,8 +76,8 @@ func NewPortalBridge(
 	nc *nats.Conn,
 	tokenRepo portalTokenReader,
 	invoiceToken invoiceTokenStore,
-	listInvoices *invoicequeries.ListInvoicesForCustomerHandler,
-	getInvoice *invoicequeries.GetInvoiceHandler,
+	listInvoices invoicesByCustomerLister,
+	getInvoice invoiceByIDGetter,
 	custReader bridgeCustomerReader,
 ) *PortalBridge {
 	return &PortalBridge{
@@ -89,6 +100,7 @@ func (b *PortalBridge) Register() error {
 		{SubjectTokenValidate, b.handleTokenValidate},
 		{SubjectInvoicesList, b.handleInvoicesList},
 		{SubjectInvoiceGet, b.handleInvoiceGet},
+		{SubjectInvoiceGetByToken, b.handleInvoiceGetByToken},
 		{SubjectInvoiceTokenValidate, b.handleInvoiceTokenValidate},
 		{SubjectInvoiceTokenMint, b.handleInvoiceTokenMint},
 		{SubjectCustomerGet, b.handleCustomerGet},
@@ -164,6 +176,8 @@ func (b *PortalBridge) handleInvoicesList(msg *nats.Msg) {
 	}{invoices}, nil)
 }
 
+// handleInvoiceGet fetches an invoice by ID. customerID is mandatory — the bridge
+// enforces ownership so a portal session can only access its own customer's invoices.
 func (b *PortalBridge) handleInvoiceGet(msg *nats.Msg) {
 	if b.getInvoice == nil {
 		bridgeReply(msg, nil, &bridgeError{"invoice get handler not configured"})
@@ -177,6 +191,11 @@ func (b *PortalBridge) handleInvoiceGet(msg *nats.Msg) {
 		bridgeReply(msg, nil, err)
 		return
 	}
+	// customerID is mandatory — reject unauthenticated callers.
+	if req.CustomerID == "" {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -185,9 +204,45 @@ func (b *PortalBridge) handleInvoiceGet(msg *nats.Msg) {
 		bridgeReply(msg, nil, err)
 		return
 	}
-	// Ownership check: portal can only fetch its customer's invoices.
-	if req.CustomerID != "" && inv.CustomerID != req.CustomerID {
+	if inv.CustomerID != req.CustomerID {
 		bridgeReply(msg, nil, errForbidden)
+		return
+	}
+	bridgeReply(msg, struct {
+		Invoice *invoicequeries.InvoiceReadModel `json:"invoice"`
+	}{inv}, nil)
+}
+
+// handleInvoiceGetByToken serves GET /i/{token} — validates the PDF token and
+// returns the invoice in a single atomic call. No customerID required; the token
+// itself is the proof of access.
+func (b *PortalBridge) handleInvoiceGetByToken(msg *nats.Msg) {
+	if b.getInvoice == nil {
+		bridgeReply(msg, nil, &bridgeError{"invoice get handler not configured"})
+		return
+	}
+	var req struct {
+		TokenHash string `json:"tokenHash"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	tok, err := b.invoiceToken.FindByHash(ctx, req.TokenHash)
+	if err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	if tok == nil || tok.IsExpired() {
+		bridgeReply(msg, nil, errExpired)
+		return
+	}
+	inv, err := b.getInvoice.Handle(ctx, tok.InvoiceID)
+	if err != nil {
+		bridgeReply(msg, nil, err)
 		return
 	}
 	bridgeReply(msg, struct {
@@ -220,17 +275,38 @@ func (b *PortalBridge) handleInvoiceTokenValidate(msg *nats.Msg) {
 	}{tok.InvoiceID}, nil)
 }
 
+// handleInvoiceTokenMint mints a public PDF token. customerID is mandatory and
+// verified against the invoice to prevent a portal session from minting tokens
+// for invoices belonging to other customers.
 func (b *PortalBridge) handleInvoiceTokenMint(msg *nats.Msg) {
+	if b.getInvoice == nil {
+		bridgeReply(msg, nil, &bridgeError{"invoice get handler not configured"})
+		return
+	}
 	var req struct {
-		InvoiceID string `json:"invoiceID"`
+		InvoiceID  string `json:"invoiceID"`
+		CustomerID string `json:"customerID"`
 	}
 	if err := json.Unmarshal(msg.Data, &req); err != nil {
 		bridgeReply(msg, nil, err)
 		return
 	}
+	if req.CustomerID == "" {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	inv, err := b.getInvoice.Handle(ctx, req.InvoiceID)
+	if err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	if inv.CustomerID != req.CustomerID {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
 	tok, plain, err := invoicedomain.NewInvoiceToken(req.InvoiceID, 48*time.Hour)
 	if err != nil {
 		bridgeReply(msg, nil, err)

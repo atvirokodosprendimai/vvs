@@ -185,7 +185,7 @@ func New(cfg Config) (*App, error) {
 		}
 		log.Printf("NATS connected to external server: %s", cfg.NATSUrl)
 	} else {
-		ns, nc, err = infranats.StartEmbedded(cfg.NATSListenAddr)
+		ns, nc, err = infranats.StartEmbedded(cfg.NATSListenAddr, cfg.NATSAuthToken)
 		if err != nil {
 			return nil, fmt.Errorf("start nats: %w", err)
 		}
@@ -1021,7 +1021,7 @@ type invoiceTokenMinter struct {
 	tokenRepo invoicedomain.InvoiceTokenRepository
 }
 
-func (m *invoiceTokenMinter) MintToken(ctx context.Context, invoiceID string) (string, error) {
+func (m *invoiceTokenMinter) MintToken(ctx context.Context, invoiceID, _ string) (string, error) {
 	tok, plain, err := invoicedomain.NewInvoiceToken(invoiceID, 48*time.Hour)
 	if err != nil {
 		return "", err

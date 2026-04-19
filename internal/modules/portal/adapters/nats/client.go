@@ -18,7 +18,7 @@ import (
 // PortalNATSClient satisfies the interfaces expected by portal/adapters/http.Handlers:
 //   - domain.PortalTokenRepository  (FindByHash only — write ops return ErrNotSupported)
 //   - invoiceLister
-//   - invoiceGetter
+//   - invoiceGetter (via InvoiceGetterAdapter)
 //   - pdfTokenMinter
 //   - NATSCustomerReader (use NATSCustomerAdapter to satisfy customerReader)
 type PortalNATSClient struct {
@@ -38,12 +38,12 @@ func NewPortalNATSClient(nc *nats.Conn, timeout time.Duration) *PortalNATSClient
 
 // FindByHash validates a portal session token via NATS.
 // Satisfies domain.PortalTokenRepository.FindByHash.
-func (c *PortalNATSClient) FindByHash(_ context.Context, hash string) (*portaldomain.PortalToken, error) {
+func (c *PortalNATSClient) FindByHash(ctx context.Context, hash string) (*portaldomain.PortalToken, error) {
 	var resp struct {
 		CustomerID string    `json:"customerID"`
 		ExpiresAt  time.Time `json:"expiresAt"`
 	}
-	if err := c.rpc(SubjectTokenValidate, map[string]string{"hash": hash}, &resp); err != nil {
+	if err := c.rpc(ctx, SubjectTokenValidate, map[string]string{"hash": hash}, &resp); err != nil {
 		return nil, err
 	}
 	return &portaldomain.PortalToken{
@@ -71,11 +71,11 @@ func (c *PortalNATSClient) PruneExpired(_ context.Context) error {
 
 // Handle lists invoices for a customer via NATS.
 // Satisfies portal/adapters/http.invoiceLister.
-func (c *PortalNATSClient) Handle(_ context.Context, q invoicequeries.ListInvoicesForCustomerQuery) ([]invoicequeries.InvoiceReadModel, error) {
+func (c *PortalNATSClient) Handle(ctx context.Context, q invoicequeries.ListInvoicesForCustomerQuery) ([]invoicequeries.InvoiceReadModel, error) {
 	var resp struct {
 		Invoices []invoicequeries.InvoiceReadModel `json:"invoices"`
 	}
-	if err := c.rpc(SubjectInvoicesList, map[string]string{"customerID": q.CustomerID}, &resp); err != nil {
+	if err := c.rpc(ctx, SubjectInvoicesList, map[string]string{"customerID": q.CustomerID}, &resp); err != nil {
 		return nil, err
 	}
 	return resp.Invoices, nil
@@ -83,13 +83,26 @@ func (c *PortalNATSClient) Handle(_ context.Context, q invoicequeries.ListInvoic
 
 // ── invoiceGetter ─────────────────────────────────────────────────────────────
 
-// GetInvoice retrieves a single invoice by ID via NATS.
-// Named differently from Handle to avoid method set collision — use InvoiceGetterAdapter.
-func (c *PortalNATSClient) GetInvoice(_ context.Context, id string) (*invoicequeries.InvoiceReadModel, error) {
+// GetInvoice retrieves a single invoice by ID for a specific customer via NATS.
+// customerID is mandatory — the bridge enforces ownership.
+// Use InvoiceGetterAdapter to satisfy the invoiceGetter interface.
+func (c *PortalNATSClient) GetInvoice(ctx context.Context, id, customerID string) (*invoicequeries.InvoiceReadModel, error) {
 	var resp struct {
 		Invoice *invoicequeries.InvoiceReadModel `json:"invoice"`
 	}
-	if err := c.rpc(SubjectInvoiceGet, map[string]string{"invoiceID": id}, &resp); err != nil {
+	if err := c.rpc(ctx, SubjectInvoiceGet, map[string]string{"invoiceID": id, "customerID": customerID}, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Invoice, nil
+}
+
+// GetInvoiceByTokenHash validates a PDF token and returns the invoice in one call.
+// Used by GET /i/{token} — no customer session required; the token proves access.
+func (c *PortalNATSClient) GetInvoiceByTokenHash(ctx context.Context, tokenHash string) (*invoicequeries.InvoiceReadModel, error) {
+	var resp struct {
+		Invoice *invoicequeries.InvoiceReadModel `json:"invoice"`
+	}
+	if err := c.rpc(ctx, SubjectInvoiceGetByToken, map[string]string{"tokenHash": tokenHash}, &resp); err != nil {
 		return nil, err
 	}
 	return resp.Invoice, nil
@@ -98,12 +111,13 @@ func (c *PortalNATSClient) GetInvoice(_ context.Context, id string) (*invoiceque
 // ── pdfTokenMinter ───────────────────────────────────────────────────────────
 
 // MintToken mints a new invoice PDF token via NATS.
+// customerID is required; the bridge verifies ownership before minting.
 // Satisfies portal/adapters/http.pdfTokenMinter.
-func (c *PortalNATSClient) MintToken(_ context.Context, invoiceID string) (string, error) {
+func (c *PortalNATSClient) MintToken(ctx context.Context, invoiceID, customerID string) (string, error) {
 	var resp struct {
 		Plain string `json:"plain"`
 	}
-	if err := c.rpc(SubjectInvoiceTokenMint, map[string]string{"invoiceID": invoiceID}, &resp); err != nil {
+	if err := c.rpc(ctx, SubjectInvoiceTokenMint, map[string]string{"invoiceID": invoiceID, "customerID": customerID}, &resp); err != nil {
 		return "", err
 	}
 	return resp.Plain, nil
@@ -112,9 +126,9 @@ func (c *PortalNATSClient) MintToken(_ context.Context, invoiceID string) (strin
 // ── customer ─────────────────────────────────────────────────────────────────
 
 // GetCustomer fetches customer info for the portal header via NATS.
-func (c *PortalNATSClient) GetCustomer(_ context.Context, id string) (*BridgeCustomer, error) {
+func (c *PortalNATSClient) GetCustomer(ctx context.Context, id string) (*BridgeCustomer, error) {
 	var cust BridgeCustomer
-	if err := c.rpc(SubjectCustomerGet, map[string]string{"customerID": id}, &cust); err != nil {
+	if err := c.rpc(ctx, SubjectCustomerGet, map[string]string{"customerID": id}, &cust); err != nil {
 		return nil, err
 	}
 	return &cust, nil
@@ -122,11 +136,11 @@ func (c *PortalNATSClient) GetCustomer(_ context.Context, id string) (*BridgeCus
 
 // ValidateInvoiceToken validates a PDF token hash via NATS.
 // Returns the InvoiceID the token grants access to.
-func (c *PortalNATSClient) ValidateInvoiceToken(_ context.Context, tokenHash string) (string, error) {
+func (c *PortalNATSClient) ValidateInvoiceToken(ctx context.Context, tokenHash string) (string, error) {
 	var resp struct {
 		InvoiceID string `json:"invoiceID"`
 	}
-	if err := c.rpc(SubjectInvoiceTokenValidate, map[string]string{"tokenHash": tokenHash}, &resp); err != nil {
+	if err := c.rpc(ctx, SubjectInvoiceTokenValidate, map[string]string{"tokenHash": tokenHash}, &resp); err != nil {
 		return "", err
 	}
 	return resp.InvoiceID, nil
@@ -136,12 +150,19 @@ func (c *PortalNATSClient) ValidateInvoiceToken(_ context.Context, tokenHash str
 
 // InvoiceGetterAdapter wraps PortalNATSClient so it satisfies the invoiceGetter interface
 // (Handle(ctx, id string) (*InvoiceReadModel, error)) used by portal/adapters/http.
+// CustomerIDFromCtx extracts the authenticated customer ID from the request context —
+// inject portalhttp.PortalCustomerIDFromContext when constructing this adapter.
 type InvoiceGetterAdapter struct {
-	C *PortalNATSClient
+	C                 *PortalNATSClient
+	CustomerIDFromCtx func(context.Context) string
 }
 
 func (a *InvoiceGetterAdapter) Handle(ctx context.Context, id string) (*invoicequeries.InvoiceReadModel, error) {
-	return a.C.GetInvoice(ctx, id)
+	customerID := ""
+	if a.CustomerIDFromCtx != nil {
+		customerID = a.CustomerIDFromCtx(ctx)
+	}
+	return a.C.GetInvoice(ctx, id, customerID)
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -149,12 +170,16 @@ func (a *InvoiceGetterAdapter) Handle(ctx context.Context, id string) (*invoiceq
 // ErrNotSupported is returned by write operations not available on the portal side.
 var ErrNotSupported = errors.New("operation not supported on portal binary")
 
-func (c *PortalNATSClient) rpc(subject string, req any, out any) error {
+// rpc marshals req, sends to subject with context-aware timeout, and unmarshals the reply into out.
+// ctx cancellation propagates; c.timeout acts as a maximum deadline.
+func (c *PortalNATSClient) rpc(ctx context.Context, subject string, req any, out any) error {
 	b, err := json.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("portal rpc: marshal: %w", err)
 	}
-	msg, err := c.nc.Request(subject, b, c.timeout)
+	tctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+	msg, err := c.nc.RequestMsgWithContext(tctx, &nats.Msg{Subject: subject, Data: b})
 	if err != nil {
 		return fmt.Errorf("portal rpc %s: %w", subject, err)
 	}

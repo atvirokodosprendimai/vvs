@@ -10,41 +10,64 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/stretchr/testify/assert"
+	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
+	portaldomain "github.com/vvs/isp/internal/modules/portal/domain"
+	portalhttp "github.com/vvs/isp/internal/modules/portal/adapters/http"
 	portalnats "github.com/vvs/isp/internal/modules/portal/adapters/nats"
 )
 
-// buildPortalRouter constructs the same router as runPortal but with a stub NATS client.
+// ── stubs ──────────────────────────────────────────────────────────────────────
+
+type stubTokenRepo struct{}
+
+func (s *stubTokenRepo) FindByHash(_ context.Context, _ string) (*portaldomain.PortalToken, error) {
+	return nil, nil
+}
+func (s *stubTokenRepo) Save(_ context.Context, _ *portaldomain.PortalToken) error { return nil }
+func (s *stubTokenRepo) DeleteByCustomerID(_ context.Context, _ string) error      { return nil }
+func (s *stubTokenRepo) PruneExpired(_ context.Context) error                      { return nil }
+
+type stubInvoiceLister struct{}
+
+func (s *stubInvoiceLister) Handle(_ context.Context, _ invoicequeries.ListInvoicesForCustomerQuery) ([]invoicequeries.InvoiceReadModel, error) {
+	return nil, nil
+}
+
+type stubInvoiceGetter struct{}
+
+func (s *stubInvoiceGetter) Handle(_ context.Context, _ string) (*invoicequeries.InvoiceReadModel, error) {
+	return nil, nil
+}
+
+type stubPDFMinter struct{}
+
+func (s *stubPDFMinter) MintToken(_ context.Context, _, _ string) (string, error) { return "", nil }
+
+// ── router builder ─────────────────────────────────────────────────────────────
+
+// buildPortalRouter constructs the same router as runPortal but with stub dependencies.
 // Used to assert that admin routes are NOT reachable from the portal binary.
 func buildPortalRouter(t *testing.T) http.Handler {
 	t.Helper()
 
-	// A nil PortalNATSClient is fine here — we only want to verify route registration,
-	// not actual handler execution.
+	// nil client is fine — publicInvoiceByToken guards nil and returns 503
 	var client *portalnats.PortalNATSClient = nil
+
+	// Real handlers with stubs — verifies actual route wiring, not fake registrations.
+	handlers := portalhttp.NewHandlers(
+		&stubTokenRepo{},
+		&stubInvoiceLister{},
+		&stubInvoiceGetter{},
+	).WithPDFTokens(&stubPDFMinter{})
 
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 
 	r.Get("/i/{token}", publicInvoiceByToken(client))
-
-	// Register portal public routes with a stub handler (no NATS needed for route list).
-	// We construct a minimal portalHandlers using nil dependencies, which is fine for
-	// route enumeration tests since the router registers routes at startup before any request.
-	registerPortalRoutesForTest(r)
+	handlers.RegisterPublicRoutes(r)
 
 	return r
-}
-
-// registerPortalRoutesForTest registers portal routes using nil handlers — enough to
-// enumerate the registered path set without a real NATS connection.
-func registerPortalRoutesForTest(r chi.Router) {
-	// Mimic RegisterPublicRoutes paths directly.
-	r.Get("/portal/auth", http.NotFound)
-	r.Post("/portal/logout", http.NotFound)
-	r.Get("/portal", http.NotFound)
-	r.Get("/portal/invoices", http.NotFound)
-	r.Get("/portal/invoices/{id}", http.NotFound)
 }
 
 // adminRoutes lists paths that MUST NOT exist in the portal binary.

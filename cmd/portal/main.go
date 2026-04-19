@@ -117,9 +117,12 @@ func runPortal(ctx context.Context, cmd *cli.Command) error {
 
 	// Portal HTTP handler — backed by NATS, no DB.
 	portalHandlers := portalhttp.NewHandlers(
-		client,                                     // domain.PortalTokenRepository
-		client,                                     // invoiceLister (Handle with ListInvoicesForCustomerQuery)
-		&portalnats.InvoiceGetterAdapter{C: client}, // invoiceGetter (Handle with id string)
+		client, // domain.PortalTokenRepository
+		client, // invoiceLister (Handle with ListInvoicesForCustomerQuery)
+		&portalnats.InvoiceGetterAdapter{ // invoiceGetter — extracts customerID from portal session
+			C:                 client,
+			CustomerIDFromCtx: portalhttp.PortalCustomerIDFromContext,
+		},
 	).
 		WithPDFTokens(client).
 		WithCustomerReader(custAdapter).
@@ -162,23 +165,21 @@ func runPortal(ctx context.Context, cmd *cli.Command) error {
 	return srv.Shutdown(shutdownCtx)
 }
 
-// publicInvoiceByToken handles GET /i/{token} — validates the invoice token via NATS,
-// fetches the invoice via NATS, and renders the printable invoice HTML.
+// publicInvoiceByToken handles GET /i/{token} — validates the invoice token and fetches
+// the invoice in a single NATS call, then renders the printable invoice HTML.
 func publicInvoiceByToken(client *portalnats.PortalNATSClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if client == nil {
+			http.Error(w, "not configured", http.StatusServiceUnavailable)
+			return
+		}
 		plain := chi.URLParam(r, "token")
 		sum := sha256.Sum256([]byte(plain))
 		hashHex := hex.EncodeToString(sum[:])
 
-		invoiceID, err := client.ValidateInvoiceToken(r.Context(), hashHex)
-		if err != nil {
-			http.Error(w, "Link expired or not found", http.StatusNotFound)
-			return
-		}
-
-		inv, err := client.GetInvoice(r.Context(), invoiceID)
+		inv, err := client.GetInvoiceByTokenHash(r.Context(), hashHex)
 		if err != nil || inv == nil {
-			http.Error(w, "Invoice not found", http.StatusNotFound)
+			http.Error(w, "Link expired or not found", http.StatusNotFound)
 			return
 		}
 

@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
+	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
 	natspkg "github.com/vvs/isp/internal/infrastructure/nats"
 	portalnats "github.com/vvs/isp/internal/modules/portal/adapters/nats"
 	portaldomain "github.com/vvs/isp/internal/modules/portal/domain"
@@ -58,6 +59,23 @@ func (s *stubCustomerReader) GetPortalCustomer(_ context.Context, _ string) (*po
 	return s.customer, nil
 }
 
+// stubInvoiceGetter returns a fixed invoice by ID.
+type stubInvoiceGetter struct {
+	invoices map[string]*invoicequeries.InvoiceReadModel
+}
+
+func newStubInvoiceGetter() *stubInvoiceGetter {
+	return &stubInvoiceGetter{invoices: make(map[string]*invoicequeries.InvoiceReadModel)}
+}
+
+func (s *stubInvoiceGetter) Handle(_ context.Context, id string) (*invoicequeries.InvoiceReadModel, error) {
+	inv, ok := s.invoices[id]
+	if !ok {
+		return nil, fmt.Errorf("invoice not found: %s", id)
+	}
+	return inv, nil
+}
+
 // ── helper ─────────────────────────────────────────────────────────────────────
 
 func startBridge(t *testing.T) (*nats.Conn, *nats.Conn, *stubPortalTokenReader, *stubInvoiceTokenStore, *stubCustomerReader) {
@@ -81,6 +99,27 @@ func startBridge(t *testing.T) (*nats.Conn, *nats.Conn, *stubPortalTokenReader, 
 	t.Cleanup(func() { clientNC.Close() })
 
 	return clientNC, serverNC, tokenReader, invTokenStore, custReader
+}
+
+func startBridgeWithInvoices(t *testing.T) (*nats.Conn, *nats.Conn, *stubInvoiceTokenStore, *stubInvoiceGetter) {
+	t.Helper()
+	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { ns.Shutdown() })
+	t.Cleanup(func() { serverNC.Close() })
+
+	invTokenStore := newStubInvoiceTokenStore()
+	invGetter := newStubInvoiceGetter()
+
+	bridge := portalnats.NewPortalBridge(serverNC, &stubPortalTokenReader{}, invTokenStore, nil, invGetter, &stubCustomerReader{})
+	require.NoError(t, bridge.Register())
+	t.Cleanup(bridge.Close)
+
+	clientNC, err := nats.Connect(fmt.Sprintf("nats://%s", ns.Addr().String()))
+	require.NoError(t, err)
+	t.Cleanup(func() { clientNC.Close() })
+
+	return clientNC, serverNC, invTokenStore, invGetter
 }
 
 func rpcRequest(t *testing.T, nc *nats.Conn, subject string, req any) map[string]any {
@@ -132,9 +171,17 @@ func TestBridge_TokenValidate_NotFound(t *testing.T) {
 }
 
 func TestBridge_InvoiceTokenMint_StoresAndReturnsPlain(t *testing.T) {
-	clientNC, _, _, invTokenStore, _ := startBridge(t)
+	clientNC, _, invTokenStore, invGetter := startBridgeWithInvoices(t)
 
-	env := rpcRequest(t, clientNC, portalnats.SubjectInvoiceTokenMint, map[string]string{"invoiceID": "inv-42"})
+	invGetter.invoices["inv-42"] = &invoicequeries.InvoiceReadModel{
+		ID:         "inv-42",
+		CustomerID: "cust-1",
+	}
+
+	env := rpcRequest(t, clientNC, portalnats.SubjectInvoiceTokenMint, map[string]string{
+		"invoiceID":  "inv-42",
+		"customerID": "cust-1",
+	})
 	assert.Empty(t, env["error"])
 	data := env["data"].(map[string]any)
 	plain, ok := data["plain"].(string)
@@ -145,21 +192,84 @@ func TestBridge_InvoiceTokenMint_StoresAndReturnsPlain(t *testing.T) {
 	assert.Len(t, invTokenStore.tokens, 1)
 }
 
+func TestBridge_InvoiceTokenMint_MissingCustomerID_Forbidden(t *testing.T) {
+	clientNC, _, _, invGetter := startBridgeWithInvoices(t)
+	invGetter.invoices["inv-42"] = &invoicequeries.InvoiceReadModel{ID: "inv-42", CustomerID: "cust-1"}
+
+	env := rpcRequest(t, clientNC, portalnats.SubjectInvoiceTokenMint, map[string]string{"invoiceID": "inv-42"})
+	assert.NotEmpty(t, env["error"])
+}
+
+func TestBridge_InvoiceTokenMint_WrongCustomerID_Forbidden(t *testing.T) {
+	clientNC, _, _, invGetter := startBridgeWithInvoices(t)
+	invGetter.invoices["inv-42"] = &invoicequeries.InvoiceReadModel{ID: "inv-42", CustomerID: "cust-1"}
+
+	env := rpcRequest(t, clientNC, portalnats.SubjectInvoiceTokenMint, map[string]string{
+		"invoiceID":  "inv-42",
+		"customerID": "cust-evil",
+	})
+	assert.NotEmpty(t, env["error"])
+}
+
 func TestBridge_InvoiceTokenValidate_Valid(t *testing.T) {
-	clientNC, _, _, invTokenStore, _ := startBridge(t)
+	clientNC, _, invTokenStore, invGetter := startBridgeWithInvoices(t)
 
-	// First mint a token
-	env := rpcRequest(t, clientNC, portalnats.SubjectInvoiceTokenMint, map[string]string{"invoiceID": "inv-99"})
+	invGetter.invoices["inv-99"] = &invoicequeries.InvoiceReadModel{ID: "inv-99", CustomerID: "cust-1"}
+
+	// Mint a token via the bridge
+	env := rpcRequest(t, clientNC, portalnats.SubjectInvoiceTokenMint, map[string]string{
+		"invoiceID":  "inv-99",
+		"customerID": "cust-1",
+	})
 	plain := env["data"].(map[string]any)["plain"].(string)
-	_ = invTokenStore // token already stored by bridge
+	_ = invTokenStore
 
-	// Now validate it
+	// Validate it
 	raw := sha256.Sum256([]byte(plain))
 	sum := hex.EncodeToString(raw[:])
 	env2 := rpcRequest(t, clientNC, portalnats.SubjectInvoiceTokenValidate, map[string]string{"tokenHash": sum})
 	assert.Empty(t, env2["error"])
 	data := env2["data"].(map[string]any)
 	assert.Equal(t, "inv-99", data["invoiceID"])
+}
+
+func TestBridge_InvoiceGetByToken_Valid(t *testing.T) {
+	clientNC, _, invTokenStore, invGetter := startBridgeWithInvoices(t)
+
+	invGetter.invoices["inv-77"] = &invoicequeries.InvoiceReadModel{ID: "inv-77", CustomerID: "cust-1"}
+
+	// Mint a token first
+	env := rpcRequest(t, clientNC, portalnats.SubjectInvoiceTokenMint, map[string]string{
+		"invoiceID":  "inv-77",
+		"customerID": "cust-1",
+	})
+	plain := env["data"].(map[string]any)["plain"].(string)
+	_ = invTokenStore
+
+	// Now use SubjectInvoiceGetByToken — validates token + returns invoice atomically
+	raw := sha256.Sum256([]byte(plain))
+	tokenHash := hex.EncodeToString(raw[:])
+	env2 := rpcRequest(t, clientNC, portalnats.SubjectInvoiceGetByToken, map[string]string{"tokenHash": tokenHash})
+	assert.Empty(t, env2["error"])
+	data := env2["data"].(map[string]any)
+	invoice := data["invoice"].(map[string]any)
+	assert.Equal(t, "inv-77", invoice["ID"])
+}
+
+func TestBridge_InvoiceGetByToken_Expired(t *testing.T) {
+	clientNC, _, invTokenStore, _ := startBridgeWithInvoices(t)
+
+	// Insert an expired token directly
+	expiredTok := &invoicedomain.InvoiceToken{
+		ID:        "tok-exp",
+		InvoiceID: "inv-x",
+		TokenHash: "expiredhash",
+		ExpiresAt: time.Now().Add(-time.Hour),
+	}
+	_ = invTokenStore.Save(context.Background(), expiredTok)
+
+	env := rpcRequest(t, clientNC, portalnats.SubjectInvoiceGetByToken, map[string]string{"tokenHash": "expiredhash"})
+	assert.NotEmpty(t, env["error"])
 }
 
 func TestBridge_CustomerGet_Found(t *testing.T) {
@@ -185,11 +295,8 @@ func TestBridge_CustomerGet_NotFound(t *testing.T) {
 	assert.NotEmpty(t, env["error"])
 }
 
-// listInvoices/getInvoice handlers require concrete query handlers backed by DB.
-// Those are tested via the full integration path in cmd/portal tests.
-// Here we verify the bridge wiring with nil handlers returns a non-panic error.
+// listInvoices handler requires DB-backed handler — nil returns error, not panic.
 func TestBridge_InvoicesList_NilHandler_ReturnsError(t *testing.T) {
-	// bridge has nil listInvoices — should return error, not panic
 	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0")
 	require.NoError(t, err)
 	t.Cleanup(func() { ns.Shutdown() })
@@ -207,17 +314,17 @@ func TestBridge_InvoicesList_NilHandler_ReturnsError(t *testing.T) {
 	assert.NotEmpty(t, env["error"])
 }
 
-func TestBridge_InvoiceGet_OwnershipCheckEnforced(t *testing.T) {
-	// bridge has nil getInvoice — but ownership logic is before the DB call
-	// We test with a non-nil invoice read from a mock, injected via handleInvoiceGet.
-	// This test verifies the ownership error string is correct.
-	// The nil handler case is caught first, so we just test the nil handler returns error gracefully.
+func TestBridge_InvoiceGet_EmptyCustomerID_Forbidden(t *testing.T) {
+	// customerID is now mandatory — empty value must be rejected before any DB access.
 	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0")
 	require.NoError(t, err)
 	t.Cleanup(func() { ns.Shutdown() })
 	defer serverNC.Close()
 
-	bridge := portalnats.NewPortalBridge(serverNC, &stubPortalTokenReader{}, newStubInvoiceTokenStore(), nil, nil, &stubCustomerReader{})
+	invGetter := newStubInvoiceGetter()
+	invGetter.invoices["inv-1"] = &invoicequeries.InvoiceReadModel{ID: "inv-1", CustomerID: "cust-1"}
+
+	bridge := portalnats.NewPortalBridge(serverNC, &stubPortalTokenReader{}, newStubInvoiceTokenStore(), nil, invGetter, &stubCustomerReader{})
 	require.NoError(t, bridge.Register())
 	defer bridge.Close()
 
@@ -225,9 +332,35 @@ func TestBridge_InvoiceGet_OwnershipCheckEnforced(t *testing.T) {
 	require.NoError(t, err)
 	defer clientNC.Close()
 
+	// Empty customerID → forbidden
 	env := rpcRequest(t, clientNC, portalnats.SubjectInvoiceGet, map[string]any{
 		"invoiceID":  "inv-1",
-		"customerID": "cust-wrong",
+		"customerID": "",
+	})
+	assert.NotEmpty(t, env["error"])
+}
+
+func TestBridge_InvoiceGet_WrongCustomerID_Forbidden(t *testing.T) {
+	ns, serverNC, err := natspkg.StartEmbedded("127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { ns.Shutdown() })
+	defer serverNC.Close()
+
+	invGetter := newStubInvoiceGetter()
+	invGetter.invoices["inv-1"] = &invoicequeries.InvoiceReadModel{ID: "inv-1", CustomerID: "cust-owner"}
+
+	bridge := portalnats.NewPortalBridge(serverNC, &stubPortalTokenReader{}, newStubInvoiceTokenStore(), nil, invGetter, &stubCustomerReader{})
+	require.NoError(t, bridge.Register())
+	defer bridge.Close()
+
+	clientNC, err := nats.Connect(fmt.Sprintf("nats://%s", ns.Addr().String()))
+	require.NoError(t, err)
+	defer clientNC.Close()
+
+	// Wrong customerID → forbidden
+	env := rpcRequest(t, clientNC, portalnats.SubjectInvoiceGet, map[string]any{
+		"invoiceID":  "inv-1",
+		"customerID": "cust-attacker",
 	})
 	assert.NotEmpty(t, env["error"])
 }
