@@ -57,12 +57,23 @@ templ portalLayout(title string, cust *PortalCustomer) {
 			</div>
 		</header>
 		<nav class="border-b border-neutral-800 px-6">
-			<div class="max-w-4xl mx-auto flex gap-1">
+			<div class="max-w-4xl mx-auto flex gap-1" id="portal-nav">
 				<a href="/portal/invoices" class="px-3 py-3 text-sm text-neutral-400 hover:text-neutral-100 transition-colors border-b-2 border-transparent hover:border-amber-500 -mb-px">Invoices</a>
 				<a href="/portal/services" class="px-3 py-3 text-sm text-neutral-400 hover:text-neutral-100 transition-colors border-b-2 border-transparent hover:border-amber-500 -mb-px">Services</a>
 				<a href="/portal/tickets" class="px-3 py-3 text-sm text-neutral-400 hover:text-neutral-100 transition-colors border-b-2 border-transparent hover:border-amber-500 -mb-px">Support</a>
 			</div>
 		</nav>
+		<script>
+			(function(){
+				var p=location.pathname;
+				document.querySelectorAll('#portal-nav a').forEach(function(a){
+					if(p.startsWith(a.getAttribute('href'))){
+						a.classList.remove('text-neutral-400','border-transparent');
+						a.classList.add('text-neutral-100','border-amber-500');
+					}
+				});
+			})();
+		</script>
 		<main class="max-w-4xl mx-auto px-6 py-8">
 			{ children... }
 		</main>
