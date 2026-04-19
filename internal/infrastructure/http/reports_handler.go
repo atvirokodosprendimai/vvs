@@ -1,6 +1,7 @@
 package http
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -48,12 +49,16 @@ func newReportsHandler(reader *gorm.DB) http.HandlerFunc {
 			Total int64
 		}
 		var rawMRR []rawMonth
-		reader.Table("invoices").
+		if err := reader.Table("invoices").
 			Select("strftime('%Y-%m', created_at) as month, COALESCE(SUM(total_amount), 0) as total").
 			Where("status = 'paid' AND created_at >= ?", twelveMonthsAgo).
 			Group("strftime('%Y-%m', created_at)").
 			Order("month ASC").
-			Scan(&rawMRR)
+			Scan(&rawMRR).Error; err != nil {
+			log.Printf("reports: MRR query: %v", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
 		mrrFloats := make([]MonthRevenue, len(rawMRR))
 		for i, m := range rawMRR {
 			mrrFloats[i] = MonthRevenue{Month: m.Month, Total: float64(m.Total) / 100}
@@ -62,12 +67,16 @@ func newReportsHandler(reader *gorm.DB) http.HandlerFunc {
 
 		// Payment trend — paid invoices by paid_at month (last 12 months)
 		var rawPay []rawMonth
-		reader.Table("invoices").
+		if err := reader.Table("invoices").
 			Select("strftime('%Y-%m', paid_at) as month, COALESCE(SUM(total_amount), 0) as total").
 			Where("status = 'paid' AND paid_at IS NOT NULL AND paid_at >= ?", twelveMonthsAgo).
 			Group("strftime('%Y-%m', paid_at)").
 			Order("month ASC").
-			Scan(&rawPay)
+			Scan(&rawPay).Error; err != nil {
+			log.Printf("reports: payment trend query: %v", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
 		payFloats := make([]MonthRevenue, len(rawPay))
 		for i, m := range rawPay {
 			payFloats[i] = MonthRevenue{Month: m.Month, Total: float64(m.Total) / 100}
@@ -81,7 +90,7 @@ func newReportsHandler(reader *gorm.DB) http.HandlerFunc {
 			Total int64
 		}
 		var rawAging2 []rawAging
-		reader.Raw(`
+		if err := reader.Raw(`
 			SELECT
 				CASE
 					WHEN due_date >= date('now') THEN 'Current'
@@ -102,20 +111,28 @@ func newReportsHandler(reader *gorm.DB) http.HandlerFunc {
 				WHEN '61-90 days' THEN 3
 				ELSE 4
 			END
-		`).Scan(&rawAging2)
+		`).Scan(&rawAging2).Error; err != nil {
+			log.Printf("reports: aging query: %v", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
 		d.InvoiceAging = make([]AgingBucket, len(rawAging2))
 		for i, a := range rawAging2 {
 			d.InvoiceAging[i] = AgingBucket{Label: a.Label, Count: a.Count, Total: a.Total}
 		}
 
 		// Top customers by paid revenue (last 12 months)
-		reader.Table("invoices").
+		if err := reader.Table("invoices").
 			Select("customer_id, customer_name, SUM(total_amount) as total, COUNT(*) as invoice_count").
 			Where("status = 'paid' AND created_at >= ?", twelveMonthsAgo).
 			Group("customer_id, customer_name").
 			Order("total DESC").
 			Limit(10).
-			Scan(&d.TopCustomers)
+			Scan(&d.TopCustomers).Error; err != nil {
+			log.Printf("reports: top customers query: %v", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
 
 		sse.PatchElementTempl(ReportsContent(d))
 	}

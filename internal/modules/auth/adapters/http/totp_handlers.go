@@ -14,8 +14,12 @@ import (
 // ── Login TOTP step ───────────────────────────────────────────────────────────
 
 func (h *Handlers) loginTOTPPage(w http.ResponseWriter, r *http.Request) {
-	// If no pending cookie, redirect to login.
-	if _, err := r.Cookie(totpPendingCookie); err != nil {
+	cookie, err := r.Cookie(totpPendingCookie)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+	if _, ok := lookupTOTPPending(cookie.Value); !ok {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
@@ -38,17 +42,10 @@ func (h *Handlers) loginTOTPSSE(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
-	userID := pendingCookie.Value
 
 	if h.totpUsers == nil || h.createSessionCmd == nil {
 		log.Println("loginTOTPSSE: TOTP not configured")
 		http.Error(w, "not configured", http.StatusInternalServerError)
-		return
-	}
-
-	u, err := h.totpUsers.FindByID(r.Context(), userID)
-	if err != nil || u == nil {
-		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 
@@ -60,8 +57,32 @@ func (h *Handlers) loginTOTPSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Consume nonce — single use, resolves to userID server-side.
+	userID, ok := consumeTOTPPending(pendingCookie.Value)
+	if !ok {
+		// Nonce expired or already used.
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
+	u, err := h.totpUsers.FindByID(r.Context(), userID)
+	if err != nil || u == nil {
+		http.Redirect(w, r, "/login", http.StatusFound)
+		return
+	}
+
 	if !u.VerifyTOTP(signals.TOTPCode) {
 		globalLoginLimiter.record(ip)
+		// Re-store nonce so user can retry without going back to login.
+		nonce := newTOTPPending(u.ID)
+		http.SetCookie(w, &http.Cookie{
+			Name:     totpPendingCookie,
+			Value:    nonce,
+			Path:     "/",
+			HttpOnly: true,
+			SameSite: http.SameSiteLaxMode,
+			MaxAge:   totpPendingMaxAge,
+		})
 		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(totpLoginError("Invalid code. Try again."))
 		return

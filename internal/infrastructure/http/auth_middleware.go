@@ -102,7 +102,9 @@ func RequireAuth(currentUser *queries.GetCurrentUserHandler) func(http.Handler) 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			path := r.URL.Path
-			if path == "/login" || path == "/api/login" || strings.HasPrefix(path, "/static/") {
+			if path == "/login" || path == "/api/login" ||
+				path == "/login/totp" || path == "/api/login/totp" ||
+				strings.HasPrefix(path, "/static/") {
 				next.ServeHTTP(w, r)
 				return
 			}

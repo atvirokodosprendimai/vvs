@@ -103,8 +103,11 @@ func TestTOTPLoginPage_NoPendingCookie_RedirectsToLogin(t *testing.T) {
 func TestTOTPLoginPage_WithPendingCookie_RendersForm(t *testing.T) {
 	router, _ := buildTOTPHandlers(t, newStubUserRepo(), newStubSessionRepo())
 
+	// newTOTPPending registers a server-side nonce — the cookie must hold this nonce.
+	nonce := authhttp.NewTOTPPendingForTest("some-user-id")
+
 	req := httptest.NewRequest(http.MethodGet, "/login/totp", nil)
-	req.AddCookie(&http.Cookie{Name: "vvs_totp_pending", Value: "some-user-id"})
+	req.AddCookie(&http.Cookie{Name: "vvs_totp_pending", Value: nonce})
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
 

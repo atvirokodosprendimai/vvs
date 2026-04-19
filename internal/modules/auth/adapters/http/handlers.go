@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"log"
@@ -46,6 +47,63 @@ const (
 )
 
 var globalLoginLimiter = &loginRateLimiter{entries: make(map[string]*loginEntry)}
+
+// ── TOTP pending nonce store ──────────────────────────────────────────────────
+// Stores a server-side mapping from random nonce → userID for the TOTP login step.
+// The cookie holds the opaque nonce; the userID is never sent to the client.
+
+type totpPendingNonce struct {
+	userID    string
+	expiresAt time.Time
+}
+
+var (
+	totpPendingMu    sync.Mutex
+	totpPendingStore = make(map[string]totpPendingNonce)
+)
+
+// newTOTPPending generates a random nonce, stores userID→nonce, returns the nonce.
+func newTOTPPending(userID string) string {
+	buf := make([]byte, 24)
+	_, _ = rand.Read(buf)
+	nonce := hex.EncodeToString(buf)
+	exp := time.Now().Add(totpPendingMaxAge * time.Second)
+	totpPendingMu.Lock()
+	defer totpPendingMu.Unlock()
+	// prune stale entries
+	for k, v := range totpPendingStore {
+		if time.Now().After(v.expiresAt) {
+			delete(totpPendingStore, k)
+		}
+	}
+	totpPendingStore[nonce] = totpPendingNonce{userID: userID, expiresAt: exp}
+	return nonce
+}
+
+// lookupTOTPPending returns the userID for a nonce without consuming it (for page render).
+func lookupTOTPPending(nonce string) (string, bool) {
+	totpPendingMu.Lock()
+	defer totpPendingMu.Unlock()
+	e, ok := totpPendingStore[nonce]
+	if !ok || time.Now().After(e.expiresAt) {
+		delete(totpPendingStore, nonce)
+		return "", false
+	}
+	return e.userID, true
+}
+
+// consumeTOTPPending returns the userID and deletes the nonce (single-use).
+func consumeTOTPPending(nonce string) (string, bool) {
+	totpPendingMu.Lock()
+	defer totpPendingMu.Unlock()
+	e, ok := totpPendingStore[nonce]
+	if !ok || time.Now().After(e.expiresAt) {
+		delete(totpPendingStore, nonce)
+		return "", false
+	}
+	delete(totpPendingStore, nonce)
+	return e.userID, true
+}
 
 func (l *loginRateLimiter) allow(ip string) bool {
 	l.mu.Lock()
@@ -199,18 +257,23 @@ func (h *Handlers) loginSSE(w http.ResponseWriter, r *http.Request) {
 	// redirect to the TOTP step. The session created above is valid but the session
 	// cookie is NOT set until the code is verified.
 	if result.User.TOTPEnabled {
+		// Revoke the eagerly-created session — we'll create a fresh one after TOTP.
+		pendingSum := sha256.Sum256([]byte(result.Token))
+		if err := h.logoutCmd.Handle(r.Context(), commands.LogoutCommand{TokenHash: hex.EncodeToString(pendingSum[:])}); err != nil {
+			log.Printf("loginSSE: revoke pre-TOTP session: %v", err)
+			// Non-fatal: session will expire naturally; continue to TOTP step.
+		}
+		// Store an opaque server-side nonce — never send the userID to the client.
+		nonce := newTOTPPending(result.User.ID)
 		http.SetCookie(w, &http.Cookie{
 			Name:     totpPendingCookie,
-			Value:    result.User.ID,
+			Value:    nonce,
 			Path:     "/",
 			HttpOnly: true,
 			SameSite: http.SameSiteLaxMode,
 			MaxAge:   totpPendingMaxAge,
 			Secure:   h.secureCookie,
 		})
-		// Revoke the eagerly-created session — we'll create a fresh one after TOTP.
-		pendingSum := sha256.Sum256([]byte(result.Token))
-		_ = h.logoutCmd.Handle(r.Context(), commands.LogoutCommand{TokenHash: hex.EncodeToString(pendingSum[:])})
 		sse := datastar.NewSSE(w, r)
 		sse.Redirect("/login/totp")
 		return
