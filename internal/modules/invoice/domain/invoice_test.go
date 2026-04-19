@@ -281,3 +281,71 @@ func TestUpdateLineItem_WithVAT(t *testing.T) {
 	assert.Equal(t, 21, inv.LineItems[0].VATRate)
 	assert.Equal(t, 5, inv.LineItems[0].Quantity)
 }
+
+// ── Dunning ──────────────────────────────────────────────────────────────────
+
+func TestMarkReminderSent_SetsTimestamp(t *testing.T) {
+	inv := NewInvoice("inv-1", "cust-1", "ACME", "ACM-001", "INV-001")
+	inv.Status = StatusFinalized
+	inv.DueDate = time.Now().Add(-48 * time.Hour)
+
+	err := inv.MarkReminderSent()
+	require.NoError(t, err)
+	require.NotNil(t, inv.ReminderSentAt)
+	assert.WithinDuration(t, time.Now(), *inv.ReminderSentAt, 2*time.Second)
+}
+
+func TestMarkReminderSent_OnlyForFinalizedOverdue(t *testing.T) {
+	tests := []struct {
+		name    string
+		status  InvoiceStatus
+		dueDate time.Time
+		wantErr bool
+	}{
+		{"finalized overdue", StatusFinalized, time.Now().Add(-1 * time.Hour), false},
+		{"finalized not due", StatusFinalized, time.Now().Add(72 * time.Hour), true},
+		{"paid", StatusPaid, time.Now().Add(-1 * time.Hour), true},
+		{"draft", StatusDraft, time.Now().Add(-1 * time.Hour), true},
+		{"void", StatusVoid, time.Now().Add(-1 * time.Hour), true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inv := NewInvoice("i", "c", "N", "C", "INV-X")
+			inv.Status = tt.status
+			inv.DueDate = tt.dueDate
+			err := inv.MarkReminderSent()
+			if tt.wantErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestNeedsReminder(t *testing.T) {
+	now := time.Now()
+	past := now.Add(-48 * time.Hour)
+	recent := now.Add(-12 * time.Hour)
+
+	inv := NewInvoice("i", "c", "N", "C", "INV-X")
+	inv.Status = StatusFinalized
+	inv.DueDate = past
+
+	// No reminder sent yet — needs reminder
+	assert.True(t, inv.NeedsReminder(24*time.Hour))
+
+	// Reminder sent recently — no reminder
+	inv.ReminderSentAt = &recent
+	assert.False(t, inv.NeedsReminder(24*time.Hour))
+
+	// Reminder sent long ago — needs reminder
+	old := now.Add(-25 * time.Hour)
+	inv.ReminderSentAt = &old
+	assert.True(t, inv.NeedsReminder(24*time.Hour))
+
+	// Not overdue — no reminder
+	inv.ReminderSentAt = nil
+	inv.DueDate = now.Add(72 * time.Hour)
+	assert.False(t, inv.NeedsReminder(24*time.Hour))
+}

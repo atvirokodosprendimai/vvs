@@ -9,6 +9,22 @@ import (
 	"github.com/vvs/isp/internal/modules/auth/app/queries"
 )
 
+// RequireWrite is a middleware that blocks viewer-role users from all mutating
+// HTTP methods (POST, PUT, PATCH, DELETE). It must be placed after RequireAuth.
+func RequireWrite(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete:
+			u := authhttp.UserFromContext(r.Context())
+			if u != nil && !u.CanWrite() {
+				http.Error(w, "Forbidden: read-only account", http.StatusForbidden)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // RequireAuth is a chi middleware that validates the vvs_session cookie.
 // On success it stores the *domain.User in the request context.
 // On failure it redirects to /login (except for /login and /static/* paths).

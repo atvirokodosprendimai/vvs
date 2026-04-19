@@ -105,6 +105,7 @@ templ UserListPage() {
 						>
 							<option value="operator">Operator</option>
 							<option value="admin">Admin</option>
+							<option value="viewer">Viewer (read-only)</option>
 						</select>
 						<div id="create-user-error"></div>
 						<div class="flex gap-2 mt-1">
@@ -185,10 +186,13 @@ templ userRow(row queries.UserRow, currentUserID string) {
 }
 
 templ roleBadge(role domain.Role) {
-	if role == domain.RoleAdmin {
-		<span class="bg-amber-500/10 text-amber-400 text-xs px-2 py-0.5 rounded border border-amber-500/20">admin</span>
-	} else {
-		<span class="bg-neutral-800 text-neutral-400 text-xs px-2 py-0.5 rounded border border-neutral-700">operator</span>
+	switch role {
+		case domain.RoleAdmin:
+			<span class="bg-amber-500/10 text-amber-400 text-xs px-2 py-0.5 rounded border border-amber-500/20">admin</span>
+		case domain.RoleViewer:
+			<span class="bg-neutral-800 text-neutral-500 text-xs px-2 py-0.5 rounded border border-neutral-700">viewer</span>
+		default:
+			<span class="bg-neutral-800 text-neutral-400 text-xs px-2 py-0.5 rounded border border-neutral-700">operator</span>
 	}
 }
 

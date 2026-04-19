@@ -59,6 +59,7 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 	// Protected routes behind auth middleware
 	r.Group(func(r chi.Router) {
 		r.Use(RequireAuth(currentUser))
+		r.Use(RequireWrite) // blocks viewer role from all mutations
 
 		// Dashboard
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
