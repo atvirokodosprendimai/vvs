@@ -44,6 +44,10 @@ type Config struct {
 	// SecureCookie sets the Secure flag on the session cookie. Enable in production (HTTPS only).
 	SecureCookie bool // VVS_SECURE_COOKIE env var
 
+	// BaseURL is the public base URL used in generated links (e.g. portal access links).
+	// Example: "https://isp.example.com". Defaults to http://host when empty.
+	BaseURL string // VVS_BASE_URL env var
+
 	// Debug enables verbose debug logging (slog DEBUG level).
 	Debug bool
 }

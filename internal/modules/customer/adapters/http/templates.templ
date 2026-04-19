@@ -272,7 +272,13 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 			>
 				Delete
 			</button>
+			<button
+				data-on:click={ fmt.Sprintf("@post('/api/customers/%s/portal-link')", c.ID) }
+				class="bg-neutral-700 hover:bg-neutral-600 text-neutral-200 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+				title="Generate a portal access link for this customer"
+			>Portal Access</button>
 		}
+		<div id="portal-link-result"></div>
 		<div id="status-error" class="mb-2"></div>
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 			<!-- Left column: info + notes -->

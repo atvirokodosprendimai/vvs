@@ -122,6 +122,10 @@ import (
 	croncommands "github.com/vvs/isp/internal/modules/cron/app/commands"
 	cronqueries "github.com/vvs/isp/internal/modules/cron/app/queries"
 	cronmigrations "github.com/vvs/isp/internal/modules/cron/migrations"
+
+	portalhttp "github.com/vvs/isp/internal/modules/portal/adapters/http"
+	portalpersistence "github.com/vvs/isp/internal/modules/portal/adapters/persistence"
+	portalmigrations "github.com/vvs/isp/internal/modules/portal/migrations"
 )
 
 type App struct {
@@ -164,6 +168,7 @@ func New(cfg Config) (*App, error) {
 		{Name: "email", FS: emailmigrations.FS, TableName: "goose_email"},
 		{Name: "invoice", FS: invoicemigrations.FS, TableName: "goose_invoice"},
 		{Name: "audit_log", FS: auditlogmigrations.FS, TableName: "goose_audit_log"},
+		{Name: "portal", FS: portalmigrations.FS, TableName: "goose_portal"},
 	}); err != nil {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
@@ -665,6 +670,16 @@ func New(cfg Config) (*App, error) {
 	moduleRoutes = append(moduleRoutes, paymentRoutes)
 	log.Printf("module wired: payment import")
 
+	// Portal module — customer self-service invoice access
+	portalTokenRepo := portalpersistence.NewGormPortalTokenRepository(gdb)
+	portalRoutes := portalhttp.NewHandlers(portalTokenRepo, listInvoicesForCustomerQuery, getInvoiceQuery).
+		WithPDFTokens(invoiceTokenRepo).
+		WithCustomerReader(&portalCustomerBridge{query: getCustomerQuery}).
+		WithBaseURL(cfg.BaseURL).
+		WithSecureCookie(cfg.SecureCookie)
+	moduleRoutes = append(moduleRoutes, portalRoutes)
+	log.Printf("module wired: portal")
+
 	if err := rpcServer.Register(); err != nil {
 		return nil, fmt.Errorf("nats rpc: %w", err)
 	}
@@ -966,6 +981,23 @@ func seedGeneralChannel(ctx context.Context, store *chat.Store) error {
 		CreatedBy: "system",
 		CreatedAt: time.Now().UTC(),
 	})
+}
+
+// portalCustomerBridge implements portalhttp.customerReader using the GetCustomer query.
+type portalCustomerBridge struct {
+	query *customerqueries.GetCustomerHandler
+}
+
+func (b *portalCustomerBridge) GetPortalCustomer(ctx context.Context, id string) (*portalhttp.PortalCustomer, error) {
+	c, err := b.query.Handle(ctx, customerqueries.GetCustomerQuery{ID: id})
+	if err != nil {
+		return nil, err
+	}
+	return &portalhttp.PortalCustomer{
+		ID:          c.ID,
+		CompanyName: c.CompanyName,
+		Email:       c.Email,
+	}, nil
 }
 
 // seedAdmin creates or updates the admin user on startup.
