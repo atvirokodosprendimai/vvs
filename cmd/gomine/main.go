@@ -1,11 +1,12 @@
 // gomine — chunk Go source files by AST symbol boundaries and emit JSONL.
 // Each output line is one Chunk (func, method, type, interface, const group).
-// Pipe into scripts/mine-go.sh to import into MemPalace.
+// Pipe into scripts/mine-go.py to import into ChromaDB.
 //
 // Usage:
 //
-//	go run ./cmd/gomine [root_dir]          # defaults to .
-//	go run ./cmd/gomine ./internal | tee chunks.jsonl
+//	gomine [paths...]          # one or more files or directories; defaults to .
+//	gomine ./internal ./cmd    # multiple directories
+//	gomine internal/app/app.go internal/app/builder.go  # specific files
 package main
 
 import (
@@ -34,18 +35,35 @@ type Chunk struct {
 }
 
 func main() {
-	root := "."
-	if len(os.Args) > 1 {
-		root = os.Args[1]
+	enc := json.NewEncoder(os.Stdout)
+
+	paths := os.Args[1:]
+	if len(paths) == 0 {
+		paths = []string{"."}
 	}
 
-	enc := json.NewEncoder(os.Stdout)
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	for _, path := range paths {
+		info, err := os.Stat(path)
+		if err != nil {
+			log.Printf("skip %s: %v", path, err)
+			continue
+		}
+		if info.IsDir() {
+			if err := walkDir(enc, path); err != nil {
+				log.Printf("walk %s: %v", path, err)
+			}
+		} else if strings.HasSuffix(path, ".go") {
+			emitFile(enc, path)
+		}
+	}
+}
+
+func walkDir(enc *json.Encoder, root string) error {
+	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if info.IsDir() {
-			// Skip hidden dirs and vendor
 			base := info.Name()
 			if base != "." && (strings.HasPrefix(base, ".") || base == "vendor" || base == "testdata") {
 				return filepath.SkipDir
@@ -55,20 +73,22 @@ func main() {
 		if !strings.HasSuffix(path, ".go") {
 			return nil
 		}
-		chunks, err := parseFile(path)
-		if err != nil {
-			log.Printf("skip %s: %v", path, err)
-			return nil
-		}
-		for _, c := range chunks {
-			if err := enc.Encode(c); err != nil {
-				return err
-			}
-		}
+		emitFile(enc, path)
 		return nil
 	})
+}
+
+func emitFile(enc *json.Encoder, path string) {
+	chunks, err := parseFile(path)
 	if err != nil {
-		log.Fatalf("walk: %v", err)
+		log.Printf("skip %s: %v", path, err)
+		return
+	}
+	for _, c := range chunks {
+		if err := enc.Encode(c); err != nil {
+			log.Printf("encode %s: %v", path, err)
+			return
+		}
 	}
 }
 
@@ -163,7 +183,6 @@ func genChunks(fset *token.FileSet, src []byte, path, pkg string, d *ast.GenDecl
 			})
 		}
 	case token.CONST, token.VAR:
-		// Emit the whole block as one chunk
 		if len(d.Specs) == 0 {
 			break
 		}
@@ -174,7 +193,6 @@ func genChunks(fset *token.FileSet, src []byte, path, pkg string, d *ast.GenDecl
 		if d.Tok == token.VAR {
 			kind = "var"
 		}
-		// Use first spec name as symbol
 		symbol := ""
 		if vs, ok := d.Specs[0].(*ast.ValueSpec); ok && len(vs.Names) > 0 {
 			symbol = vs.Names[0].Name
@@ -196,7 +214,6 @@ func genChunks(fset *token.FileSet, src []byte, path, pkg string, d *ast.GenDecl
 	return chunks
 }
 
-// slice extracts source bytes between two AST positions.
 func slice(src []byte, start, end token.Pos, fset *token.FileSet) string {
 	s := fset.Position(start).Offset
 	e := fset.Position(end).Offset
@@ -206,7 +223,6 @@ func slice(src []byte, start, end token.Pos, fset *token.FileSet) string {
 	return string(src[s:e])
 }
 
-// signature returns the first line of the function declaration (no body).
 func signature(src []byte, d *ast.FuncDecl, fset *token.FileSet) string {
 	startOff := fset.Position(d.Pos()).Offset
 	var endOff int
@@ -221,7 +237,6 @@ func signature(src []byte, d *ast.FuncDecl, fset *token.FileSet) string {
 	return strings.TrimSpace(string(src[startOff:endOff]))
 }
 
-// recvType returns the receiver type name (pointer stripped).
 func recvType(field *ast.Field) string {
 	switch t := field.Type.(type) {
 	case *ast.StarExpr:
