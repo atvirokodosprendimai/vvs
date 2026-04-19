@@ -11,6 +11,8 @@ type UserModel struct {
 	Username     string    `gorm:"uniqueIndex;not null"`
 	PasswordHash string    `gorm:"not null"`
 	Role         string    `gorm:"not null"`
+	FullName     string    `gorm:"not null;default:''"`
+	Division     string    `gorm:"not null;default:''"`
 	CreatedAt    time.Time `gorm:"not null"`
 	UpdatedAt    time.Time `gorm:"not null"`
 }
@@ -33,6 +35,8 @@ func userToModel(u *domain.User) *UserModel {
 		Username:     u.Username,
 		PasswordHash: u.PasswordHash,
 		Role:         string(u.Role),
+		FullName:     u.FullName,
+		Division:     u.Division,
 		CreatedAt:    u.CreatedAt,
 		UpdatedAt:    u.UpdatedAt,
 	}
@@ -44,6 +48,8 @@ func userToDomain(m *UserModel) *domain.User {
 		Username:     m.Username,
 		PasswordHash: m.PasswordHash,
 		Role:         domain.Role(m.Role),
+		FullName:     m.FullName,
+		Division:     m.Division,
 		CreatedAt:    m.CreatedAt,
 		UpdatedAt:    m.UpdatedAt,
 	}
