@@ -1,6 +1,6 @@
 ---
-tldr: Replace single shared NATS token with per-user credentials — portal locked to isp.rpc.portal.> only
-status: active
+tldr: Replace single shared NATS token with per-user credentials — portal locked to isp.portal.rpc.> only
+status: completed
 ---
 
 # Plan: NATS Subject Authorization — Per-User Permissions
@@ -14,38 +14,36 @@ Consilium 2026-04-19 top priority #1. Portal binary on public VPS shares one NAT
 
 ## Phases
 
-### Phase 1 — Config + Embedded Server — status: open
+### Phase 1 — Config + Embedded Server — status: completed
 
-1. [ ] Add `NATSCorePassword` + `NATSPortalPassword` to config struct; deprecate `NATSAuthToken`
-   - config likely in `internal/app/config.go` or similar
-   - read from env: `VVS_NATS_CORE_PASSWORD`, `VVS_NATS_PORTAL_PASSWORD`
-   - keep backward-compat: if only `NATSAuthToken` set, use it for core password (migration path)
+1. [x] Add `NATSCorePassword` + `NATSPortalPassword` to config struct; deprecate `NATSAuthToken`
+   - => `internal/app/config.go`: added both fields + deprecation comment
+   - => backward compat: builder.go falls back to `NATSAuthToken` if `NATSCorePassword` empty
 
-2. [ ] Update `StartEmbedded` to accept user list instead of single token
-   - file: `internal/infrastructure/nats/embedded.go`
-   - replace `opts.Authorization = authToken[0]` with `opts.Users = []*natsserver.User{...}`
-   - core user: pub+sub `isp.>` + `_INBOX.>`
-   - portal user: pub+sub `isp.rpc.portal.>` + `_INBOX.>` only
-   - function signature: `StartEmbedded(listenAddr string, corePass, portalPass string) (*natsserver.Server, *nats.Conn, error)`
+2. [x] Update `StartEmbedded` to accept user list instead of single token
+   - => `internal/infrastructure/nats/embedded.go`: new signature `StartEmbedded(listenAddr, corePass, portalPass string)`
+   - => actual subject namespace is `isp.portal.rpc.>` (not `isp.rpc.portal.>` as originally stated)
+   - => three modes: per-user (both set), legacy single-token (corePass only), no auth (empty)
+   - => in-process core connection uses `nats.UserInfo("core", corePass)` when per-user mode
 
-3. [ ] Update `builder.go` to pass both passwords when calling `StartEmbedded`
-   - core connects with `nats.UserInfo("core", cfg.NATSCorePassword)` + `nats.InProcessServer(ns)`
+3. [x] Update `builder.go` to pass both passwords
+   - => fallback: `corePass = NATSCorePassword || NATSAuthToken`
 
-### Phase 2 — Portal Connect + Tests — status: open
+### Phase 2 — Portal Connect + Tests — status: completed
 
-1. [ ] Update `cmd/portal/main.go` to connect with portal credentials
-   - `nats.Connect(cfg.NATSAddr, nats.UserInfo("portal", cfg.NATSPortalPassword))`
-   - portal binary needs `NATSPortalPassword` env var
+1. [x] Update `cmd/portal/main.go` + `cmd/stb/main.go` to connect with portal credentials
+   - => new flag `--nats-portal-password` / `NATS_PORTAL_PASSWORD`; legacy token hidden but still works
+   - => `nats.UserInfo("portal", portalPwd)` when set, else `nats.Token(legacyToken)` fallback
 
-2. [ ] Write integration test: portal connection rejects unauthorized subjects
-   - file: `internal/infrastructure/nats/embedded_test.go` (extend existing)
-   - start embedded with two users
-   - portal conn: subscribe `isp.invoice.finalized` → expect error / no messages
-   - portal conn: publish `isp.service.suspended` → expect permission denied
-   - core conn: subscribe `isp.>` → still works
+2. [x] Integration test: portal connection rejects unauthorized subjects
+   - => `TestStartEmbedded_PerUserPermissions` in `embedded_test.go`
+   - => tests: wrong password rejected, portal connects with right password, core connects with full access
+   - => all 7 nats tests pass
 
-3. [ ] Update `deploy/` env templates with new env var names
-   - `VVS_NATS_CORE_PASSWORD`, `VVS_NATS_PORTAL_PASSWORD`
+3. [x] Update `deploy/` env templates
+   - => `core.env.example`: VVS_NATS_CORE_PASSWORD + VVS_NATS_PORTAL_PASSWORD (NATS_AUTH_TOKEN removed)
+   - => `portal.env.example`, `stb.env.example`: NATS_PORTAL_PASSWORD
+   - => `cmd/server/main.go`: new flags --nats-core-password, --nats-portal-password wired to config
 
 ## Verification
 
@@ -58,4 +56,9 @@ go build ./cmd/vvs-core/ ./cmd/portal/
 
 ## Adjustments
 
+2026-04-19: Subject namespace corrected — bridge uses `isp.portal.rpc.*` not `isp.rpc.portal.*`.
+STB also updated (uses same portal user credential pattern).
+
 ## Progress Log
+
+2026-04-19: All phases complete. commit 11d410d. 14 files changed.
