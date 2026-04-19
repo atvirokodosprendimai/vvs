@@ -131,6 +131,8 @@ import (
 
 	iptvhttp "github.com/vvs/isp/internal/modules/iptv/adapters/http"
 	iptvpersistence "github.com/vvs/isp/internal/modules/iptv/adapters/persistence"
+	iptvcommands "github.com/vvs/isp/internal/modules/iptv/app/commands"
+	iptvqueries "github.com/vvs/isp/internal/modules/iptv/app/queries"
 	iptvmigrations "github.com/vvs/isp/internal/modules/iptv/migrations"
 )
 
@@ -707,7 +709,28 @@ func New(cfg Config) (*App, error) {
 	iptvSubRepo := iptvpersistence.NewSubscriptionRepository(gdb)
 	iptvSTBRepo := iptvpersistence.NewSTBRepository(gdb)
 	iptvKeyRepo := iptvpersistence.NewSubscriptionKeyRepository(gdb)
-	iptvRoutes := iptvhttp.NewIPTVHandlers(iptvChannelRepo, iptvPackageRepo, iptvSubRepo, iptvSTBRepo, iptvKeyRepo)
+	iptvRoutes := iptvhttp.NewIPTVHandlers(
+		iptvcommands.NewCreateChannelHandler(iptvChannelRepo),
+		iptvcommands.NewUpdateChannelHandler(iptvChannelRepo),
+		iptvcommands.NewDeleteChannelHandler(iptvChannelRepo),
+		iptvcommands.NewCreatePackageHandler(iptvPackageRepo),
+		iptvcommands.NewUpdatePackageHandler(iptvPackageRepo),
+		iptvcommands.NewDeletePackageHandler(iptvPackageRepo),
+		iptvcommands.NewAddChannelToPackageHandler(iptvPackageRepo),
+		iptvcommands.NewRemoveChannelFromPackageHandler(iptvPackageRepo),
+		iptvcommands.NewCreateSubscriptionHandler(iptvSubRepo, iptvKeyRepo, iptvPackageRepo),
+		iptvcommands.NewSuspendSubscriptionHandler(iptvSubRepo),
+		iptvcommands.NewReactivateSubscriptionHandler(iptvSubRepo),
+		iptvcommands.NewCancelSubscriptionHandler(iptvSubRepo),
+		iptvcommands.NewRevokeSubscriptionKeyHandler(iptvKeyRepo),
+		iptvcommands.NewReissueSubscriptionKeyHandler(iptvKeyRepo),
+		iptvcommands.NewAssignSTBHandler(iptvSTBRepo),
+		iptvcommands.NewDeleteSTBHandler(iptvSTBRepo),
+		iptvqueries.NewListChannelsHandler(iptvChannelRepo),
+		iptvqueries.NewListPackagesHandler(iptvPackageRepo),
+		iptvqueries.NewListSubscriptionsHandler(iptvSubRepo, iptvPackageRepo),
+		iptvqueries.NewListSTBsHandler(iptvSTBRepo),
+	)
 	moduleRoutes = append(moduleRoutes, iptvRoutes)
 	log.Printf("module wired: iptv")
 
