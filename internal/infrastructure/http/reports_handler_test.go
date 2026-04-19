@@ -9,12 +9,12 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
-	invoicemigrations "github.com/vvs/isp/internal/modules/invoice/migrations"
-	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/testutil"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
+	invoicemigrations "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/migrations"
+	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 )
 
 // seedPaidInvoice inserts a minimal paid invoice row directly via SQL.

@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
-	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
-	portaldomain "github.com/vvs/isp/internal/modules/portal/domain"
-	ticketqueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
+	invoicequeries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
+	portaldomain "github.com/atvirokodosprendimai/vvs/internal/modules/portal/domain"
+	ticketqueries "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/queries"
 )
 
 // PortalNATSClient satisfies the interfaces expected by portal/adapters/http.Handlers:

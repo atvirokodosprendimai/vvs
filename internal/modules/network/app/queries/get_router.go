@@ -3,7 +3,7 @@ package queries
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 )
 
 type GetRouterHandler struct {

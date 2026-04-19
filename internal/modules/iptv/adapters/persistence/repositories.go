@@ -3,8 +3,8 @@ package persistence
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/modules/iptv/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/domain"
 	"gorm.io/gorm"
 )
 

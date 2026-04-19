@@ -7,7 +7,7 @@ import (
 
 	routeros "github.com/go-routeros/routeros"
 
-	"github.com/vvs/isp/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 )
 
 // routerosConn is a narrow interface over the RouterOS client for testability.

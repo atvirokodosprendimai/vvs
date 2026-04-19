@@ -13,14 +13,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
-	"github.com/vvs/isp/internal/infrastructure/bot"
-	"github.com/vvs/isp/internal/infrastructure/chat"
-	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
-	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
-	portaldomain "github.com/vvs/isp/internal/modules/portal/domain"
-	ticketcommands "github.com/vvs/isp/internal/modules/ticket/app/commands"
-	ticketdomain "github.com/vvs/isp/internal/modules/ticket/domain"
-	ticketqueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/bot"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/chat"
+	invoicedomain "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
+	invoicequeries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
+	portaldomain "github.com/atvirokodosprendimai/vvs/internal/modules/portal/domain"
+	ticketcommands "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/commands"
+	ticketdomain "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/domain"
+	ticketqueries "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/queries"
 )
 
 // Subjects served by PortalBridge.

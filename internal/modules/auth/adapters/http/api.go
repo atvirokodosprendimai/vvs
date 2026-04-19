@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/vvs/isp/internal/infrastructure/http/jsonapi"
-	"github.com/vvs/isp/internal/modules/auth/app/commands"
-	"github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/jsonapi"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 func (h *Handlers) RegisterAPIRoutes(r chi.Router) {

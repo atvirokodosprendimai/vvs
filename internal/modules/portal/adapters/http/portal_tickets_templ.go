@@ -11,7 +11,7 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
-	ticketqueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
+	ticketqueries "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/queries"
 )
 
 // PortalTicketListPage lists all support tickets for the authenticated portal customer.

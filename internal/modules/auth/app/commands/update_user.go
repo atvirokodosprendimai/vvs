@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 var ErrForbidden = errors.New("forbidden")

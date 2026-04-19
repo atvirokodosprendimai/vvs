@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/vvs/isp/internal/modules/payment/app/commands"
-	"github.com/vvs/isp/internal/modules/payment/domain"
-	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
-	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/payment/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/payment/domain"
+	invoicecommands "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/commands"
+	invoicedomain "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
 )
 
 // ── mocks ────────────────────────────────────────────────────────────

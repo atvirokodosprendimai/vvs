@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vvs/isp/internal/modules/portal/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/portal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

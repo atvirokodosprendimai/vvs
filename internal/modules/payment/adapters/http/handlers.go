@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
-	"github.com/vvs/isp/internal/modules/payment/app/commands"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/payment/app/commands"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 // Handlers wires the payment import HTTP endpoints.

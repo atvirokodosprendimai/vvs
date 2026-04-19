@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/vvs/isp/internal/infrastructure/http/jsonapi"
-	"github.com/vvs/isp/internal/modules/service/app/commands"
-	"github.com/vvs/isp/internal/modules/service/app/queries"
-	"github.com/vvs/isp/internal/modules/service/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/jsonapi"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/service/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/service/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/service/domain"
 )
 
 // RegisterAPIRoutes implements APIRoutes for the bearer-token-protected REST JSON API.

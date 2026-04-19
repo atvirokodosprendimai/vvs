@@ -9,10 +9,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
 
-	croncommands "github.com/vvs/isp/internal/modules/cron/app/commands"
-	cronqueries "github.com/vvs/isp/internal/modules/cron/app/queries"
-	"github.com/vvs/isp/internal/modules/cron/domain"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
+	croncommands "github.com/atvirokodosprendimai/vvs/internal/modules/cron/app/commands"
+	cronqueries "github.com/atvirokodosprendimai/vvs/internal/modules/cron/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/cron/domain"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 type CronHandlers struct {

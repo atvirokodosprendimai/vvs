@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/vvs/isp/internal/modules/cron/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/cron/domain"
 )
 
 type AddJobCommand struct {

@@ -5,8 +5,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/modules/device/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/device/domain"
 )
 
 // GormDeviceRepository implements domain.DeviceRepository using GORM + SQLite.

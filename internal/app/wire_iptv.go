@@ -3,13 +3,13 @@ package app
 import (
 	"log"
 
-	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
+	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
 
-	iptvhttp        "github.com/vvs/isp/internal/modules/iptv/adapters/http"
-	iptvpersistence "github.com/vvs/isp/internal/modules/iptv/adapters/persistence"
-	iptvcommands    "github.com/vvs/isp/internal/modules/iptv/app/commands"
-	iptvqueries     "github.com/vvs/isp/internal/modules/iptv/app/queries"
+	iptvhttp        "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/adapters/http"
+	iptvpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/adapters/persistence"
+	iptvcommands    "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/app/commands"
+	iptvqueries     "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/app/queries"
 )
 
 type iptvWired struct {

@@ -30,10 +30,10 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nats-io/nats.go"
 	"github.com/urfave/cli/v3"
-	invoicehttp "github.com/vvs/isp/internal/modules/invoice/adapters/http"
-	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
-	portalhttp "github.com/vvs/isp/internal/modules/portal/adapters/http"
-	portalnats "github.com/vvs/isp/internal/modules/portal/adapters/nats"
+	invoicehttp "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/adapters/http"
+	invoicequeries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
+	portalhttp "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/http"
+	portalnats "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/nats"
 )
 
 func main() {

@@ -12,11 +12,11 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
-	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
-	natspkg "github.com/vvs/isp/internal/infrastructure/nats"
-	portalnats "github.com/vvs/isp/internal/modules/portal/adapters/nats"
-	portaldomain "github.com/vvs/isp/internal/modules/portal/domain"
+	invoicedomain "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
+	invoicequeries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
+	natspkg "github.com/atvirokodosprendimai/vvs/internal/infrastructure/nats"
+	portalnats "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/nats"
+	portaldomain "github.com/atvirokodosprendimai/vvs/internal/modules/portal/domain"
 )
 
 // ── stubs ──────────────────────────────────────────────────────────────────────

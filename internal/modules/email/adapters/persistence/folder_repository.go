@@ -3,8 +3,8 @@ package persistence
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/modules/email/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/domain"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )

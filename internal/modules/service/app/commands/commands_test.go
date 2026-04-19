@@ -7,11 +7,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vvs/isp/internal/modules/service/adapters/persistence"
-	"github.com/vvs/isp/internal/modules/service/app/commands"
-	"github.com/vvs/isp/internal/modules/service/domain"
-	"github.com/vvs/isp/internal/modules/service/migrations"
-	"github.com/vvs/isp/internal/testutil"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/service/adapters/persistence"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/service/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/service/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/service/migrations"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 )
 
 func setup(t *testing.T) (*persistence.GormServiceRepository, *commands.AssignServiceHandler, *commands.SuspendServiceHandler, *commands.ReactivateServiceHandler, *commands.CancelServiceHandler) {

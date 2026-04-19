@@ -11,8 +11,8 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
-	"github.com/vvs/isp/internal/modules/contact/app/queries"
-	"github.com/vvs/isp/internal/shared/jsutil"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/contact/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/jsutil"
 )
 
 // ContactSection renders the contacts panel on a customer detail page.

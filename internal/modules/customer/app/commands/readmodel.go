@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"github.com/vvs/isp/internal/modules/customer/app/queries"
-	"github.com/vvs/isp/internal/modules/customer/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/customer/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/customer/domain"
 )
 
 // domainToReadModel maps a domain Customer to CustomerReadModel for NATS event payload.

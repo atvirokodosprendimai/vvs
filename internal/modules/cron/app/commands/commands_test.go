@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vvs/isp/internal/modules/cron/app/commands"
-	"github.com/vvs/isp/internal/modules/cron/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/cron/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/cron/domain"
 )
 
 // ── stub repo ─────────────────────────────────────────────────────────────

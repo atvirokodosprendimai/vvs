@@ -7,11 +7,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vvs/isp/internal/modules/task/adapters/persistence"
-	"github.com/vvs/isp/internal/modules/task/app/commands"
-	"github.com/vvs/isp/internal/modules/task/domain"
-	"github.com/vvs/isp/internal/modules/task/migrations"
-	"github.com/vvs/isp/internal/testutil"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/task/adapters/persistence"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/task/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/task/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/task/migrations"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 )
 
 func setup(t *testing.T) (domain.TaskRepository, commands.CreateTaskCommand) {

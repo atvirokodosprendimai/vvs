@@ -10,11 +10,11 @@ import (
 	qrcode "github.com/skip2/go-qrcode"
 	"github.com/starfederation/datastar-go/datastar"
 
-	"github.com/vvs/isp/internal/modules/device/app/commands"
-	"github.com/vvs/isp/internal/modules/device/app/queries"
-	"github.com/vvs/isp/internal/modules/device/domain"
-	"github.com/vvs/isp/internal/shared/events"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/device/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/device/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/device/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 type DeviceHandlers struct {

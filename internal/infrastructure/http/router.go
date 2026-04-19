@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
-	authqueries "github.com/vvs/isp/internal/modules/auth/app/queries"
-	"github.com/vvs/isp/internal/infrastructure/http/apimw"
-	"github.com/vvs/isp/internal/infrastructure/metrics"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
+	authqueries "github.com/atvirokodosprendimai/vvs/internal/modules/auth/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/apimw"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/metrics"
 	"gorm.io/gorm"
 )
 

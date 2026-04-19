@@ -16,11 +16,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/starfederation/datastar-go/datastar"
-	emailcommands "github.com/vvs/isp/internal/modules/email/app/commands"
-	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
-	"github.com/vvs/isp/internal/modules/email/domain"
-	"github.com/vvs/isp/internal/shared/events"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
+	emailcommands "github.com/atvirokodosprendimai/vvs/internal/modules/email/app/commands"
+	emailqueries "github.com/atvirokodosprendimai/vvs/internal/modules/email/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 // attachmentFinder fetches a single attachment by ID.

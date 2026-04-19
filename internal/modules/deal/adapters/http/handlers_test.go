@@ -8,11 +8,11 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	dealhttp "github.com/vvs/isp/internal/modules/deal/adapters/http"
-	dealcommands "github.com/vvs/isp/internal/modules/deal/app/commands"
-	dealqueries "github.com/vvs/isp/internal/modules/deal/app/queries"
-	"github.com/vvs/isp/internal/modules/deal/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	dealhttp "github.com/atvirokodosprendimai/vvs/internal/modules/deal/adapters/http"
+	dealcommands "github.com/atvirokodosprendimai/vvs/internal/modules/deal/app/commands"
+	dealqueries "github.com/atvirokodosprendimai/vvs/internal/modules/deal/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/deal/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 // ── stubs ────────────────────────────────────────────────────────────────────

@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/modules/product/domain"
-	shareddomain "github.com/vvs/isp/internal/shared/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/product/domain"
+	shareddomain "github.com/atvirokodosprendimai/vvs/internal/shared/domain"
 )
 
 type ListProductsQuery struct {

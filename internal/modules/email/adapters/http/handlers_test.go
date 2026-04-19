@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	emailhttp "github.com/vvs/isp/internal/modules/email/adapters/http"
-	emailcommands "github.com/vvs/isp/internal/modules/email/app/commands"
-	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
-	"github.com/vvs/isp/internal/modules/email/domain"
+	emailhttp "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/http"
+	emailcommands "github.com/atvirokodosprendimai/vvs/internal/modules/email/app/commands"
+	emailqueries "github.com/atvirokodosprendimai/vvs/internal/modules/email/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/domain"
 )
 
 // ── stub compose handler ──────────────────────────────────────────────────────

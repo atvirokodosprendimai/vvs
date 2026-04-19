@@ -6,7 +6,7 @@ import (
 	"time"
 
 	imaplib "github.com/emersion/go-imap/v2"
-	"github.com/vvs/isp/internal/modules/email/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/domain"
 )
 
 // Appender implements domain.EmailFolderAppender via IMAP APPEND.

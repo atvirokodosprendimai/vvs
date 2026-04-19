@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/vvs/isp/internal/infrastructure/netbox"
-	"github.com/vvs/isp/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/netbox"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 )
 
 // IPAllocatorService tries each prefix for the given zone in priority order.

@@ -8,10 +8,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vvs/isp/internal/modules/audit_log/adapters/persistence"
-	"github.com/vvs/isp/internal/modules/audit_log/domain"
-	auditlogmigrations "github.com/vvs/isp/internal/modules/audit_log/migrations"
-	"github.com/vvs/isp/internal/testutil"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/audit_log/adapters/persistence"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/audit_log/domain"
+	auditlogmigrations "github.com/atvirokodosprendimai/vvs/internal/modules/audit_log/migrations"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 )
 
 func setupRepo(t *testing.T) domain.AuditLogRepository {

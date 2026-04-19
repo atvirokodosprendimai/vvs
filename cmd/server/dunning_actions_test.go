@@ -8,17 +8,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/testutil"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 
-	customerdomain "github.com/vvs/isp/internal/modules/customer/domain"
-	customermigrations "github.com/vvs/isp/internal/modules/customer/migrations"
-	customerpersistence "github.com/vvs/isp/internal/modules/customer/adapters/persistence"
-	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
-	invoicemigrations "github.com/vvs/isp/internal/modules/invoice/migrations"
-	invoicepersistence "github.com/vvs/isp/internal/modules/invoice/adapters/persistence"
-	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
-	sharedomain "github.com/vvs/isp/internal/shared/domain"
+	customerdomain "github.com/atvirokodosprendimai/vvs/internal/modules/customer/domain"
+	customermigrations "github.com/atvirokodosprendimai/vvs/internal/modules/customer/migrations"
+	customerpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/customer/adapters/persistence"
+	invoicedomain "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
+	invoicemigrations "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/migrations"
+	invoicepersistence "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/adapters/persistence"
+	invoicecommands "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/commands"
+	sharedomain "github.com/atvirokodosprendimai/vvs/internal/shared/domain"
 )
 
 // captureMailer records sent emails without delivering them.

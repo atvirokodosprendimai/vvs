@@ -11,10 +11,10 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
-	"github.com/vvs/isp/internal/infrastructure/http/templates"
-	"github.com/vvs/isp/internal/modules/deal/app/queries"
-	"github.com/vvs/isp/internal/modules/deal/domain"
-	"github.com/vvs/isp/internal/shared/jsutil"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/deal/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/deal/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/jsutil"
 )
 
 // DealSection renders the full deals panel for a customer detail page.

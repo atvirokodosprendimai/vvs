@@ -8,7 +8,7 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import authdomain "github.com/vvs/isp/internal/modules/auth/domain"
+import authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 
 func Layout(title string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {

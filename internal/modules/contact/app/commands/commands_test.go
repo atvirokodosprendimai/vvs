@@ -6,13 +6,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/modules/contact/adapters/persistence"
-	"github.com/vvs/isp/internal/modules/contact/app/commands"
-	"github.com/vvs/isp/internal/modules/contact/domain"
-	contactmigrations "github.com/vvs/isp/internal/modules/contact/migrations"
-	customermigrations "github.com/vvs/isp/internal/modules/customer/migrations"
-	"github.com/vvs/isp/internal/testutil"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/contact/adapters/persistence"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/contact/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/contact/domain"
+	contactmigrations "github.com/atvirokodosprendimai/vvs/internal/modules/contact/migrations"
+	customermigrations "github.com/atvirokodosprendimai/vvs/internal/modules/customer/migrations"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 )
 
 // insertCustomer inserts a bare-minimum customer row to satisfy the FK constraint.

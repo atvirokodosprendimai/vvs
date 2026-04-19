@@ -1,4 +1,4 @@
-module github.com/vvs/isp
+module github.com/atvirokodosprendimai/vvs
 
 go 1.25.0
 

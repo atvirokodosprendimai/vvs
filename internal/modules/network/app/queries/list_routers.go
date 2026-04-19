@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/vvs/isp/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 )
 
 // RouterReadModel is the flat read representation for SSE/HTTP responses.

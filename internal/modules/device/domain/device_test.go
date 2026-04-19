@@ -3,7 +3,7 @@ package domain_test
 import (
 	"testing"
 
-	"github.com/vvs/isp/internal/modules/device/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/device/domain"
 )
 
 func newTestDevice(t *testing.T) *domain.Device {

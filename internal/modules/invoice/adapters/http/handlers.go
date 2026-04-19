@@ -14,14 +14,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
-	"github.com/vvs/isp/internal/modules/invoice/app/commands"
-	"github.com/vvs/isp/internal/modules/invoice/app/queries"
-	"github.com/vvs/isp/internal/modules/invoice/domain"
-	"github.com/vvs/isp/internal/shared/audit"
-	"github.com/vvs/isp/internal/shared/events"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
-	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/audit"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
+	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
 )
 
 // CustomerSearchResult is returned by CustomerSearcher for the autocomplete dropdown.

@@ -5,14 +5,14 @@ import (
 	"log"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 
-	customerqueries "github.com/vvs/isp/internal/modules/customer/app/queries"
-	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
-	invoicepersistence "github.com/vvs/isp/internal/modules/invoice/adapters/persistence"
-	servicedomain "github.com/vvs/isp/internal/modules/service/domain"
-	servicepersistence "github.com/vvs/isp/internal/modules/service/adapters/persistence"
+	customerqueries "github.com/atvirokodosprendimai/vvs/internal/modules/customer/app/queries"
+	invoicecommands "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/commands"
+	invoicepersistence "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/adapters/persistence"
+	servicedomain "github.com/atvirokodosprendimai/vvs/internal/modules/service/domain"
+	servicepersistence "github.com/atvirokodosprendimai/vvs/internal/modules/service/adapters/persistence"
 )
 
 // RegisterBillingActions wires the billing run dependencies and registers the

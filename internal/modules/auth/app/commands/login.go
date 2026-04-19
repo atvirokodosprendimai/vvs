@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"time"
 
-	"github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 const SessionTTL = 24 * time.Hour

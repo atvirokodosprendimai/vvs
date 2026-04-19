@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vvs/isp/internal/modules/customer/adapters/persistence"
-	"github.com/vvs/isp/internal/modules/customer/app/commands"
-	"github.com/vvs/isp/internal/modules/customer/migrations"
-	"github.com/vvs/isp/internal/testutil"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/customer/adapters/persistence"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/customer/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/customer/migrations"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 )
 
 // stubIPAM is a minimal in-test implementation of commands.IPAllocator.

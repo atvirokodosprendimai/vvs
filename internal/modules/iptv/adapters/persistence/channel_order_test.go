@@ -6,10 +6,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vvs/isp/internal/modules/iptv/adapters/persistence"
-	"github.com/vvs/isp/internal/modules/iptv/domain"
-	iptvmigrations "github.com/vvs/isp/internal/modules/iptv/migrations"
-	"github.com/vvs/isp/internal/testutil"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/adapters/persistence"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/domain"
+	iptvmigrations "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/migrations"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 )
 
 func setupIPTVDB(t *testing.T) (*persistence.ChannelRepository, *persistence.PackageRepository) {

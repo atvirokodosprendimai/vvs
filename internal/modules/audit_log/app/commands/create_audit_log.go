@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/vvs/isp/internal/modules/audit_log/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/audit_log/domain"
 )
 
 // CreateAuditLogCommand carries the data needed to record an audit event.

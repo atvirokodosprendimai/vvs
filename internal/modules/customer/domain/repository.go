@@ -3,7 +3,7 @@ package domain
 import (
 	"context"
 
-	shareddomain "github.com/vvs/isp/internal/shared/domain"
+	shareddomain "github.com/atvirokodosprendimai/vvs/internal/shared/domain"
 )
 
 type CustomerFilter struct {

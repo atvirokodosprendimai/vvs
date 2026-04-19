@@ -3,8 +3,8 @@ package testutil
 import (
 	"testing"
 
-	infraNats "github.com/vvs/isp/internal/infrastructure/nats"
-	"github.com/vvs/isp/internal/shared/events"
+	infraNats "github.com/atvirokodosprendimai/vvs/internal/infrastructure/nats"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 // NewTestNATS starts an embedded NATS server for testing.

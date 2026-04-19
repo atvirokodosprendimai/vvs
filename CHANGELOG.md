@@ -75,3 +75,4 @@
 - 2026-04-19 `6515c73` feat(docker): multi-target Dockerfile + compose + Caddyfile
 - 2026-04-19 `2a468a9` feat(cron): VVS_DEMO_MODE env var disables shell and url job types
 - 2026-04-19 `bfa267b` feat(demo): suppress outbound email in demo mode + bind-mount data dirs
+- 2026-04-19 `c7cce1b` chore: update CHANGELOG and regenerate cron templ

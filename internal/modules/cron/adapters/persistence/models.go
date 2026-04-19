@@ -3,7 +3,7 @@ package persistence
 import (
 	"time"
 
-	"github.com/vvs/isp/internal/modules/cron/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/cron/domain"
 )
 
 // JobModel is the GORM model mapping to the cron_jobs table.

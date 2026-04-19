@@ -8,15 +8,15 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	producthttp "github.com/vvs/isp/internal/modules/product/adapters/http"
-	"github.com/vvs/isp/internal/modules/product/adapters/persistence"
-	productcommands "github.com/vvs/isp/internal/modules/product/app/commands"
-	productqueries "github.com/vvs/isp/internal/modules/product/app/queries"
-	"github.com/vvs/isp/internal/modules/product/domain"
-	"github.com/vvs/isp/internal/modules/product/migrations"
-	shareddomain "github.com/vvs/isp/internal/shared/domain"
-	"github.com/vvs/isp/internal/shared/events"
-	"github.com/vvs/isp/internal/testutil"
+	producthttp "github.com/atvirokodosprendimai/vvs/internal/modules/product/adapters/http"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/product/adapters/persistence"
+	productcommands "github.com/atvirokodosprendimai/vvs/internal/modules/product/app/commands"
+	productqueries "github.com/atvirokodosprendimai/vvs/internal/modules/product/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/product/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/product/migrations"
+	shareddomain "github.com/atvirokodosprendimai/vvs/internal/shared/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 )
 
 // ── stubs ────────────────────────────────────────────────────────────────────

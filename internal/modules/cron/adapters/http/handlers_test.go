@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	cronhttp "github.com/vvs/isp/internal/modules/cron/adapters/http"
-	croncommands "github.com/vvs/isp/internal/modules/cron/app/commands"
-	cronqueries "github.com/vvs/isp/internal/modules/cron/app/queries"
-	"github.com/vvs/isp/internal/modules/cron/domain"
+	cronhttp "github.com/atvirokodosprendimai/vvs/internal/modules/cron/adapters/http"
+	croncommands "github.com/atvirokodosprendimai/vvs/internal/modules/cron/app/commands"
+	cronqueries "github.com/atvirokodosprendimai/vvs/internal/modules/cron/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/cron/domain"
 )
 
 // ── stub repository ─────────────────────────────────────────────────────────

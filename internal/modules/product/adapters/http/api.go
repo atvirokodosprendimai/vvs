@@ -8,10 +8,10 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/vvs/isp/internal/infrastructure/http/jsonapi"
-	"github.com/vvs/isp/internal/modules/product/app/commands"
-	"github.com/vvs/isp/internal/modules/product/app/queries"
-	"github.com/vvs/isp/internal/modules/product/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/jsonapi"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/product/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/product/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/product/domain"
 )
 
 func (h *Handlers) RegisterAPIRoutes(r chi.Router) {

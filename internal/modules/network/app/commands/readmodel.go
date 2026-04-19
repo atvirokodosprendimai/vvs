@@ -1,8 +1,8 @@
 package commands
 
 import (
-	"github.com/vvs/isp/internal/modules/network/app/queries"
-	"github.com/vvs/isp/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 )
 
 func toReadModel(r *domain.Router) queries.RouterReadModel {

@@ -3,7 +3,7 @@ package persistence
 import (
 	"time"
 
-	"github.com/vvs/isp/internal/modules/service/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/service/domain"
 )
 
 // ServiceModel is the GORM model mapping to the customer_services table.

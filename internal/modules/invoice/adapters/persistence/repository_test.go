@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vvs/isp/internal/modules/invoice/adapters/persistence"
-	"github.com/vvs/isp/internal/modules/invoice/domain"
-	"github.com/vvs/isp/internal/modules/invoice/migrations"
-	"github.com/vvs/isp/internal/testutil"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/invoice/adapters/persistence"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/invoice/migrations"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 )
 
 func setupRepo(t *testing.T) *persistence.InvoiceRepository {

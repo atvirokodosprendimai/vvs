@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/vvs/isp/internal/modules/iptv/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/domain"
 )
 
 // xmltvDoc is the top-level XML structure.

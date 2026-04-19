@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/vvs/isp/internal/infrastructure/http/jsonapi"
-	"github.com/vvs/isp/internal/modules/customer/app/commands"
-	"github.com/vvs/isp/internal/modules/customer/app/queries"
-	"github.com/vvs/isp/internal/modules/customer/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/jsonapi"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/customer/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/customer/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/customer/domain"
 )
 
 // RegisterAPIRoutes implements the APIRoutes interface for the REST JSON API.

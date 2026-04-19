@@ -3,19 +3,19 @@ package app
 import (
 	"log"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 
-	customerhttp "github.com/vvs/isp/internal/modules/customer/adapters/http"
-	customerpersistence "github.com/vvs/isp/internal/modules/customer/adapters/persistence"
-	customercommands "github.com/vvs/isp/internal/modules/customer/app/commands"
-	customerqueries "github.com/vvs/isp/internal/modules/customer/app/queries"
+	customerhttp "github.com/atvirokodosprendimai/vvs/internal/modules/customer/adapters/http"
+	customerpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/customer/adapters/persistence"
+	customercommands "github.com/atvirokodosprendimai/vvs/internal/modules/customer/app/commands"
+	customerqueries "github.com/atvirokodosprendimai/vvs/internal/modules/customer/app/queries"
 
-	producthttp "github.com/vvs/isp/internal/modules/product/adapters/http"
-	productpersistence "github.com/vvs/isp/internal/modules/product/adapters/persistence"
-	productcommands "github.com/vvs/isp/internal/modules/product/app/commands"
-	productqueries "github.com/vvs/isp/internal/modules/product/app/queries"
+	producthttp "github.com/atvirokodosprendimai/vvs/internal/modules/product/adapters/http"
+	productpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/product/adapters/persistence"
+	productcommands "github.com/atvirokodosprendimai/vvs/internal/modules/product/app/commands"
+	productqueries "github.com/atvirokodosprendimai/vvs/internal/modules/product/app/queries"
 )
 
 type customerWired struct {

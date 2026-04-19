@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vvs/isp/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 )
 
 // rewriteDoer is an httpDoer that rewrites every request's URL to a fixed target,

@@ -13,9 +13,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/starfederation/datastar-go/datastar"
-	"github.com/vvs/isp/internal/infrastructure/chat"
-	"github.com/vvs/isp/internal/shared/events"
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/chat"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
 )
 
 const chatHistoryLimit = 100

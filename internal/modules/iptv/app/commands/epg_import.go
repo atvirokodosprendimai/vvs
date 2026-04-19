@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/vvs/isp/internal/modules/iptv/adapters/xmltv"
-	"github.com/vvs/isp/internal/modules/iptv/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/adapters/xmltv"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/domain"
 )
 
 // ImportEPGCommand triggers an EPG import from an XMLTV URL.

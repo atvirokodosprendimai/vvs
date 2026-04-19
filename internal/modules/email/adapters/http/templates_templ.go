@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/http/templates"
-	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	emailqueries "github.com/atvirokodosprendimai/vvs/internal/modules/email/app/queries"
 )
 
 // EmailPage is the full inbox page.

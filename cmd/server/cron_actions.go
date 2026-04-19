@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/metrics"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/metrics"
 )
 
 // ActionFunc is a built-in action callable by a cron job with type=action.

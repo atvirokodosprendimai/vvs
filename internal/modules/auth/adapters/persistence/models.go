@@ -3,7 +3,7 @@ package persistence
 import (
 	"time"
 
-	"github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 type UserModel struct {

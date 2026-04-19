@@ -8,18 +8,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/vvs/isp/internal/shared/events"
-	"github.com/vvs/isp/internal/testutil"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 
-	customermigrations "github.com/vvs/isp/internal/modules/customer/migrations"
-	invoicemigrations "github.com/vvs/isp/internal/modules/invoice/migrations"
-	servicemigrations "github.com/vvs/isp/internal/modules/service/migrations"
+	customermigrations "github.com/atvirokodosprendimai/vvs/internal/modules/customer/migrations"
+	invoicemigrations "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/migrations"
+	servicemigrations "github.com/atvirokodosprendimai/vvs/internal/modules/service/migrations"
 
-	customerpersistence "github.com/vvs/isp/internal/modules/customer/adapters/persistence"
-	customercommands "github.com/vvs/isp/internal/modules/customer/app/commands"
-	invoicepersistence "github.com/vvs/isp/internal/modules/invoice/adapters/persistence"
-	servicepersistence "github.com/vvs/isp/internal/modules/service/adapters/persistence"
-	servicecommands "github.com/vvs/isp/internal/modules/service/app/commands"
+	customerpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/customer/adapters/persistence"
+	customercommands "github.com/atvirokodosprendimai/vvs/internal/modules/customer/app/commands"
+	invoicepersistence "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/adapters/persistence"
+	servicepersistence "github.com/atvirokodosprendimai/vvs/internal/modules/service/adapters/persistence"
+	servicecommands "github.com/atvirokodosprendimai/vvs/internal/modules/service/app/commands"
 )
 
 func setupBillingTest(t *testing.T) (

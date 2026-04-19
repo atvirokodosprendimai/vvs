@@ -12,10 +12,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/http/templates"
-	"github.com/vvs/isp/internal/modules/auth/app/queries"
-	"github.com/vvs/isp/internal/modules/auth/domain"
-	"github.com/vvs/isp/internal/shared/jsutil"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/jsutil"
 )
 
 func LoginPage(errMsg string) templ.Component {

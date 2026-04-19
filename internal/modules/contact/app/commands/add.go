@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/vvs/isp/internal/modules/contact/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/contact/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 type AddContactCommand struct {

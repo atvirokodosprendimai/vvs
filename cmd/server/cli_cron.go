@@ -10,11 +10,11 @@ import (
 	"syscall"
 
 	"github.com/urfave/cli/v3"
-	"github.com/vvs/isp/internal/app"
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	infranats "github.com/vvs/isp/internal/infrastructure/nats"
-	"github.com/vvs/isp/internal/shared/events"
-	cronpersistence "github.com/vvs/isp/internal/modules/cron/adapters/persistence"
+	"github.com/atvirokodosprendimai/vvs/internal/app"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	infranats "github.com/atvirokodosprendimai/vvs/internal/infrastructure/nats"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	cronpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/cron/adapters/persistence"
 )
 
 func cronCommands() *cli.Command {

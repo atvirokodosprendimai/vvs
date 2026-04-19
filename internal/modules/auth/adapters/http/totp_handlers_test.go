@@ -9,9 +9,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vvs/isp/internal/modules/auth/app/commands"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/app/commands"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
 )
 
 // ── stubs ─────────────────────────────────────────────────────────────────────

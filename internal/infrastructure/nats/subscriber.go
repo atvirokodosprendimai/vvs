@@ -6,8 +6,8 @@ import (
 	"sync"
 
 	"github.com/nats-io/nats.go"
-	"github.com/vvs/isp/internal/infrastructure/metrics"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/metrics"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 type Subscriber struct {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/vvs/isp/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 )
 
 // ARPCall records a single SetARPStatic call.

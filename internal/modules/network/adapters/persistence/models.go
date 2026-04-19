@@ -3,7 +3,7 @@ package persistence
 import (
 	"time"
 
-	"github.com/vvs/isp/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 )
 
 type RouterModel struct {

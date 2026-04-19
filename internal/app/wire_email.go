@@ -6,17 +6,17 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 
-	emailhttp "github.com/vvs/isp/internal/modules/email/adapters/http"
-	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
-	emailpersistence "github.com/vvs/isp/internal/modules/email/adapters/persistence"
-	smtpAdapter "github.com/vvs/isp/internal/modules/email/adapters/smtp"
-	emailcommands "github.com/vvs/isp/internal/modules/email/app/commands"
-	emailqueries "github.com/vvs/isp/internal/modules/email/app/queries"
-	emaildomain "github.com/vvs/isp/internal/modules/email/domain"
-	"github.com/vvs/isp/internal/modules/email/worker"
+	emailhttp "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/http"
+	imapAdapter "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/imap"
+	emailpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/persistence"
+	smtpAdapter "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/smtp"
+	emailcommands "github.com/atvirokodosprendimai/vvs/internal/modules/email/app/commands"
+	emailqueries "github.com/atvirokodosprendimai/vvs/internal/modules/email/app/queries"
+	emaildomain "github.com/atvirokodosprendimai/vvs/internal/modules/email/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/worker"
 )
 
 type emailWired struct {

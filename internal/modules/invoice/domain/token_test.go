@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vvs/isp/internal/modules/invoice/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
 )
 
 func TestNewInvoiceToken_GeneratesUniqueTokens(t *testing.T) {

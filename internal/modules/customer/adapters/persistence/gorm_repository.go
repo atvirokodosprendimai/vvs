@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/modules/customer/domain"
-	shareddomain "github.com/vvs/isp/internal/shared/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/customer/domain"
+	shareddomain "github.com/atvirokodosprendimai/vvs/internal/shared/domain"
 	"gorm.io/gorm"
 )
 

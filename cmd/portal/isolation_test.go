@@ -10,10 +10,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/stretchr/testify/assert"
-	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
-	portaldomain "github.com/vvs/isp/internal/modules/portal/domain"
-	portalhttp "github.com/vvs/isp/internal/modules/portal/adapters/http"
-	portalnats "github.com/vvs/isp/internal/modules/portal/adapters/nats"
+	invoicequeries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
+	portaldomain "github.com/atvirokodosprendimai/vvs/internal/modules/portal/domain"
+	portalhttp "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/http"
+	portalnats "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/nats"
 )
 
 // ── stubs ──────────────────────────────────────────────────────────────────────

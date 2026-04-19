@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/vvs/isp/internal/modules/email/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/domain"
 )
 
 // ThreadRepositoryReader is the subset of EmailThreadRepository needed by Assign.

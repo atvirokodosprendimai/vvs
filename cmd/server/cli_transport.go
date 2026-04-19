@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
-	"github.com/vvs/isp/internal/app"
-	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
+	"github.com/atvirokodosprendimai/vvs/internal/app"
+	natsrpc "github.com/atvirokodosprendimai/vvs/internal/infrastructure/nats/rpc"
 )
 
 // transport sends an RPC request and decodes the JSON response into resp.

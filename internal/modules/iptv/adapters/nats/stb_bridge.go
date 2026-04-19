@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
-	"github.com/vvs/isp/internal/modules/iptv/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/domain"
 )
 
 // Subjects served by STBBridge.

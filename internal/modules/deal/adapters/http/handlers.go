@@ -12,11 +12,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
-	"github.com/vvs/isp/internal/modules/deal/app/commands"
-	"github.com/vvs/isp/internal/modules/deal/app/queries"
-	"github.com/vvs/isp/internal/modules/deal/domain"
-	"github.com/vvs/isp/internal/shared/events"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/deal/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/deal/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/deal/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 // CustomerNameResolver resolves customer ID → name.

@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/vvs/isp/internal/infrastructure/http/jsonapi"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/jsonapi"
 )
 
 // RPCDispatcher is implemented by natsrpc.Server.

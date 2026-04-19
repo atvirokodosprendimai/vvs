@@ -3,29 +3,29 @@ package app
 import (
 	"log"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 
-	contacthttp "github.com/vvs/isp/internal/modules/contact/adapters/http"
-	contactpersistence "github.com/vvs/isp/internal/modules/contact/adapters/persistence"
-	contactcommands "github.com/vvs/isp/internal/modules/contact/app/commands"
-	contactqueries "github.com/vvs/isp/internal/modules/contact/app/queries"
+	contacthttp "github.com/atvirokodosprendimai/vvs/internal/modules/contact/adapters/http"
+	contactpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/contact/adapters/persistence"
+	contactcommands "github.com/atvirokodosprendimai/vvs/internal/modules/contact/app/commands"
+	contactqueries "github.com/atvirokodosprendimai/vvs/internal/modules/contact/app/queries"
 
-	dealhttp "github.com/vvs/isp/internal/modules/deal/adapters/http"
-	dealpersistence "github.com/vvs/isp/internal/modules/deal/adapters/persistence"
-	dealcommands "github.com/vvs/isp/internal/modules/deal/app/commands"
-	dealqueries "github.com/vvs/isp/internal/modules/deal/app/queries"
+	dealhttp "github.com/atvirokodosprendimai/vvs/internal/modules/deal/adapters/http"
+	dealpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/deal/adapters/persistence"
+	dealcommands "github.com/atvirokodosprendimai/vvs/internal/modules/deal/app/commands"
+	dealqueries "github.com/atvirokodosprendimai/vvs/internal/modules/deal/app/queries"
 
-	tickethttp "github.com/vvs/isp/internal/modules/ticket/adapters/http"
-	ticketpersistence "github.com/vvs/isp/internal/modules/ticket/adapters/persistence"
-	ticketcommands "github.com/vvs/isp/internal/modules/ticket/app/commands"
-	ticketqueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
+	tickethttp "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/adapters/http"
+	ticketpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/adapters/persistence"
+	ticketcommands "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/commands"
+	ticketqueries "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/queries"
 
-	taskhttp "github.com/vvs/isp/internal/modules/task/adapters/http"
-	taskpersistence "github.com/vvs/isp/internal/modules/task/adapters/persistence"
-	taskcommands "github.com/vvs/isp/internal/modules/task/app/commands"
-	taskqueries "github.com/vvs/isp/internal/modules/task/app/queries"
+	taskhttp "github.com/atvirokodosprendimai/vvs/internal/modules/task/adapters/http"
+	taskpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/task/adapters/persistence"
+	taskcommands "github.com/atvirokodosprendimai/vvs/internal/modules/task/app/commands"
+	taskqueries "github.com/atvirokodosprendimai/vvs/internal/modules/task/app/queries"
 )
 
 type crmWired struct {

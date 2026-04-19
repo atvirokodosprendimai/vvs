@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/vvs/isp/internal/modules/iptv/adapters/xmltv"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/adapters/xmltv"
 )
 
 const sampleXMLTV = `<?xml version="1.0" encoding="UTF-8"?>

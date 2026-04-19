@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/vvs/isp/internal/modules/ticket/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/ticket/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 type OpenTicketCommand struct {

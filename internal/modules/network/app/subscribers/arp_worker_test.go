@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/vvs/isp/internal/modules/network/app/commands"
-	"github.com/vvs/isp/internal/modules/network/app/subscribers"
-	"github.com/vvs/isp/internal/modules/network/domain"
-	"github.com/vvs/isp/internal/shared/events"
-	"github.com/vvs/isp/internal/testutil"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/app/subscribers"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 )
 
 // ── stubs ─────────────────────────────────────────────────────────────────────

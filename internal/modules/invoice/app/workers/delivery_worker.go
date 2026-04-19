@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/vvs/isp/internal/infrastructure/metrics"
-	"github.com/vvs/isp/internal/modules/invoice/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/metrics"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 // Mailer sends a plain email. Implemented by app.go wiring.

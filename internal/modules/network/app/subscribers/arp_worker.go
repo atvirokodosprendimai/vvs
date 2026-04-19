@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/vvs/isp/internal/modules/network/app/commands"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 // ARPWorker subscribes to customer events and isp.network.arp_requested,

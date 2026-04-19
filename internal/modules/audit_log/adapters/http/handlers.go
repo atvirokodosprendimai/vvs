@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
-	"github.com/vvs/isp/internal/modules/audit_log/app/queries"
-	"github.com/vvs/isp/internal/shared/events"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/audit_log/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 func (h *Handlers) customerAuditLogsSSE(w http.ResponseWriter, r *http.Request) {

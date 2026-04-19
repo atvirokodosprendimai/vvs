@@ -3,14 +3,14 @@ package app
 import (
 	"log"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 
-	servicehttp "github.com/vvs/isp/internal/modules/service/adapters/http"
-	servicepersistence "github.com/vvs/isp/internal/modules/service/adapters/persistence"
-	servicecommands "github.com/vvs/isp/internal/modules/service/app/commands"
-	servicequeries "github.com/vvs/isp/internal/modules/service/app/queries"
-	servicedomain "github.com/vvs/isp/internal/modules/service/domain"
+	servicehttp "github.com/atvirokodosprendimai/vvs/internal/modules/service/adapters/http"
+	servicepersistence "github.com/atvirokodosprendimai/vvs/internal/modules/service/adapters/persistence"
+	servicecommands "github.com/atvirokodosprendimai/vvs/internal/modules/service/app/commands"
+	servicequeries "github.com/atvirokodosprendimai/vvs/internal/modules/service/app/queries"
+	servicedomain "github.com/atvirokodosprendimai/vvs/internal/modules/service/domain"
 )
 
 type serviceWired struct {

@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vvs/isp/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 )
 
 // httpDoer is a narrow interface over http.Client for testability.

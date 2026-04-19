@@ -3,7 +3,7 @@ package queries
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/modules/audit_log/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/audit_log/domain"
 )
 
 type ListForResourceQuery struct {

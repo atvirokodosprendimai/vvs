@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 func TestChanSubscriptionOf_ReceivesTypedPayload(t *testing.T) {

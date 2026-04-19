@@ -8,11 +8,11 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	tickethttp "github.com/vvs/isp/internal/modules/ticket/adapters/http"
-	ticketcommands "github.com/vvs/isp/internal/modules/ticket/app/commands"
-	ticketqueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
-	"github.com/vvs/isp/internal/modules/ticket/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	tickethttp "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/adapters/http"
+	ticketcommands "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/commands"
+	ticketqueries "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/ticket/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 // ── stubs ────────────────────────────────────────────────────────────────────

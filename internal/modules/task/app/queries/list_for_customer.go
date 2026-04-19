@@ -3,7 +3,7 @@ package queries
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/modules/task/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/task/domain"
 )
 
 type ListTasksForCustomerQuery struct {

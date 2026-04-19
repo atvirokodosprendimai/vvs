@@ -8,14 +8,14 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	contacthttp "github.com/vvs/isp/internal/modules/contact/adapters/http"
-	contactpersistence "github.com/vvs/isp/internal/modules/contact/adapters/persistence"
-	contactcommands "github.com/vvs/isp/internal/modules/contact/app/commands"
-	contactqueries "github.com/vvs/isp/internal/modules/contact/app/queries"
-	contactmigrations "github.com/vvs/isp/internal/modules/contact/migrations"
-	customermigrations "github.com/vvs/isp/internal/modules/customer/migrations"
-	"github.com/vvs/isp/internal/shared/events"
-	"github.com/vvs/isp/internal/testutil"
+	contacthttp "github.com/atvirokodosprendimai/vvs/internal/modules/contact/adapters/http"
+	contactpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/contact/adapters/persistence"
+	contactcommands "github.com/atvirokodosprendimai/vvs/internal/modules/contact/app/commands"
+	contactqueries "github.com/atvirokodosprendimai/vvs/internal/modules/contact/app/queries"
+	contactmigrations "github.com/atvirokodosprendimai/vvs/internal/modules/contact/migrations"
+	customermigrations "github.com/atvirokodosprendimai/vvs/internal/modules/customer/migrations"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 )
 
 // ── stubs ────────────────────────────────────────────────────────────────────

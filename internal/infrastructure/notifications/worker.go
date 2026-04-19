@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 // Worker subscribes to all ISP domain events (isp.>) and creates notification

@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/vvs/isp/internal/infrastructure/http/jsonapi"
-	"github.com/vvs/isp/internal/modules/network/app/commands"
-	"github.com/vvs/isp/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/jsonapi"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 )
 
 // RegisterAPIRoutes registers REST JSON endpoints under /api/v1/routers.

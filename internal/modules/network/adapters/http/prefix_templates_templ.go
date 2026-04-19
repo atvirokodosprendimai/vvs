@@ -10,8 +10,8 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/vvs/isp/internal/infrastructure/http/templates"
-	"github.com/vvs/isp/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 )
 
 func PrefixListPage(prefixes []*domain.NetBoxPrefix) templ.Component {

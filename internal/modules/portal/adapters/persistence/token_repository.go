@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/modules/portal/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/portal/domain"
 	"gorm.io/gorm"
 )
 

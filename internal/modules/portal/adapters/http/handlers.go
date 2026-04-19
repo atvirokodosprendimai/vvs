@@ -10,11 +10,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
-	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
-	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
-	"github.com/vvs/isp/internal/modules/portal/domain"
-	ticketqueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
+	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
+	invoicequeries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/portal/domain"
+	ticketqueries "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/queries"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
 )
 
 const portalCookieName = "vvs_portal"

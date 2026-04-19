@@ -3,7 +3,7 @@ package queries
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/modules/iptv/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/domain"
 )
 
 type ListChannelsHandler struct{ repo domain.ChannelRepository }

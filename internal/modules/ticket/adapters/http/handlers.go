@@ -11,13 +11,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
-	"github.com/vvs/isp/internal/modules/ticket/app/commands"
-	"github.com/vvs/isp/internal/modules/ticket/app/queries"
-	"github.com/vvs/isp/internal/modules/ticket/domain"
-	"github.com/vvs/isp/internal/shared/audit"
-	"github.com/vvs/isp/internal/shared/events"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/ticket/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/audit"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
 )
 
 // CustomerSearchResult holds a customer match for the ticket creation search dropdown.

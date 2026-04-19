@@ -3,7 +3,7 @@ package persistence
 import (
 	"time"
 
-	"github.com/vvs/isp/internal/modules/task/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/task/domain"
 )
 
 // TaskModel is the GORM model mapping to the tasks table.

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
-	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
-	"github.com/vvs/isp/internal/modules/payment/domain"
+	invoicecommands "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/commands"
+	invoicedomain "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/payment/domain"
 )
 
 // InvoiceLookup is a port for finding invoices from the payment module.

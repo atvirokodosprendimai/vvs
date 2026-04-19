@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
-	portalhttp "github.com/vvs/isp/internal/modules/portal/adapters/http"
-	"github.com/vvs/isp/internal/modules/portal/domain"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
+	portalhttp "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/http"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/portal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

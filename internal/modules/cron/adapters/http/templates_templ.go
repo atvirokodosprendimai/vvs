@@ -12,9 +12,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/http/templates"
-	"github.com/vvs/isp/internal/modules/cron/app/queries"
-	"github.com/vvs/isp/internal/modules/cron/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/cron/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/cron/domain"
 )
 
 // ── List page ──────────────────────────────────────────────────────────────

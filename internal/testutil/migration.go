@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/pressly/goose/v3"
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
 )
 
 // RunMigrations runs goose migrations for a given module against the test DB.

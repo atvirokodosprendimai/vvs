@@ -6,20 +6,20 @@ import (
 
 	"github.com/nats-io/nats.go"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 
-	auditloghttp        "github.com/vvs/isp/internal/modules/audit_log/adapters/http"
-	auditlogpersistence "github.com/vvs/isp/internal/modules/audit_log/adapters/persistence"
-	auditlogcommands    "github.com/vvs/isp/internal/modules/audit_log/app/commands"
-	auditlogqueries     "github.com/vvs/isp/internal/modules/audit_log/app/queries"
+	auditloghttp        "github.com/atvirokodosprendimai/vvs/internal/modules/audit_log/adapters/http"
+	auditlogpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/audit_log/adapters/persistence"
+	auditlogcommands    "github.com/atvirokodosprendimai/vvs/internal/modules/audit_log/app/commands"
+	auditlogqueries     "github.com/atvirokodosprendimai/vvs/internal/modules/audit_log/app/queries"
 
-	invoicehttp        "github.com/vvs/isp/internal/modules/invoice/adapters/http"
-	invoicepersistence "github.com/vvs/isp/internal/modules/invoice/adapters/persistence"
-	invoicecommands    "github.com/vvs/isp/internal/modules/invoice/app/commands"
-	invoicequeries     "github.com/vvs/isp/internal/modules/invoice/app/queries"
-	invoiceworkers     "github.com/vvs/isp/internal/modules/invoice/app/workers"
-	invoicedomain      "github.com/vvs/isp/internal/modules/invoice/domain"
+	invoicehttp        "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/adapters/http"
+	invoicepersistence "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/adapters/persistence"
+	invoicecommands    "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/commands"
+	invoicequeries     "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
+	invoiceworkers     "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/workers"
+	invoicedomain      "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
 )
 
 type invoiceWired struct {

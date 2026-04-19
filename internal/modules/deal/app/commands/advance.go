@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/vvs/isp/internal/modules/deal/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/deal/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 // AdvanceDealCommand advances a deal stage using one of:

@@ -3,7 +3,7 @@ package commands
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/modules/customer/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/customer/domain"
 )
 
 type AddNoteCommand struct {

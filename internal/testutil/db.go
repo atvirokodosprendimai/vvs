@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )

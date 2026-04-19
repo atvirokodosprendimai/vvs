@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"time"
 
-	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
+	invoicequeries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
 )
 
 // portalLayout wraps all portal pages — no sidebar, no admin nav.

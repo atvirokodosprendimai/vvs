@@ -12,9 +12,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/vvs/isp/internal/infrastructure/http/templates"
-	"github.com/vvs/isp/internal/modules/product/app/queries"
-	"github.com/vvs/isp/internal/modules/product/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/product/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/product/domain"
 )
 
 func ProductListPage() templ.Component {

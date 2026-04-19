@@ -6,7 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 
-	"github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 // CreateSessionHandler creates a session for an already-verified user.

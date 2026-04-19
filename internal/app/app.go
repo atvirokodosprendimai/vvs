@@ -8,33 +8,33 @@ import (
 	natsserver "github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
 
-	"github.com/vvs/isp/internal/infrastructure/chat"
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
-	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/chat"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
+	natsrpc "github.com/atvirokodosprendimai/vvs/internal/infrastructure/nats/rpc"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 
-	"github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 
-	customerqueries "github.com/vvs/isp/internal/modules/customer/app/queries"
-	customerdomain "github.com/vvs/isp/internal/modules/customer/domain"
+	customerqueries "github.com/atvirokodosprendimai/vvs/internal/modules/customer/app/queries"
+	customerdomain "github.com/atvirokodosprendimai/vvs/internal/modules/customer/domain"
 
-	networkdomain "github.com/vvs/isp/internal/modules/network/domain"
+	networkdomain "github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 
-	servicedomain "github.com/vvs/isp/internal/modules/service/domain"
+	servicedomain "github.com/atvirokodosprendimai/vvs/internal/modules/service/domain"
 
-	emailpersistence "github.com/vvs/isp/internal/modules/email/adapters/persistence"
-	emaildomain "github.com/vvs/isp/internal/modules/email/domain"
-	"github.com/vvs/isp/internal/modules/email/worker"
+	emailpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/persistence"
+	emaildomain "github.com/atvirokodosprendimai/vvs/internal/modules/email/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/worker"
 
-	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
-	invoicehttp "github.com/vvs/isp/internal/modules/invoice/adapters/http"
-	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
+	invoicecommands "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/commands"
+	invoicehttp "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/adapters/http"
+	invoicedomain "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
 
-	tickethttp "github.com/vvs/isp/internal/modules/ticket/adapters/http"
+	tickethttp "github.com/atvirokodosprendimai/vvs/internal/modules/ticket/adapters/http"
 
-	portalhttp "github.com/vvs/isp/internal/modules/portal/adapters/http"
-	portalnats "github.com/vvs/isp/internal/modules/portal/adapters/nats"
+	portalhttp "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/http"
+	portalnats "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/nats"
 )
 
 // App is the fully assembled application.

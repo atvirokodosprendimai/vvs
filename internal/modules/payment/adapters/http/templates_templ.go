@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/vvs/isp/internal/infrastructure/http/templates"
-	"github.com/vvs/isp/internal/modules/payment/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/payment/domain"
 )
 
 // PaymentImportPage is the full SEPA CSV upload page at /payments/import.

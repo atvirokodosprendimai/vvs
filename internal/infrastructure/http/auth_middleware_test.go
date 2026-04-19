@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
-	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
+	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
 )
 
 func makeTestUser(t *testing.T, role authdomain.Role) *authdomain.User {

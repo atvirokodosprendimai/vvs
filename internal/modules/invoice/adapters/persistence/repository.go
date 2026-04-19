@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/modules/invoice/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
 	"gorm.io/gorm"
 )
 

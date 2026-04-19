@@ -8,11 +8,11 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	taskhttp "github.com/vvs/isp/internal/modules/task/adapters/http"
-	taskcommands "github.com/vvs/isp/internal/modules/task/app/commands"
-	taskqueries "github.com/vvs/isp/internal/modules/task/app/queries"
-	"github.com/vvs/isp/internal/modules/task/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	taskhttp "github.com/atvirokodosprendimai/vvs/internal/modules/task/adapters/http"
+	taskcommands "github.com/atvirokodosprendimai/vvs/internal/modules/task/app/commands"
+	taskqueries "github.com/atvirokodosprendimai/vvs/internal/modules/task/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/task/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 // ── stubs ────────────────────────────────────────────────────────────────────

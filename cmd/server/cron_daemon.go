@@ -6,8 +6,8 @@ import (
 	"sync"
 
 	"github.com/robfig/cron/v3"
-	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
-	"github.com/vvs/isp/internal/modules/cron/domain"
+	natsrpc "github.com/atvirokodosprendimai/vvs/internal/infrastructure/nats/rpc"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/cron/domain"
 )
 
 // Daemon runs scheduled jobs in-process using the robfig/cron goroutine scheduler.

@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	smtpadapter "github.com/vvs/isp/internal/modules/email/adapters/smtp"
-	"github.com/vvs/isp/internal/modules/email/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	smtpadapter "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/smtp"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 type ComposeEmailCommand struct {

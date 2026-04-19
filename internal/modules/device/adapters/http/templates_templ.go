@@ -12,8 +12,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/http/templates"
-	"github.com/vvs/isp/internal/modules/device/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/device/app/queries"
 )
 
 // ── List page ──────────────────────────────────────────────────────────────

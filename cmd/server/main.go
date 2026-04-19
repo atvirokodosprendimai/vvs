@@ -11,7 +11,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/urfave/cli/v3"
-	"github.com/vvs/isp/internal/app"
+	"github.com/atvirokodosprendimai/vvs/internal/app"
 )
 
 func main() {

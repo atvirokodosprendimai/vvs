@@ -3,7 +3,7 @@ package commands
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 type ChangePasswordCommand struct {

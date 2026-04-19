@@ -35,7 +35,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nats-io/nats.go"
 	"github.com/urfave/cli/v3"
-	iptvnats "github.com/vvs/isp/internal/modules/iptv/adapters/nats"
+	iptvnats "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/adapters/nats"
 )
 
 func main() {

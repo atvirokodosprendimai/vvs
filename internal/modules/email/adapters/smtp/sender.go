@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/vvs/isp/internal/modules/email/emailcrypto"
-	"github.com/vvs/isp/internal/modules/email/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/emailcrypto"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/domain"
 )
 
 // Sender implements domain.EmailSender using stdlib net/smtp.

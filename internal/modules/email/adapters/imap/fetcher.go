@@ -15,10 +15,10 @@ import (
 	imaplib "github.com/emersion/go-imap/v2"
 	"github.com/emersion/go-imap/v2/imapclient"
 	"github.com/emersion/go-message/charset"
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/modules/email/adapters/persistence"
-	"github.com/vvs/isp/internal/modules/email/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/persistence"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 // Repos bundles all repositories and the shared DB needed by the fetcher.

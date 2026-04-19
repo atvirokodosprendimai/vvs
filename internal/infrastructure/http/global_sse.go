@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/starfederation/datastar-go/datastar"
-	"github.com/vvs/isp/internal/infrastructure/chat"
-	"github.com/vvs/isp/internal/infrastructure/metrics"
-	"github.com/vvs/isp/internal/infrastructure/notifications"
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/chat"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/metrics"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/notifications"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 // GlobalHandler serves the single /sse endpoint that merges clock,

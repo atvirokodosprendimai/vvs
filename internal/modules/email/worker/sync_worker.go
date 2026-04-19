@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
-	"github.com/vvs/isp/internal/modules/email/adapters/persistence"
-	"github.com/vvs/isp/internal/modules/email/domain"
-	"github.com/vvs/isp/internal/infrastructure/metrics"
-	"github.com/vvs/isp/internal/shared/events"
+	imapAdapter "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/imap"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/persistence"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/metrics"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 const defaultInterval = 5 * time.Minute

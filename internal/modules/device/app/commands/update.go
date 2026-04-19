@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/vvs/isp/internal/modules/device/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/device/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 
 	"github.com/google/uuid"
 )

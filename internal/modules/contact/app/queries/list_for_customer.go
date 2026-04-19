@@ -3,7 +3,7 @@ package queries
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
 )
 
 type ListContactsForCustomerQuery struct {

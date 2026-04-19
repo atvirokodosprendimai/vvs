@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
 )
 
 // Notification is the read view for a single notification entry.

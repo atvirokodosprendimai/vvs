@@ -3,7 +3,7 @@ package persistence
 import (
 	"time"
 
-	"github.com/vvs/isp/internal/modules/device/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/device/domain"
 )
 
 // DeviceModel is the GORM model mapping to the devices table.

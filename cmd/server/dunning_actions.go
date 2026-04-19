@@ -6,14 +6,14 @@ import (
 	"log"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	customerpersistence "github.com/vvs/isp/internal/modules/customer/adapters/persistence"
-	emailpersistence "github.com/vvs/isp/internal/modules/email/adapters/persistence"
-	smtpAdapter "github.com/vvs/isp/internal/modules/email/adapters/smtp"
-	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
-	invoicepersistence "github.com/vvs/isp/internal/modules/invoice/adapters/persistence"
-	portalpersistence "github.com/vvs/isp/internal/modules/portal/adapters/persistence"
-	portaldomain "github.com/vvs/isp/internal/modules/portal/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	customerpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/customer/adapters/persistence"
+	emailpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/persistence"
+	smtpAdapter "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/smtp"
+	invoicecommands "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/commands"
+	invoicepersistence "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/adapters/persistence"
+	portalpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/persistence"
+	portaldomain "github.com/atvirokodosprendimai/vvs/internal/modules/portal/domain"
 )
 
 // RegisterDunningActions wires dunning dependencies and registers the

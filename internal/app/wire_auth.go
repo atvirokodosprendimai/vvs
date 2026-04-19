@@ -4,12 +4,12 @@ import (
 	"context"
 	"log"
 
-	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
-	authpersistence "github.com/vvs/isp/internal/modules/auth/adapters/persistence"
-	authcommands "github.com/vvs/isp/internal/modules/auth/app/commands"
-	authqueries "github.com/vvs/isp/internal/modules/auth/app/queries"
+	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
+	authpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/persistence"
+	authcommands "github.com/atvirokodosprendimai/vvs/internal/modules/auth/app/commands"
+	authqueries "github.com/atvirokodosprendimai/vvs/internal/modules/auth/app/queries"
 )
 
 type authWired struct {

@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/starfederation/datastar-go/datastar"
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
-	"github.com/vvs/isp/internal/infrastructure/notifications"
-	"github.com/vvs/isp/internal/shared/events"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/notifications"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 const notifListLimit = 30

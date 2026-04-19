@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strings"
 
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
-	"github.com/vvs/isp/internal/modules/auth/app/queries"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/app/queries"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 // WithPermissions stores a PermissionSet in the context.

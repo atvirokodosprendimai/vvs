@@ -3,7 +3,7 @@ package queries
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/modules/ticket/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/ticket/domain"
 )
 
 // customerNameResolver is a local interface for resolving customer names.

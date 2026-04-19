@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/vvs/isp/internal/infrastructure/http/jsonapi"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/jsonapi"
 )
 
 // BearerToken returns middleware that enforces Authorization: Bearer <token>.

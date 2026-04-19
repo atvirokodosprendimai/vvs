@@ -3,7 +3,7 @@ package imap_test
 import (
 	"testing"
 
-	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
+	imapAdapter "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/imap"
 )
 
 func TestDecodeToUTF8_utf8_passthrough(t *testing.T) {

@@ -11,10 +11,10 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
-	"github.com/vvs/isp/internal/infrastructure/http/templates"
-	"github.com/vvs/isp/internal/modules/ticket/app/queries"
-	"github.com/vvs/isp/internal/modules/ticket/domain"
-	"github.com/vvs/isp/internal/shared/jsutil"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/ticket/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/jsutil"
 )
 
 // TicketsPage is the standalone tickets list page at /tickets.

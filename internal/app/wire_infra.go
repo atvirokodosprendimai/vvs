@@ -7,27 +7,27 @@ import (
 
 	"github.com/nats-io/nats.go"
 
-	"github.com/vvs/isp/internal/infrastructure/bot"
-	"github.com/vvs/isp/internal/infrastructure/chat"
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
-	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
-	"github.com/vvs/isp/internal/infrastructure/notifications"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/bot"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/chat"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
+	natsrpc "github.com/atvirokodosprendimai/vvs/internal/infrastructure/nats/rpc"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/notifications"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 
-	cronhttp        "github.com/vvs/isp/internal/modules/cron/adapters/http"
-	cronpersistence "github.com/vvs/isp/internal/modules/cron/adapters/persistence"
-	croncommands    "github.com/vvs/isp/internal/modules/cron/app/commands"
-	cronqueries     "github.com/vvs/isp/internal/modules/cron/app/queries"
+	cronhttp        "github.com/atvirokodosprendimai/vvs/internal/modules/cron/adapters/http"
+	cronpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/cron/adapters/persistence"
+	croncommands    "github.com/atvirokodosprendimai/vvs/internal/modules/cron/app/commands"
+	cronqueries     "github.com/atvirokodosprendimai/vvs/internal/modules/cron/app/queries"
 
-	paymenthttp     "github.com/vvs/isp/internal/modules/payment/adapters/http"
-	paymentcommands "github.com/vvs/isp/internal/modules/payment/app/commands"
+	paymenthttp     "github.com/atvirokodosprendimai/vvs/internal/modules/payment/adapters/http"
+	paymentcommands "github.com/atvirokodosprendimai/vvs/internal/modules/payment/app/commands"
 
-	portalhttp        "github.com/vvs/isp/internal/modules/portal/adapters/http"
-	portalnats        "github.com/vvs/isp/internal/modules/portal/adapters/nats"
-	portalpersistence "github.com/vvs/isp/internal/modules/portal/adapters/persistence"
+	portalhttp        "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/http"
+	portalnats        "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/nats"
+	portalpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/persistence"
 
-	iptvnats "github.com/vvs/isp/internal/modules/iptv/adapters/nats"
+	iptvnats "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/adapters/nats"
 )
 
 type infraWired struct {

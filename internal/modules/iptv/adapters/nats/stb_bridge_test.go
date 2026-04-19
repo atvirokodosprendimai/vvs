@@ -10,9 +10,9 @@ import (
 	natsgo "github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	natspkg "github.com/vvs/isp/internal/infrastructure/nats"
-	iptvnats "github.com/vvs/isp/internal/modules/iptv/adapters/nats"
-	"github.com/vvs/isp/internal/modules/iptv/domain"
+	natspkg "github.com/atvirokodosprendimai/vvs/internal/infrastructure/nats"
+	iptvnats "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/adapters/nats"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/domain"
 )
 
 // ── stubs ─────────────────────────────────────────────────────────────────────

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
-	"github.com/vvs/isp/internal/modules/email/emailcrypto"
-	"github.com/vvs/isp/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/emailcrypto"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
 	"gorm.io/gorm"
 )
 

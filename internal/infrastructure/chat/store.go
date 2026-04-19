@@ -6,7 +6,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
 )
 
 // ErrNotFound is returned when a thread or member is not found.

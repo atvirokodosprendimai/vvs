@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vvs/isp/internal/shared/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/domain"
 )
 
 func TestNewCustomer_Success(t *testing.T) {

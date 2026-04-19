@@ -3,8 +3,8 @@ package persistence
 import (
 	"time"
 
-	"github.com/vvs/isp/internal/modules/product/domain"
-	shareddomain "github.com/vvs/isp/internal/shared/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/product/domain"
+	shareddomain "github.com/atvirokodosprendimai/vvs/internal/shared/domain"
 )
 
 type ProductModel struct {

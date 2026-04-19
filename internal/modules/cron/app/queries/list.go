@@ -3,7 +3,7 @@ package queries
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/modules/cron/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/cron/domain"
 )
 
 type ListJobsHandler struct{ repo domain.JobRepository }

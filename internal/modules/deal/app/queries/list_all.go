@@ -3,7 +3,7 @@ package queries
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/modules/deal/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/deal/domain"
 )
 
 type ListAllDealsQuery struct{}

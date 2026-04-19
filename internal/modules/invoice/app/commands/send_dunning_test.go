@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	customerdomain "github.com/vvs/isp/internal/modules/customer/domain"
-	sharedomain "github.com/vvs/isp/internal/shared/domain"
-	"github.com/vvs/isp/internal/modules/invoice/app/commands"
-	"github.com/vvs/isp/internal/modules/invoice/domain"
+	customerdomain "github.com/atvirokodosprendimai/vvs/internal/modules/customer/domain"
+	sharedomain "github.com/atvirokodosprendimai/vvs/internal/shared/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/invoice/domain"
 )
 
 // ── mocks ──────────────────────────────────────────────────────────────────

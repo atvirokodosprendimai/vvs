@@ -3,7 +3,7 @@ package domain_test
 import (
 	"testing"
 
-	"github.com/vvs/isp/internal/modules/email/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/email/domain"
 )
 
 func TestNewEmailAccount_defaults(t *testing.T) {

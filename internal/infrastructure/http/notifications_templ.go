@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vvs/isp/internal/infrastructure/notifications"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/notifications"
 )
 
 // NotifBadge is the unread-count badge on the bell icon. Patched by SSE.

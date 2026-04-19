@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/vvs/isp/internal/modules/task/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/task/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 type UpdateTaskCommand struct {

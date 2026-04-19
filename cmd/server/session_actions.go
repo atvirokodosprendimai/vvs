@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	authpersistence "github.com/vvs/isp/internal/modules/auth/adapters/persistence"
-	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
+	authpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/persistence"
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
 )
 
 // RegisterSessionActions wires the session pruning cron action.

@@ -6,12 +6,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	customermigrations "github.com/vvs/isp/internal/modules/customer/migrations"
-	"github.com/vvs/isp/internal/modules/ticket/adapters/persistence"
-	"github.com/vvs/isp/internal/modules/ticket/app/commands"
-	"github.com/vvs/isp/internal/modules/ticket/domain"
-	"github.com/vvs/isp/internal/modules/ticket/migrations"
-	"github.com/vvs/isp/internal/testutil"
+	customermigrations "github.com/atvirokodosprendimai/vvs/internal/modules/customer/migrations"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/ticket/adapters/persistence"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/ticket/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/ticket/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/ticket/migrations"
+	"github.com/atvirokodosprendimai/vvs/internal/testutil"
 )
 
 const testCustomerID = "cust-test-001"

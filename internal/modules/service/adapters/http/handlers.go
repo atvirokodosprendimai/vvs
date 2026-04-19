@@ -11,12 +11,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
-	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
-	"github.com/vvs/isp/internal/modules/service/app/commands"
-	"github.com/vvs/isp/internal/modules/service/app/queries"
-	"github.com/vvs/isp/internal/shared/audit"
-	"github.com/vvs/isp/internal/shared/events"
-	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
+	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/service/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/service/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/audit"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
+	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 type ServiceHandlers struct {

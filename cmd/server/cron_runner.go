@@ -10,8 +10,8 @@ import (
 	"os/exec"
 	"time"
 
-	natsrpc "github.com/vvs/isp/internal/infrastructure/nats/rpc"
-	"github.com/vvs/isp/internal/modules/cron/domain"
+	natsrpc "github.com/atvirokodosprendimai/vvs/internal/infrastructure/nats/rpc"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/cron/domain"
 )
 
 // RunDueJobs loads all active jobs where next_run <= now, executes each, and

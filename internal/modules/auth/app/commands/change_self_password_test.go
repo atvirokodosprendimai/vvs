@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/vvs/isp/internal/modules/auth/app/commands"
-	"github.com/vvs/isp/internal/modules/auth/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
 type stubUserRepo struct {

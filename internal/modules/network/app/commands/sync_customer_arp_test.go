@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/vvs/isp/internal/modules/network/app/commands"
-	"github.com/vvs/isp/internal/modules/network/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/app/commands"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/network/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 // ── stubs ─────────────────────────────────────────────────────────────────────

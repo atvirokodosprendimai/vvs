@@ -3,7 +3,7 @@ package commands
 import (
 	"context"
 
-	"github.com/vvs/isp/internal/modules/cron/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/cron/domain"
 )
 
 type ResumeJobCommand struct{ ID string }

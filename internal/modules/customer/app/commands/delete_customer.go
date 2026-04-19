@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/vvs/isp/internal/modules/customer/domain"
-	"github.com/vvs/isp/internal/shared/events"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/customer/domain"
+	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 )
 
 type DeleteCustomerCommand struct {
