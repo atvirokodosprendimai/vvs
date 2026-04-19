@@ -1,19 +1,21 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3.13
 """mine-go.py — import Go AST chunks into a dedicated ChromaDB collection with Ollama embeddings.
 
 Uses a separate collection `go_code` so it doesn't conflict with MemPalace's
 default all-MiniLM-L6-v2 embeddings (768-dim vs 384-dim).
 
 Usage:
-    go run ./cmd/gomine ./internal ./cmd | python3 scripts/mine-go.py   # import
-    python3 scripts/mine-go.py --search "mark invoice paid"              # search
-    go run ./cmd/gomine ./internal | python3 scripts/mine-go.py --dry-run
+    gomine ./internal ./cmd | python3 scripts/mine-go.py              # full reindex
+    gomine f1.go f2.go | python3 scripts/mine-go.py --reindex f1.go f2.go  # incremental
+    python3 scripts/mine-go.py --search "mark invoice paid"            # search
+    gomine . | python3 scripts/mine-go.py --dry-run
 
 Options:
-    --dry-run       Print chunks without writing
-    --skip-tests    Skip *_test.go files
-    --search QUERY  Search existing collection (rest of argv = query)
-    --n N           Number of search results (default 5)
+    --dry-run            Print chunks without writing
+    --skip-tests         Skip *_test.go files
+    --reindex f1 f2 ...  Incremental: delete old chunks for listed files, then re-add from stdin
+    --search QUERY       Search existing collection
+    --n N                Number of search results (default 5)
 """
 import hashlib
 import json
@@ -24,10 +26,19 @@ DRY_RUN = "--dry-run" in sys.argv
 SKIP_TESTS = "--skip-tests" in sys.argv
 SEARCH_MODE = "--search" in sys.argv
 
+# --reindex f1.go f2.go ...  (all non-flag args after --reindex)
+REINDEX_FILES = []
+if "--reindex" in sys.argv:
+    idx = sys.argv.index("--reindex")
+    for arg in sys.argv[idx + 1:]:
+        if arg.startswith("--"):
+            break
+        REINDEX_FILES.append(arg)
+
 PALACE_PATH = os.path.expanduser("~/.mempalace/palace")
 COLLECTION_NAME = "go_code"
 AGENT = "gomine"
-OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://100.64.79.36:11434")
+OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 EMBED_MODEL = os.environ.get("EMBED_MODEL", "nomic-embed-text")
 # ChromaDB OllamaEmbeddingFunction uses the old /api/embeddings path
 OLLAMA_EMBED_URL = f"{OLLAMA_BASE_URL}/api/embeddings"
@@ -83,8 +94,23 @@ def chunk_id(source_file: str, start_line: int) -> str:
     return f"go_{h}"
 
 
+def delete_file_chunks(collection, paths: list[str]):
+    """Delete all existing ChromaDB chunks for the given file paths."""
+    for path in paths:
+        try:
+            collection.delete(where={"file": {"$eq": path}})
+        except Exception as e:
+            print(f"[warn] purge {path}: {e}", file=sys.stderr)
+
+
 def do_import():
     collection = get_collection(create=True)
+
+    # Incremental reindex: purge old chunks for changed files before re-adding.
+    if REINDEX_FILES:
+        print(f"[reindex] purging {len(REINDEX_FILES)} files from index...", file=sys.stderr)
+        delete_file_chunks(collection, REINDEX_FILES)
+
     added = skipped = errors = 0
 
     for lineno, line in enumerate(sys.stdin):
@@ -98,7 +124,7 @@ def do_import():
             errors += 1
             continue
 
-        if SKIP_TESTS and chunk.get("file", "").endswith("_test.go"):
+        if (SKIP_TESTS and chunk.get("file", "").endswith("_test.go")) or chunk.get("file", "").endswith("_templ.go"):
             skipped += 1
             continue
         if not chunk.get("body"):
@@ -112,6 +138,7 @@ def do_import():
             continue
 
         content = format_content(chunk)
+        content = content[:6000]  # nomic-embed-text token limit safety
         doc_id = chunk_id(chunk["file"], chunk["start_line"])
         try:
             collection.upsert(
@@ -148,7 +175,6 @@ def do_search(query: str, n: int = 5):
     for doc, meta, dist in zip(docs, metas, dists):
         sim = 1 - dist
         print(f"\n── {meta['file']}:{meta['start_line']} [{meta['kind']}:{meta['symbol']}] sim={sim:.3f}")
-        # Print first 10 lines of body
         lines = doc.splitlines()
         print("\n".join(lines[:12]))
         if len(lines) > 12:
