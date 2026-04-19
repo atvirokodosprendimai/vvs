@@ -27,6 +27,8 @@ templ PortalTicketListPage(cust *PortalCustomer, tickets []ticketqueries.TicketR
 		<div class="mb-6 flex items-center gap-2 text-sm text-neutral-500">
 			<a href="/portal/invoices" class="hover:text-neutral-300 transition-colors">Invoices</a>
 			<span class="text-neutral-700">·</span>
+			<a href="/portal/services" class="hover:text-neutral-300 transition-colors">Services</a>
+			<span class="text-neutral-700">·</span>
 			<span class="text-neutral-100">Support</span>
 		</div>
 		if len(tickets) == 0 {

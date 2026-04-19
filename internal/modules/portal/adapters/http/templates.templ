@@ -130,6 +130,13 @@ templ PortalInvoiceListPage(cust *PortalCustomer, invoices []invoicequeries.Invo
 			<h1 class="text-lg font-semibold text-neutral-100">Invoices</h1>
 			<p class="text-sm text-neutral-500 mt-1">Your billing history</p>
 		</div>
+		<div class="mb-6 flex items-center gap-2 text-sm text-neutral-500">
+			<span class="text-neutral-100">Invoices</span>
+			<span class="text-neutral-700">·</span>
+			<a href="/portal/services" class="hover:text-neutral-300 transition-colors">Services</a>
+			<span class="text-neutral-700">·</span>
+			<a href="/portal/tickets" class="hover:text-neutral-300 transition-colors">Support</a>
+		</div>
 		if len(invoices) == 0 {
 			<div class="bg-neutral-900 border border-neutral-800 rounded-lg px-6 py-12 text-center">
 				<p class="text-sm text-neutral-600">No invoices yet.</p>

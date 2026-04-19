@@ -181,7 +181,7 @@ func PortalInvoiceListPage(cust *PortalCustomer, invoices []invoicequeries.Invoi
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"mb-6\"><h1 class=\"text-lg font-semibold text-neutral-100\">Invoices</h1><p class=\"text-sm text-neutral-500 mt-1\">Your billing history</p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"mb-6\"><h1 class=\"text-lg font-semibold text-neutral-100\">Invoices</h1><p class=\"text-sm text-neutral-500 mt-1\">Your billing history</p></div><div class=\"mb-6 flex items-center gap-2 text-sm text-neutral-500\"><span class=\"text-neutral-100\">Invoices</span> <span class=\"text-neutral-700\">·</span> <a href=\"/portal/services\" class=\"hover:text-neutral-300 transition-colors\">Services</a> <span class=\"text-neutral-700\">·</span> <a href=\"/portal/tickets\" class=\"hover:text-neutral-300 transition-colors\">Support</a></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -203,7 +203,7 @@ func PortalInvoiceListPage(cust *PortalCustomer, invoices []invoicequeries.Invoi
 					var templ_7745c5c3_Var8 templ.SafeURL
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/portal/invoices/%s", inv.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 154, Col: 74}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 161, Col: 74}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -216,7 +216,7 @@ func PortalInvoiceListPage(cust *PortalCustomer, invoices []invoicequeries.Invoi
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(inv.Code)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 156, Col: 20}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 163, Col: 20}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -229,7 +229,7 @@ func PortalInvoiceListPage(cust *PortalCustomer, invoices []invoicequeries.Invoi
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(inv.IssueDate.Format("Jan 2, 2006"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 158, Col: 92}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 165, Col: 92}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -247,7 +247,7 @@ func PortalInvoiceListPage(cust *PortalCustomer, invoices []invoicequeries.Invoi
 						var templ_7745c5c3_Var11 string
 						templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(inv.DueDate.Format("Jan 2, 2006"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 161, Col: 72}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 168, Col: 72}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 						if templ_7745c5c3_Err != nil {
@@ -265,7 +265,7 @@ func PortalInvoiceListPage(cust *PortalCustomer, invoices []invoicequeries.Invoi
 						var templ_7745c5c3_Var12 string
 						templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(inv.DueDate.Format("Jan 2, 2006"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 163, Col: 76}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 170, Col: 76}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 						if templ_7745c5c3_Err != nil {
@@ -283,7 +283,7 @@ func PortalInvoiceListPage(cust *PortalCustomer, invoices []invoicequeries.Invoi
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(portalFormatCents(inv.TotalAmount, inv.Currency))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 167, Col: 59}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 174, Col: 59}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -358,7 +358,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(inv.Code)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 193, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 200, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -379,7 +379,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(inv.IssueDate.Format("Jan 2, 2006"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 197, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 204, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -392,7 +392,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(inv.DueDate.Format("Jan 2, 2006"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 197, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 204, Col: 98}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -410,7 +410,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 				var templ_7745c5c3_Var19 templ.SafeURL
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(pdfURL))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 202, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 209, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {
@@ -428,7 +428,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(portalFormatCents(inv.SubTotal, inv.Currency))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 220, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 227, Col: 100}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
@@ -441,7 +441,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(portalFormatCents(inv.VATTotal, inv.Currency))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 224, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 231, Col: 100}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -454,7 +454,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(portalFormatCents(inv.TotalAmount, inv.Currency))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 228, Col: 119}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 235, Col: 119}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -472,7 +472,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 				var templ_7745c5c3_Var23 string
 				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(inv.PaidAt.Format("Jan 2, 2006"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 233, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 240, Col: 76}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 				if templ_7745c5c3_Err != nil {
@@ -495,7 +495,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 				var templ_7745c5c3_Var24 string
 				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(inv.Notes)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 240, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 247, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 				if templ_7745c5c3_Err != nil {
@@ -523,7 +523,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 					var templ_7745c5c3_Var25 string
 					templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(li.ProductName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 265, Col: 63}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 272, Col: 63}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 					if templ_7745c5c3_Err != nil {
@@ -541,7 +541,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 						var templ_7745c5c3_Var26 string
 						templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(li.Description)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 267, Col: 71}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 274, Col: 71}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 						if templ_7745c5c3_Err != nil {
@@ -559,7 +559,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 					var templ_7745c5c3_Var27 string
 					templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", li.Quantity))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 270, Col: 108}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 277, Col: 108}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 					if templ_7745c5c3_Err != nil {
@@ -572,7 +572,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 					var templ_7745c5c3_Var28 string
 					templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(portalFormatCents(li.UnitPrice, inv.Currency))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 271, Col: 123}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 278, Col: 123}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 					if templ_7745c5c3_Err != nil {
@@ -585,7 +585,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 					var templ_7745c5c3_Var29 string
 					templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d%%", li.VATRate))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 272, Col: 109}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 279, Col: 109}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 					if templ_7745c5c3_Err != nil {
@@ -598,7 +598,7 @@ func PortalInvoiceDetailPage(cust *PortalCustomer, inv *invoicequeries.InvoiceRe
 					var templ_7745c5c3_Var30 string
 					templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(portalFormatCents(li.TotalGross, inv.Currency))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 273, Col: 124}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 280, Col: 124}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 					if templ_7745c5c3_Err != nil {
@@ -654,7 +654,7 @@ func PortalLinkFragment(url string) templ.Component {
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(url)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 289, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 296, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -667,7 +667,7 @@ func PortalLinkFragment(url string) templ.Component {
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(url)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 292, Col: 25}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 299, Col: 25}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -715,7 +715,7 @@ func PortalLoginPage(captchaID, errMsg string) templ.Component {
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(errMsg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 346, Col: 14}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 353, Col: 14}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -733,7 +733,7 @@ func PortalLoginPage(captchaID, errMsg string) templ.Component {
 		var templ_7745c5c3_Var36 string
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(captchaID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 350, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 357, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 		if templ_7745c5c3_Err != nil {
@@ -746,7 +746,7 @@ func PortalLoginPage(captchaID, errMsg string) templ.Component {
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("/portal/captcha/%s.png", captchaID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 366, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 373, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
@@ -801,7 +801,7 @@ func PortalErrorPage(cust *PortalCustomer, title, msg string) templ.Component {
 			var templ_7745c5c3_Var40 string
 			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 402, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 409, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 			if templ_7745c5c3_Err != nil {
@@ -814,7 +814,7 @@ func PortalErrorPage(cust *PortalCustomer, title, msg string) templ.Component {
 			var templ_7745c5c3_Var41 string
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 403, Col: 61}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 410, Col: 61}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 			if templ_7745c5c3_Err != nil {
@@ -885,7 +885,7 @@ func portalStatusBadge(status string) templ.Component {
 			var templ_7745c5c3_Var43 string
 			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 420, Col: 148}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/portal/adapters/http/templates.templ`, Line: 427, Col: 148}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 			if templ_7745c5c3_Err != nil {
