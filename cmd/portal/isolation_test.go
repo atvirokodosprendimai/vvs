@@ -43,6 +43,29 @@ type stubPDFMinter struct{}
 
 func (s *stubPDFMinter) MintToken(_ context.Context, _, _ string) (string, error) { return "", nil }
 
+// stubAuthTokenRepo returns a valid portal token for customer "cust-owner" on any hash lookup.
+type stubAuthTokenRepo struct{}
+
+func (s *stubAuthTokenRepo) FindByHash(_ context.Context, _ string) (*portaldomain.PortalToken, error) {
+	return &portaldomain.PortalToken{
+		CustomerID: "cust-owner",
+		ExpiresAt:  time.Now().Add(time.Hour),
+	}, nil
+}
+func (s *stubAuthTokenRepo) Save(_ context.Context, _ *portaldomain.PortalToken) error { return nil }
+func (s *stubAuthTokenRepo) DeleteByCustomerID(_ context.Context, _ string) error      { return nil }
+func (s *stubAuthTokenRepo) PruneExpired(_ context.Context) error                      { return nil }
+
+// stubInvoiceGetterOtherCustomer returns an invoice that belongs to a different customer.
+type stubInvoiceGetterOtherCustomer struct{}
+
+func (s *stubInvoiceGetterOtherCustomer) Handle(_ context.Context, _ string) (*invoicequeries.InvoiceReadModel, error) {
+	return &invoicequeries.InvoiceReadModel{
+		ID:         "inv-other",
+		CustomerID: "cust-other", // belongs to a different customer
+	}, nil
+}
+
 // ── router builder ─────────────────────────────────────────────────────────────
 
 // buildPortalRouter constructs the same router as runPortal but with stub dependencies.
@@ -140,4 +163,31 @@ func TestPortalBinary_PortalRoutesRegistered(t *testing.T) {
 				"portal route %s %s should be registered", tc.method, tc.path)
 		})
 	}
+}
+
+// TestPortalBinary_CrossCustomerIsolation verifies that an authenticated portal
+// session cannot access invoices belonging to a different customer.
+// Uses a real handler with stub deps: token repo returns "cust-owner",
+// invoice getter returns an invoice owned by "cust-other".
+func TestPortalBinary_CrossCustomerIsolation(t *testing.T) {
+	handlers := portalhttp.NewHandlers(
+		&stubAuthTokenRepo{},                 // session → customerID "cust-owner"
+		&stubInvoiceLister{},                 // invoice list (not exercised)
+		&stubInvoiceGetterOtherCustomer{},    // returns invoice owned by "cust-other"
+	).WithPDFTokens(&stubPDFMinter{})
+
+	r := chi.NewRouter()
+	r.Use(middleware.RealIP)
+	r.Use(middleware.Recoverer)
+	handlers.RegisterPublicRoutes(r)
+
+	// Authenticated request as "cust-owner" trying to read "cust-other"'s invoice.
+	req := httptest.NewRequest("GET", "/portal/invoices/inv-other", nil)
+	req.AddCookie(&http.Cookie{Name: "vvs_portal", Value: "any-valid-looking-token"})
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	// Ownership check must block cross-customer access.
+	assert.Equal(t, http.StatusNotFound, rr.Code,
+		"portal session for cust-owner must not access cust-other's invoice")
 }

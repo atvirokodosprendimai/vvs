@@ -82,9 +82,9 @@ func serveCommand() *cli.Command {
 				Sources: cli.EnvVars("VVS_BASE_URL"),
 			},
 			&cli.BoolFlag{
-				Name:    "secure-cookie",
-				Usage:   "Set Secure flag on session cookies (requires HTTPS)",
-				Sources: cli.EnvVars("PORTAL_SECURE_COOKIE"),
+				Name:    "insecure-cookie",
+				Usage:   "Disable Secure flag on session cookies (only for local dev without HTTPS)",
+				Sources: cli.EnvVars("PORTAL_INSECURE_COOKIE"),
 			},
 		},
 		Action: runPortal,
@@ -96,7 +96,7 @@ func runPortal(ctx context.Context, cmd *cli.Command) error {
 	natsURL := cmd.String("nats-url")
 	natsToken := cmd.String("nats-auth-token")
 	baseURL := cmd.String("base-url")
-	secureCookie := cmd.Bool("secure-cookie")
+	secureCookie := !cmd.Bool("insecure-cookie") // secure by default; opt out for local dev
 
 	// Connect to NATS (vvs-core side)
 	opts := []nats.Option{nats.Name("vvs-portal")}
