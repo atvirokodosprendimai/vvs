@@ -101,6 +101,13 @@ func (h *Handlers) WithReader(reader *gorm.DB) *Handlers {
 	return h
 }
 
+// WithCreateCmd injects the create-customer command (wired separately because it
+// needs the IPAM provider from the network module).
+func (h *Handlers) WithCreateCmd(cmd *commands.CreateCustomerHandler) *Handlers {
+	h.createCmd = cmd
+	return h
+}
+
 // WithContactsQuery injects the contact list query for the detail page.
 func (h *Handlers) WithContactsQuery(q *contactQueries.ListContactsForCustomerHandler) *Handlers {
 	h.listContactsQuery = q
