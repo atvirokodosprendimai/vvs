@@ -35,6 +35,8 @@ type crmWired struct {
 	listTickets          *ticketqueries.ListTicketsForCustomerHandler
 	listAllTickets       *ticketqueries.ListAllTicketsHandler
 	getTicket            *ticketqueries.GetTicketHandler
+	openTicket           *ticketcommands.OpenTicketHandler
+	addComment           *ticketcommands.AddCommentHandler
 	listTasksForCustomer *taskqueries.ListTasksForCustomerHandler
 	listAllTasks         *taskqueries.ListAllTasksHandler
 	ticketRoutes         *tickethttp.Handlers
@@ -131,6 +133,8 @@ func wireCRM(
 		listTickets:          listTicketsQuery,
 		listAllTickets:       listAllTicketsQuery,
 		getTicket:            getTicketQuery,
+		openTicket:           openTicketCmd,
+		addComment:           addCommentCmd,
 		listTasksForCustomer: listTasksForCustomerQ,
 		listAllTasks:         listAllTasksQuery,
 		ticketRoutes:         ticketRoutes,

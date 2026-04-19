@@ -56,6 +56,17 @@ type Config struct {
 	// Example: "https://isp.example.com". Defaults to http://host when empty.
 	BaseURL string // VVS_BASE_URL env var
 
+	// MetricsAddr is the address for the Prometheus /metrics endpoint (e.g. ":9091").
+	// When empty, the metrics server is not started.
+	MetricsAddr string // VVS_METRICS_ADDR env var
+
+	// OllamaURL is the base URL for the Ollama API used by the portal chat bot.
+	// Defaults to http://localhost:11434 when empty.
+	OllamaURL string // VVS_OLLAMA_URL env var
+
+	// BotModel is the Ollama model name for the portal chat bot (default: llama3.2).
+	BotModel string // VVS_BOT_MODEL env var
+
 	// Debug enables verbose debug logging (slog DEBUG level).
 	Debug bool
 }

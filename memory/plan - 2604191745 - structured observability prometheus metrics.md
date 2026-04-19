@@ -1,6 +1,6 @@
 ---
 tldr: Prometheus metrics endpoint + HTTP/NATS/cron/business instrumentation — no more blind production incidents
-status: active
+status: completed
 ---
 
 # Plan: Structured Observability — Prometheus Metrics

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -11,8 +12,31 @@ import (
 	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 	authqueries "github.com/vvs/isp/internal/modules/auth/app/queries"
 	"github.com/vvs/isp/internal/infrastructure/http/apimw"
+	"github.com/vvs/isp/internal/infrastructure/metrics"
 	"gorm.io/gorm"
 )
+
+// metricsMiddleware records HTTP request duration and count into Prometheus.
+// Uses the chi route pattern as the path label to avoid label cardinality explosion.
+func metricsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+		start := time.Now()
+		next.ServeHTTP(ww, r)
+		status := ww.Status()
+		if status == 0 {
+			status = http.StatusOK
+		}
+		path := "/unknown"
+		if rctx := chi.RouteContext(r.Context()); rctx != nil && rctx.RoutePattern() != "" {
+			path = rctx.RoutePattern()
+		}
+		statusStr := strconv.Itoa(status)
+		elapsed := time.Since(start).Seconds()
+		metrics.HTTPRequestDuration.WithLabelValues(r.Method, path, statusStr).Observe(elapsed)
+		metrics.HTTPRequestsTotal.WithLabelValues(r.Method, path, statusStr).Inc()
+	})
+}
 
 // requestLogger is a chi-compatible request logger using slog.
 // Unlike middleware.Logger, it treats status 0 (SSE connections where datastar flushes
@@ -63,6 +87,7 @@ func NewRouter(reader *gorm.DB, currentUser *authqueries.GetCurrentUserHandler, 
 
 	r.Use(middleware.Recoverer)
 	r.Use(requestLogger)
+	r.Use(metricsMiddleware)
 	r.Use(middleware.RealIP)
 
 	// Static files (unauthenticated)

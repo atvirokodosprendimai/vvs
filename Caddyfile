@@ -1,0 +1,24 @@
+# VVS Caddy reverse proxy
+#
+# Local dev  (*.localhost — Caddy auto-provisions a local CA cert):
+#   admin.localhost   → vvs-core  admin UI
+#   portal.localhost  → vvs-portal customer portal
+#   stb.localhost     → vvs-stb   IPTV device API
+#
+# Production: replace *.localhost with your real domains and remove
+# the tls internal blocks — Caddy will obtain Let's Encrypt certs automatically.
+
+admin.localhost {
+    tls internal
+    reverse_proxy core:8080
+}
+
+portal.localhost {
+    tls internal
+    reverse_proxy portal:8081
+}
+
+stb.localhost {
+    tls internal
+    reverse_proxy stb:8082
+}

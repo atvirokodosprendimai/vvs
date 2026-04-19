@@ -9,6 +9,7 @@ import (
 
 	"github.com/starfederation/datastar-go/datastar"
 	"github.com/vvs/isp/internal/infrastructure/chat"
+	"github.com/vvs/isp/internal/infrastructure/metrics"
 	"github.com/vvs/isp/internal/infrastructure/notifications"
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
 	"github.com/vvs/isp/internal/shared/events"
@@ -32,6 +33,9 @@ func (h *GlobalHandler) globalSSE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
+
+	metrics.ActiveSSEConns.Inc()
+	defer metrics.ActiveSSEConns.Dec()
 
 	sse := datastar.NewSSE(w, r)
 

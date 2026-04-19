@@ -172,6 +172,21 @@ func serveCommand() *cli.Command {
 				Usage:   "Set Secure flag on session cookie (enable for HTTPS-only production deployments)",
 				Sources: cli.EnvVars("VVS_SECURE_COOKIE"),
 			},
+			&cli.StringFlag{
+				Name:    "metrics-addr",
+				Usage:   "Address for Prometheus /metrics endpoint (e.g. :9091); empty = disabled",
+				Sources: cli.EnvVars("VVS_METRICS_ADDR"),
+			},
+			&cli.StringFlag{
+				Name:    "ollama-url",
+				Usage:   "Ollama API base URL for the portal chat bot (default: http://localhost:11434)",
+				Sources: cli.EnvVars("VVS_OLLAMA_URL"),
+			},
+			&cli.StringFlag{
+				Name:    "bot-model",
+				Usage:   "Ollama model for the portal chat bot (default: llama3.2)",
+				Sources: cli.EnvVars("VVS_BOT_MODEL"),
+			},
 			&cli.BoolFlag{
 				Name:    "debug",
 				Usage:   "Enable verbose debug logging",
@@ -215,6 +230,9 @@ func serveCommand() *cli.Command {
 				SessionLifetimeSecs:   int(cmd.Int("session-lifetime")),
 				SecureCookie:          cmd.Bool("secure-cookie"),
 				BaseURL:               cmd.Root().String("base-url"),
+				MetricsAddr:           cmd.String("metrics-addr"),
+				OllamaURL:             cmd.String("ollama-url"),
+				BotModel:              cmd.String("bot-model"),
 				EnabledModules:        enabledModules,
 				Debug:                 cmd.Bool("debug"),
 			}

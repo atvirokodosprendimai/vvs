@@ -1,0 +1,90 @@
+package http
+
+
+// PortalServiceListPage shows the customer's active and suspended services.
+templ PortalServiceListPage(cust *PortalCustomer, services []*PortalService) {
+	@portalLayout("My Services", cust) {
+		<div class="mb-6">
+			<h1 class="text-lg font-semibold text-neutral-100">My Services</h1>
+			<p class="text-sm text-neutral-500 mt-1">Your current subscriptions and connection details</p>
+		</div>
+		<div class="mb-6 flex items-center gap-2 text-sm text-neutral-500">
+			<a href="/portal/invoices" class="hover:text-neutral-300 transition-colors">Invoices</a>
+			<span class="text-neutral-700">·</span>
+			<span class="text-neutral-100">Services</span>
+			<span class="text-neutral-700">·</span>
+			<a href="/portal/tickets" class="hover:text-neutral-300 transition-colors">Support</a>
+		</div>
+
+		if len(services) == 0 {
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg px-6 py-12 text-center">
+				<p class="text-sm text-neutral-600">No active services.</p>
+				<p class="text-xs text-neutral-700 mt-1">Contact us to get started.</p>
+			</div>
+		} else {
+			<div class="space-y-3 mb-8">
+				for _, svc := range services {
+					<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5">
+						<div class="flex items-start justify-between gap-3">
+							<div class="min-w-0">
+								<div class="flex items-center gap-2 mb-1">
+									<span class="text-sm font-semibold text-neutral-100">{ svc.ProductName }</span>
+									@portalServiceStatusBadge(svc.Status)
+								</div>
+								<div class="text-sm text-neutral-400 font-mono">
+									{ portalFormatCents(svc.PriceAmountCents, svc.Currency) }
+									if svc.BillingCycle != "" {
+										<span class="text-neutral-600"> / { svc.BillingCycle }</span>
+									}
+								</div>
+							</div>
+							if svc.NextBillingDate != nil && svc.Status == "active" {
+								<div class="text-right shrink-0">
+									<div class="text-xs text-neutral-600 uppercase tracking-wider mb-0.5">Next billing</div>
+									<div class="text-sm text-neutral-300">{ svc.NextBillingDate.Format("Jan 2, 2006") }</div>
+								</div>
+							}
+						</div>
+						if svc.Status == "suspended" {
+							<div class="mt-3 pt-3 border-t border-neutral-800 text-xs text-amber-500">
+								Service suspended — contact support to reactivate.
+							</div>
+						}
+					</div>
+				}
+			</div>
+		}
+
+		if cust != nil && cust.IPAddress != "" {
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5">
+				<h2 class="text-xs font-medium text-neutral-500 uppercase tracking-wider mb-3">Connection Info</h2>
+				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+					<div>
+						<div class="text-xs text-neutral-600 uppercase tracking-wider mb-0.5">IP Address</div>
+						<div class="text-sm font-mono text-neutral-200">{ cust.IPAddress }</div>
+					</div>
+					if cust.NetworkZone != "" {
+						<div>
+							<div class="text-xs text-neutral-600 uppercase tracking-wider mb-0.5">Zone</div>
+							<div class="text-sm text-neutral-300">{ cust.NetworkZone }</div>
+						</div>
+					}
+				</div>
+			</div>
+		}
+	}
+}
+
+templ portalServiceStatusBadge(status string) {
+	switch status {
+		case "active":
+			<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-900/40 text-green-400 border border-green-800/50">Active</span>
+		case "suspended":
+			<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-900/40 text-amber-400 border border-amber-800/50">Suspended</span>
+		case "cancelled":
+			<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-800 text-neutral-500 border border-neutral-700">Cancelled</span>
+		default:
+			<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-800 text-neutral-400 border border-neutral-700">{ status }</span>
+	}
+}
+

@@ -56,9 +56,17 @@ templ portalLayout(title string, cust *PortalCustomer) {
 				</form>
 			</div>
 		</header>
+		<nav class="border-b border-neutral-800 px-6">
+			<div class="max-w-4xl mx-auto flex gap-1">
+				<a href="/portal/invoices" class="px-3 py-3 text-sm text-neutral-400 hover:text-neutral-100 transition-colors border-b-2 border-transparent hover:border-amber-500 -mb-px">Invoices</a>
+				<a href="/portal/services" class="px-3 py-3 text-sm text-neutral-400 hover:text-neutral-100 transition-colors border-b-2 border-transparent hover:border-amber-500 -mb-px">Services</a>
+				<a href="/portal/tickets" class="px-3 py-3 text-sm text-neutral-400 hover:text-neutral-100 transition-colors border-b-2 border-transparent hover:border-amber-500 -mb-px">Support</a>
+			</div>
+		</nav>
 		<main class="max-w-4xl mx-auto px-6 py-8">
 			{ children... }
 		</main>
+		@PortalChatWidget()
 	</body>
 	</html>
 }

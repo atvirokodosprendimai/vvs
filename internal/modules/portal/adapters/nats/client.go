@@ -13,6 +13,7 @@ import (
 	"github.com/nats-io/nats.go"
 	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
 	portaldomain "github.com/vvs/isp/internal/modules/portal/domain"
+	ticketqueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
 )
 
 // PortalNATSClient satisfies the interfaces expected by portal/adapters/http.Handlers:
@@ -143,6 +144,17 @@ func (c *PortalNATSClient) GetCustomer(ctx context.Context, id string) (*BridgeC
 	return &cust, nil
 }
 
+// ListServices returns the customer's active and suspended services via NATS.
+func (c *PortalNATSClient) ListServices(ctx context.Context, customerID string) ([]*BridgeService, error) {
+	var resp struct {
+		Services []*BridgeService `json:"services"`
+	}
+	if err := c.rpc(ctx, SubjectServicesList, map[string]string{"customerID": customerID}, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Services, nil
+}
+
 // ValidateInvoiceToken validates a PDF token hash via NATS.
 // Returns the InvoiceID the token grants access to.
 func (c *PortalNATSClient) ValidateInvoiceToken(ctx context.Context, tokenHash string) (string, error) {
@@ -153,6 +165,119 @@ func (c *PortalNATSClient) ValidateInvoiceToken(ctx context.Context, tokenHash s
 		return "", err
 	}
 	return resp.InvoiceID, nil
+}
+
+// ── tickets ───────────────────────────────────────────────────────────────────
+
+// ListTickets returns all tickets for the authenticated portal customer.
+func (c *PortalNATSClient) ListTickets(ctx context.Context, customerID string) ([]ticketqueries.TicketReadModel, error) {
+	var resp struct {
+		Tickets []ticketqueries.TicketReadModel `json:"tickets"`
+	}
+	if err := c.rpc(ctx, SubjectTicketsList, map[string]string{"customerID": customerID}, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Tickets, nil
+}
+
+// OpenTicket opens a new support ticket on behalf of the portal customer.
+// Returns the new ticket ID.
+func (c *PortalNATSClient) OpenTicket(ctx context.Context, customerID, subject, body string) (string, error) {
+	var resp struct {
+		TicketID string `json:"ticketID"`
+	}
+	if err := c.rpc(ctx, SubjectTicketOpen, map[string]string{
+		"customerID": customerID,
+		"subject":    subject,
+		"body":       body,
+	}, &resp); err != nil {
+		return "", err
+	}
+	return resp.TicketID, nil
+}
+
+// AddTicketComment adds a customer comment to an existing ticket.
+// Returns the new comment ID.
+func (c *PortalNATSClient) AddTicketComment(ctx context.Context, ticketID, customerID, body string) (string, error) {
+	var resp struct {
+		CommentID string `json:"commentID"`
+	}
+	if err := c.rpc(ctx, SubjectTicketCommentAdd, map[string]string{
+		"ticketID":   ticketID,
+		"customerID": customerID,
+		"body":       body,
+	}, &resp); err != nil {
+		return "", err
+	}
+	return resp.CommentID, nil
+}
+
+// ── bot ───────────────────────────────────────────────────────────────────────
+
+// BotMessage sends a user message to the portal chat bot.
+// Returns reply text, the session ID, state, and whether a handoff is suggested.
+func (c *PortalNATSClient) BotMessage(ctx context.Context, customerID, sessionID, message string) (reply, newSessionID, state string, suggestHandoff bool, err error) {
+	var resp struct {
+		Reply          string `json:"reply"`
+		SessionID      string `json:"sessionID"`
+		State          string `json:"state"`
+		SuggestHandoff bool   `json:"suggestHandoff"`
+	}
+	if err := c.rpc(ctx, SubjectBotMessage, map[string]any{
+		"customerID": customerID,
+		"sessionID":  sessionID,
+		"message":    message,
+	}, &resp); err != nil {
+		return "", "", "", false, err
+	}
+	return resp.Reply, resp.SessionID, resp.State, resp.SuggestHandoff, nil
+}
+
+// BotHandoff initiates a live staff handoff for a bot session.
+func (c *PortalNATSClient) BotHandoff(ctx context.Context, customerID, sessionID string) (threadID, state string, err error) {
+	var resp struct {
+		ThreadID string `json:"threadID"`
+		State    string `json:"state"`
+	}
+	if err := c.rpc(ctx, SubjectBotHandoff, map[string]string{
+		"customerID": customerID,
+		"sessionID":  sessionID,
+	}, &resp); err != nil {
+		return "", "", err
+	}
+	return resp.ThreadID, resp.State, nil
+}
+
+// BotLiveMessage sends a message in a live handoff session and returns the latest staff reply.
+func (c *PortalNATSClient) BotLiveMessage(ctx context.Context, customerID, sessionID, message string) (staffReply, state string, err error) {
+	var resp struct {
+		StaffReply string `json:"staffReply"`
+		State      string `json:"state"`
+	}
+	if err := c.rpc(ctx, SubjectBotLiveMessage, map[string]any{
+		"customerID": customerID,
+		"sessionID":  sessionID,
+		"message":    message,
+	}, &resp); err != nil {
+		return "", "", err
+	}
+	return resp.StaffReply, resp.State, nil
+}
+
+// BotClose closes a portal bot session. Pass createTicket=true to open a support ticket
+// with the conversation transcript.
+func (c *PortalNATSClient) BotClose(ctx context.Context, customerID, sessionID string, createTicket bool) (ticketID string, err error) {
+	var resp struct {
+		TicketID string `json:"ticketID"`
+	}
+	if err := c.rpc(ctx, SubjectBotClose, map[string]any{
+		"customerID":   customerID,
+		"sessionID":    sessionID,
+		"createTicket": createTicket,
+	}, &resp); err != nil {
+		return "", err
+	}
+	return resp.TicketID, nil
 }
 
 // ── InvoiceGetterAdapter ──────────────────────────────────────────────────────

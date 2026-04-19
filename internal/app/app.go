@@ -317,6 +317,8 @@ func (b *portalCustomerBridge) GetPortalCustomer(ctx context.Context, id string)
 		ID:          c.ID,
 		CompanyName: c.CompanyName,
 		Email:       c.Email,
+		IPAddress:   c.IPAddress,
+		NetworkZone: c.NetworkZone,
 	}, nil
 }
 
@@ -347,7 +349,34 @@ func (b *natsPortalCustomerBridge) GetPortalCustomer(ctx context.Context, id str
 		ID:          c.ID,
 		CompanyName: c.CompanyName,
 		Email:       c.Email,
+		IPAddress:   c.IPAddress,
+		NetworkZone: c.NetworkZone,
 	}, nil
+}
+
+// portalServiceBridge adapts servicedomain.ServiceRepository to portalnats.bridgeServiceLister.
+type portalServiceBridge struct {
+	repo servicedomain.ServiceRepository
+}
+
+func (b *portalServiceBridge) ListForCustomer(ctx context.Context, customerID string) ([]*portalnats.BridgeService, error) {
+	svcs, err := b.repo.ListForCustomer(ctx, customerID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*portalnats.BridgeService, len(svcs))
+	for i, s := range svcs {
+		out[i] = &portalnats.BridgeService{
+			ID:               s.ID,
+			ProductName:      s.ProductName,
+			PriceAmountCents: s.PriceAmount,
+			Currency:         s.Currency,
+			Status:           s.Status,
+			BillingCycle:     s.BillingCycle,
+			NextBillingDate:  s.NextBillingDate,
+		}
+	}
+	return out, nil
 }
 
 // seedGeneralChannel ensures the #general channel exists.

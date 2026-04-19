@@ -7,6 +7,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 
+	"github.com/vvs/isp/internal/infrastructure/bot"
 	"github.com/vvs/isp/internal/infrastructure/chat"
 	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
 	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
@@ -50,6 +51,7 @@ func wireInfra(
 	svc  *serviceWired,
 	inv  *invoiceWired,
 	iptv *iptvWired,
+	crm  *crmWired,
 	cfg  Config,
 ) (*infraWired, error) {
 	// ── Notifications ─────────────────────────────────────────────────────────
@@ -159,11 +161,16 @@ func wireInfra(
 	log.Printf("module wired: portal")
 
 	// ── Portal NATS bridge (serves isp.portal.rpc.* for vvs-portal binary) ───
+	botSessions := bot.NewSessions(0)
+	botOllama   := bot.NewOllamaClient(cfg.OllamaURL, cfg.BotModel)
 	portalBridge := portalnats.NewPortalBridge(
 		nc, portalTokenRepo, inv.tokenRepo,
 		inv.listForCustomer, inv.get,
 		&natsPortalCustomerBridge{query: cust.getQuery},
-	)
+	).
+		WithTickets(crm.listTickets, crm.openTicket, crm.addComment).
+		WithServices(&portalServiceBridge{repo: svc.repo}).
+		WithBot(botSessions, botOllama, chatStore)
 	if err := portalBridge.Register(); err != nil {
 		return nil, fmt.Errorf("portal nats bridge: %w", err)
 	}
