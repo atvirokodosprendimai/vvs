@@ -16,7 +16,8 @@ import (
 
 // RunDueJobs loads all active jobs where next_run <= now, executes each, and
 // advances next_run. Intended to be called by system cron every minute.
-func RunDueJobs(ctx context.Context, repo domain.JobRepository, rpc *natsrpc.Server) {
+// demoMode blocks shell and url job types (safe for public demo environments).
+func RunDueJobs(ctx context.Context, repo domain.JobRepository, rpc *natsrpc.Server, demoMode bool) {
 	now := time.Now().UTC()
 	jobs, err := repo.ListDue(ctx, now)
 	if err != nil {
@@ -29,11 +30,11 @@ func RunDueJobs(ctx context.Context, repo domain.JobRepository, rpc *natsrpc.Ser
 	}
 	log.Printf("cron: %d job(s) due", len(jobs))
 	for _, job := range jobs {
-		runJob(ctx, job, repo, rpc)
+		runJob(ctx, job, repo, rpc, demoMode)
 	}
 }
 
-func runJob(ctx context.Context, job *domain.Job, repo domain.JobRepository, rpc *natsrpc.Server) {
+func runJob(ctx context.Context, job *domain.Job, repo domain.JobRepository, rpc *natsrpc.Server, demoMode bool) {
 	jobCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -42,11 +43,19 @@ func runJob(ctx context.Context, job *domain.Job, repo domain.JobRepository, rpc
 	case domain.TypeAction:
 		runErr = runAction(jobCtx, job.Payload)
 	case domain.TypeShell:
-		runErr = runShell(jobCtx, job.Payload)
+		if demoMode {
+			runErr = fmt.Errorf("demo mode: shell jobs are disabled")
+		} else {
+			runErr = runShell(jobCtx, job.Payload)
+		}
 	case domain.TypeRPC:
 		runErr = runRPC(jobCtx, job.Payload, rpc)
 	case domain.TypeURL:
-		runErr = runURL(jobCtx, job.Payload)
+		if demoMode {
+			runErr = fmt.Errorf("demo mode: url jobs are disabled")
+		} else {
+			runErr = runURL(jobCtx, job.Payload)
+		}
 	default:
 		runErr = fmt.Errorf("unknown job type: %s", job.JobType)
 	}

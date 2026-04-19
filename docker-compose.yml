@@ -18,7 +18,7 @@ services:
       VVS_BASE_URL: ${VVS_BASE_URL:-https://portal.localhost}
       VVS_SECURE_COOKIE: ${VVS_SECURE_COOKIE:-false}
     volumes:
-      - core-data:/app/data
+      - ./data/core:/app/data
     networks:
       - vvs
     healthcheck:
@@ -73,19 +73,14 @@ services:
       - "443:443/udp"   # HTTP/3
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
+      - ./data/caddy/data:/data
+      - ./data/caddy/config:/config
     depends_on:
       - core
       - portal
       - stb
     networks:
       - vvs
-
-volumes:
-  core-data:
-  caddy-data:
-  caddy-config:
 
 networks:
   vvs:

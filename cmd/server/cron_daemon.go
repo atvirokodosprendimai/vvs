@@ -14,19 +14,21 @@ import (
 // Call Start(ctx) — it blocks until ctx is cancelled (e.g. SIGTERM).
 // Use as an alternative to calling `vvs cron run` every minute via system cron.
 type Daemon struct {
-	cr      *cron.Cron
-	mu      sync.Mutex
-	entries map[string]cron.EntryID // jobID → scheduled EntryID
-	repo    domain.JobRepository
-	rpc     *natsrpc.Server
+	cr       *cron.Cron
+	mu       sync.Mutex
+	entries  map[string]cron.EntryID // jobID → scheduled EntryID
+	repo     domain.JobRepository
+	rpc      *natsrpc.Server
+	demoMode bool
 }
 
-func NewDaemon(repo domain.JobRepository, rpc *natsrpc.Server) *Daemon {
+func NewDaemon(repo domain.JobRepository, rpc *natsrpc.Server, demoMode bool) *Daemon {
 	return &Daemon{
-		cr:      cron.New(),
-		entries: make(map[string]cron.EntryID),
-		repo:    repo,
-		rpc:     rpc,
+		cr:       cron.New(),
+		entries:  make(map[string]cron.EntryID),
+		repo:     repo,
+		rpc:      rpc,
+		demoMode: demoMode,
 	}
 }
 
@@ -83,7 +85,7 @@ func (d *Daemon) reload(ctx context.Context) {
 		}
 		j := job // capture for closure
 		entryID, err := d.cr.AddFunc(j.Schedule, func() {
-			runJob(ctx, j, d.repo, d.rpc)
+			runJob(ctx, j, d.repo, d.rpc, d.demoMode)
 		})
 		if err != nil {
 			log.Printf("cron daemon: schedule %s (%s): %v", j.Name, j.ID, err)

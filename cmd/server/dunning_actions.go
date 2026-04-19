@@ -18,9 +18,15 @@ import (
 
 // RegisterDunningActions wires dunning dependencies and registers the
 // "send-dunning-reminders" cron action. Call before RunDueJobs.
-func RegisterDunningActions(gdb *gormsqlite.DB, emailEncKey []byte, baseURL string) {
+// demoMode suppresses outbound email (noop sender used instead of SMTP).
+func RegisterDunningActions(gdb *gormsqlite.DB, emailEncKey []byte, baseURL string, demoMode bool) {
 	emailAccountRepo := emailpersistence.NewGormEmailAccountRepository(gdb)
-	smtp := smtpAdapter.NewSender(emailEncKey)
+	var mailer invoicecommands.EmailSender
+	if demoMode {
+		mailer = &noopDunningMailer{}
+	} else {
+		mailer = &dunningMailerBridge{accounts: emailAccountRepo, smtp: smtpAdapter.NewSender(emailEncKey)}
+	}
 	var portalGen invoicecommands.PortalLinkGenerator
 	if baseURL != "" {
 		portalGen = &dunningPortalBridge{
@@ -28,7 +34,15 @@ func RegisterDunningActions(gdb *gormsqlite.DB, emailEncKey []byte, baseURL stri
 			baseURL: baseURL,
 		}
 	}
-	RegisterDunningActionsWithMailer(gdb, &dunningMailerBridge{accounts: emailAccountRepo, smtp: smtp}, portalGen)
+	RegisterDunningActionsWithMailer(gdb, mailer, portalGen)
+}
+
+// noopDunningMailer silently discards dunning emails in demo mode.
+type noopDunningMailer struct{}
+
+func (*noopDunningMailer) SendPlain(_ context.Context, to, subject, _ string) error {
+	log.Printf("dunning: demo mode — email suppressed (to=%s subject=%s)", to, subject)
+	return nil
 }
 
 // RegisterDunningActionsWithMailer is the testable variant — accepts a pre-built mailer.

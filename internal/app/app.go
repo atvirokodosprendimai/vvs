@@ -24,7 +24,7 @@ import (
 	servicedomain "github.com/vvs/isp/internal/modules/service/domain"
 
 	emailpersistence "github.com/vvs/isp/internal/modules/email/adapters/persistence"
-	smtpAdapter "github.com/vvs/isp/internal/modules/email/adapters/smtp"
+	emaildomain "github.com/vvs/isp/internal/modules/email/domain"
 	"github.com/vvs/isp/internal/modules/email/worker"
 
 	invoicecommands "github.com/vvs/isp/internal/modules/invoice/app/commands"
@@ -279,7 +279,7 @@ func (d *provisionerDispatcher) pick(conn networkdomain.RouterConn) networkdomai
 // emailAccountMailerBridge implements invoiceworkers.Mailer using the first active email account.
 type emailAccountMailerBridge struct {
 	accounts *emailpersistence.GormEmailAccountRepository
-	smtp     *smtpAdapter.Sender
+	smtp     emaildomain.EmailSender
 }
 
 func (b *emailAccountMailerBridge) Send(ctx context.Context, to, subject, body string) error {

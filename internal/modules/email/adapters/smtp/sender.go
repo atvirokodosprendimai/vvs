@@ -22,6 +22,17 @@ func NewSender(encKey []byte) *Sender {
 	return &Sender{encKey: encKey}
 }
 
+// NoopSender implements domain.EmailSender but silently discards all messages.
+// Use when VVS_DEMO_MODE is enabled to prevent outbound email from demo instances.
+type NoopSender struct{}
+
+func NewNoopSender() *NoopSender { return &NoopSender{} }
+
+func (*NoopSender) Send(_ context.Context, _ *domain.EmailAccount, _, _, _, _, _ string) error {
+	fmt.Println("smtp: demo mode — email send suppressed")
+	return nil
+}
+
 // BuildMessage constructs a RFC 2822 message and returns its Message-ID and raw bytes.
 // Exported so command handlers can reuse the same bytes for IMAP APPEND.
 func BuildMessage(account *domain.EmailAccount, to, subject, body, inReplyTo, references string) (msgID string, raw []byte) {

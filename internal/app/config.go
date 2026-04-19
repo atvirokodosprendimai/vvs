@@ -67,6 +67,10 @@ type Config struct {
 	// BotModel is the Ollama model name for the portal chat bot (default: llama3.2).
 	BotModel string // VVS_BOT_MODEL env var
 
+	// DemoMode disables risky cron job types (shell, url) for public demo environments.
+	// When true: shell and url job types are rejected at the HTTP layer and skipped at execution.
+	DemoMode bool // VVS_DEMO_MODE env var
+
 	// Debug enables verbose debug logging (slog DEBUG level).
 	Debug bool
 }
