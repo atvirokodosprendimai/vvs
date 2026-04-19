@@ -38,6 +38,8 @@ type IPTVHandlers struct {
 	listPackages *queries.ListPackagesHandler
 	listSubs     *queries.ListSubscriptionsHandler
 	listSTBs     *queries.ListSTBsHandler
+	// EPG
+	importEPG *commands.ImportEPGHandler
 }
 
 func NewIPTVHandlers(
@@ -61,6 +63,7 @@ func NewIPTVHandlers(
 	listPackages *queries.ListPackagesHandler,
 	listSubs *queries.ListSubscriptionsHandler,
 	listSTBs *queries.ListSTBsHandler,
+	importEPG *commands.ImportEPGHandler,
 ) *IPTVHandlers {
 	return &IPTVHandlers{
 		createChannel:   createChannel,
@@ -83,6 +86,7 @@ func NewIPTVHandlers(
 		listPackages:    listPackages,
 		listSubs:        listSubs,
 		listSTBs:        listSTBs,
+		importEPG:       importEPG,
 	}
 }
 
@@ -126,6 +130,9 @@ func (h *IPTVHandlers) RegisterRoutes(r chi.Router) {
 	// STB mutations
 	r.Post("/api/iptv/stbs", h.assignSTBSSE)
 	r.Delete("/api/iptv/stbs/{id}", h.deleteSTBSSE)
+
+	// EPG
+	r.Post("/api/iptv/epg/import", h.epgImport)
 }
 
 // ── Page handlers ──────────────────────────────────────────────────────────────
@@ -526,6 +533,30 @@ func (h *IPTVHandlers) patchSTBTable(w http.ResponseWriter, r *http.Request, sse
 func clearSignals(sse *datastar.ServerSentEventGenerator, vals map[string]any) {
 	b, _ := json.Marshal(vals)
 	sse.PatchSignals(b)
+}
+
+// ── EPG ───────────────────────────────────────────────────────────────────────
+
+func (h *IPTVHandlers) epgImport(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		URL      string `json:"url"`
+		DaysAhead int   `json:"days_ahead"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+	result, err := h.importEPG.Handle(r.Context(), commands.ImportEPGCommand{
+		URL:      req.URL,
+		DaysAhead: req.DaysAhead,
+	})
+	if err != nil {
+		log.Printf("iptv: epgImport: %v", err)
+		http.Error(w, "import failed", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }
 
 func parsePriceCents(s string) (int64, error) {

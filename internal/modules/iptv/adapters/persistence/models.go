@@ -6,6 +6,47 @@ import (
 	"github.com/vvs/isp/internal/modules/iptv/domain"
 )
 
+// ── EPGProgramme ──────────────────────────────────────────────────────────────
+
+type EPGProgrammeModel struct {
+	ID           string `gorm:"primaryKey;type:text"`
+	ChannelEPGID string `gorm:"column:channel_epg_id;type:text;not null;index"`
+	Title        string `gorm:"type:text;not null;default:''"`
+	Description  string `gorm:"type:text;not null;default:''"`
+	StartTime    int64  `gorm:"column:start_time;not null;index"`
+	StopTime     int64  `gorm:"column:stop_time;not null;index"`
+	Category     string `gorm:"type:text;not null;default:''"`
+	Rating       string `gorm:"type:text;not null;default:''"`
+}
+
+func (EPGProgrammeModel) TableName() string { return "iptv_epg_programmes" }
+
+func toEPGModel(p *domain.EPGProgramme) EPGProgrammeModel {
+	return EPGProgrammeModel{
+		ID:           p.ID,
+		ChannelEPGID: p.ChannelEPGID,
+		Title:        p.Title,
+		Description:  p.Description,
+		StartTime:    p.StartTime.Unix(),
+		StopTime:     p.StopTime.Unix(),
+		Category:     p.Category,
+		Rating:       p.Rating,
+	}
+}
+
+func (m *EPGProgrammeModel) toDomain() *domain.EPGProgramme {
+	return &domain.EPGProgramme{
+		ID:           m.ID,
+		ChannelEPGID: m.ChannelEPGID,
+		Title:        m.Title,
+		Description:  m.Description,
+		StartTime:    time.Unix(m.StartTime, 0).UTC(),
+		StopTime:     time.Unix(m.StopTime, 0).UTC(),
+		Category:     m.Category,
+		Rating:       m.Rating,
+	}
+}
+
 // ── Channel ───────────────────────────────────────────────────────────────────
 
 type ChannelModel struct {

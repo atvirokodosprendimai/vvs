@@ -710,6 +710,7 @@ func New(cfg Config) (*App, error) {
 	iptvSubRepo := iptvpersistence.NewSubscriptionRepository(gdb)
 	iptvSTBRepo := iptvpersistence.NewSTBRepository(gdb)
 	iptvKeyRepo := iptvpersistence.NewSubscriptionKeyRepository(gdb)
+	iptvEPGRepo := iptvpersistence.NewEPGProgrammeRepository(gdb)
 	iptvRoutes := iptvhttp.NewIPTVHandlers(
 		iptvcommands.NewCreateChannelHandler(iptvChannelRepo),
 		iptvcommands.NewUpdateChannelHandler(iptvChannelRepo),
@@ -731,6 +732,7 @@ func New(cfg Config) (*App, error) {
 		iptvqueries.NewListPackagesHandler(iptvPackageRepo),
 		iptvqueries.NewListSubscriptionsHandler(iptvSubRepo, iptvPackageRepo),
 		iptvqueries.NewListSTBsHandler(iptvSTBRepo),
+		iptvcommands.NewImportEPGHandler(iptvEPGRepo),
 	)
 	moduleRoutes = append(moduleRoutes, iptvRoutes)
 	log.Printf("module wired: iptv")
