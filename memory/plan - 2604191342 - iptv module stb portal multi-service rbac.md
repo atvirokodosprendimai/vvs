@@ -59,7 +59,22 @@ No new RBAC infra needed — just add `ModuleIPTV` to the module registry.
 - **XMLTV EPG** — electronic programme guide XML
 - **Simple JSON REST** — for custom integrations
 
-No HTML, no cookies, no session pages. Authentication is MAC-based (device identity).
+No HTML, no cookies, no session pages.
+
+**Authentication: per-subscription token embedded in every URL.**
+Each subscriber gets a unique opaque token when their subscription is created.
+The token is distributed to them as part of the playlist URL — they configure it in their app once.
+No device registration, no MAC pairing, no session handshake needed.
+
+```
+https://stb.example.com/apis/siptv/playlist/{token}       ← SIPTV app
+https://stb.example.com/apis/tvzone/playlist/{token}       ← tvzone / generic
+https://stb.example.com/stream/{token}/{channelID}         ← per-channel stream redirect
+https://stb.example.com/epg/{token}.xml                    ← XMLTV EPG
+https://stb.example.com/portal/server.php?token={token}    ← Stalker/MAG protocol
+```
+
+The `{token}` is 32-byte random hex (64 chars), stored **plain** in the DB (it's a long-lived subscription credential, must be showable to admin for copy-paste to customer). If token leaks: admin revokes and issues a new one.
 
 ### IPTV domain concepts
 
@@ -67,57 +82,57 @@ No HTML, no cookies, no session pages. Authentication is MAC-based (device ident
 |---------|------|
 | **Channel** | Single broadcast stream — name, logo URL, stream URL, category, EPG source |
 | **Package** | Bundle of channels with a price — customers subscribe to packages |
-| **Subscription** | Customer ↔ Package link — status (active/suspended/cancelled), dates |
-| **STB** | Set-Top Box — MAC address (device identity), model, firmware, customer assignment |
-| **STBSession** | Device session token — MAC authenticates → gets short-lived token for playlist/EPG URLs |
+| **Subscription** | Customer ↔ Package link — status (active/suspended/cancelled), start/end dates |
+| **STB** | Optional: Set-Top Box inventory — MAC, model, notes, assigned customer |
+| **SubscriptionKey** | Per-subscription API key — `{ID, SubscriptionID, CustomerID, Token, CreatedAt, RevokedAt}`. Token stored PLAIN (must be showable). Revoke + re-issue if compromised. |
 
 ### STB API protocols served by cmd/stb
 
 | Protocol | Endpoint | Used by |
 |----------|----------|---------|
-| **M3U8 playlist** | `GET /stb/playlist/{mac}.m3u8` | VLC, Tivimate, IPTV apps |
-| **M3U8 + token** | `GET /stb/playlist?token={t}&format=m3u8` | Apps with auth |
-| **XMLTV EPG** | `GET /stb/epg/{mac}.xml` | Any EPG consumer |
-| **Stalker handshake** | `POST /portal/server.php?action=handshake` | MAG 250/500/522, Formuler |
-| **Stalker profile** | `GET /portal/server.php?action=get_profile` | MAG boxes |
-| **Stalker channels** | `GET /portal/server.php?action=get_all_channels` | MAG boxes |
-| **JSON REST** | `POST /stb/api/auth`, `GET /stb/api/channels` | Custom integrations |
+| **M3U8 — SIPTV** | `GET /apis/siptv/playlist/{token}` | SIPTV app (specific M3U8 tags) |
+| **M3U8 — generic** | `GET /apis/tvzone/playlist/{token}` | tvzone, VLC, Tivimate, generic apps |
+| **M3U8 — TVIP** | `GET /apis/tvip/playlist/{token}` | TVIP STBs (custom tag format) |
+| **XMLTV EPG** | `GET /epg/{token}.xml` | Any EPG consumer |
+| **Per-channel stream** | `GET /stream/{token}/{channelID}` | In-M3U8 channel redirect URL |
+| **Stalker/MAG** | `GET /portal/server.php?token={token}&action=...` | MAG 250/500/522, Formuler, clones |
 
-Authentication: STB sends its MAC → core validates MAC is registered + subscription active → returns session token → token embedded in stream URLs or used as Bearer.
+Every channel URL in the M3U8 playlist goes through `/stream/{token}/{channelID}` — this validates the token is still active before redirecting/proxying to the real stream URL. Allows per-subscriber access revocation.
 
 ### NATS RPC for STB API (`isp.stb.rpc.*`)
 
 | Subject | Request | Reply |
 |---------|---------|-------|
-| `isp.stb.rpc.auth` | `{mac, serial?}` | `{token, expiresAt, packageID}` or error if not registered/expired |
-| `isp.stb.rpc.playlist.get` | `{mac}` | `{channels: [{name, streamURL, logoURL, epgID}]}` |
-| `isp.stb.rpc.epg.get` | `{packageID, days}` | `{xmltv: string}` (XMLTV XML) |
-| `isp.stb.rpc.channel.stream` | `{mac, channelID}` | `{streamURL}` (single channel, Stalker create_link) |
-| `isp.stb.rpc.subscription.check` | `{mac}` | `{active: bool, packageID, expiresAt}` |
+| `isp.stb.rpc.key.validate` | `{token}` | `{customerID, subscriptionID, packageID, active}` |
+| `isp.stb.rpc.playlist.get` | `{token}` | `{channels: [{id, name, streamURLTemplate, logoURL, epgID, category}]}` |
+| `isp.stb.rpc.epg.get` | `{token, days}` | `{xmltv: string}` (XMLTV XML) |
+| `isp.stb.rpc.channel.resolve` | `{token, channelID}` | `{streamURL}` (actual stream URL for redirect) |
 
 ---
 
-## Phase 1 — Spec — status: open
+## Phase 1 — Spec — status: skipped
 
-Write the IPTV spec before any code.
+Spec deferred — user requested scaffold directly. Plan adjusted to start with scaffold (Phase 2).
 
-1. [ ] `/eidos:spec` — write `eidos/spec - iptv - channel package stb management.md`
-   - Document domain model: Channel, Package, Subscription, STB, STBToken
-   - Document IPTV admin routes in vvs-core
-   - Document STB portal routes in cmd/stb
+1. [~] `/eidos:spec` — write `eidos/spec - iptv - channel package stb management.md`
+   - => skipped per user instruction ("start iptv module scaffold")
+   - Document domain model: Channel, Package, Subscription, SubscriptionKey (per-sub token), STB (optional device inventory)
+   - Document token-in-URL auth model — no MAC, no session, long-lived key per subscription
+   - Document STB API endpoints in cmd/stb (per-app M3U8 paths, EPG, stream redirect, Stalker)
    - Document NATS RPC subjects (table above)
    - Document RBAC: ModuleIPTV constant, admin UI permissions page
 
 ---
 
-## Phase 2 — IPTV UI Mockup (templ, static) — status: open
+## Phase 2 — IPTV UI Mockup (templ, static) — status: active
 
-Deliver visible screens first — no real DB queries yet, all hardcoded stub data.
-Goal: stakeholder can see and react to the IPTV admin and STB portal screens.
+Delivered as real pages backed by repos (not stub data), merged with Phase 3/4 skeleton.
 
 ### IPTV admin screens (in vvs-core templ)
 
-2. [ ] Create `internal/modules/iptv/adapters/http/templates.templ` with stub pages:
+2. [x] Create `internal/modules/iptv/adapters/http/templates.templ` with stub pages:
+   - => IPTVChannelListPage, IPTVPackageListPage, IPTVSubscriptionListPage, IPTVSTBListPage
+   - => uses real domain types, renders empty-state message when no data
 
    **IPTVDashboardPage** — overview stats + quick actions
    ```
@@ -165,7 +180,7 @@ Goal: stakeholder can see and react to the IPTV admin and STB portal screens.
    **IPTVSubscriberListPage** — customer subscriptions
    **IPTVSTBListPage** — device inventory
 
-3. [ ] Register stub routes in `internal/modules/iptv/adapters/http/handlers.go`
+3. [x] Register stub routes in `internal/modules/iptv/adapters/http/handlers.go`
    - `GET /iptv/dashboard` → IPTVDashboardPage (stub data)
    - `GET /iptv/channels` → IPTVChannelListPage (stub data)
    - `GET /iptv/packages` → IPTVPackageListPage (stub data)
@@ -173,14 +188,17 @@ Goal: stakeholder can see and react to the IPTV admin and STB portal screens.
    - `GET /iptv/stbs` → IPTVSTBListPage (stub data)
    - `ModuleName() authdomain.Module` — return `ModuleIPTV`
 
-4. [ ] Add `ModuleIPTV` to `internal/modules/auth/domain/module.go`
+4. [x] Add `ModuleIPTV` to `internal/modules/auth/domain/permissions.go`
+   - => ModuleIPTV = "iptv"; added to AllModules between ModuleReports and ModuleNetwork
    - Const `ModuleIPTV Module = "iptv"`
 
-5. [ ] Wire stub routes in `internal/app/app.go` (no DB yet)
+5. [x] Wire routes in `internal/app/app.go`
+   - => migration goose_iptv registered; 5 repos instantiated; iptvRoutes wired into moduleRoutes
    - `iptvRoutes := iptvhttp.NewHandlers()`
    - `moduleRoutes = append(moduleRoutes, iptvRoutes)`
 
-6. [ ] Add IPTV nav entry in sidebar
+6. [x] Add IPTV nav entry in sidebar
+   - => "_navIptv" group between Finance and Network; 4 items (Channels/Packages/Subscriptions/STBs); 4 SVG icons added
    - Group: "Services" (new group between Finance and Network)
    - `iptv-icon.svg` or use a simple play-button SVG
 
@@ -208,57 +226,61 @@ Goal: stakeholder can see and react to the IPTV admin and STB portal screens.
 
 ---
 
-## Phase 3 — Domain Layer — status: open
+## Phase 3 — Domain Layer — status: completed
 
-Pure Go domain types, zero framework deps, TDD.
+Pure Go domain types, zero framework deps. Shipped with scaffold (commit 39294d4).
 
-8. [ ] `internal/modules/iptv/domain/channel.go`
+8. [x] `internal/modules/iptv/domain/channel.go`
    - `Channel{ID, Name, LogoURL, StreamURL, Category, EPGSource, Active}`
    - `ChannelRepository` interface (Save, FindByID, FindAll, Delete)
 
-9. [ ] `internal/modules/iptv/domain/package.go`
+9. [x] `internal/modules/iptv/domain/package.go`
    - `Package{ID, Name, Price, Description}` (price in cents)
    - `PackageChannels` — many-to-many via junction
    - `PackageRepository` interface
 
-10. [ ] `internal/modules/iptv/domain/subscription.go`
+10. [x] `internal/modules/iptv/domain/subscription.go`
     - `Subscription{ID, CustomerID, PackageID, Status, StartsAt, EndsAt, CreatedAt}`
     - `Status` enum: active/suspended/cancelled
     - `SubscriptionRepository` interface
 
-11. [ ] `internal/modules/iptv/domain/stb.go`
+11. [x] `internal/modules/iptv/domain/stb.go`
     - `STB{ID, MAC, Model, Firmware, Serial, CustomerID, AssignedAt, Notes}`
     - MAC as normalised uppercase hex (00:1A:2B:...)
     - `STBRepository` interface
 
-12. [ ] `internal/modules/iptv/domain/stb_session.go`
-    - Device-side auth token — MAC authenticates → gets 24h session token for stream URLs
-    - `STBSession{ID, MAC, Token, ExpiresAt, CreatedAt}` (Token = 32-byte random hex)
-    - `STBSessionRepository` interface (Save, FindByToken, DeleteByMAC, PruneExpired)
-    - `NewSTBSession(mac string, ttl duration) (*STBSession, error)`
+12. [x] `internal/modules/iptv/domain/subscription_key.go`
+    - Per-subscription API key — long-lived, embedded in all URLs
+    - `SubscriptionKey{ID, SubscriptionID, CustomerID, PackageID, Token, CreatedAt, RevokedAt}`
+    - Token: 32-byte random hex (64 chars), stored PLAIN in DB (must be showable to admin)
+    - `RevokedAt *time.Time` — nil = active, set = revoked
+    - `SubscriptionKeyRepository` interface (Save, FindByToken, RevokeByID, FindBySubscriptionID)
+    - `NewSubscriptionKey(subscriptionID, customerID, packageID string) (*SubscriptionKey, error)`
 
-13. [ ] Domain unit tests for Channel, Subscription, STBSession
+13. [ ] Domain unit tests for Channel, Subscription, SubscriptionKey (open)
 
 ---
 
-## Phase 4 — Persistence + Migrations — status: open
+## Phase 4 — Persistence + Migrations — status: completed
 
-14. [ ] `internal/modules/iptv/migrations/001_iptv_tables.sql`
+Shipped with scaffold (commit 39294d4).
+
+14. [x] `internal/modules/iptv/migrations/001_iptv_tables.sql`
     ```sql
     CREATE TABLE iptv_channels (id, name, logo_url, stream_url, category, epg_source, active, created_at);
     CREATE TABLE iptv_packages (id, name, price_cents, description, created_at);
     CREATE TABLE iptv_package_channels (package_id, channel_id, PRIMARY KEY(package_id, channel_id));
     CREATE TABLE iptv_subscriptions (id, customer_id REFERENCES customers, package_id, status, starts_at, ends_at, created_at);
     CREATE TABLE iptv_stbs (id, mac UNIQUE, model, firmware, serial, customer_id, assigned_at, notes);
-    CREATE TABLE iptv_stb_sessions (id, mac REFERENCES iptv_stbs(mac), token UNIQUE, expires_at, created_at);
+    CREATE TABLE iptv_subscription_keys (id, subscription_id REFERENCES iptv_subscriptions, customer_id, package_id, token UNIQUE, created_at, revoked_at);
     ```
 
-15. [ ] Persistence adapters:
+15. [x] Persistence adapters:
     - `internal/modules/iptv/adapters/persistence/channel_repository.go`
     - `internal/modules/iptv/adapters/persistence/package_repository.go`
     - `internal/modules/iptv/adapters/persistence/subscription_repository.go`
     - `internal/modules/iptv/adapters/persistence/stb_repository.go`
-    - `internal/modules/iptv/adapters/persistence/stb_session_repository.go`
+    - `internal/modules/iptv/adapters/persistence/subscription_key_repository.go`
 
 ---
 
@@ -272,8 +294,9 @@ Pure Go domain types, zero framework deps, TDD.
     - `AssignChannelToPackageHandler`
     - `CreateSubscriptionHandler`
     - `SuspendSubscriptionHandler`
-    - `AssignSTBHandler` (register MAC → customer + subscription)
-    - `UnassignSTBHandler` (revoke device access — blacklist)
+    - `CreateSubscriptionKeyHandler` — generate SubscriptionKey when subscription is created
+    - `RevokeSubscriptionKeyHandler` — revoke key (issues new key, old stops working)
+    - `AssignSTBHandler` (optional: register MAC → customer, for device inventory only)
 
 17. [ ] Queries:
     - `ListChannelsHandler`
@@ -294,34 +317,38 @@ Pure Go domain types, zero framework deps, TDD.
 
 19. [ ] `internal/modules/iptv/adapters/nats/stb_bridge.go` (core side)
     - Subscribe to `isp.stb.rpc.*` subjects
-    - `handleAuth`: lookup MAC in `iptv_stbs` → verify subscription active → create STBSession → return token
-    - `handlePlaylist`: lookup MAC → get subscription → build channel list with stream URLs
-    - `handleEPG`: lookup packageID → build XMLTV XML string (stub initially, real EPG later)
-    - `handleChannelStream`: single channel URL for Stalker `create_link`
-    - `handleSubscriptionCheck`: quick active/expired check
+    - `handleKeyValidate`: lookup token in `iptv_subscription_keys` → verify not revoked + subscription active → return customerID/packageID
+    - `handlePlaylistGet`: validate token → get package channels → return list with streamURLTemplate (cmd/stb builds full URL: `/stream/{token}/{channelID}`)
+    - `handleEPGGet`: validate token → get packageID → build XMLTV XML
+    - `handleChannelResolve`: validate token + channelID → return actual stream URL for redirect
     - Same `bridgeReply(msg, data, err)` pattern as `portal/adapters/nats/bridge.go`
 
 20. [ ] `internal/modules/iptv/adapters/nats/stb_bridge_test.go`
-    - Tests: auth valid MAC, auth unknown MAC → error, auth expired subscription → error
-    - playlist returns channels, subscription check active/expired
+    - Tests: validate valid token, revoked token → error, expired subscription → error
+    - playlist returns channels list, channel resolve returns stream URL
 
 21. [ ] `internal/modules/iptv/adapters/nats/stb_client.go` (API side)
-    - `STBNATSClient` with `rpc()` helper
-    - Methods: `Auth(mac) (token, packageID, error)`, `GetPlaylist(mac) ([]Channel, error)`
-    - `GetEPG(packageID, days) (string, error)`, `CheckSubscription(mac) (bool, error)`
+    - `STBNATSClient` with `rpc()` helper (same pattern as portal client)
+    - Methods: `ValidateKey(ctx, token)`, `GetPlaylist(ctx, token)`, `GetEPG(ctx, token, days)`, `ResolveChannel(ctx, token, channelID)`
 
 22. [ ] `cmd/stb/main.go` — STB device API binary (NO HTML templates)
     - Flags: `--addr`, `--nats-url`, `--nats-auth-token`, `--base-url`
-    - Routes (machine API):
-      - `GET /stb/playlist/{mac}.m3u8` — M3U8 playlist by MAC
-      - `GET /stb/playlist` — M3U8 playlist by `?token=` or `?mac=`
-      - `GET /stb/epg/{mac}.xml` — XMLTV EPG by MAC
-      - `GET /stb/epg` — XMLTV EPG by `?token=`
-      - `GET /portal/server.php` — Stalker/MAG portal protocol (action= dispatch)
-      - `POST /stb/api/auth` — JSON `{mac, serial}` → `{token, expiresAt}`
-      - `GET /stb/api/channels` — JSON channel list (Bearer token)
+    - Routes — all authenticated by token in URL path:
+      ```
+      GET /apis/siptv/playlist/{token}     → M3U8 (SIPTV-compatible tags)
+      GET /apis/tvzone/playlist/{token}    → M3U8 (generic)
+      GET /apis/tvip/playlist/{token}      → M3U8 (TVIP format)
+      GET /epg/{token}.xml                 → XMLTV EPG
+      GET /stream/{token}/{channelID}      → 302 redirect to actual stream URL
+      GET /portal/server.php               → Stalker/MAG protocol (?token=&action=)
+      ```
+    - M3U8 channel entry example:
+      ```m3u
+      #EXTINF:-1 tvg-id="lnk-hd" tvg-logo="https://..." group-title="National",LNK HD
+      https://stb.example.com/stream/TOKEN64CHARS/lnk-hd
+      ```
     - Zero DB imports — NATS client only
-    - Response: `Content-Type: application/x-mpegURL` for M3U8, `text/xml` for EPG, `application/json` for REST
+    - Content-Types: `application/x-mpegURL` for M3U8, `text/xml` for EPG
 
 23. [ ] `deploy/stb.env.example`
     ```env
@@ -383,3 +410,4 @@ go test ./cmd/stb/...
 ## Progress Log
 
 - 2026-04-19: Plan created — IPTV module + STB portal + multi-service RBAC, 7 phases, 28 actions
+- 2026-04-19: Scaffold complete (commit 39294d4): Phase 2 UI + Phase 3 domain + Phase 4 persistence + migration + nav — `go build ./...` clean
