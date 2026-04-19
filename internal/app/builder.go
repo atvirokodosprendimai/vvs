@@ -3,14 +3,17 @@ package app
 import (
 	"fmt"
 	"log"
+	"net/http"
 
 	natsserver "github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/vvs/isp/internal/infrastructure/database"
 	"github.com/vvs/isp/internal/infrastructure/gormsqlite"
 	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
 	infranats "github.com/vvs/isp/internal/infrastructure/nats"
+	"github.com/vvs/isp/internal/infrastructure/metrics"
 
 	authmigrations      "github.com/vvs/isp/internal/modules/auth/migrations"
 	auditlogmigrations  "github.com/vvs/isp/internal/modules/audit_log/migrations"
@@ -34,6 +37,19 @@ import (
 
 // New constructs and wires the full application.
 func New(cfg Config) (*App, error) {
+	// ── Prometheus metrics ────────────────────────────────────────────────────
+	metrics.Register()
+	if cfg.MetricsAddr != "" {
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.Handler())
+		go func() {
+			log.Printf("metrics server listening on %s", cfg.MetricsAddr)
+			if err := http.ListenAndServe(cfg.MetricsAddr, mux); err != nil {
+				log.Printf("metrics server: %v", err)
+			}
+		}()
+	}
+
 	// ── Database ──────────────────────────────────────────────────────────────
 	gdb, err := gormsqlite.Open(cfg.DatabasePath)
 	if err != nil {

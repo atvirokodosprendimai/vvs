@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/nats-io/nats.go"
+	"github.com/vvs/isp/internal/infrastructure/metrics"
 	"github.com/vvs/isp/internal/shared/events"
 )
 
@@ -21,6 +22,7 @@ func NewSubscriber(nc *nats.Conn) *Subscriber {
 
 func (s *Subscriber) Subscribe(subject string, handler events.EventHandler) error {
 	sub, err := s.nc.Subscribe(subject, func(msg *nats.Msg) {
+		metrics.NATSReceived.WithLabelValues(subject).Inc()
 		var event events.DomainEvent
 		if err := json.Unmarshal(msg.Data, &event); err != nil {
 			fmt.Printf("unmarshal event error: %v\n", err)

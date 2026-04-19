@@ -172,6 +172,11 @@ func serveCommand() *cli.Command {
 				Usage:   "Set Secure flag on session cookie (enable for HTTPS-only production deployments)",
 				Sources: cli.EnvVars("VVS_SECURE_COOKIE"),
 			},
+			&cli.StringFlag{
+				Name:    "metrics-addr",
+				Usage:   "Address for Prometheus /metrics endpoint (e.g. :9091); empty = disabled",
+				Sources: cli.EnvVars("VVS_METRICS_ADDR"),
+			},
 			&cli.BoolFlag{
 				Name:    "debug",
 				Usage:   "Enable verbose debug logging",
@@ -215,6 +220,7 @@ func serveCommand() *cli.Command {
 				SessionLifetimeSecs:   int(cmd.Int("session-lifetime")),
 				SecureCookie:          cmd.Bool("secure-cookie"),
 				BaseURL:               cmd.Root().String("base-url"),
+				MetricsAddr:           cmd.String("metrics-addr"),
 				EnabledModules:        enabledModules,
 				Debug:                 cmd.Bool("debug"),
 			}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/nats-io/nats.go"
+	"github.com/vvs/isp/internal/infrastructure/metrics"
 	"github.com/vvs/isp/internal/shared/events"
 )
 
@@ -22,5 +23,9 @@ func (p *Publisher) Publish(_ context.Context, subject string, event events.Doma
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
 	}
-	return p.nc.Publish(subject, data)
+	if err := p.nc.Publish(subject, data); err != nil {
+		return err
+	}
+	metrics.NATSPublished.WithLabelValues(subject).Inc()
+	return nil
 }

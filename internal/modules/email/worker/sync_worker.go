@@ -9,6 +9,7 @@ import (
 	imapAdapter "github.com/vvs/isp/internal/modules/email/adapters/imap"
 	"github.com/vvs/isp/internal/modules/email/adapters/persistence"
 	"github.com/vvs/isp/internal/modules/email/domain"
+	"github.com/vvs/isp/internal/infrastructure/metrics"
 	"github.com/vvs/isp/internal/shared/events"
 )
 
@@ -137,12 +138,14 @@ func (w *SyncWorker) syncAccount(ctx context.Context, account *domain.EmailAccou
 	err := imapAdapter.Fetch(ctx, account, w.repos, newID, w.pub)
 	if err != nil {
 		slog.Error("email sync: account failed", "account", account.Name, "err", err)
+		metrics.EmailSyncErrors.Inc()
 		account.SetError(err.Error())
 		if saveErr := w.repos.Accounts.Save(ctx, account); saveErr != nil {
 			slog.Error("email sync: save error state", "account", account.Name, "err", saveErr)
 		}
 		return
 	}
+	metrics.EmailSyncMessages.Inc()
 	slog.Info("email sync: account done", "account", account.Name, "last_uid", account.LastUID)
 }
 

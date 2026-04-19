@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/vvs/isp/internal/infrastructure/metrics"
 	"github.com/vvs/isp/internal/modules/invoice/domain"
 	"github.com/vvs/isp/internal/shared/events"
 )
@@ -70,8 +71,10 @@ func (w *InvoiceDeliveryWorker) handleFinalized(ctx context.Context, event event
 
 	if err := w.mailer.Send(ctx, toEmail, subject, body); err != nil {
 		log.Printf("invoice delivery: send to %s: %v", toEmail, err)
+		metrics.InvoiceDeliveryErr.Inc()
 		return
 	}
+	metrics.InvoiceDelivered.Inc()
 	log.Printf("invoice delivery: sent invoice %s to %s", inv.Code, toEmail)
 }
 

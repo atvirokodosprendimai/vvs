@@ -56,6 +56,10 @@ type Config struct {
 	// Example: "https://isp.example.com". Defaults to http://host when empty.
 	BaseURL string // VVS_BASE_URL env var
 
+	// MetricsAddr is the address for the Prometheus /metrics endpoint (e.g. ":9091").
+	// When empty, the metrics server is not started.
+	MetricsAddr string // VVS_METRICS_ADDR env var
+
 	// Debug enables verbose debug logging (slog DEBUG level).
 	Debug bool
 }
