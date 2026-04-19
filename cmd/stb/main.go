@@ -120,6 +120,7 @@ func runSTB(ctx context.Context, cmd *cli.Command) error {
 
 	// ── EPG ─────────────────────────────────────────────────────────────────
 	r.Get("/epg/{token}.xml", epgHandler(client))
+	r.Get("/epg/{token}/now.json", epgShortHandler(client))
 
 	// ── Stream redirect ──────────────────────────────────────────────────────
 	r.Get("/stream/{token}/{channelID}", streamHandler(client))
@@ -198,6 +199,19 @@ func epgHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/xml; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, xmltv)
+	}
+}
+
+func epgShortHandler(client *iptvnats.STBNATSClient) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		token := chi.URLParam(r, "token")
+		entries, err := client.GetEPGShort(r.Context(), token)
+		if err != nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(entries)
 	}
 }
 

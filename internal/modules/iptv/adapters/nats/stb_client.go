@@ -75,6 +75,31 @@ func (c *STBNATSClient) GetEPG(ctx context.Context, token string, days int) (str
 	return resp.XMLTV, nil
 }
 
+// EPGShortEntry is current+next programme for one channel.
+type EPGShortEntry struct {
+	ChannelEPGID string        `json:"channelEPGID"`
+	Current      *EPGShortSlot `json:"current,omitempty"`
+	Next         *EPGShortSlot `json:"next,omitempty"`
+}
+
+// EPGShortSlot is a single programme slot in the short EPG response.
+type EPGShortSlot struct {
+	Title     string `json:"title"`
+	StartTime string `json:"start"`
+	StopTime  string `json:"stop"`
+}
+
+// GetEPGShort returns current+next programme per channel for the subscriber.
+func (c *STBNATSClient) GetEPGShort(ctx context.Context, token string) ([]EPGShortEntry, error) {
+	var resp struct {
+		Programmes []EPGShortEntry `json:"programmes"`
+	}
+	if err := c.rpc(ctx, SubjectEPGShort, map[string]string{"token": token}, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Programmes, nil
+}
+
 // ── Channel resolve ───────────────────────────────────────────────────────────
 
 func (c *STBNATSClient) ResolveChannel(ctx context.Context, token, channelID string) (string, error) {

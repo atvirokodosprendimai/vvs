@@ -40,6 +40,14 @@ type stubChannelReader struct {
 	byID      map[string]*domain.Channel
 }
 
+type stubEPGReader struct {
+	data map[string][2]*domain.EPGProgramme
+}
+
+func (s *stubEPGReader) ListCurrentAndNext(_ context.Context, _ []string) (map[string][2]*domain.EPGProgramme, error) {
+	return s.data, nil
+}
+
 func newStubChannelReader() *stubChannelReader {
 	return &stubChannelReader{byID: make(map[string]*domain.Channel)}
 }
@@ -63,6 +71,7 @@ type bridgeFixture struct {
 	keys     *stubKeyReader
 	subs     *stubSubReader
 	channels *stubChannelReader
+	epg      *stubEPGReader
 }
 
 func startSTBBridge(t *testing.T) *bridgeFixture {
@@ -76,9 +85,10 @@ func startSTBBridge(t *testing.T) *bridgeFixture {
 		keys:     &stubKeyReader{},
 		subs:     &stubSubReader{},
 		channels: newStubChannelReader(),
+		epg:      &stubEPGReader{},
 	}
 
-	bridge := iptvnats.NewSTBBridge(serverNC, fix.keys, fix.subs, fix.channels)
+	bridge := iptvnats.NewSTBBridge(serverNC, fix.keys, fix.subs, fix.channels, fix.epg)
 	require.NoError(t, bridge.Register())
 	t.Cleanup(bridge.Close)
 
@@ -233,6 +243,58 @@ func TestSTBBridge_ChannelResolve_InactiveChannel(t *testing.T) {
 		"channelID": "ch-inactive",
 	})
 	assert.NotEmpty(t, env["error"])
+}
+
+// ── EPGGet ────────────────────────────────────────────────────────────────────
+
+// ── EPGShort ──────────────────────────────────────────────────────────────────
+
+func TestSTBBridge_EPGShort_ReturnsCurrentAndNext(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Minute)
+	fix := startSTBBridge(t)
+	fix.keys.key = activeKey()
+	fix.subs.sub = activeSub()
+	fix.channels.byPackage = []*domain.Channel{
+		{ID: "ch-1", Name: "BBC", EPGSource: "bbc.co.uk", Active: true},
+	}
+	fix.epg.data = map[string][2]*domain.EPGProgramme{
+		"bbc.co.uk": {
+			{ID: "p1", ChannelEPGID: "bbc.co.uk", Title: "News", StartTime: now, StopTime: now.Add(time.Hour)},
+			{ID: "p2", ChannelEPGID: "bbc.co.uk", Title: "Film", StartTime: now.Add(time.Hour), StopTime: now.Add(2 * time.Hour)},
+		},
+	}
+
+	env := rpcSTB(t, fix.clientNC, iptvnats.SubjectEPGShort, map[string]string{"token": "abc123"})
+	assert.Empty(t, env["error"])
+	data := env["data"].(map[string]any)
+	progs := data["programmes"].([]any)
+	require.Len(t, progs, 1)
+	entry := progs[0].(map[string]any)
+	assert.Equal(t, "bbc.co.uk", entry["channelEPGID"])
+	current := entry["current"].(map[string]any)
+	assert.Equal(t, "News", current["title"])
+	next := entry["next"].(map[string]any)
+	assert.Equal(t, "Film", next["title"])
+}
+
+func TestSTBBridge_EPGShort_NoSlotsWhenNoData(t *testing.T) {
+	fix := startSTBBridge(t)
+	fix.keys.key = activeKey()
+	fix.subs.sub = activeSub()
+	fix.channels.byPackage = []*domain.Channel{
+		{ID: "ch-1", Name: "BBC", EPGSource: "bbc.co.uk", Active: true},
+	}
+	// epg.data is nil — no programmes loaded
+
+	env := rpcSTB(t, fix.clientNC, iptvnats.SubjectEPGShort, map[string]string{"token": "abc123"})
+	assert.Empty(t, env["error"])
+	data := env["data"].(map[string]any)
+	progs := data["programmes"].([]any)
+	require.Len(t, progs, 1, "channel still appears even without EPG data")
+	entry := progs[0].(map[string]any)
+	assert.Equal(t, "bbc.co.uk", entry["channelEPGID"])
+	_, hasCurrent := entry["current"]
+	assert.False(t, hasCurrent, "no current slot when no programme data")
 }
 
 // ── EPGGet ────────────────────────────────────────────────────────────────────

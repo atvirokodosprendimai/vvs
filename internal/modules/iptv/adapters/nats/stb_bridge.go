@@ -18,10 +18,11 @@ import (
 
 // Subjects served by STBBridge.
 const (
-	SubjectKeyValidate     = "isp.stb.rpc.key.validate"
-	SubjectPlaylistGet     = "isp.stb.rpc.playlist.get"
-	SubjectEPGGet          = "isp.stb.rpc.epg.get"
-	SubjectChannelResolve  = "isp.stb.rpc.channel.resolve"
+	SubjectKeyValidate    = "isp.stb.rpc.key.validate"
+	SubjectPlaylistGet    = "isp.stb.rpc.playlist.get"
+	SubjectEPGGet         = "isp.stb.rpc.epg.get"
+	SubjectEPGShort       = "isp.stb.rpc.epg.short"
+	SubjectChannelResolve = "isp.stb.rpc.channel.resolve"
 )
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
@@ -39,6 +40,10 @@ type channelsByPackageReader interface {
 	FindByID(ctx context.Context, id string) (*domain.Channel, error)
 }
 
+type epgCurrentNextReader interface {
+	ListCurrentAndNext(ctx context.Context, channelEPGIDs []string) (map[string][2]*domain.EPGProgramme, error)
+}
+
 // STBBridge subscribes to isp.stb.rpc.* subjects and serves STB data.
 // Runs on vvs-core — has direct access to SQLite via the injected repos.
 type STBBridge struct {
@@ -46,6 +51,7 @@ type STBBridge struct {
 	keys     subscriptionKeyReader
 	subs     subscriptionReader
 	channels channelsByPackageReader
+	epg      epgCurrentNextReader
 	nSubs    []*nats.Subscription
 }
 
@@ -55,8 +61,9 @@ func NewSTBBridge(
 	keys subscriptionKeyReader,
 	subs subscriptionReader,
 	channels channelsByPackageReader,
+	epg epgCurrentNextReader,
 ) *STBBridge {
-	return &STBBridge{nc: nc, keys: keys, subs: subs, channels: channels}
+	return &STBBridge{nc: nc, keys: keys, subs: subs, channels: channels, epg: epg}
 }
 
 // Register subscribes to all STB RPC subjects.
@@ -68,6 +75,7 @@ func (b *STBBridge) Register() error {
 		{SubjectKeyValidate, b.handleKeyValidate},
 		{SubjectPlaylistGet, b.handlePlaylistGet},
 		{SubjectEPGGet, b.handleEPGGet},
+		{SubjectEPGShort, b.handleEPGShort},
 		{SubjectChannelResolve, b.handleChannelResolve},
 	}
 	for _, e := range entries {
@@ -223,6 +231,94 @@ func (b *STBBridge) handleEPGGet(msg *nats.Msg) {
 	stbBridgeReply(msg, struct {
 		XMLTV string `json:"xmltv"`
 	}{xmltv}, nil)
+}
+
+func (b *STBBridge) handleEPGShort(msg *nats.Msg) {
+	var req struct {
+		Token string `json:"token"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil {
+		stbBridgeReply(msg, nil, err)
+		return
+	}
+	if req.Token == "" {
+		stbBridgeReply(msg, nil, errInvalidToken)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	key, sub, err := b.resolveKey(ctx, req.Token)
+	if err != nil {
+		stbBridgeReply(msg, nil, err)
+		return
+	}
+	if sub.Status != domain.SubscriptionActive {
+		stbBridgeReply(msg, nil, errSuspended)
+		return
+	}
+
+	chs, err := b.channels.FindByPackage(ctx, key.PackageID)
+	if err != nil {
+		stbBridgeReply(msg, nil, err)
+		return
+	}
+
+	// Collect EPG IDs for active channels.
+	epgIDs := make([]string, 0, len(chs))
+	for _, ch := range chs {
+		if !ch.Active {
+			continue
+		}
+		epgID := ch.EPGSource
+		if epgID == "" {
+			epgID = ch.ID
+		}
+		epgIDs = append(epgIDs, epgID)
+	}
+
+	currentNext, err := b.epg.ListCurrentAndNext(ctx, epgIDs)
+	if err != nil {
+		stbBridgeReply(msg, nil, err)
+		return
+	}
+
+	type progSlot struct {
+		Title     string `json:"title"`
+		StartTime string `json:"start"`
+		StopTime  string `json:"stop"`
+	}
+	type entry struct {
+		ChannelEPGID string   `json:"channelEPGID"`
+		Current      *progSlot `json:"current,omitempty"`
+		Next         *progSlot `json:"next,omitempty"`
+	}
+
+	toSlot := func(p *domain.EPGProgramme) *progSlot {
+		if p == nil {
+			return nil
+		}
+		return &progSlot{
+			Title:     p.Title,
+			StartTime: p.StartTime.Format(time.RFC3339),
+			StopTime:  p.StopTime.Format(time.RFC3339),
+		}
+	}
+
+	items := make([]entry, 0, len(epgIDs))
+	for _, epgID := range epgIDs {
+		pair := currentNext[epgID]
+		items = append(items, entry{
+			ChannelEPGID: epgID,
+			Current:      toSlot(pair[0]),
+			Next:         toSlot(pair[1]),
+		})
+	}
+
+	stbBridgeReply(msg, struct {
+		Programmes []entry `json:"programmes"`
+	}{items}, nil)
 }
 
 func (b *STBBridge) handleChannelResolve(msg *nats.Msg) {
