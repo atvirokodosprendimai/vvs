@@ -8,6 +8,8 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import authdomain "github.com/vvs/isp/internal/modules/auth/domain"
+
 func Layout(title string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -36,7 +38,7 @@ func Layout(title string) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 9, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 11, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -129,6 +131,11 @@ func Sidebar() templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
+		ps := authdomain.PermissionsFromCtx(ctx)
+		crmVisible := ps.CanView(authdomain.ModuleCustomers) || ps.CanView(authdomain.ModuleDeals) || ps.CanView(authdomain.ModuleTickets) || ps.CanView(authdomain.ModuleTasks)
+		financeVisible := ps.CanView(authdomain.ModuleInvoices) || ps.CanView(authdomain.ModuleProducts) || ps.CanView(authdomain.ModulePayments)
+		networkVisible := ps.CanView(authdomain.ModuleNetwork)
+		systemVisible := ps.CanView(authdomain.ModuleEmail) || ps.CanView(authdomain.ModuleCron) || ps.CanView(authdomain.ModuleAuditLog) || ps.CanView(authdomain.ModuleUsers)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<nav class=\"w-56 bg-neutral-900 border-r border-neutral-800 p-3 flex flex-col justify-between h-full\" data-signals=\"{_notifOpen:false, _navCrm:true, _navFinance:true, _navNetwork:true, _navSystem:false}\" data-init=\"(function(){try{var p=JSON.parse(localStorage.getItem('navState')||'{}');$_navCrm=p.crm??$_navCrm;$_navFinance=p.finance??$_navFinance;$_navNetwork=p.network??$_navNetwork;$_navSystem=p.system??$_navSystem}catch(e){}})()\" data-effect=\"localStorage.setItem('navState',JSON.stringify({crm:$_navCrm,finance:$_navFinance,network:$_navNetwork,system:$_navSystem}))\"><div class=\"flex flex-col gap-0.5 overflow-y-auto min-h-0 flex-1\"><div class=\"flex items-center justify-between mb-4 px-2 pt-1\"><span class=\"text-amber-400 font-bold text-base tracking-widest uppercase\">VVS ISP</span><!-- Notification bell --><div id=\"notif-container\" class=\"relative\"><button data-on:click=\"($_notifOpen = !$_notifOpen) && @post('/api/notifications/read')\" class=\"relative p-1 text-neutral-500 hover:text-neutral-300 transition-colors\" title=\"Notifications\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0\"></path></svg> <span id=\"notif-badge\"></span></button></div></div><!-- Main -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -145,115 +152,161 @@ func Sidebar() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = NavGroup("CRM", "_navCrm", crmIcon()).Render(ctx, templ_7745c5c3_Buffer)
+		if crmVisible {
+			templ_7745c5c3_Err = NavGroup("CRM", "_navCrm", crmIcon()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " <div data-show=\"$_navCrm\" style=\"display:none\" class=\"flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = NavItem("/crm", "Overview", crmIcon()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if ps.CanView(authdomain.ModuleCustomers) {
+				templ_7745c5c3_Err = NavItem("/customers", "Customers", customersIcon()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if ps.CanView(authdomain.ModuleDeals) {
+				templ_7745c5c3_Err = NavItem("/deals", "Deals", dealsNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if ps.CanView(authdomain.ModuleTickets) {
+				templ_7745c5c3_Err = NavItem("/tickets", "Tickets", ticketsNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if ps.CanView(authdomain.ModuleTasks) {
+				templ_7745c5c3_Err = NavItem("/tasks", "Tasks", taskNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- Finance -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<div data-show=\"$_navCrm\" style=\"display:none\" class=\"flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2\">")
+		if financeVisible {
+			templ_7745c5c3_Err = NavGroup("Finance", "_navFinance", financeNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, " <div data-show=\"$_navFinance\" style=\"display:none\" class=\"flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if ps.CanView(authdomain.ModuleInvoices) {
+				templ_7745c5c3_Err = NavItem("/invoices", "Invoices", invoicesNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if ps.CanView(authdomain.ModuleProducts) {
+				templ_7745c5c3_Err = NavItem("/products", "Products", productsIcon()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if ps.CanView(authdomain.ModulePayments) {
+				templ_7745c5c3_Err = NavItem("/payments/import", "Pay Import", paymentsNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<!-- Network -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = NavItem("/crm", "Overview", crmIcon()).Render(ctx, templ_7745c5c3_Buffer)
+		if networkVisible {
+			templ_7745c5c3_Err = NavGroup("Network", "_navNetwork", networkNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, " <div data-show=\"$_navNetwork\" style=\"display:none\" class=\"flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = NavItem("/routers", "Routers", routersIcon()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = NavItem("/prefixes", "Prefixes", prefixesIcon()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = NavItem("/devices", "Devices", devicesIcon()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<!-- System -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = NavItem("/customers", "Customers", customersIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
+		if systemVisible {
+			templ_7745c5c3_Err = NavGroup("System", "_navSystem", systemNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, " <div data-show=\"$_navSystem\" style=\"display:none\" class=\"flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if ps.CanView(authdomain.ModuleUsers) {
+				templ_7745c5c3_Err = NavItem("/users", "Users", usersIcon()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if ps.CanView(authdomain.ModuleCron) {
+				templ_7745c5c3_Err = NavItem("/cron", "Cron", cronIcon()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			if ps.CanView(authdomain.ModuleEmail) {
+				templ_7745c5c3_Err = NavItem("/emails", "Email", emailNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = NavItem("/attachments", "Attachments", attachmentsNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if ps.CanView(authdomain.ModuleAuditLog) {
+				templ_7745c5c3_Err = NavItem("/audit-logs", "Audit Log", auditLogIcon()).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
-		templ_7745c5c3_Err = NavItem("/deals", "Deals", dealsNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/tickets", "Tickets", ticketsNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/tasks", "Tasks", taskNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div><!-- Finance -->")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavGroup("Finance", "_navFinance", financeNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div data-show=\"$_navFinance\" style=\"display:none\" class=\"flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/invoices", "Invoices", invoicesNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/products", "Products", productsIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/payments/import", "Pay Import", paymentsNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div><!-- Network -->")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavGroup("Network", "_navNetwork", networkNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div data-show=\"$_navNetwork\" style=\"display:none\" class=\"flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/routers", "Routers", routersIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/prefixes", "Prefixes", prefixesIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/devices", "Devices", devicesIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div><!-- System -->")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavGroup("System", "_navSystem", systemNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div data-show=\"$_navSystem\" style=\"display:none\" class=\"flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/users", "Users", usersIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/cron", "Cron", cronIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/emails", "Email", emailNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/attachments", "Attachments", attachmentsNavIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = NavItem("/audit-logs", "Audit Log", auditLogIcon()).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div></div><!-- Notification panel — shown when $_notifOpen is true --><div data-show=\"$_notifOpen\" class=\"absolute left-0 top-0 w-56 h-full bg-neutral-900 border-r border-neutral-800 flex flex-col z-10\" style=\"display:none\"><div class=\"flex items-center justify-between px-4 py-3 border-b border-neutral-800\"><span class=\"text-sm font-medium text-neutral-200\">Notifications</span> <button data-on:click=\"$_notifOpen = false\" class=\"text-neutral-500 hover:text-neutral-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex-1 overflow-y-auto\"><ul id=\"notifications\" class=\"flex flex-col divide-y divide-neutral-800\"><li class=\"px-4 py-6 text-center text-xs text-neutral-600\">Loading...</li></ul></div></div><div class=\"flex flex-col gap-1 border-t border-neutral-800 pt-3\"><div data-show=\"$_userRole === 'viewer'\" style=\"display:none\" class=\"mx-2 mb-1 px-2 py-1 rounded bg-neutral-800 border border-neutral-700 text-xs text-neutral-500 flex items-center gap-1.5\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-3 h-3 flex-shrink-0\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z\"></path><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15 12a3 3 0 11-6 0 3 3 0 016 0z\"></path></svg> Read-only mode</div><div id=\"server-clock\" class=\"px-2 py-1.5 text-xs text-neutral-600 font-mono\">--:--:--</div><a href=\"/profile\" class=\"flex items-center gap-2.5 px-2 py-1.5 rounded text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors text-sm w-full\"><span class=\"w-4 h-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</div><!-- Notification panel — shown when $_notifOpen is true --><div data-show=\"$_notifOpen\" class=\"absolute left-0 top-0 w-56 h-full bg-neutral-900 border-r border-neutral-800 flex flex-col z-10\" style=\"display:none\"><div class=\"flex items-center justify-between px-4 py-3 border-b border-neutral-800\"><span class=\"text-sm font-medium text-neutral-200\">Notifications</span> <button data-on:click=\"$_notifOpen = false\" class=\"text-neutral-500 hover:text-neutral-300 transition-colors\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-4 h-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M6 18L18 6M6 6l12 12\"></path></svg></button></div><div class=\"flex-1 overflow-y-auto\"><ul id=\"notifications\" class=\"flex flex-col divide-y divide-neutral-800\"><li class=\"px-4 py-6 text-center text-xs text-neutral-600\">Loading...</li></ul></div></div><div class=\"flex flex-col gap-1 border-t border-neutral-800 pt-3\"><div data-show=\"$_userRole === 'viewer'\" style=\"display:none\" class=\"mx-2 mb-1 px-2 py-1 rounded bg-neutral-800 border border-neutral-700 text-xs text-neutral-500 flex items-center gap-1.5\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-3 h-3 flex-shrink-0\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"1.5\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z\"></path><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M15 12a3 3 0 11-6 0 3 3 0 016 0z\"></path></svg> Read-only mode</div><div id=\"server-clock\" class=\"px-2 py-1.5 text-xs text-neutral-600 font-mono\">--:--:--</div><a href=\"/profile\" class=\"flex items-center gap-2.5 px-2 py-1.5 rounded text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors text-sm w-full\"><span class=\"w-4 h-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -261,7 +314,7 @@ func Sidebar() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span> Profile</a> <button data-on:click=\"@post('/api/logout')\" class=\"flex items-center gap-2.5 px-2 py-1.5 rounded text-neutral-500 hover:text-red-400 hover:bg-neutral-800 transition-colors text-sm w-full\"><span class=\"w-4 h-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</span> Profile</a> <button data-on:click=\"@post('/api/logout')\" class=\"flex items-center gap-2.5 px-2 py-1.5 rounded text-neutral-500 hover:text-red-400 hover:bg-neutral-800 transition-colors text-sm w-full\"><span class=\"w-4 h-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -269,7 +322,7 @@ func Sidebar() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span> Sign out</button></div></nav>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</span> Sign out</button></div></nav>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -298,20 +351,20 @@ func NavGroup(label string, signal string, icon string) templ.Component {
 			templ_7745c5c3_Var5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<button data-on:click=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<button data-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs("$" + signal + " = !$" + signal)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 223, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 262, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\" class=\"flex items-center justify-between w-full px-2 py-1.5 mt-3 mb-0.5 rounded text-neutral-500 hover:text-neutral-300 transition-colors text-xs font-semibold uppercase tracking-wider\"><div class=\"flex items-center gap-2\"><span class=\"w-3.5 h-3.5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" class=\"flex items-center justify-between w-full px-2 py-1.5 mt-3 mb-0.5 rounded text-neutral-500 hover:text-neutral-300 transition-colors text-xs font-semibold uppercase tracking-wider\"><div class=\"flex items-center gap-2\"><span class=\"w-3.5 h-3.5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -319,33 +372,33 @@ func NavGroup(label string, signal string, icon string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</span> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</span> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 230, Col: 10}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 269, Col: 10}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-3 h-3 transition-transform\" data-class:rotate-180=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"w-3 h-3 transition-transform\" data-class:rotate-180=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("$" + signal)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 235, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 274, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"2\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.5 8.25l-7.5 7.5-7.5-7.5\"></path></svg></button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" fill=\"none\" viewBox=\"0 0 24 24\" stroke-width=\"2\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M19.5 8.25l-7.5 7.5-7.5-7.5\"></path></svg></button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -374,20 +427,20 @@ func NavItem(href string, label string, icon string) templ.Component {
 			templ_7745c5c3_Var9 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var10 templ.SafeURL
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 245, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 284, Col: 28}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" class=\"flex items-center gap-2.5 px-2 py-1.5 rounded text-neutral-400 hover:text-amber-400 hover:bg-neutral-800 transition-colors text-sm\"><span class=\"w-4 h-4\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" class=\"flex items-center gap-2.5 px-2 py-1.5 rounded text-neutral-400 hover:text-amber-400 hover:bg-neutral-800 transition-colors text-sm\"><span class=\"w-4 h-4\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -395,20 +448,20 @@ func NavItem(href string, label string, icon string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</span> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</span> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 251, Col: 9}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/infrastructure/http/templates/layout.templ`, Line: 290, Col: 9}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</a>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</a>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -437,7 +490,7 @@ func Toast() templ.Component {
 			templ_7745c5c3_Var12 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div id=\"toast-container\" class=\"fixed top-4 right-4 z-50 flex flex-col gap-2\" data-signals=\"{toastMessage: '', toastType: 'info', toastVisible: false}\"><div data-show=\"$toastVisible\" class=\"px-4 py-3 rounded shadow-lg border border-neutral-700 bg-neutral-800 text-neutral-100 min-w-[300px] text-sm\"><span data-text=\"$toastMessage\"></span></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div id=\"toast-container\" class=\"fixed top-4 right-4 z-50 flex flex-col gap-2\" data-signals=\"{toastMessage: '', toastType: 'info', toastVisible: false}\"><div data-show=\"$toastVisible\" class=\"px-4 py-3 rounded shadow-lg border border-neutral-700 bg-neutral-800 text-neutral-100 min-w-[300px] text-sm\"><span data-text=\"$toastMessage\"></span></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

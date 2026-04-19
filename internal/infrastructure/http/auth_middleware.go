@@ -10,23 +10,16 @@ import (
 	authdomain "github.com/vvs/isp/internal/modules/auth/domain"
 )
 
-// ── Module permission context ──────────────────────────────────────────────
-
-type permContextKey struct{}
-
 // WithPermissions stores a PermissionSet in the context.
+// Delegates to authdomain so templates can read it without a circular import.
 func WithPermissions(ctx context.Context, ps authdomain.PermissionSet) context.Context {
-	return context.WithValue(ctx, permContextKey{}, ps)
+	return authdomain.WithPermissions(ctx, ps)
 }
 
 // PermissionsFromCtx retrieves the PermissionSet from context.
 // Returns an empty (deny-all) set if not found.
 func PermissionsFromCtx(ctx context.Context) authdomain.PermissionSet {
-	ps, _ := ctx.Value(permContextKey{}).(authdomain.PermissionSet)
-	if ps == nil {
-		return authdomain.PermissionSet{}
-	}
-	return ps
+	return authdomain.PermissionsFromCtx(ctx)
 }
 
 // InjectModulePermissions loads the role's PermissionSet from DB into the request context.

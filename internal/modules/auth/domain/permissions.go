@@ -2,6 +2,25 @@ package domain
 
 import "context"
 
+// ── Permission context helpers ─────────────────────────────────────────────
+
+type permContextKey struct{}
+
+// WithPermissions stores a PermissionSet in the context.
+func WithPermissions(ctx context.Context, ps PermissionSet) context.Context {
+	return context.WithValue(ctx, permContextKey{}, ps)
+}
+
+// PermissionsFromCtx retrieves the PermissionSet from context.
+// Returns an empty (deny-all) set if not found.
+func PermissionsFromCtx(ctx context.Context) PermissionSet {
+	ps, _ := ctx.Value(permContextKey{}).(PermissionSet)
+	if ps == nil {
+		return PermissionSet{}
+	}
+	return ps
+}
+
 // Module identifies a navigable feature area of the system.
 type Module string
 

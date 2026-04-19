@@ -1,5 +1,7 @@
 package templates
 
+import authdomain "github.com/vvs/isp/internal/modules/auth/domain"
+
 templ Layout(title string) {
 	<!DOCTYPE html>
 	<html lang="en" class="dark">
@@ -93,6 +95,13 @@ templ chatWidget() {
 }
 
 templ Sidebar() {
+	{{
+		ps := authdomain.PermissionsFromCtx(ctx)
+		crmVisible    := ps.CanView(authdomain.ModuleCustomers) || ps.CanView(authdomain.ModuleDeals) || ps.CanView(authdomain.ModuleTickets) || ps.CanView(authdomain.ModuleTasks)
+		financeVisible := ps.CanView(authdomain.ModuleInvoices) || ps.CanView(authdomain.ModuleProducts) || ps.CanView(authdomain.ModulePayments)
+		networkVisible := ps.CanView(authdomain.ModuleNetwork)
+		systemVisible  := ps.CanView(authdomain.ModuleEmail) || ps.CanView(authdomain.ModuleCron) || ps.CanView(authdomain.ModuleAuditLog) || ps.CanView(authdomain.ModuleUsers)
+	}}
 	<nav
 		class="w-56 bg-neutral-900 border-r border-neutral-800 p-3 flex flex-col justify-between h-full"
 		data-signals="{_notifOpen:false, _navCrm:true, _navFinance:true, _navNetwork:true, _navSystem:false}"
@@ -125,40 +134,70 @@ templ Sidebar() {
 			@NavItem("/chat", "Chat", chatNavIcon())
 
 			<!-- CRM -->
-			@NavGroup("CRM", "_navCrm", crmIcon())
-			<div data-show="$_navCrm" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
-				@NavItem("/crm", "Overview", crmIcon())
-				@NavItem("/customers", "Customers", customersIcon())
-				@NavItem("/deals", "Deals", dealsNavIcon())
-				@NavItem("/tickets", "Tickets", ticketsNavIcon())
-				@NavItem("/tasks", "Tasks", taskNavIcon())
-			</div>
+			if crmVisible {
+				@NavGroup("CRM", "_navCrm", crmIcon())
+				<div data-show="$_navCrm" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
+					@NavItem("/crm", "Overview", crmIcon())
+					if ps.CanView(authdomain.ModuleCustomers) {
+						@NavItem("/customers", "Customers", customersIcon())
+					}
+					if ps.CanView(authdomain.ModuleDeals) {
+						@NavItem("/deals", "Deals", dealsNavIcon())
+					}
+					if ps.CanView(authdomain.ModuleTickets) {
+						@NavItem("/tickets", "Tickets", ticketsNavIcon())
+					}
+					if ps.CanView(authdomain.ModuleTasks) {
+						@NavItem("/tasks", "Tasks", taskNavIcon())
+					}
+				</div>
+			}
 
 			<!-- Finance -->
-			@NavGroup("Finance", "_navFinance", financeNavIcon())
-			<div data-show="$_navFinance" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
-				@NavItem("/invoices", "Invoices", invoicesNavIcon())
-				@NavItem("/products", "Products", productsIcon())
-				@NavItem("/payments/import", "Pay Import", paymentsNavIcon())
-			</div>
+			if financeVisible {
+				@NavGroup("Finance", "_navFinance", financeNavIcon())
+				<div data-show="$_navFinance" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
+					if ps.CanView(authdomain.ModuleInvoices) {
+						@NavItem("/invoices", "Invoices", invoicesNavIcon())
+					}
+					if ps.CanView(authdomain.ModuleProducts) {
+						@NavItem("/products", "Products", productsIcon())
+					}
+					if ps.CanView(authdomain.ModulePayments) {
+						@NavItem("/payments/import", "Pay Import", paymentsNavIcon())
+					}
+				</div>
+			}
 
 			<!-- Network -->
-			@NavGroup("Network", "_navNetwork", networkNavIcon())
-			<div data-show="$_navNetwork" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
-				@NavItem("/routers", "Routers", routersIcon())
-				@NavItem("/prefixes", "Prefixes", prefixesIcon())
-				@NavItem("/devices", "Devices", devicesIcon())
-			</div>
+			if networkVisible {
+				@NavGroup("Network", "_navNetwork", networkNavIcon())
+				<div data-show="$_navNetwork" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
+					@NavItem("/routers", "Routers", routersIcon())
+					@NavItem("/prefixes", "Prefixes", prefixesIcon())
+					@NavItem("/devices", "Devices", devicesIcon())
+				</div>
+			}
 
 			<!-- System -->
-			@NavGroup("System", "_navSystem", systemNavIcon())
-			<div data-show="$_navSystem" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
-				@NavItem("/users", "Users", usersIcon())
-				@NavItem("/cron", "Cron", cronIcon())
-				@NavItem("/emails", "Email", emailNavIcon())
-				@NavItem("/attachments", "Attachments", attachmentsNavIcon())
-				@NavItem("/audit-logs", "Audit Log", auditLogIcon())
-			</div>
+			if systemVisible {
+				@NavGroup("System", "_navSystem", systemNavIcon())
+				<div data-show="$_navSystem" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
+					if ps.CanView(authdomain.ModuleUsers) {
+						@NavItem("/users", "Users", usersIcon())
+					}
+					if ps.CanView(authdomain.ModuleCron) {
+						@NavItem("/cron", "Cron", cronIcon())
+					}
+					if ps.CanView(authdomain.ModuleEmail) {
+						@NavItem("/emails", "Email", emailNavIcon())
+					}
+					@NavItem("/attachments", "Attachments", attachmentsNavIcon())
+					if ps.CanView(authdomain.ModuleAuditLog) {
+						@NavItem("/audit-logs", "Audit Log", auditLogIcon())
+					}
+				</div>
+			}
 		</div>
 
 		<!-- Notification panel — shown when $_notifOpen is true -->
