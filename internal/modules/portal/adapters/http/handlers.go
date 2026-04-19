@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -241,7 +241,7 @@ func (h *Handlers) portalAuth(w http.ResponseWriter, r *http.Request) {
 
 	// Mark token as consumed before issuing the cookie — single-use enforcement.
 	if err := h.tokenRepo.MarkUsed(r.Context(), domain.HashOf(plain)); err != nil {
-		log.Printf("portal auth: mark token used: %v", err)
+		slog.Error("portal auth: mark token used", "err", err)
 		// Non-fatal: proceed to issue cookie (MarkUsed failure is better than locking the user out).
 	}
 
@@ -281,7 +281,7 @@ func (h *Handlers) invoiceList(w http.ResponseWriter, r *http.Request) {
 		CustomerID: customerID,
 	})
 	if err != nil {
-		log.Printf("portal invoiceList: %v", err)
+		slog.Error("portal invoiceList", "err", err)
 		PortalErrorPage(cust, "Error", "Could not load invoices. Please try again later.").Render(r.Context(), w)
 		return
 	}
@@ -328,12 +328,12 @@ func (h *Handlers) generatePortalLink(w http.ResponseWriter, r *http.Request) {
 	customerID := chi.URLParam(r, "id")
 	tok, plain, err := domain.NewPortalToken(customerID, 15*time.Minute)
 	if err != nil {
-		log.Printf("portal generatePortalLink: %v", err)
+		slog.Error("portal generatePortalLink", "err", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
 	if err := h.tokenRepo.Save(r.Context(), tok); err != nil {
-		log.Printf("portal generatePortalLink: save: %v", err)
+		slog.Error("portal generatePortalLink: save", "err", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
@@ -360,7 +360,7 @@ func (h *Handlers) serviceList(w http.ResponseWriter, r *http.Request) {
 
 	services, err := h.services.ListServices(r.Context(), customerID)
 	if err != nil {
-		log.Printf("portal serviceList: %v", err)
+		slog.Error("portal serviceList", "err", err)
 		PortalErrorPage(cust, "Error", "Could not load services. Please try again later.").Render(r.Context(), w)
 		return
 	}
@@ -374,14 +374,15 @@ func (h *Handlers) ticketList(w http.ResponseWriter, r *http.Request) {
 	customerID := PortalCustomerIDFromContext(r.Context())
 	cust := h.resolveCustomer(r.Context(), customerID)
 	if h.tickets == nil {
-		PortalErrorPage(cust, "Support Unavailable", "Support tickets are not available right now. Please try again later.").Render(r.Context(), w)
+		slog.Warn("portal ticketList: tickets handler not configured")
+		PortalTicketListPage(cust, nil).Render(r.Context(), w)
 		return
 	}
 
 	tickets, err := h.tickets.ListTickets(r.Context(), customerID)
 	if err != nil {
-		log.Printf("portal ticketList: %v", err)
-		PortalErrorPage(cust, "Error", "Could not load tickets. Please try again later.").Render(r.Context(), w)
+		slog.Error("portal ticketList", "err", err)
+		PortalTicketListPage(cust, nil).Render(r.Context(), w)
 		return
 	}
 
@@ -394,7 +395,8 @@ func (h *Handlers) ticketNew(w http.ResponseWriter, r *http.Request) {
 	customerID := PortalCustomerIDFromContext(r.Context())
 	cust := h.resolveCustomer(r.Context(), customerID)
 	if h.tickets == nil {
-		PortalErrorPage(cust, "Support Unavailable", "Support tickets are not available right now. Please try again later.").Render(r.Context(), w)
+		slog.Warn("portal ticketNew: tickets handler not configured")
+		http.Redirect(w, r, "/portal/tickets", http.StatusSeeOther)
 		return
 	}
 	PortalTicketNewPage(cust, "").Render(r.Context(), w)
@@ -403,9 +405,9 @@ func (h *Handlers) ticketNew(w http.ResponseWriter, r *http.Request) {
 // ticketCreate opens a new support ticket.
 func (h *Handlers) ticketCreate(w http.ResponseWriter, r *http.Request) {
 	customerID := PortalCustomerIDFromContext(r.Context())
-	cust := h.resolveCustomer(r.Context(), customerID)
 	if h.tickets == nil {
-		PortalErrorPage(cust, "Support Unavailable", "Support tickets are not available right now. Please try again later.").Render(r.Context(), w)
+		slog.Warn("portal ticketCreate: tickets handler not configured")
+		http.Redirect(w, r, "/portal/tickets", http.StatusSeeOther)
 		return
 	}
 	if err := r.ParseForm(); err != nil {
@@ -422,7 +424,7 @@ func (h *Handlers) ticketCreate(w http.ResponseWriter, r *http.Request) {
 
 	ticketID, err := h.tickets.OpenTicket(r.Context(), customerID, subject, body)
 	if err != nil {
-		log.Printf("portal ticketCreate: %v", err)
+		slog.Error("portal ticketCreate", "err", err)
 		cust := h.resolveCustomer(r.Context(), customerID)
 		PortalTicketNewPage(cust, "Failed to open ticket. Please try again.").Render(r.Context(), w)
 		return
@@ -437,13 +439,14 @@ func (h *Handlers) ticketDetail(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	cust := h.resolveCustomer(r.Context(), customerID)
 	if h.tickets == nil {
-		PortalErrorPage(cust, "Support Unavailable", "Support tickets are not available right now. Please try again later.").Render(r.Context(), w)
+		slog.Warn("portal ticketDetail: tickets handler not configured")
+		http.Redirect(w, r, "/portal/tickets", http.StatusSeeOther)
 		return
 	}
 
 	tickets, err := h.tickets.ListTickets(r.Context(), customerID)
 	if err != nil {
-		log.Printf("portal ticketDetail: %v", err)
+		slog.Error("portal ticketDetail", "err", err)
 		PortalErrorPage(cust, "Error", "Could not load ticket. Please try again later.").Render(r.Context(), w)
 		return
 	}
@@ -481,7 +484,7 @@ func (h *Handlers) ticketCommentAdd(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := h.tickets.AddTicketComment(r.Context(), id, customerID, body); err != nil {
-		log.Printf("portal ticketCommentAdd: %v", err)
+		slog.Error("portal ticketCommentAdd", "err", err)
 		// Re-render ticket detail with error so the customer knows the comment failed.
 		tickets, _ := h.tickets.ListTickets(r.Context(), customerID)
 		var found *ticketqueries.TicketReadModel
@@ -515,7 +518,7 @@ func (h *Handlers) botMessage(w http.ResponseWriter, r *http.Request) {
 	}
 	reply, sid, state, suggest, err := h.bot.BotMessage(r.Context(), customerID, req.SessionID, req.Message)
 	if err != nil {
-		log.Printf("portal botMessage: %v", err)
+		slog.Error("portal botMessage", "err", err)
 		http.Error(w, "bot error", http.StatusInternalServerError)
 		return
 	}
@@ -544,7 +547,7 @@ func (h *Handlers) botHandoff(w http.ResponseWriter, r *http.Request) {
 	}
 	_, state, err := h.bot.BotHandoff(r.Context(), customerID, req.SessionID)
 	if err != nil {
-		log.Printf("portal botHandoff: %v", err)
+		slog.Error("portal botHandoff", "err", err)
 		http.Error(w, "handoff error", http.StatusInternalServerError)
 		return
 	}
@@ -569,7 +572,7 @@ func (h *Handlers) botLiveMessage(w http.ResponseWriter, r *http.Request) {
 	}
 	staffReply, state, err := h.bot.BotLiveMessage(r.Context(), customerID, req.SessionID, req.Message)
 	if err != nil {
-		log.Printf("portal botLiveMessage: %v", err)
+		slog.Error("portal botLiveMessage", "err", err)
 		http.Error(w, "live message error", http.StatusInternalServerError)
 		return
 	}
@@ -597,7 +600,7 @@ func (h *Handlers) botClose(w http.ResponseWriter, r *http.Request) {
 	}
 	ticketID, err := h.bot.BotClose(r.Context(), customerID, req.SessionID, req.CreateTicket)
 	if err != nil {
-		log.Printf("portal botClose: %v", err)
+		slog.Error("portal botClose", "err", err)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{"ticketID": ticketID}) //nolint:errcheck
@@ -654,7 +657,7 @@ func (h *Handlers) portalLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	plain, _, err := h.loginClient.CreatePortalToken(r.Context(), customerID, 15*time.Minute)
 	if err != nil {
-		log.Printf("portal loginSubmit: create token: %v", err)
+		slog.Error("portal loginSubmit: create token", "err", err)
 		newID := captcha.New()
 		PortalLoginPage(newID, "Could not generate login link. Please try again.").Render(r.Context(), w)
 		return
