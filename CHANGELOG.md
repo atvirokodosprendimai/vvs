@@ -71,3 +71,7 @@
 - 2026-04-19 `a60fd59` feat(portal): chat bot + live handoff via NATS bridge
 - 2026-04-19 `75736f5` chore(plans): mark portal+metrics+chatbot plans as completed
 - 2026-04-19 `75736f5` chore(plans): mark portal+metrics+chatbot plans as completed
+- 2026-04-19 `30fad32` fix(portal): bot cross-session security + mutex safety + comment UX
+- 2026-04-19 `6515c73` feat(docker): multi-target Dockerfile + compose + Caddyfile
+- 2026-04-19 `2a468a9` feat(cron): VVS_DEMO_MODE env var disables shell and url job types
+- 2026-04-19 `bfa267b` feat(demo): suppress outbound email in demo mode + bind-mount data dirs
