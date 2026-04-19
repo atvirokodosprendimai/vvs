@@ -478,6 +478,11 @@ func (b *PortalBridge) handleBotMessage(msg *nats.Msg) {
 	defer cancel()
 
 	sess := b.botSessions.GetOrCreate(req.SessionID, req.CustomerID)
+	// Ownership: session belongs to the authenticated customer only.
+	if sess.CustomerID != req.CustomerID {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
 	if sess.State == bot.StateClosed {
 		bridgeReply(msg, map[string]any{"reply": "This conversation has ended.", "sessionID": req.SessionID, "state": sess.State}, nil)
 		return
@@ -493,18 +498,19 @@ func (b *PortalBridge) handleBotMessage(msg *nats.Msg) {
 	// Try rule-based FAQ.
 	reply, matched, suggestHandoff := bot.MatchRules(ctx, req.Message, rc)
 	if !matched {
-		// AI fallback via Ollama.
+		// AI fallback via Ollama — snapshot history before releasing context.
 		if b.botOllama != nil {
-			reply = b.ollamaFallback(ctx, sess, req.Message, rc)
+			history := b.botSessions.MessagesSnapshot(req.SessionID)
+			reply = b.ollamaFallback(ctx, history, req.Message, rc)
 		} else {
 			reply = "I'm not sure how to answer that. Would you like to speak with a staff member?"
 			suggestHandoff = true
 		}
 	}
 
-	// Append to session history.
+	// Append to session history under lock.
 	now := time.Now()
-	sess.Messages = append(sess.Messages,
+	b.botSessions.AppendMessages(req.SessionID,
 		bot.BotMessage{Role: "user", Content: req.Message, At: now},
 		bot.BotMessage{Role: "assistant", Content: reply, At: now},
 	)
@@ -540,8 +546,8 @@ func (b *PortalBridge) handleBotHandoff(msg *nats.Msg) {
 	defer cancel()
 
 	sess := b.botSessions.Get(req.SessionID)
-	if sess == nil {
-		bridgeReply(msg, nil, &bridgeError{"session not found"})
+	if sess == nil || sess.CustomerID != req.CustomerID {
+		bridgeReply(msg, nil, errForbidden)
 		return
 	}
 
@@ -571,8 +577,8 @@ func (b *PortalBridge) handleBotHandoff(msg *nats.Msg) {
 			return
 		}
 
-		// Post conversation history as first message.
-		history := buildHistoryText(sess.Messages)
+		// Post conversation history as first message (snapshot under lock).
+		history := buildHistoryText(b.botSessions.MessagesSnapshot(req.SessionID))
 		_ = b.chatStore.Save(ctx, chat.Message{
 			ID:        uuid.Must(uuid.NewV7()).String(),
 			ThreadID:  threadID,
@@ -583,12 +589,12 @@ func (b *PortalBridge) handleBotHandoff(msg *nats.Msg) {
 		})
 	}
 
-	sess.State = bot.StateHandoff
-	sess.ThreadID = threadID
+	// Update state under lock.
+	b.botSessions.UpdateState(req.SessionID, bot.StateHandoff, threadID)
 
 	bridgeReply(msg, map[string]any{
 		"threadID": threadID,
-		"state":    sess.State,
+		"state":    bot.StateHandoff,
 	}, nil)
 }
 
@@ -616,8 +622,8 @@ func (b *PortalBridge) handleBotLiveMessage(msg *nats.Msg) {
 	defer cancel()
 
 	sess := b.botSessions.Get(req.SessionID)
-	if sess == nil || sess.ThreadID == "" {
-		bridgeReply(msg, nil, &bridgeError{"no active live session"})
+	if sess == nil || sess.CustomerID != req.CustomerID || sess.ThreadID == "" {
+		bridgeReply(msg, nil, errForbidden)
 		return
 	}
 
@@ -631,7 +637,7 @@ func (b *PortalBridge) handleBotLiveMessage(msg *nats.Msg) {
 			Body:      req.Message,
 			CreatedAt: time.Now().UTC(),
 		})
-		sess.State = bot.StateLive
+		b.botSessions.UpdateState(req.SessionID, bot.StateLive, "")
 	}
 
 	// Get latest staff reply.
@@ -674,12 +680,17 @@ func (b *PortalBridge) handleBotClose(msg *nats.Msg) {
 	}
 
 	sess := b.botSessions.Get(req.SessionID)
+	// Ownership check: only the session owner may close it.
+	if sess != nil && sess.CustomerID != req.CustomerID {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
 	ticketID := ""
 	if req.CreateTicket && b.openTicket != nil && sess != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		subject := "Portal chat — unresolved question"
-		body := buildHistoryText(sess.Messages)
+		body := buildHistoryText(b.botSessions.MessagesSnapshot(req.SessionID))
 		if tk, err := b.openTicket.Handle(ctx, ticketcommands.OpenTicketCommand{
 			CustomerID: req.CustomerID,
 			Subject:    subject,
@@ -689,9 +700,7 @@ func (b *PortalBridge) handleBotClose(msg *nats.Msg) {
 			ticketID = tk.ID
 		}
 	}
-	if sess != nil {
-		sess.State = bot.StateClosed
-	}
+	b.botSessions.UpdateState(req.SessionID, bot.StateClosed, "")
 	b.botSessions.Delete(req.SessionID)
 
 	bridgeReply(msg, map[string]any{
@@ -753,10 +762,11 @@ func (b *PortalBridge) buildRuleContext(ctx context.Context, customerID string) 
 }
 
 // ollamaFallback calls Ollama with session history + system prompt.
-func (b *PortalBridge) ollamaFallback(ctx context.Context, sess *bot.BotSession, userMsg string, rc *bot.RuleContext) string {
+// history is a snapshot taken before the mutex was released.
+func (b *PortalBridge) ollamaFallback(ctx context.Context, history []bot.BotMessage, userMsg string, rc *bot.RuleContext) string {
 	sysPrompt := bot.BuildSystemPrompt(rc.Customer, rc.Services, rc.Invoices)
 	msgs := []bot.OllamaMessage{{Role: "system", Content: sysPrompt}}
-	for _, m := range sess.Messages {
+	for _, m := range history {
 		msgs = append(msgs, bot.OllamaMessage{Role: m.Role, Content: m.Content})
 	}
 	msgs = append(msgs, bot.OllamaMessage{Role: "user", Content: userMsg})

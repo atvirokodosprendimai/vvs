@@ -68,3 +68,6 @@
 - 2026-04-19 `cab098b` feat(portal): support ticket submission via NATS bridge
 - 2026-04-19 `36e2ea4` feat(portal): service status + usage summary page
 - 2026-04-19 `9d89926` feat(observability): Prometheus metrics endpoint + instrumentation
+- 2026-04-19 `a60fd59` feat(portal): chat bot + live handoff via NATS bridge
+- 2026-04-19 `75736f5` chore(plans): mark portal+metrics+chatbot plans as completed
+- 2026-04-19 `75736f5` chore(plans): mark portal+metrics+chatbot plans as completed

@@ -79,6 +79,49 @@ func (s *Sessions) Get(sessionID string) *BotSession {
 	return sess
 }
 
+// MessagesSnapshot returns a copy of a session's message history under the lock.
+// Returns nil if the session does not exist.
+func (s *Sessions) MessagesSnapshot(sessionID string) []BotMessage {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sess, ok := s.sessions[sessionID]
+	if !ok {
+		return nil
+	}
+	out := make([]BotMessage, len(sess.Messages))
+	copy(out, sess.Messages)
+	return out
+}
+
+// UpdateState atomically updates State and optionally ThreadID for a session.
+// No-op if the session does not exist.
+func (s *Sessions) UpdateState(sessionID, state, threadID string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sess, ok := s.sessions[sessionID]
+	if !ok {
+		return
+	}
+	if state != "" {
+		sess.State = state
+	}
+	if threadID != "" {
+		sess.ThreadID = threadID
+	}
+}
+
+// AppendMessages atomically appends messages to a session's history.
+// No-op if the session does not exist.
+func (s *Sessions) AppendMessages(sessionID string, msgs ...BotMessage) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sess, ok := s.sessions[sessionID]
+	if !ok {
+		return
+	}
+	sess.Messages = append(sess.Messages, msgs...)
+}
+
 // Delete removes a session.
 func (s *Sessions) Delete(sessionID string) {
 	s.mu.Lock()

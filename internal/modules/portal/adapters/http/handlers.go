@@ -460,6 +460,18 @@ func (h *Handlers) ticketCommentAdd(w http.ResponseWriter, r *http.Request) {
 
 	if _, err := h.tickets.AddTicketComment(r.Context(), id, customerID, body); err != nil {
 		log.Printf("portal ticketCommentAdd: %v", err)
+		// Re-render ticket detail with error so the customer knows the comment failed.
+		tickets, _ := h.tickets.ListTickets(r.Context(), customerID)
+		var found *ticketqueries.TicketReadModel
+		for i := range tickets {
+			if tickets[i].ID == id {
+				found = &tickets[i]
+				break
+			}
+		}
+		cust := h.resolveCustomer(r.Context(), customerID)
+		PortalTicketDetailPage(cust, found, "Failed to post comment. Please try again.").Render(r.Context(), w)
+		return
 	}
 	http.Redirect(w, r, fmt.Sprintf("/portal/tickets/%s", id), http.StatusSeeOther)
 }
