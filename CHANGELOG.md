@@ -105,3 +105,4 @@
 - 2026-04-19 `263b2f9` chore: update CHANGELOG
 - 2026-04-19 `07028ee` feat(portal): self-service login with image captcha + fix templ module paths
 - 2026-04-19 `4ac04f4` chore: update CHANGELOG — add missing TOTP, portal split, IPTV, gomine entries + dedup
+- 2026-04-19 `8fc4754` feat(portal): self-service login with image captcha + templ module path fix
