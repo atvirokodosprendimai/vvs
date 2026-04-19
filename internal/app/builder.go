@@ -85,7 +85,7 @@ func New(cfg Config) (*App, error) {
 	inv   := wireInvoice(gdb, pub, sub, nc, cust, svc, email, cfg)
 	aud   := wireAudit(gdb, sub, cust, crm, svc, inv)
 	iptv  := wireIPTV(gdb)
-	infra, err := wireInfra(gdb, pub, sub, nc, auth, cust, prod, net, dev, svc, inv, iptv, cfg)
+	infra, err := wireInfra(gdb, pub, sub, nc, auth, cust, prod, net, dev, svc, inv, iptv, crm, cfg)
 	if err != nil {
 		return nil, err
 	}

@@ -13,6 +13,9 @@ import (
 	invoicedomain "github.com/vvs/isp/internal/modules/invoice/domain"
 	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
 	portaldomain "github.com/vvs/isp/internal/modules/portal/domain"
+	ticketcommands "github.com/vvs/isp/internal/modules/ticket/app/commands"
+	ticketdomain "github.com/vvs/isp/internal/modules/ticket/domain"
+	ticketqueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
 )
 
 // Subjects served by PortalBridge.
@@ -25,6 +28,10 @@ const (
 	SubjectInvoiceTokenValidate = "isp.portal.rpc.invoice.token.validate"
 	SubjectInvoiceTokenMint     = "isp.portal.rpc.invoice.token.mint"
 	SubjectCustomerGet          = "isp.portal.rpc.customer.get"
+
+	SubjectTicketsList       = "isp.portal.rpc.tickets.list"
+	SubjectTicketOpen        = "isp.portal.rpc.ticket.open"
+	SubjectTicketCommentAdd  = "isp.portal.rpc.ticket.comment.add"
 )
 
 // portalTokenReader reads and updates portal tokens from the DB.
@@ -49,6 +56,21 @@ type invoicesByCustomerLister interface {
 	Handle(ctx context.Context, q invoicequeries.ListInvoicesForCustomerQuery) ([]invoicequeries.InvoiceReadModel, error)
 }
 
+// ticketListerForCustomer lists tickets for a specific customer.
+type ticketListerForCustomer interface {
+	Handle(ctx context.Context, q ticketqueries.ListTicketsForCustomerQuery) ([]ticketqueries.TicketReadModel, error)
+}
+
+// ticketOpener opens a new support ticket.
+type ticketOpener interface {
+	Handle(ctx context.Context, cmd ticketcommands.OpenTicketCommand) (*ticketdomain.Ticket, error)
+}
+
+// ticketCommenter adds a comment to an existing ticket.
+type ticketCommenter interface {
+	Handle(ctx context.Context, cmd ticketcommands.AddCommentCommand) (*ticketdomain.TicketComment, error)
+}
+
 // invoiceByIDGetter retrieves a single invoice by its ID.
 type invoiceByIDGetter interface {
 	Handle(ctx context.Context, id string) (*invoicequeries.InvoiceReadModel, error)
@@ -70,6 +92,9 @@ type PortalBridge struct {
 	listInvoices invoicesByCustomerLister
 	getInvoice   invoiceByIDGetter
 	custReader   bridgeCustomerReader
+	ticketLister ticketListerForCustomer
+	openTicket   ticketOpener
+	addComment   ticketCommenter
 	subs         []*nats.Subscription
 }
 
@@ -92,6 +117,15 @@ func NewPortalBridge(
 	}
 }
 
+// WithTickets wires the ticket sub-handlers into the bridge.
+// Call before Register() to enable ticket RPC subjects.
+func (b *PortalBridge) WithTickets(lister ticketListerForCustomer, opener ticketOpener, commenter ticketCommenter) *PortalBridge {
+	b.ticketLister = lister
+	b.openTicket   = opener
+	b.addComment   = commenter
+	return b
+}
+
 // Register subscribes to all portal RPC subjects.
 func (b *PortalBridge) Register() error {
 	type entry struct {
@@ -107,6 +141,9 @@ func (b *PortalBridge) Register() error {
 		{SubjectInvoiceTokenValidate, b.handleInvoiceTokenValidate},
 		{SubjectInvoiceTokenMint, b.handleInvoiceTokenMint},
 		{SubjectCustomerGet, b.handleCustomerGet},
+		{SubjectTicketsList, b.handleTicketsList},
+		{SubjectTicketOpen, b.handleTicketOpen},
+		{SubjectTicketCommentAdd, b.handleTicketCommentAdd},
 	}
 	for _, e := range entries {
 		sub, err := b.nc.Subscribe(e.subject, e.handler)
@@ -373,6 +410,128 @@ func (b *PortalBridge) handleCustomerGet(msg *nats.Msg) {
 		return
 	}
 	bridgeReply(msg, c, nil)
+}
+
+func (b *PortalBridge) handleTicketsList(msg *nats.Msg) {
+	if b.ticketLister == nil {
+		bridgeReply(msg, nil, &bridgeError{"ticket list handler not configured"})
+		return
+	}
+	var req struct {
+		CustomerID string `json:"customerID"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	if req.CustomerID == "" {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	tickets, err := b.ticketLister.Handle(ctx, ticketqueries.ListTicketsForCustomerQuery{CustomerID: req.CustomerID})
+	if err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	bridgeReply(msg, struct {
+		Tickets []ticketqueries.TicketReadModel `json:"tickets"`
+	}{tickets}, nil)
+}
+
+// handleTicketOpen opens a support ticket on behalf of the authenticated portal customer.
+// customerID is mandatory — enforces that the ticket is owned by the caller.
+func (b *PortalBridge) handleTicketOpen(msg *nats.Msg) {
+	if b.openTicket == nil {
+		bridgeReply(msg, nil, &bridgeError{"ticket open handler not configured"})
+		return
+	}
+	var req struct {
+		CustomerID string `json:"customerID"`
+		Subject    string `json:"subject"`
+		Body       string `json:"body"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	if req.CustomerID == "" {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	tk, err := b.openTicket.Handle(ctx, ticketcommands.OpenTicketCommand{
+		CustomerID: req.CustomerID,
+		Subject:    req.Subject,
+		Body:       req.Body,
+		Priority:   "normal",
+	})
+	if err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	bridgeReply(msg, struct {
+		TicketID string `json:"ticketID"`
+	}{tk.ID}, nil)
+}
+
+// handleTicketCommentAdd adds a customer comment to a ticket.
+// customerID is mandatory and verified against the ticket owner.
+func (b *PortalBridge) handleTicketCommentAdd(msg *nats.Msg) {
+	if b.ticketLister == nil || b.addComment == nil {
+		bridgeReply(msg, nil, &bridgeError{"ticket comment handler not configured"})
+		return
+	}
+	var req struct {
+		TicketID   string `json:"ticketID"`
+		CustomerID string `json:"customerID"`
+		Body       string `json:"body"`
+	}
+	if err := json.Unmarshal(msg.Data, &req); err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	if req.CustomerID == "" {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Verify ownership — list tickets and check the target ticket belongs to this customer.
+	tickets, err := b.ticketLister.Handle(ctx, ticketqueries.ListTicketsForCustomerQuery{CustomerID: req.CustomerID})
+	if err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	owned := false
+	for _, t := range tickets {
+		if t.ID == req.TicketID {
+			owned = true
+			break
+		}
+	}
+	if !owned {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
+
+	comment, err := b.addComment.Handle(ctx, ticketcommands.AddCommentCommand{
+		TicketID: req.TicketID,
+		Body:     req.Body,
+		AuthorID: req.CustomerID,
+	})
+	if err != nil {
+		bridgeReply(msg, nil, err)
+		return
+	}
+	bridgeReply(msg, struct {
+		CommentID string `json:"commentID"`
+	}{comment.ID}, nil)
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────

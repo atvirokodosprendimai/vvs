@@ -13,6 +13,7 @@ import (
 	"github.com/nats-io/nats.go"
 	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
 	portaldomain "github.com/vvs/isp/internal/modules/portal/domain"
+	ticketqueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
 )
 
 // PortalNATSClient satisfies the interfaces expected by portal/adapters/http.Handlers:
@@ -153,6 +154,51 @@ func (c *PortalNATSClient) ValidateInvoiceToken(ctx context.Context, tokenHash s
 		return "", err
 	}
 	return resp.InvoiceID, nil
+}
+
+// ── tickets ───────────────────────────────────────────────────────────────────
+
+// ListTickets returns all tickets for the authenticated portal customer.
+func (c *PortalNATSClient) ListTickets(ctx context.Context, customerID string) ([]ticketqueries.TicketReadModel, error) {
+	var resp struct {
+		Tickets []ticketqueries.TicketReadModel `json:"tickets"`
+	}
+	if err := c.rpc(ctx, SubjectTicketsList, map[string]string{"customerID": customerID}, &resp); err != nil {
+		return nil, err
+	}
+	return resp.Tickets, nil
+}
+
+// OpenTicket opens a new support ticket on behalf of the portal customer.
+// Returns the new ticket ID.
+func (c *PortalNATSClient) OpenTicket(ctx context.Context, customerID, subject, body string) (string, error) {
+	var resp struct {
+		TicketID string `json:"ticketID"`
+	}
+	if err := c.rpc(ctx, SubjectTicketOpen, map[string]string{
+		"customerID": customerID,
+		"subject":    subject,
+		"body":       body,
+	}, &resp); err != nil {
+		return "", err
+	}
+	return resp.TicketID, nil
+}
+
+// AddTicketComment adds a customer comment to an existing ticket.
+// Returns the new comment ID.
+func (c *PortalNATSClient) AddTicketComment(ctx context.Context, ticketID, customerID, body string) (string, error) {
+	var resp struct {
+		CommentID string `json:"commentID"`
+	}
+	if err := c.rpc(ctx, SubjectTicketCommentAdd, map[string]string{
+		"ticketID":   ticketID,
+		"customerID": customerID,
+		"body":       body,
+	}, &resp); err != nil {
+		return "", err
+	}
+	return resp.CommentID, nil
 }
 
 // ── InvoiceGetterAdapter ──────────────────────────────────────────────────────

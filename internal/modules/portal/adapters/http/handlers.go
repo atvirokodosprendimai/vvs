@@ -12,6 +12,7 @@ import (
 	infrahttp "github.com/vvs/isp/internal/infrastructure/http"
 	invoicequeries "github.com/vvs/isp/internal/modules/invoice/app/queries"
 	"github.com/vvs/isp/internal/modules/portal/domain"
+	ticketqueries "github.com/vvs/isp/internal/modules/ticket/app/queries"
 	authhttp "github.com/vvs/isp/internal/modules/auth/adapters/http"
 )
 
@@ -43,6 +44,13 @@ type customerReader interface {
 	GetPortalCustomer(ctx context.Context, id string) (*PortalCustomer, error)
 }
 
+// portalTicketClient lists, opens, and comments on support tickets.
+type portalTicketClient interface {
+	ListTickets(ctx context.Context, customerID string) ([]ticketqueries.TicketReadModel, error)
+	OpenTicket(ctx context.Context, customerID, subject, body string) (string, error)
+	AddTicketComment(ctx context.Context, ticketID, customerID, body string) (string, error)
+}
+
 // PortalCustomer holds the customer info shown in the portal header.
 type PortalCustomer struct {
 	ID          string
@@ -57,6 +65,7 @@ type Handlers struct {
 	getInvoice   invoiceGetter
 	pdfTokens    pdfTokenMinter
 	custReader   customerReader
+	tickets      portalTicketClient
 	baseURL      string
 	secureCookie bool
 }
@@ -93,6 +102,11 @@ func (h *Handlers) WithSecureCookie(secure bool) *Handlers {
 	return h
 }
 
+func (h *Handlers) WithTickets(tc portalTicketClient) *Handlers {
+	h.tickets = tc
+	return h
+}
+
 // RegisterRoutes registers admin routes (protected by RequireAuth in the router).
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/customers/{id}/portal-link", h.generatePortalLink)
@@ -113,6 +127,11 @@ func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 		})
 		r.Get("/portal/invoices", h.invoiceList)
 		r.Get("/portal/invoices/{id}", h.invoiceDetail)
+		r.Get("/portal/tickets", h.ticketList)
+		r.Get("/portal/tickets/new", h.ticketNew)
+		r.Post("/portal/tickets", h.ticketCreate)
+		r.Get("/portal/tickets/{id}", h.ticketDetail)
+		r.Post("/portal/tickets/{id}/comments", h.ticketCommentAdd)
 	})
 }
 
@@ -266,6 +285,119 @@ func (h *Handlers) generatePortalLink(w http.ResponseWriter, r *http.Request) {
 
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElementTempl(PortalLinkFragment(portalURL))
+}
+
+// ticketList renders the customer's support ticket list.
+func (h *Handlers) ticketList(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	customerID := PortalCustomerIDFromContext(r.Context())
+	if h.tickets == nil {
+		http.Error(w, "support tickets not available", http.StatusServiceUnavailable)
+		return
+	}
+
+	tickets, err := h.tickets.ListTickets(r.Context(), customerID)
+	if err != nil {
+		log.Printf("portal ticketList: %v", err)
+		http.Error(w, "error loading tickets", http.StatusInternalServerError)
+		return
+	}
+
+	cust := h.resolveCustomer(r.Context(), customerID)
+	PortalTicketListPage(cust, tickets).Render(r.Context(), w)
+}
+
+// ticketNew renders the new ticket form.
+func (h *Handlers) ticketNew(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	customerID := PortalCustomerIDFromContext(r.Context())
+	cust := h.resolveCustomer(r.Context(), customerID)
+	PortalTicketNewPage(cust, "").Render(r.Context(), w)
+}
+
+// ticketCreate opens a new support ticket.
+func (h *Handlers) ticketCreate(w http.ResponseWriter, r *http.Request) {
+	if h.tickets == nil {
+		http.Error(w, "support tickets not available", http.StatusServiceUnavailable)
+		return
+	}
+	customerID := PortalCustomerIDFromContext(r.Context())
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	subject := r.FormValue("subject")
+	body := r.FormValue("body")
+	if subject == "" || body == "" {
+		cust := h.resolveCustomer(r.Context(), customerID)
+		PortalTicketNewPage(cust, "Subject and message are required.").Render(r.Context(), w)
+		return
+	}
+
+	ticketID, err := h.tickets.OpenTicket(r.Context(), customerID, subject, body)
+	if err != nil {
+		log.Printf("portal ticketCreate: %v", err)
+		cust := h.resolveCustomer(r.Context(), customerID)
+		PortalTicketNewPage(cust, "Failed to open ticket. Please try again.").Render(r.Context(), w)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/portal/tickets/%s", ticketID), http.StatusSeeOther)
+}
+
+// ticketDetail renders a single support ticket with comments.
+func (h *Handlers) ticketDetail(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	customerID := PortalCustomerIDFromContext(r.Context())
+	id := chi.URLParam(r, "id")
+	if h.tickets == nil {
+		http.Error(w, "support tickets not available", http.StatusServiceUnavailable)
+		return
+	}
+
+	tickets, err := h.tickets.ListTickets(r.Context(), customerID)
+	if err != nil {
+		log.Printf("portal ticketDetail: %v", err)
+		http.Error(w, "error loading ticket", http.StatusInternalServerError)
+		return
+	}
+	var found *ticketqueries.TicketReadModel
+	for i := range tickets {
+		if tickets[i].ID == id {
+			found = &tickets[i]
+			break
+		}
+	}
+	if found == nil {
+		http.Error(w, "ticket not found", http.StatusNotFound)
+		return
+	}
+
+	cust := h.resolveCustomer(r.Context(), customerID)
+	PortalTicketDetailPage(cust, found, "").Render(r.Context(), w)
+}
+
+// ticketCommentAdd adds a comment to an existing support ticket.
+func (h *Handlers) ticketCommentAdd(w http.ResponseWriter, r *http.Request) {
+	if h.tickets == nil {
+		http.Error(w, "support tickets not available", http.StatusServiceUnavailable)
+		return
+	}
+	customerID := PortalCustomerIDFromContext(r.Context())
+	id := chi.URLParam(r, "id")
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	body := r.FormValue("body")
+	if body == "" {
+		http.Redirect(w, r, fmt.Sprintf("/portal/tickets/%s", id), http.StatusSeeOther)
+		return
+	}
+
+	if _, err := h.tickets.AddTicketComment(r.Context(), id, customerID, body); err != nil {
+		log.Printf("portal ticketCommentAdd: %v", err)
+	}
+	http.Redirect(w, r, fmt.Sprintf("/portal/tickets/%s", id), http.StatusSeeOther)
 }
 
 // resolveCustomer fetches customer info for the portal header, returning a fallback on error.

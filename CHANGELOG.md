@@ -54,3 +54,14 @@
 - 2026-04-19 `e135a63` fix(portal): add SameSite+Secure flags to logout Set-Cookie
 - 2026-04-19 `fec7c00` plan: reporting module + two-factor auth (TOTP)
 - 2026-04-19 `11d1832` feat(reports): /reports page — MRR, invoice aging, top customers, payment trend
+- 2026-04-19 `eb9da86` chore(plans): add 3 security+provisioning plans from Consilium backlog
+- 2026-04-19 `86f933a` chore(plan): customer portal support ticket submission
+- 2026-04-19 `078a5da` chore(plan): customer portal service status + usage summary
+- 2026-04-19 `90cad2f` chore(plan): structured observability — Prometheus metrics
+- 2026-04-19 `7d2920e` chore(plan): customer portal chat bot with AI + live human handoff
+- 2026-04-19 `11d410d` feat(nats): per-user subject permissions for portal/stb isolation
+- 2026-04-19 `2d46d5b` chore(plan): mark NATS subject authorization plan as completed
+- 2026-04-19 `878141f` feat(portal): single-use magic-link tokens + IP rate limiting
+- 2026-04-19 `e953d0c` chore(plan): mark magic-link hardening plan as completed
+- 2026-04-19 `f9cf15b` test(network): FakeRouterProvisioner testutil + subscriber integration tests
+- 2026-04-19 `abc6bf0` chore(plan): mark network provisioning plan as completed

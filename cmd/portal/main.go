@@ -134,6 +134,7 @@ func runPortal(ctx context.Context, cmd *cli.Command) error {
 	).
 		WithPDFTokens(client).
 		WithCustomerReader(custAdapter).
+		WithTickets(client).
 		WithBaseURL(baseURL).
 		WithSecureCookie(secureCookie)
 

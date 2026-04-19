@@ -50,6 +50,7 @@ func wireInfra(
 	svc  *serviceWired,
 	inv  *invoiceWired,
 	iptv *iptvWired,
+	crm  *crmWired,
 	cfg  Config,
 ) (*infraWired, error) {
 	// ── Notifications ─────────────────────────────────────────────────────────
@@ -163,7 +164,7 @@ func wireInfra(
 		nc, portalTokenRepo, inv.tokenRepo,
 		inv.listForCustomer, inv.get,
 		&natsPortalCustomerBridge{query: cust.getQuery},
-	)
+	).WithTickets(crm.listTickets, crm.openTicket, crm.addComment)
 	if err := portalBridge.Register(); err != nil {
 		return nil, fmt.Errorf("portal nats bridge: %w", err)
 	}
