@@ -1,0 +1,92 @@
+services:
+
+  # ── vvs-core — admin UI, SQLite, embedded NATS ───────────────────────────────
+  core:
+    build:
+      context: .
+      target: core
+    restart: unless-stopped
+    environment:
+      VVS_ADDR: ":8080"
+      VVS_DB_PATH: /app/data/vvs.db
+      VVS_ADMIN_USER: ${VVS_ADMIN_USER:-admin}
+      VVS_ADMIN_PASSWORD: ${VVS_ADMIN_PASSWORD:-change-me}
+      # NATS: bind on all interfaces so portal + stb containers can reach it
+      NATS_LISTEN_ADDR: "0.0.0.0:4222"
+      VVS_NATS_CORE_PASSWORD: ${VVS_NATS_CORE_PASSWORD:-dev-core-secret}
+      VVS_NATS_PORTAL_PASSWORD: ${VVS_NATS_PORTAL_PASSWORD:-dev-portal-secret}
+      VVS_BASE_URL: ${VVS_BASE_URL:-https://portal.localhost}
+      VVS_SECURE_COOKIE: ${VVS_SECURE_COOKIE:-false}
+    volumes:
+      - core-data:/app/data
+    networks:
+      - vvs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health 2>/dev/null || exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ── vvs-portal — customer self-service portal ─────────────────────────────────
+  portal:
+    build:
+      context: .
+      target: portal
+    restart: unless-stopped
+    environment:
+      PORTAL_ADDR: ":8081"
+      NATS_URL: nats://core:4222
+      NATS_PORTAL_PASSWORD: ${VVS_NATS_PORTAL_PASSWORD:-dev-portal-secret}
+      VVS_BASE_URL: ${PORTAL_BASE_URL:-https://portal.localhost}
+      PORTAL_INSECURE_COOKIE: "true"   # Caddy handles TLS; cookie is secure at the transport layer
+    depends_on:
+      core:
+        condition: service_started
+    networks:
+      - vvs
+
+  # ── vvs-stb — IPTV set-top-box device API ────────────────────────────────────
+  stb:
+    build:
+      context: .
+      target: stb
+    restart: unless-stopped
+    environment:
+      STB_ADDR: ":8082"
+      NATS_URL: nats://core:4222
+      NATS_PORTAL_PASSWORD: ${VVS_NATS_PORTAL_PASSWORD:-dev-portal-secret}
+      VVS_BASE_URL: ${STB_BASE_URL:-https://stb.localhost}
+    depends_on:
+      core:
+        condition: service_started
+    networks:
+      - vvs
+
+  # ── caddy — HTTPS reverse proxy + subdomain routing ──────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - core
+      - portal
+      - stb
+    networks:
+      - vvs
+
+volumes:
+  core-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  vvs:
+    driver: bridge
