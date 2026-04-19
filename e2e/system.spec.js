@@ -42,6 +42,23 @@ test.describe('Users', () => {
     // Role select inside modal
     await expect(page.locator('.fixed.inset-0 select')).toBeVisible();
   });
+
+  test('user table shows Full Name and Division columns', async ({ page }) => {
+    await page.goto('/users');
+    await page.waitForSelector('#user-table', { timeout: 8_000 });
+    const headers = await page.locator('#user-table th').allInnerTexts();
+    expect(headers.join(' ')).toMatch(/Full Name/i);
+    expect(headers.join(' ')).toMatch(/Division/i);
+  });
+
+  test('Edit button opens edit modal', async ({ page }) => {
+    await page.goto('/users');
+    await page.waitForSelector('#user-table', { timeout: 8_000 });
+    await page.locator('#user-table button:has-text("Edit")').first().click();
+    await expect(page.locator('h2:has-text("Edit User")')).toBeVisible({ timeout: 3_000 });
+    await expect(page.locator('input[placeholder="Full name"]')).toBeVisible();
+    await expect(page.locator('input[placeholder="Division / department"]')).toBeVisible();
+  });
 });
 
 // ── Email ──────────────────────────────────────────────────────────────────

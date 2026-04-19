@@ -37,9 +37,14 @@ test.describe('Profile', () => {
 
   test('username and role displayed', async ({ page }) => {
     await page.goto('/profile');
-    // Username and role sections should be visible
     const bodyText = await page.locator('body').innerText();
     expect(bodyText).toMatch(/Username|username/i);
     expect(bodyText).toMatch(/Role|role/i);
+  });
+
+  test('display name input present', async ({ page }) => {
+    await page.goto('/profile');
+    await expect(page.locator('input[placeholder="Your full name"]')).toBeVisible();
+    await expect(page.locator('button:has-text("Save display name")')).toBeVisible();
   });
 });
