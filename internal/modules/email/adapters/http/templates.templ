@@ -494,10 +494,10 @@ templ messageItem(m emailqueries.MessageReadModel) {
 templ AccountForm() {
 	<div
 		data-show="$_emailAccountID == ''"
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+		class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 overflow-y-auto py-8"
 		style="display:none"
 	>
-		<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
+		<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 flex flex-col gap-4">
 			<div class="flex items-center justify-between">
 				<h3 class="text-sm font-semibold text-neutral-200">Add IMAP Account</h3>
 				<button
@@ -587,10 +587,10 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 		<!-- Add account modal -->
 		<div
 			data-show="$_showAdd"
-			class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+			class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 overflow-y-auto py-8"
 			style="display:none"
 		>
-			<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
+			<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 flex flex-col gap-4">
 				<div class="flex items-center justify-between">
 					<h3 class="text-sm font-semibold text-neutral-200">Add IMAP Account</h3>
 					<button type="button" data-on:click="$_showAdd=false" class="text-neutral-500 hover:text-neutral-300">
@@ -637,10 +637,10 @@ templ EmailSettingsPage(accounts []emailqueries.AccountReadModel) {
 		<!-- Edit account modal -->
 		<div
 			data-show="$emailSettingsEdit != ''"
-			class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+			class="fixed inset-0 z-50 flex items-start justify-center bg-black/60 overflow-y-auto py-8"
 			style="display:none"
 		>
-			<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4">
+			<div class="bg-neutral-900 border border-neutral-700 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 flex flex-col gap-4">
 				<div class="flex items-center justify-between">
 					<h3 class="text-sm font-semibold text-neutral-200">Edit Account</h3>
 					<button type="button" data-on:click="$emailSettingsEdit=''" class="text-neutral-500 hover:text-neutral-300">
