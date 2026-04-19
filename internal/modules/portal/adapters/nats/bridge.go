@@ -163,6 +163,11 @@ func (b *PortalBridge) handleInvoicesList(msg *nats.Msg) {
 		bridgeReply(msg, nil, err)
 		return
 	}
+	// customerID is mandatory — reject to prevent potential wildcard queries.
+	if req.CustomerID == "" {
+		bridgeReply(msg, nil, errForbidden)
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -204,7 +209,7 @@ func (b *PortalBridge) handleInvoiceGet(msg *nats.Msg) {
 		bridgeReply(msg, nil, err)
 		return
 	}
-	if inv.CustomerID != req.CustomerID {
+	if inv == nil || inv.CustomerID != req.CustomerID {
 		bridgeReply(msg, nil, errForbidden)
 		return
 	}
@@ -243,6 +248,10 @@ func (b *PortalBridge) handleInvoiceGetByToken(msg *nats.Msg) {
 	inv, err := b.getInvoice.Handle(ctx, tok.InvoiceID)
 	if err != nil {
 		bridgeReply(msg, nil, err)
+		return
+	}
+	if inv == nil {
+		bridgeReply(msg, nil, errExpired)
 		return
 	}
 	bridgeReply(msg, struct {
@@ -303,7 +312,7 @@ func (b *PortalBridge) handleInvoiceTokenMint(msg *nats.Msg) {
 		bridgeReply(msg, nil, err)
 		return
 	}
-	if inv.CustomerID != req.CustomerID {
+	if inv == nil || inv.CustomerID != req.CustomerID {
 		bridgeReply(msg, nil, errForbidden)
 		return
 	}

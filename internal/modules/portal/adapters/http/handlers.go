@@ -206,7 +206,7 @@ func (h *Handlers) invoiceDetail(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	inv, err := h.getInvoice.Handle(r.Context(), id)
-	if err != nil {
+	if err != nil || inv == nil {
 		http.Error(w, "invoice not found", http.StatusNotFound)
 		return
 	}
