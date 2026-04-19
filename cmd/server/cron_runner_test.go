@@ -166,7 +166,7 @@ func TestRunDueJobs_ExecutesDueJob(t *testing.T) {
 	j.NextRun = time.Now().UTC().Add(-2 * time.Minute)
 	_ = repo.Save(context.Background(), j)
 
-	RunDueJobs(context.Background(), repo, nil)
+	RunDueJobs(context.Background(), repo, nil, false)
 
 	saved, _ := repo.FindByID(context.Background(), "id-due")
 	if saved.LastRun == nil {
@@ -185,7 +185,7 @@ func TestRunDueJobs_SkipsPausedJob(t *testing.T) {
 	_ = j.Pause()
 	_ = repo.Save(context.Background(), j)
 
-	RunDueJobs(context.Background(), repo, nil)
+	RunDueJobs(context.Background(), repo, nil, false)
 
 	saved, _ := repo.FindByID(context.Background(), "id-paused")
 	if saved.LastRun != nil {
@@ -201,7 +201,7 @@ func TestRunDueJobs_AdvancesNextRun(t *testing.T) {
 	before := j.NextRun
 	_ = repo.Save(context.Background(), j)
 
-	RunDueJobs(context.Background(), repo, nil)
+	RunDueJobs(context.Background(), repo, nil, false)
 
 	saved, _ := repo.FindByID(context.Background(), "id-adv")
 	if !saved.NextRun.After(before) {
@@ -221,7 +221,7 @@ func TestRunDueJobs_RecordsJobError(t *testing.T) {
 	j.NextRun = time.Now().UTC().Add(-2 * time.Minute)
 	_ = repo.Save(context.Background(), j)
 
-	RunDueJobs(context.Background(), repo, nil)
+	RunDueJobs(context.Background(), repo, nil, false)
 
 	saved, _ := repo.FindByID(context.Background(), "id-fail")
 	if saved.LastError != "boom" {

@@ -176,7 +176,7 @@ func cronRunCommand() *cli.Command {
 			RegisterSessionActions(gdb)
 
 			repo := cronpersistence.NewGormJobRepository(gdb)
-			RunDueJobs(ctx, repo, rpcServer)
+			RunDueJobs(ctx, repo, rpcServer, cmd.Root().Bool("demo-mode"))
 			return nil
 		},
 	}
@@ -202,7 +202,7 @@ func cronDaemonCommand() *cli.Command {
 			defer cleanup()
 
 			repo := cronpersistence.NewGormJobRepository(gdb)
-			daemon := NewDaemon(repo, rpcServer)
+			daemon := NewDaemon(repo, rpcServer, cmd.Root().Bool("demo-mode"))
 
 			ctx, stop := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
 			defer stop()

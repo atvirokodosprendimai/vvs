@@ -23,6 +23,13 @@ type CronHandlers struct {
 	pauseCmd  *croncommands.PauseJobHandler
 	resumeCmd *croncommands.ResumeJobHandler
 	deleteCmd *croncommands.DeleteJobHandler
+	demoMode  bool
+}
+
+// WithDemoMode disables shell and url job types (safe for public demo environments).
+func (h *CronHandlers) WithDemoMode(enabled bool) *CronHandlers {
+	h.demoMode = enabled
+	return h
 }
 
 func NewCronHandlers(
@@ -66,7 +73,7 @@ func (h *CronHandlers) listPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html")
-	CronListPage(jobs).Render(r.Context(), w)
+	CronListPage(h.demoMode, jobs).Render(r.Context(), w)
 }
 
 // ── SSE ────────────────────────────────────────────────────────────────────
@@ -111,6 +118,11 @@ func (h *CronHandlers) addSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sse := datastar.NewSSE(w, r)
+
+	if h.demoMode && (signals.JobType == domain.TypeShell || signals.JobType == domain.TypeURL) {
+		sse.PatchElements(`<div id="cron-form-errors" class="text-red-400 text-xs mt-1">demo mode: shell and url job types are disabled</div>`)
+		return
+	}
 
 	payload, err := buildPayload(signals.JobType, signals.Action, signals.Command, signals.Subject, signals.URL, signals.Method, signals.Headers)
 	if err != nil {
@@ -182,6 +194,11 @@ func (h *CronHandlers) updateSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	sse := datastar.NewSSE(w, r)
 	id := chi.URLParam(r, "id")
+
+	if h.demoMode && (signals.EditJobType == domain.TypeShell || signals.EditJobType == domain.TypeURL) {
+		sse.PatchElements(`<div id="cron-edit-errors" class="text-red-400 text-xs mt-1">demo mode: shell and url job types are disabled</div>`)
+		return
+	}
 
 	payload, err := buildPayload(signals.EditJobType, signals.EditAction, signals.EditCommand, signals.EditSubject, signals.EditURL, signals.EditMethod, signals.EditHeaders)
 	if err != nil {

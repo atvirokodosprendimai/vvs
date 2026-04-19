@@ -11,7 +11,7 @@ import (
 
 // ── List page ──────────────────────────────────────────────────────────────
 
-templ CronListPage(jobs []queries.JobReadModel) {
+templ CronListPage(demoMode bool, jobs []queries.JobReadModel) {
 	@templates.Layout("Cron Jobs") {
 		<div
 			data-signals="{_addOpen: false, jobType: 'action', name: '', schedule: '', action: '', command: '', subject: '', url: '', method: 'GET', headers: '{}', _editOpen: false, editId: '', editName: '', editSchedule: '', editJobType: 'action', editAction: '', editCommand: '', editSubject: '', editUrl: '', editMethod: 'GET', editHeaders: '{}'}"
@@ -68,8 +68,10 @@ templ CronListPage(jobs []queries.JobReadModel) {
 							<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Type *</label>
 							<select data-bind:job-type class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500">
 								<option value="action">Action (built-in)</option>
-								<option value="shell">Shell command</option>
-								<option value="url">URL ping / webhook</option>
+								if !demoMode {
+									<option value="shell">Shell command</option>
+									<option value="url">URL ping / webhook</option>
+								}
 								<option value="rpc">RPC subject</option>
 							</select>
 						</div>
@@ -160,8 +162,10 @@ templ CronListPage(jobs []queries.JobReadModel) {
 							<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Type *</label>
 							<select data-bind:edit-job-type class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-orange-500">
 								<option value="action">Action (built-in)</option>
-								<option value="shell">Shell command</option>
-								<option value="url">URL ping / webhook</option>
+								if !demoMode {
+									<option value="shell">Shell command</option>
+									<option value="url">URL ping / webhook</option>
+								}
 								<option value="rpc">RPC subject</option>
 							</select>
 						</div>

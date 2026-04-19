@@ -50,6 +50,11 @@ func main() {
 				Usage:   "Public base URL for generated links, e.g. https://isp.example.com (no trailing slash)",
 				Sources: cli.EnvVars("VVS_BASE_URL"),
 			},
+			&cli.BoolFlag{
+				Name:    "demo-mode",
+				Usage:   "Disable risky cron job types (shell, url) for public demo environments",
+				Sources: cli.EnvVars("VVS_DEMO_MODE"),
+			},
 		},
 		Commands: []*cli.Command{
 			serveCommand(),
@@ -233,6 +238,7 @@ func serveCommand() *cli.Command {
 				MetricsAddr:           cmd.String("metrics-addr"),
 				OllamaURL:             cmd.String("ollama-url"),
 				BotModel:              cmd.String("bot-model"),
+				DemoMode:              cmd.Root().Bool("demo-mode"),
 				EnabledModules:        enabledModules,
 				Debug:                 cmd.Bool("debug"),
 			}

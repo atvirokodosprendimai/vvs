@@ -142,7 +142,7 @@ func wireInfra(
 		croncommands.NewPauseJobHandler(cronRepo),
 		croncommands.NewResumeJobHandler(cronRepo),
 		croncommands.NewDeleteJobHandler(cronRepo),
-	)
+	).WithDemoMode(cfg.DemoMode)
 
 	// ── Payment import ────────────────────────────────────────────────────────
 	paymentRoutes := paymenthttp.NewHandlers(
