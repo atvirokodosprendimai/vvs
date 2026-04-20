@@ -1,46 +1,73 @@
 ---
-tldr: Extend the Docker module with Swarm cluster management — SSH transport, overlay/macvlan/bridge networks with reserved IPs, and stack deploy onto swarm
+tldr: Extend the Docker module with Swarm cluster management — wgmesh WireGuard transport, SSH provisioning, overlay/macvlan networks with reserved IPs, Traefik routing, and stack deploy
 ---
 
 # Docker Swarm
 
-Extension of the existing Docker orchestrator module. Adds Swarm cluster management (init or import), SSH-based node transport, multi-host network creation (overlay, macvlan, bridge), and stack deployment onto a swarm cluster.
+Extension of the existing Docker orchestrator module. Adds Swarm cluster management (init or import), wgmesh WireGuard mesh transport, SSH-based node provisioning, multi-host network creation (overlay, macvlan, bridge), and stack deployment onto a swarm cluster.
 
 ## Target
 
 Manage a Docker Swarm cluster entirely from the VVS admin UI:
-- SSH into nodes without exposing the Docker TCP port publicly
+- SSH into nodes to provision wgmesh (WireGuard mesh VPN) — Swarm communicates over the mesh, not the public network
 - Initialise a new swarm or import an existing one (paste join tokens)
-- Add/remove manager and worker nodes
+- Add/remove manager and worker nodes; each node's wgmesh VPN IP is auto-discovered and stored
 - Create overlay, macvlan, and bridge networks with subnet/gateway and reserved IP assignments
 - Deploy multi-service apps as stacks (compose YAML) onto the swarm
 
 ## Behaviour
 
-### Transport: SSH
+### Transport: wgmesh over SSH
 
-- Each `SwarmNode` stores an SSH private key (PEM, AES-256-GCM encrypted in SQLite)
-- Docker SDK connects via `ssh://user@host:port` scheme using a custom dialer backed by `golang.org/x/crypto/ssh`
-- SSH key is decrypted at runtime, used to dial, never written to disk
-- SSHUser defaults to `root`; SSHPort defaults to 22
-- The existing TLS/TCP path (DockerNode) is unchanged — swarm nodes use SSH only
+Swarm nodes communicate over a WireGuard mesh VPN (`wgmesh`) rather than the public network. SSH is used only for provisioning; all Docker Swarm traffic travels over the encrypted mesh.
+
+- `SwarmCluster.wgmeshKey` — 32+ character shared mesh key (AES-256-GCM encrypted in SQLite). All nodes in a cluster share one key.
+- When a node is added, VVS SSH-deploys wgmesh as a docker compose stack on that node, passing the cluster key. wgmesh creates a `wgmesh0` WireGuard interface.
+- VVS reads the assigned `wgmesh0` IP via SSH exec (`ip -4 addr show wgmesh0`) and stores it as `SwarmNode.vpnIP`
+- All Swarm advertise/listen addresses and join targets use `vpnIP`, not `sshHost`
+- Docker SDK still dials via SSH (`ssh://user@host:port`) for management calls; the Swarm data plane goes over WireGuard
+- The existing TLS/TCP path (DockerNode) is unchanged — swarm nodes use SSH for mgmt + wgmesh for Swarm transport
+
+#### wgmesh Compose Deploy
+
+VVS renders and deploys the following compose on each node via SSH (parameterised with cluster key and node hostname):
+
+```yaml
+# managed by VVS — do not edit manually
+services:
+  wgmesh:
+    image: ghcr.io/atvirokodosprendimai/wgmesh:latest
+    cap_add: [NET_ADMIN]
+    network_mode: host
+    environment:
+      WGMESH_KEY: "<clusterWgmeshKey>"
+      HOSTNAME: "<nodeHostname>"
+    restart: always
+```
+
+After deploy VVS polls `ip -4 addr show wgmesh0` (up to 30 s, 2 s interval) until an IP appears, then stores it.
 
 ### Swarm Cluster
 
-- `SwarmCluster` entity: ID, name, advertise address of first manager, manager join token, worker join token (both AES-encrypted), notes, status (`initializing | active | degraded | unknown`)
+- `SwarmCluster` entity: ID, name, wgmeshKey (AES-encrypted, 32+ chars), manager join token, worker join token (AES-encrypted), notes, status (`initializing | active | degraded | unknown`)
 - Two creation paths:
-  - **VVS-init**: select an existing SwarmNode → VVS calls `SwarmInit` via Docker SDK → stores returned join tokens and advertise addr
-  - **Import**: admin pastes manager join token, worker join token, and advertise addr → VVS stores them; subsequent node additions use the stored tokens
-- Join tokens are stored encrypted; never displayed in plaintext after save (show masked: `SWMTKN-1-****`)
+  - **VVS-init**: enter cluster name + wgmesh key → select first manager node (must have vpnIP already) → VVS calls `SwarmInit(vpnIP)` → stores returned join tokens
+  - **Import**: enter wgmesh key + paste manager/worker tokens → add nodes manually
+- Join tokens are stored encrypted; never displayed in plaintext (masked: `SWMTKN-1-****`)
+- wgmeshKey is never displayed after save (masked: `****`)
 - Cluster status is derived from the manager node's swarm info on page load (not polled continuously)
 
 ### Swarm Nodes
 
-- `SwarmNode` entity: ID, clusterID (optional — standalone SSH nodes are also valid), role (`manager | worker`), name, sshHost, sshUser, sshPort, sshKey (PEM, encrypted), advertiseAddr, swarmNodeID (Docker's internal node ID after join), status
-- Adding a worker: VVS uses stored worker join token, calls `SwarmJoin` on the target node's Docker API via SSH transport
-- Adding a manager: same with manager join token
-- Removing a node: demote if manager → call `SwarmLeave` on the node → call `NodeRemove` on the manager
-- Swarm node list shows: name, role badge (manager/worker), status (ready/down), IP, Docker node ID
+- `SwarmNode` entity: ID, clusterID (optional — standalone SSH nodes also valid), role (`manager | worker`), name, sshHost, sshUser, sshPort, sshKey (PEM, AES-encrypted), vpnIP (wgmesh0 IP, auto-populated), swarmNodeID (Docker internal node ID after join), status
+- **Node setup flow** (SSE-streamed, keeping connection open):
+  1. SSH to `sshHost` → deploy wgmesh compose with cluster key
+  2. Poll for `wgmesh0` IP → store as `vpnIP`
+  3. Stream progress updates to UI; show VPN IP once acquired
+- **Adding a worker**: VVS uses stored worker join token, calls `SwarmJoin(managerVpnIP, workerToken)` on target node via SSH transport
+- **Adding a manager**: same with manager join token
+- **Removing a node**: demote if manager → `SwarmLeave` on node → `NodeRemove` on manager
+- Swarm node list shows: name, role badge, status, VPN IP (`wgmesh0`), Docker node ID
 
 ### Networks
 
@@ -113,18 +140,34 @@ adapters/dockerclient/ssh_client.go
 ### New Domain Entities
 
 ```
-domain/swarm_cluster.go   — SwarmCluster, SwarmClusterRepository
-domain/swarm_node.go      — SwarmNode, SwarmNodeRepository
+domain/swarm_cluster.go   — SwarmCluster (+ wgmeshKey), SwarmClusterRepository
+domain/swarm_node.go      — SwarmNode (+ vpnIP), SwarmNodeRepository
 domain/swarm_network.go   — SwarmNetwork (+ ReservedIP, DHCPRange), SwarmNetworkRepository
 domain/swarm_stack.go     — SwarmStack, SwarmRoute, SwarmStackRepository
 domain/traefik_config.go  — GenerateTraefikConfig(network *SwarmNetwork, stacks []SwarmStack) string
+domain/wgmesh.go          — RenderWgmeshCompose(clusterKey, hostname string) string
+                            PollVpnIP(ctx, sshClient, timeout) (string, error)
+```
+
+Key fields:
+```go
+type SwarmCluster struct {
+    // ...
+    WgmeshKey string // AES-encrypted, 32+ chars; shared by all nodes in cluster
+}
+
+type SwarmNode struct {
+    // ...
+    VpnIP      string // wgmesh0 IP — auto-populated after wgmesh deploy; empty until provisioned
+    SshHost    string // physical/public IP for SSH provisioning only
+}
 ```
 
 ### New Migrations
 
 ```
-migrations/003_create_swarm_clusters.sql
-migrations/004_create_swarm_nodes.sql
+migrations/003_create_swarm_clusters.sql   — includes wgmesh_key column
+migrations/004_create_swarm_nodes.sql      — includes vpn_ip column
 migrations/005_create_swarm_networks.sql
 migrations/006_create_swarm_stacks.sql
 ```
@@ -134,17 +177,22 @@ migrations/006_create_swarm_stacks.sql
 New methods on `domain.DockerClient`:
 
 ```go
-SwarmInit(ctx, advertiseAddr string) (managerToken, workerToken string, err error)
-SwarmJoin(ctx, managerAddr, joinToken string) error
+// vpnIP is the node's wgmesh0 IP — passed to all three addr flags:
+//   --advertise-addr vpnIP   (what peers use to reach this node)
+//   --data-path-addr vpnIP   (VXLAN overlay data plane binds here)
+//   --listen-addr    vpnIP   (Swarm management API listens here)
+// All Swarm traffic (mgmt + data plane) travels over the WireGuard mesh.
+SwarmInit(ctx, vpnIP string) (managerToken, workerToken string, err error)
+SwarmJoin(ctx, managerVpnIP, joinToken string) error
 SwarmLeave(ctx context.Context, force bool) error
 SwarmNodeList(ctx context.Context) ([]SwarmNodeInfo, error)
 SwarmNodeRemove(ctx context.Context, nodeID string) error
 NetworkCreate(ctx context.Context, req NetworkCreateRequest) (string, error)
 NetworkList(ctx context.Context) ([]NetworkInfo, error)
-InterfaceList(ctx context.Context) ([]string, error) // for macvlan parent dropdown
 StackDeploy(ctx context.Context, name, composeYAML string) error
 StackRemove(ctx context.Context, name string) error
 StackList(ctx context.Context) ([]StackInfo, error)
+// NOTE: InterfaceList removed — macvlan parent is free-text in VVS, not from Docker API
 ```
 
 ### NATS Subjects (new)
@@ -164,8 +212,10 @@ isp.docker.swarm.stack.*     — deployed/updated/removed/status_changed
 ## Verification
 
 - Add swarm node with SSH key → Ping returns Docker version (SSH dial successful)
-- VVS-init: select node → cluster created, join tokens stored masked
-- Import: paste tokens → add worker node → node appears in cluster node list with role=worker
+- Add node (sshHost + sshKey + cluster) → wgmesh compose deployed → `wgmesh0` IP polled and stored as vpnIP → UI shows VPN IP
+- VVS-init: select manager node (vpnIP must exist) → `SwarmInit(vpnIP)` with all three addr flags = vpnIP → cluster created, tokens stored masked
+- Add worker: wgmesh deployed first → vpnIP obtained → `SwarmJoin(managerVpnIP, token)` → node joins over WireGuard mesh
+- Import: paste tokens + enter manager vpnIP → add worker nodes → nodes appear in cluster list with vpnIP
 - Create overlay network `10.100.0.0/17` → DHCP range auto-calculates lower half, reserved range shows upper half
 - Add reserved IP `10.100.100.1 / traefik / HTTP router` in VVS panel → visible in reserved IP table, not fetched from Docker
 - Deploy nginx stack → container gets auto-assigned IP from DHCP lower half
@@ -178,10 +228,12 @@ isp.docker.swarm.stack.*     — deployed/updated/removed/status_changed
 
 - SSH dialing in Go requires `golang.org/x/crypto/ssh` — not in current go.mod; needs `go get`
 - Docker SDK has no built-in SSH transport helper; must implement custom `http.Transport` with SSH dial function
+- wgmesh IP polling: `wgmesh0` may take several seconds to appear after compose deploy; retry loop needed (30 s timeout, 2 s interval)
 - `docker stack deploy` requires compose v3 format with `deploy:` keys; v2-only compose files will fail at the swarm scheduler
-- SwarmJoin via Docker API requires the target node's Docker daemon to be reachable; ordering matters (manager must be up first)
+- SwarmJoin ordering: wgmesh must be running and vpnIP obtained before `SwarmJoin` — manager's wgmesh must be reachable on vpnIP
 - Macvlan networks require kernel macvlan support and appropriate NIC promiscuous mode — VVS cannot verify this; surface as a warning in the UI
-- Docker does not enforce the VVS-defined DHCP range boundary — it allocates from the full subnet unless the network is created with an explicit `--ip-range` flag; VVS should pass `IPRange` in the `NetworkCreate` call to constrain Docker's pool to the lower half
+- Docker does not enforce the VVS-defined DHCP range boundary — pass `IPRange` in `NetworkCreate` to constrain Docker's pool to the lower half
+- wgmesh key length: must be ≥ 32 chars; validate in VVS form before storing
 
 ## Interactions
 
