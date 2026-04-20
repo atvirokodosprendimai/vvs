@@ -165,3 +165,12 @@
 - 2026-04-20 `3172074` chore(plan): mark phases 2-5 complete
 - 2026-04-20 `adf41b9` feat(swarm): Generate button for wgmesh key using crypto.getRandomValues
 - 2026-04-20 `6644b86` fix(swarm): lowercase all Datastar signal JSON tags
+- 2026-04-20 `49e1ccd` feat(swarm): Hetzner VPS auto-provisioning
+- 2026-04-20 `2c8341b` feat(docker): add target node selector to stack deploy form
+- 2026-04-20 `26c0a08` fix(docker): lowercase _hetznerformopen signal everywhere
+- 2026-04-20 `16acb62` fix(docker): replace deprecated cx22 with current cpx/cax server types
+- 2026-04-20 `4f69237` feat(docker): per-node compose deploy with TargetNodeID
+- 2026-04-20 `15d0d82` fix(docker): guard ARM server types to EU locations only
+- 2026-04-20 `37f0572` fix(docker): replace flat 30s SSH wait with active retry loop
+- 2026-04-20 `4ca8968` feat(docker): auto-register SSH key + delete VPS on node remove
+- 2026-04-20 `7210b62` feat(docker): fetch server types + locations from Hetzner API
