@@ -278,6 +278,20 @@ func (h *InitSwarmHandler) Handle(ctx context.Context, cmd InitSwarmCommand) (*d
 		return nil, fmt.Errorf("save cluster: %w", err)
 	}
 
+	// Mark the manager node as active and capture its Docker swarm node ID
+	if nodeList, err := client.SwarmNodeList(ctx); err == nil {
+		for _, info := range nodeList {
+			if info.Hostname == node.Name {
+				node.SetSwarmNodeID(info.ID) // also sets Status = Active
+				break
+			}
+		}
+	}
+	if node.Status != domain.SwarmNodeActive {
+		node.Status = domain.SwarmNodeActive // fallback if hostname match failed
+	}
+	_ = h.nodeRepo.Save(ctx, node)
+
 	h.emit("Swarm active — tokens stored")
 	_ = h.publisher.Publish(ctx, events.SwarmClusterInitialised.String(), events.DomainEvent{
 		ID: uuid.Must(uuid.NewV7()).String(), Type: events.SwarmClusterInitialised.String(),
