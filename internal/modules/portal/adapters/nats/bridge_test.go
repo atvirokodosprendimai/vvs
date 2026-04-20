@@ -30,6 +30,9 @@ func (s *stubPortalTokenReader) FindByHash(_ context.Context, _ string) (*portal
 }
 
 func (s *stubPortalTokenReader) MarkUsed(_ context.Context, _ string) error { return nil }
+func (s *stubPortalTokenReader) Save(_ context.Context, _ *portaldomain.PortalToken) error {
+	return nil
+}
 
 type stubInvoiceTokenStore struct {
 	tokens map[string]*invoicedomain.InvoiceToken

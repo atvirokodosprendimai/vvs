@@ -150,7 +150,7 @@ func TestPortalLogout_ClearsCookieAndRedirects(t *testing.T) {
 	router.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusFound, rr.Code)
-	assert.Contains(t, rr.Header().Get("Location"), "/portal/auth")
+	assert.Contains(t, rr.Header().Get("Location"), "/portal/login")
 
 	cookies := rr.Result().Cookies()
 	for _, c := range cookies {

@@ -298,11 +298,13 @@ func (h *Handlers) invoiceDetail(w http.ResponseWriter, r *http.Request) {
 
 	inv, err := h.getInvoice.Handle(r.Context(), id)
 	if err != nil || inv == nil {
+		w.WriteHeader(http.StatusNotFound)
 		PortalErrorPage(cust, "Not Found", "This invoice could not be found.").Render(r.Context(), w)
 		return
 	}
 	// Ownership check — customer can only view their own invoices.
 	if inv.CustomerID != customerID {
+		w.WriteHeader(http.StatusNotFound)
 		PortalErrorPage(cust, "Not Found", "This invoice could not be found.").Render(r.Context(), w)
 		return
 	}

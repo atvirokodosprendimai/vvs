@@ -17,6 +17,8 @@ func makeTestUser(t *testing.T, role authdomain.Role) *authdomain.User {
 	if err != nil {
 		t.Fatalf("NewUser: %v", err)
 	}
+	// Mirror what the persistence layer does via JOIN: built-in write roles get IsWriteRole=true.
+	u.IsWriteRole = role == authdomain.RoleAdmin || role == authdomain.RoleOperator
 	return u
 }
 
