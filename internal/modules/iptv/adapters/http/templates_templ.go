@@ -189,7 +189,7 @@ func IPTVChannelListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"></div><div id=\"iptv-ch-form-error\"></div><div class=\"flex gap-2 mt-4 justify-end\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"></div><div id=\"iptv-form-error\"></div><div class=\"flex gap-2 mt-4 justify-end\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -524,7 +524,7 @@ func IPTVPackageListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\"></div><div id=\"iptv-pkg-form-error\"></div><div class=\"flex gap-2 mt-4 justify-end\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\"></div><div id=\"iptv-form-error\"></div><div class=\"flex gap-2 mt-4 justify-end\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -822,7 +822,7 @@ func IPTVSubscriptionListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\" disabled><option>Loading packages...</option></select></div></div><div id=\"iptv-sub-form-error\"></div><div class=\"flex gap-2 mt-4 justify-end\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\" disabled><option>Loading packages...</option></select></div></div><div id=\"iptv-form-error\"></div><div class=\"flex gap-2 mt-4 justify-end\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1288,7 +1288,7 @@ func IPTVSTBListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "\"></div><div id=\"iptv-stb-form-error\"></div><div class=\"flex gap-2 mt-4 justify-end\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "\"></div><div id=\"iptv-form-error\"></div><div class=\"flex gap-2 mt-4 justify-end\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

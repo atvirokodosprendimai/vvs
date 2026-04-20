@@ -45,7 +45,7 @@ templ IPTVChannelListPage() {
 						<input data-bind:iptv-ch-category placeholder="Category (e.g. National)" class={ iptvInput() }/>
 						<input data-bind:iptv-ch-epg placeholder="EPG Source / tvg-id" class={ iptvInput() }/>
 					</div>
-					<div id="iptv-ch-form-error"></div>
+					<div id="iptv-form-error"></div>
 					<div class="flex gap-2 mt-4 justify-end">
 						<button type="button" data-on:click="$_iptvChOpen = false" class={ iptvCancelBtn() }>Cancel</button>
 						<button
@@ -144,7 +144,7 @@ templ IPTVPackageListPage() {
 						<input data-bind:iptv-pkg-price placeholder="Price (e.g. 9.99)" class={ iptvInput() }/>
 						<input data-bind:iptv-pkg-desc placeholder="Description (optional)" class={ iptvInput() }/>
 					</div>
-					<div id="iptv-pkg-form-error"></div>
+					<div id="iptv-form-error"></div>
 					<div class="flex gap-2 mt-4 justify-end">
 						<button type="button" data-on:click="$_iptvPkgOpen = false" class={ iptvCancelBtn() }>Cancel</button>
 						<button
@@ -237,7 +237,7 @@ templ IPTVSubscriptionListPage() {
 							<select class={ iptvSelect() } disabled><option>Loading packages...</option></select>
 						</div>
 					</div>
-					<div id="iptv-sub-form-error"></div>
+					<div id="iptv-form-error"></div>
 					<div class="flex gap-2 mt-4 justify-end">
 						<button type="button" data-on:click="$_iptvSubOpen = false" class={ iptvCancelBtn() }>Cancel</button>
 						<button
@@ -357,7 +357,7 @@ templ IPTVSTBListPage() {
 						</div>
 						<input data-bind:iptv-stb-notes placeholder="Notes (optional)" class={ iptvInput() }/>
 					</div>
-					<div id="iptv-stb-form-error"></div>
+					<div id="iptv-form-error"></div>
 					<div class="flex gap-2 mt-4 justify-end">
 						<button type="button" data-on:click="$_iptvStbOpen = false" class={ iptvCancelBtn() }>Cancel</button>
 						<button
