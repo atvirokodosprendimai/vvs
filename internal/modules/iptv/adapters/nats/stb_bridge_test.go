@@ -124,7 +124,7 @@ func startSTBBridge(t *testing.T) *bridgeFixture {
 		keysBySub:      &stubKeysBySubReader{},
 	}
 
-	bridge := iptvnats.NewSTBBridge(serverNC, fix.keys, fix.subs, fix.channels, fix.epg,
+	bridge := iptvnats.NewSTBBridge(serverNC, fix.keys, fix.subs, fix.channels, nil, fix.epg,
 		fix.stbsByMAC, fix.subsByCustomer, fix.keysBySub)
 	require.NoError(t, bridge.Register())
 	t.Cleanup(bridge.Close)

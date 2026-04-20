@@ -52,6 +52,7 @@ func (m *EPGProgrammeModel) toDomain() *domain.EPGProgramme {
 type ChannelModel struct {
 	ID        string    `gorm:"primaryKey;type:text"`
 	Name      string    `gorm:"type:text;not null"`
+	Slug      string    `gorm:"type:text;not null;default:''"`
 	LogoURL   string    `gorm:"type:text;not null;default:''"`
 	StreamURL string    `gorm:"type:text;not null;default:''"`
 	DVRUrl    string    `gorm:"column:dvr_url;type:text;not null;default:''"`
@@ -66,7 +67,7 @@ func (ChannelModel) TableName() string { return "iptv_channels" }
 
 func toChannelModel(c *domain.Channel) ChannelModel {
 	return ChannelModel{
-		ID: c.ID, Name: c.Name, LogoURL: c.LogoURL, StreamURL: c.StreamURL,
+		ID: c.ID, Name: c.Name, Slug: c.Slug, LogoURL: c.LogoURL, StreamURL: c.StreamURL,
 		DVRUrl: c.DVRUrl, Category: c.Category, EPGSource: c.EPGSource, Active: c.Active,
 		CreatedAt: c.CreatedAt, UpdatedAt: c.UpdatedAt,
 	}
@@ -74,9 +75,107 @@ func toChannelModel(c *domain.Channel) ChannelModel {
 
 func (m *ChannelModel) toDomain() *domain.Channel {
 	return &domain.Channel{
-		ID: m.ID, Name: m.Name, LogoURL: m.LogoURL, StreamURL: m.StreamURL,
+		ID: m.ID, Name: m.Name, Slug: m.Slug, LogoURL: m.LogoURL, StreamURL: m.StreamURL,
 		DVRUrl: m.DVRUrl, Category: m.Category, EPGSource: m.EPGSource, Active: m.Active,
 		CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
+	}
+}
+
+// ── ChannelProvider ───────────────────────────────────────────────────────────
+
+type ChannelProviderModel struct {
+	ID          string    `gorm:"primaryKey;type:text"`
+	ChannelID   string    `gorm:"column:channel_id;type:text;not null;index"`
+	Name        string    `gorm:"type:text;not null;default:''"`
+	URLTemplate string    `gorm:"column:url_template;type:text;not null;default:''"`
+	Token       string    `gorm:"type:text;not null;default:''"`
+	Type        string    `gorm:"type:text;not null;default:'external'"`
+	Priority    int       `gorm:"not null;default:0"`
+	Active      bool      `gorm:"not null;default:1"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+func (ChannelProviderModel) TableName() string { return "iptv_channel_providers" }
+
+func toChannelProviderModel(p *domain.ChannelProvider) ChannelProviderModel {
+	return ChannelProviderModel{
+		ID: p.ID, ChannelID: p.ChannelID, Name: p.Name,
+		URLTemplate: p.URLTemplate, Token: p.Token, Type: string(p.Type),
+		Priority: p.Priority, Active: p.Active,
+		CreatedAt: p.CreatedAt, UpdatedAt: p.UpdatedAt,
+	}
+}
+
+func (m *ChannelProviderModel) toDomain() *domain.ChannelProvider {
+	return &domain.ChannelProvider{
+		ID: m.ID, ChannelID: m.ChannelID, Name: m.Name,
+		URLTemplate: m.URLTemplate, Token: m.Token, Type: domain.ProviderType(m.Type),
+		Priority: m.Priority, Active: m.Active,
+		CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
+	}
+}
+
+// ── IPTVStack ─────────────────────────────────────────────────────────────────
+
+type IPTVStackModel struct {
+	ID                 string     `gorm:"primaryKey;type:text"`
+	Name               string     `gorm:"type:text;not null;default:''"`
+	ClusterID          string     `gorm:"column:cluster_id;type:text;not null;default:''"`
+	NodeID             string     `gorm:"column:node_id;type:text;not null;default:''"`
+	WANNetworkID       string     `gorm:"column:wan_network_id;type:text;not null;default:''"`
+	OverlayNetworkID   string     `gorm:"column:overlay_network_id;type:text;not null;default:''"`
+	WANNetworkName     string     `gorm:"column:wan_network_name;type:text;not null;default:''"`
+	OverlayNetworkName string     `gorm:"column:overlay_network_name;type:text;not null;default:''"`
+	WanIP              string     `gorm:"column:wan_ip;type:text;not null;default:''"`
+	Status             string     `gorm:"type:text;not null;default:'pending'"`
+	LastDeployedAt     *time.Time `gorm:"column:last_deployed_at;type:datetime"`
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
+}
+
+func (IPTVStackModel) TableName() string { return "iptv_stacks" }
+
+func toIPTVStackModel(s *domain.IPTVStack) IPTVStackModel {
+	return IPTVStackModel{
+		ID: s.ID, Name: s.Name, ClusterID: s.ClusterID, NodeID: s.NodeID,
+		WANNetworkID: s.WANNetworkID, OverlayNetworkID: s.OverlayNetworkID,
+		WANNetworkName: s.WANNetworkName, OverlayNetworkName: s.OverlayNetworkName,
+		WanIP: s.WanIP, Status: string(s.Status),
+		LastDeployedAt: s.LastDeployedAt, CreatedAt: s.CreatedAt, UpdatedAt: s.UpdatedAt,
+	}
+}
+
+func (m *IPTVStackModel) toDomain() *domain.IPTVStack {
+	return &domain.IPTVStack{
+		ID: m.ID, Name: m.Name, ClusterID: m.ClusterID, NodeID: m.NodeID,
+		WANNetworkID: m.WANNetworkID, OverlayNetworkID: m.OverlayNetworkID,
+		WANNetworkName: m.WANNetworkName, OverlayNetworkName: m.OverlayNetworkName,
+		WanIP: m.WanIP, Status: domain.IPTVStackStatus(m.Status),
+		LastDeployedAt: m.LastDeployedAt, CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
+	}
+}
+
+// ── IPTVStackChannel ──────────────────────────────────────────────────────────
+
+type IPTVStackChannelModel struct {
+	ID         string `gorm:"primaryKey;type:text"`
+	StackID    string `gorm:"column:stack_id;type:text;not null;index"`
+	ChannelID  string `gorm:"column:channel_id;type:text;not null"`
+	ProviderID string `gorm:"column:provider_id;type:text;not null;default:''"`
+}
+
+func (IPTVStackChannelModel) TableName() string { return "iptv_stack_channels" }
+
+func toIPTVStackChannelModel(sc *domain.IPTVStackChannel) IPTVStackChannelModel {
+	return IPTVStackChannelModel{
+		ID: sc.ID, StackID: sc.StackID, ChannelID: sc.ChannelID, ProviderID: sc.ProviderID,
+	}
+}
+
+func (m *IPTVStackChannelModel) toDomain() *domain.IPTVStackChannel {
+	return &domain.IPTVStackChannel{
+		ID: m.ID, StackID: m.StackID, ChannelID: m.ChannelID, ProviderID: m.ProviderID,
 	}
 }
 

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -12,7 +13,26 @@ import (
 	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/app/commands"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/iptv/domain"
 )
+
+// NodeSSHInfo holds the SSH connection credentials for a node.
+type NodeSSHInfo struct {
+	Host   string
+	User   string
+	Port   int
+	SSHKey []byte
+}
+
+// NodeSSHLookup resolves SSH connection info for a node ID.
+type NodeSSHLookup interface {
+	FindByID(ctx context.Context, id string) (*NodeSSHInfo, error)
+}
+
+// stackReader is the narrow read interface for IPTVStack.
+type stackReader interface {
+	FindByID(ctx context.Context, id string) (*domain.IPTVStack, error)
+}
 
 // IPTVHandlers serves the IPTV admin module routes.
 type IPTVHandlers struct {
@@ -33,13 +53,29 @@ type IPTVHandlers struct {
 	reissueKey      *commands.ReissueSubscriptionKeyHandler
 	assignSTB       *commands.AssignSTBHandler
 	deleteSTB       *commands.DeleteSTBHandler
+	// Provider commands
+	createProvider *commands.CreateChannelProviderHandler
+	deleteProvider *commands.DeleteChannelProviderHandler
+	// Stack commands
+	createStack       *commands.CreateIPTVStackHandler
+	deleteStack       *commands.DeleteIPTVStackHandler
+	addChToStack      *commands.AddChannelToIPTVStackHandler
+	removeChFromStack *commands.RemoveChannelFromIPTVStackHandler
+	deployStack       *commands.DeployIPTVStackHandler
 	// Queries
-	listChannels *queries.ListChannelsHandler
-	listPackages *queries.ListPackagesHandler
-	listSubs     *queries.ListSubscriptionsHandler
-	listSTBs     *queries.ListSTBsHandler
+	listChannels   *queries.ListChannelsHandler
+	getChannel     *queries.GetChannelHandler
+	listPackages   *queries.ListPackagesHandler
+	listSubs       *queries.ListSubscriptionsHandler
+	listSTBs       *queries.ListSTBsHandler
+	listProviders  *queries.ListChannelProvidersHandler
+	listStacks     *queries.ListIPTVStacksHandler
+	getStackChans  *queries.GetIPTVStackChannelsHandler
 	// EPG
 	importEPG *commands.ImportEPGHandler
+	// Node SSH resolver (cross-module)
+	nodeLookup NodeSSHLookup
+	stackRepo  stackReader
 }
 
 func NewIPTVHandlers(
@@ -59,34 +95,60 @@ func NewIPTVHandlers(
 	reissueKey *commands.ReissueSubscriptionKeyHandler,
 	assignSTB *commands.AssignSTBHandler,
 	deleteSTB *commands.DeleteSTBHandler,
+	createProvider *commands.CreateChannelProviderHandler,
+	deleteProvider *commands.DeleteChannelProviderHandler,
+	createStack *commands.CreateIPTVStackHandler,
+	deleteStack *commands.DeleteIPTVStackHandler,
+	addChToStack *commands.AddChannelToIPTVStackHandler,
+	removeChFromStack *commands.RemoveChannelFromIPTVStackHandler,
+	deployStack *commands.DeployIPTVStackHandler,
 	listChannels *queries.ListChannelsHandler,
+	getChannel *queries.GetChannelHandler,
 	listPackages *queries.ListPackagesHandler,
 	listSubs *queries.ListSubscriptionsHandler,
 	listSTBs *queries.ListSTBsHandler,
+	listProviders *queries.ListChannelProvidersHandler,
+	listStacks *queries.ListIPTVStacksHandler,
+	getStackChans *queries.GetIPTVStackChannelsHandler,
 	importEPG *commands.ImportEPGHandler,
+	nodeLookup NodeSSHLookup,
+	stackRepo stackReader,
 ) *IPTVHandlers {
 	return &IPTVHandlers{
-		createChannel:   createChannel,
-		updateChannel:   updateChannel,
-		deleteChannel:   deleteChannel,
-		createPackage:   createPackage,
-		updatePackage:   updatePackage,
-		deletePackage:   deletePackage,
-		addChToPkg:      addChToPkg,
-		removeChFromPkg: removeChFromPkg,
-		createSub:       createSub,
-		suspendSub:      suspendSub,
-		reactivateSub:   reactivateSub,
-		cancelSub:       cancelSub,
-		revokeKey:       revokeKey,
-		reissueKey:      reissueKey,
-		assignSTB:       assignSTB,
-		deleteSTB:       deleteSTB,
-		listChannels:    listChannels,
-		listPackages:    listPackages,
-		listSubs:        listSubs,
-		listSTBs:        listSTBs,
-		importEPG:       importEPG,
+		createChannel:     createChannel,
+		updateChannel:     updateChannel,
+		deleteChannel:     deleteChannel,
+		createPackage:     createPackage,
+		updatePackage:     updatePackage,
+		deletePackage:     deletePackage,
+		addChToPkg:        addChToPkg,
+		removeChFromPkg:   removeChFromPkg,
+		createSub:         createSub,
+		suspendSub:        suspendSub,
+		reactivateSub:     reactivateSub,
+		cancelSub:         cancelSub,
+		revokeKey:         revokeKey,
+		reissueKey:        reissueKey,
+		assignSTB:         assignSTB,
+		deleteSTB:         deleteSTB,
+		createProvider:    createProvider,
+		deleteProvider:    deleteProvider,
+		createStack:       createStack,
+		deleteStack:       deleteStack,
+		addChToStack:      addChToStack,
+		removeChFromStack: removeChFromStack,
+		deployStack:       deployStack,
+		listChannels:      listChannels,
+		getChannel:        getChannel,
+		listPackages:      listPackages,
+		listSubs:          listSubs,
+		listSTBs:          listSTBs,
+		listProviders:     listProviders,
+		listStacks:        listStacks,
+		getStackChans:     getStackChans,
+		importEPG:         importEPG,
+		nodeLookup:        nodeLookup,
+		stackRepo:         stackRepo,
 	}
 }
 
@@ -98,20 +160,28 @@ func (h *IPTVHandlers) RegisterRoutes(r chi.Router) {
 		http.Redirect(w, r, "/iptv/channels", http.StatusFound)
 	})
 	r.Get("/iptv/channels", h.channelsPage)
+	r.Get("/iptv/channels/{id}", h.channelDetailPage)
 	r.Get("/iptv/packages", h.packagesPage)
 	r.Get("/iptv/subscriptions", h.subscriptionsPage)
 	r.Get("/iptv/stbs", h.stbsPage)
+	r.Get("/iptv/stacks", h.stacksPage)
+	r.Get("/iptv/stacks/{id}", h.stackDetailPage)
 
 	// SSE data endpoints
 	r.Get("/sse/iptv/channels", h.channelsSSE)
+	r.Get("/sse/iptv/channels/{id}/providers", h.channelProvidersSSE)
 	r.Get("/sse/iptv/packages", h.packagesSSE)
 	r.Get("/sse/iptv/subscriptions", h.subscriptionsSSE)
 	r.Get("/sse/iptv/stbs", h.stbsSSE)
+	r.Get("/sse/iptv/stacks", h.stacksSSE)
+	r.Get("/sse/iptv/stacks/{id}/channels", h.stackChannelsSSE)
 
 	// Channel mutations
 	r.Post("/api/iptv/channels", h.createChannelSSE)
 	r.Put("/api/iptv/channels/{id}", h.updateChannelSSE)
 	r.Delete("/api/iptv/channels/{id}", h.deleteChannelSSE)
+	r.Post("/api/iptv/channels/{id}/providers", h.createProviderSSE)
+	r.Delete("/api/iptv/channels/{id}/providers/{pid}", h.deleteProviderSSE)
 
 	// Package mutations
 	r.Post("/api/iptv/packages", h.createPackageSSE)
@@ -131,6 +201,13 @@ func (h *IPTVHandlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/iptv/stbs", h.assignSTBSSE)
 	r.Delete("/api/iptv/stbs/{id}", h.deleteSTBSSE)
 
+	// Stack mutations
+	r.Post("/api/iptv/stacks", h.createStackSSE)
+	r.Delete("/api/iptv/stacks/{id}", h.deleteStackSSE)
+	r.Post("/api/iptv/stacks/{id}/channels", h.addChannelToStackSSE)
+	r.Delete("/api/iptv/stacks/{id}/channels/{cid}", h.removeChannelFromStackSSE)
+	r.Post("/api/iptv/stacks/{id}/deploy", h.deployStackSSE)
+
 	// EPG
 	r.Post("/api/iptv/epg/import", h.epgImport)
 }
@@ -139,6 +216,43 @@ func (h *IPTVHandlers) RegisterRoutes(r chi.Router) {
 
 func (h *IPTVHandlers) channelsPage(w http.ResponseWriter, r *http.Request) {
 	IPTVChannelListPage().Render(r.Context(), w)
+}
+
+func (h *IPTVHandlers) channelDetailPage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	ch, err := h.getChannel.Handle(r.Context(), id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	IPTVChannelDetailPage(*ch).Render(r.Context(), w)
+}
+
+func (h *IPTVHandlers) stacksPage(w http.ResponseWriter, r *http.Request) {
+	IPTVStackListPage().Render(r.Context(), w)
+}
+
+func (h *IPTVHandlers) stackDetailPage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	stack, err := h.stackRepo.FindByID(r.Context(), id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	IPTVStackDetailPage(queries.IPTVStackReadModel{
+		ID:                 stack.ID,
+		Name:               stack.Name,
+		ClusterID:          stack.ClusterID,
+		NodeID:             stack.NodeID,
+		WANNetworkID:       stack.WANNetworkID,
+		OverlayNetworkID:   stack.OverlayNetworkID,
+		WANNetworkName:     stack.WANNetworkName,
+		OverlayNetworkName: stack.OverlayNetworkName,
+		WanIP:              stack.WanIP,
+		Status:             string(stack.Status),
+		LastDeployedAt:     stack.LastDeployedAt,
+		CreatedAt:          stack.CreatedAt,
+	}).Render(r.Context(), w)
 }
 
 func (h *IPTVHandlers) packagesPage(w http.ResponseWriter, r *http.Request) {
@@ -492,6 +606,224 @@ func (h *IPTVHandlers) deleteSTBSSE(w http.ResponseWriter, r *http.Request) {
 	h.patchSTBTable(w, r, sse)
 }
 
+// ── Provider mutations ────────────────────────────────────────────────────────
+
+func (h *IPTVHandlers) channelProvidersSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	providers, err := h.listProviders.Handle(r.Context(), id)
+	if err != nil {
+		log.Printf("iptv: channelProvidersSSE: %v", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElementTempl(IPTVChannelProviderTable(id, providers))
+}
+
+func (h *IPTVHandlers) createProviderSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var sig struct {
+		Name        string `json:"iptv_prov_name"`
+		URLTemplate string `json:"iptv_prov_url"`
+		Token       string `json:"iptv_prov_token"`
+		Type        string `json:"iptv_prov_type"`
+		Priority    string `json:"iptv_prov_priority"`
+	}
+	sse := datastar.NewSSE(w, r)
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse.PatchElementTempl(iptvFormError("Invalid input"))
+		return
+	}
+	priority, _ := strconv.Atoi(sig.Priority)
+	if _, err := h.createProvider.Handle(r.Context(), commands.CreateChannelProviderCommand{
+		ChannelID:   id,
+		Name:        sig.Name,
+		URLTemplate: sig.URLTemplate,
+		Token:       sig.Token,
+		Type:        sig.Type,
+		Priority:    priority,
+	}); err != nil {
+		log.Printf("iptv: createProvider: %v", err)
+		sse.PatchElementTempl(iptvFormError("Failed to create provider"))
+		return
+	}
+	providers, _ := h.listProviders.Handle(r.Context(), id)
+	sse.PatchElementTempl(IPTVChannelProviderTable(id, providers))
+	clearSignals(sse, map[string]any{
+		"_iptvProvOpen": false, "iptv_prov_name": "", "iptv_prov_url": "",
+		"iptv_prov_token": "", "iptv_prov_type": "internal", "iptv_prov_priority": "0",
+	})
+}
+
+func (h *IPTVHandlers) deleteProviderSSE(w http.ResponseWriter, r *http.Request) {
+	chID := chi.URLParam(r, "id")
+	pid := chi.URLParam(r, "pid")
+	sse := datastar.NewSSE(w, r)
+	if err := h.deleteProvider.Handle(r.Context(), commands.DeleteChannelProviderCommand{ID: pid}); err != nil {
+		log.Printf("iptv: deleteProvider: %v", err)
+		sse.PatchElementTempl(iptvFormError("Failed to delete provider"))
+		return
+	}
+	providers, _ := h.listProviders.Handle(r.Context(), chID)
+	sse.PatchElementTempl(IPTVChannelProviderTable(chID, providers))
+}
+
+// ── Stack SSE + mutations ─────────────────────────────────────────────────────
+
+func (h *IPTVHandlers) stacksSSE(w http.ResponseWriter, r *http.Request) {
+	stacks, err := h.listStacks.Handle(r.Context())
+	if err != nil {
+		log.Printf("iptv: stacksSSE: %v", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElementTempl(IPTVStackTable(stacks))
+}
+
+func (h *IPTVHandlers) stackChannelsSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	chans, err := h.getStackChans.Handle(r.Context(), id)
+	if err != nil {
+		log.Printf("iptv: stackChannelsSSE: %v", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElementTempl(IPTVStackChannelTable(id, chans))
+}
+
+func (h *IPTVHandlers) createStackSSE(w http.ResponseWriter, r *http.Request) {
+	var sig struct {
+		Name               string `json:"iptv_stack_name"`
+		ClusterID          string `json:"iptv_stack_cluster"`
+		NodeID             string `json:"iptv_stack_node"`
+		WANNetworkID       string `json:"iptv_stack_wan_net"`
+		OverlayNetworkID   string `json:"iptv_stack_overlay_net"`
+		WANNetworkName     string `json:"iptv_stack_wan_name"`
+		OverlayNetworkName string `json:"iptv_stack_overlay_name"`
+		WanIP              string `json:"iptv_stack_wan_ip"`
+	}
+	sse := datastar.NewSSE(w, r)
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse.PatchElementTempl(iptvFormError("Invalid input"))
+		return
+	}
+	if _, err := h.createStack.Handle(r.Context(), commands.CreateIPTVStackCommand{
+		Name:               sig.Name,
+		ClusterID:          sig.ClusterID,
+		NodeID:             sig.NodeID,
+		WANNetworkID:       sig.WANNetworkID,
+		OverlayNetworkID:   sig.OverlayNetworkID,
+		WANNetworkName:     sig.WANNetworkName,
+		OverlayNetworkName: sig.OverlayNetworkName,
+		WanIP:              sig.WanIP,
+	}); err != nil {
+		log.Printf("iptv: createStack: %v", err)
+		sse.PatchElementTempl(iptvFormError("Failed to create stack"))
+		return
+	}
+	h.patchStackTable(w, r, sse)
+	clearSignals(sse, map[string]any{
+		"_iptvStackOpen": false, "iptv_stack_name": "", "iptv_stack_cluster": "",
+		"iptv_stack_node": "", "iptv_stack_wan_net": "", "iptv_stack_overlay_net": "",
+		"iptv_stack_wan_name": "", "iptv_stack_overlay_name": "", "iptv_stack_wan_ip": "",
+	})
+}
+
+func (h *IPTVHandlers) deleteStackSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	sse := datastar.NewSSE(w, r)
+	if err := h.deleteStack.Handle(r.Context(), commands.DeleteIPTVStackCommand{ID: id}); err != nil {
+		log.Printf("iptv: deleteStack: %v", err)
+		sse.PatchElementTempl(iptvFormError("Failed to delete stack"))
+		return
+	}
+	h.patchStackTable(w, r, sse)
+}
+
+func (h *IPTVHandlers) addChannelToStackSSE(w http.ResponseWriter, r *http.Request) {
+	stackID := chi.URLParam(r, "id")
+	var sig struct {
+		ChannelID  string `json:"iptv_stack_ch_id"`
+		ProviderID string `json:"iptv_stack_ch_prov"`
+	}
+	sse := datastar.NewSSE(w, r)
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse.PatchElementTempl(iptvFormError("Invalid input"))
+		return
+	}
+	if err := h.addChToStack.Handle(r.Context(), commands.AddChannelToIPTVStackCommand{
+		StackID:    stackID,
+		ChannelID:  sig.ChannelID,
+		ProviderID: sig.ProviderID,
+	}); err != nil {
+		log.Printf("iptv: addChannelToStack: %v", err)
+		sse.PatchElementTempl(iptvFormError("Failed to add channel"))
+		return
+	}
+	chans, _ := h.getStackChans.Handle(r.Context(), stackID)
+	sse.PatchElementTempl(IPTVStackChannelTable(stackID, chans))
+	clearSignals(sse, map[string]any{
+		"_iptvStackChOpen": false, "iptv_stack_ch_id": "", "iptv_stack_ch_prov": "",
+	})
+}
+
+func (h *IPTVHandlers) removeChannelFromStackSSE(w http.ResponseWriter, r *http.Request) {
+	stackID := chi.URLParam(r, "id")
+	cid := chi.URLParam(r, "cid")
+	sse := datastar.NewSSE(w, r)
+	if err := h.removeChFromStack.Handle(r.Context(), commands.RemoveChannelFromIPTVStackCommand{
+		StackID:   stackID,
+		ChannelID: cid,
+	}); err != nil {
+		log.Printf("iptv: removeChannelFromStack: %v", err)
+		sse.PatchElementTempl(iptvFormError("Failed to remove channel"))
+		return
+	}
+	chans, _ := h.getStackChans.Handle(r.Context(), stackID)
+	sse.PatchElementTempl(IPTVStackChannelTable(stackID, chans))
+}
+
+func (h *IPTVHandlers) deployStackSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	sse := datastar.NewSSE(w, r)
+
+	stack, err := h.stackRepo.FindByID(r.Context(), id)
+	if err != nil {
+		sse.PatchElementTempl(IPTVDeployLog("Error: stack not found"))
+		return
+	}
+	if h.nodeLookup == nil {
+		sse.PatchElementTempl(IPTVDeployLog("Error: node SSH resolver not configured"))
+		return
+	}
+	node, err := h.nodeLookup.FindByID(r.Context(), stack.NodeID)
+	if err != nil {
+		log.Printf("iptv: deploy: node lookup %s: %v", stack.NodeID, err)
+		sse.PatchElementTempl(IPTVDeployLog("Error: node not found or SSH key unavailable"))
+		return
+	}
+
+	deployer := h.deployStack.WithProgress(func(msg string) {
+		sse.PatchElementTempl(IPTVDeployLog(msg))
+	})
+
+	if err := deployer.Handle(r.Context(), commands.DeployIPTVStackCommand{
+		StackID:    id,
+		NodeHost:   node.Host,
+		NodeUser:   node.User,
+		NodePort:   node.Port,
+		NodeSSHKey: node.SSHKey,
+	}); err != nil {
+		log.Printf("iptv: deploy: %v", err)
+		sse.PatchElementTempl(IPTVDeployLog("Error: " + err.Error()))
+		return
+	}
+	// Refresh stack list
+	h.patchStackTable(w, r, sse)
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 func (h *IPTVHandlers) patchChannelTable(w http.ResponseWriter, r *http.Request, sse *datastar.ServerSentEventGenerator) {
@@ -528,6 +860,15 @@ func (h *IPTVHandlers) patchSTBTable(w http.ResponseWriter, r *http.Request, sse
 		return
 	}
 	sse.PatchElementTempl(IPTVSTBTable(stbs))
+}
+
+func (h *IPTVHandlers) patchStackTable(w http.ResponseWriter, r *http.Request, sse *datastar.ServerSentEventGenerator) {
+	stacks, err := h.listStacks.Handle(r.Context())
+	if err != nil {
+		log.Printf("iptv: patchStackTable: %v", err)
+		return
+	}
+	sse.PatchElementTempl(IPTVStackTable(stacks))
 }
 
 func clearSignals(sse *datastar.ServerSentEventGenerator, vals map[string]any) {

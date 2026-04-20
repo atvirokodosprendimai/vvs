@@ -174,3 +174,11 @@
 - 2026-04-20 `37f0572` fix(docker): replace flat 30s SSH wait with active retry loop
 - 2026-04-20 `4ca8968` feat(docker): auto-register SSH key + delete VPS on node remove
 - 2026-04-20 `7210b62` feat(docker): fetch server types + locations from Hetzner API
+- 2026-04-20 `214f2bb` chore: update CHANGELOG with Hetzner VPS provisioning features
+- 2026-04-20 `4da9a90` fix(docker): install Docker on fresh VPS before deploying wgmesh
+- 2026-04-20 `e71e425` fix(docker): fix wgmesh compose format to use join command + secret flag
+- 2026-04-20 `09ede15` fix(docker): auto-init swarm on first Hetzner manager node
+- 2026-04-20 `abcbea0` fix(docker): mark manager node active after swarm init
+- 2026-04-20 `b5f7fb5` fix(docker): show Init Swarm button after nodes removed and re-add
+- 2026-04-20 `d03bfac` spec(iptv): IPTV multi-provider channels with managed swarm stack
+- 2026-04-20 `ea0d6d8` plan(iptv): multi-provider channels + managed swarm stack

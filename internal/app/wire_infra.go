@@ -205,7 +205,7 @@ func wireInfra(
 
 	// ── STB NATS bridge (serves isp.stb.rpc.* for vvs-stb binary) ───────────
 	stbBridge := iptvnats.NewSTBBridge(nc,
-		iptv.keyRepo, iptv.subRepo, iptv.channelRepo, iptv.epgRepo,
+		iptv.keyRepo, iptv.subRepo, iptv.channelRepo, iptv.providerRepo, iptv.epgRepo,
 		iptv.stbRepo, iptv.subRepo, iptv.keyRepo,
 	)
 	if err := stbBridge.Register(); err != nil {
