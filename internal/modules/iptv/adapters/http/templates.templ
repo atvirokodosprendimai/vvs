@@ -697,7 +697,7 @@ templ IPTVChannelProviderTable(channelID string, providers []queries.ChannelProv
 templ IPTVStackListPage() {
 	@templates.Layout("IPTV Stacks") {
 		<div
-			data-signals="{_iptvStackOpen:false, iptvStackName:'', iptvStackCluster:'', iptvStackNode:'', iptvStackWanNet:'', iptvStackOverlayNet:'', iptvStackWanName:'', iptvStackOverlayName:'', iptvStackWanIp:'', _iptvStackEditOpen:false, iptvStackEditId:''}"
+			data-signals="{_iptvStackOpen:false, iptvStackName:'', iptvStackCluster:'', iptvStackNode:'', iptvStackWanNet:'', iptvStackOverlayNet:'', iptvStackWanName:'', iptvStackOverlayName:'', iptvStackWanIp:'', iptvStackWanIface:'', _iptvStackEditOpen:false, iptvStackEditId:'', _iptvStackCloneOpen:false, iptvStackCloneSrc:''}"
 		>
 			@templates.PageHeaderRow("IPTV — Stacks", "Managed ffmpeg/Caddy deployments") {
 				@iptvNavLinks("stacks")
@@ -742,7 +742,8 @@ templ IPTVStackListPage() {
 							<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
 						</div>
 						<input data-bind:iptv-stack-wan-ip placeholder="WAN IP (auto-filled from node)" class={ iptvInput() }/>
-					</div>
+							<input data-bind:iptv-stack-wan-iface placeholder="WAN Interface (e.g. eth0, ens3)" class={ iptvInput() }/>
+						</div>
 					<div id="iptv-form-error"></div>
 					<div class="flex gap-2 mt-4 justify-end">
 						<button type="button" data-on:click="$_iptvStackOpen = false" class={ iptvCancelBtn() }>Cancel</button>
@@ -764,7 +765,24 @@ templ IPTVStackListPage() {
 					<h2 class="text-neutral-100 font-semibold mb-4">Edit Stack</h2>
 					<div class="flex flex-col gap-3">
 						<input data-bind:iptv-stack-name placeholder="Stack name" class={ iptvInput() }/>
+						<label class="text-xs text-neutral-500">Cluster</label>
+						<div id="iptv-sel-edit-cluster">
+							<select class={ iptvSelect() } disabled><option>— loading —</option></select>
+						</div>
+						<label class="text-xs text-neutral-500">Node</label>
+						<div id="iptv-sel-edit-nodes">
+							<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
+						</div>
+						<label class="text-xs text-neutral-500">WAN Network</label>
+						<div id="iptv-sel-edit-wan-nets">
+							<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
+						</div>
+						<label class="text-xs text-neutral-500">Overlay Network</label>
+						<div id="iptv-sel-edit-overlay-nets">
+							<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
+						</div>
 						<input data-bind:iptv-stack-wan-ip placeholder="WAN IP" class={ iptvInput() }/>
+						<input data-bind:iptv-stack-wan-iface placeholder="WAN Interface (e.g. eth0, ens3)" class={ iptvInput() }/>
 					</div>
 					<div id="iptv-form-error"></div>
 					<div class="flex gap-2 mt-4 justify-end">
@@ -774,6 +792,46 @@ templ IPTVStackListPage() {
 							data-on:click="@put('/api/iptv/stacks/' + $iptvStackEditId)"
 							class={ iptvPrimaryBtn() }
 						>Save</button>
+					</div>
+				</div>
+			</div>
+			<!-- Clone modal -->
+			<div
+				data-show="$_iptvStackCloneOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6">
+					<h2 class="text-neutral-100 font-semibold mb-4">Clone Stack</h2>
+					<div class="flex flex-col gap-3">
+						<input data-bind:iptv-stack-name placeholder="New stack name" class={ iptvInput() }/>
+						<label class="text-xs text-neutral-500">Cluster</label>
+						<div id="iptv-sel-clone-cluster">
+							<select class={ iptvSelect() } disabled><option>— loading —</option></select>
+						</div>
+						<label class="text-xs text-neutral-500">Node</label>
+						<div id="iptv-sel-clone-nodes">
+							<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
+						</div>
+						<label class="text-xs text-neutral-500">WAN Network</label>
+						<div id="iptv-sel-clone-wan-nets">
+							<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
+						</div>
+						<label class="text-xs text-neutral-500">Overlay Network</label>
+						<div id="iptv-sel-clone-overlay-nets">
+							<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
+						</div>
+						<input data-bind:iptv-stack-wan-ip placeholder="WAN IP" class={ iptvInput() }/>
+						<input data-bind:iptv-stack-wan-iface placeholder="WAN Interface (e.g. eth0, ens3)" class={ iptvInput() }/>
+					</div>
+					<div id="iptv-form-error"></div>
+					<div class="flex gap-2 mt-4 justify-end">
+						<button type="button" data-on:click="$_iptvStackCloneOpen = false" class={ iptvCancelBtn() }>Cancel</button>
+						<button
+							type="button"
+							data-on:click="@post('/api/iptv/stacks/' + $iptvStackCloneSrc + '/clone')"
+							class={ iptvPrimaryBtn() }
+						>Clone</button>
 					</div>
 				</div>
 			</div>
@@ -818,9 +876,14 @@ templ IPTVStackTable(stacks []queries.IPTVStackReadModel) {
 									<a href={ templ.SafeURL("/iptv/stacks/" + s.ID) } class="text-xs text-neutral-400 hover:text-neutral-200 transition-colors">Manage</a>
 									<button
 										type="button"
-										data-on:click={ fmt.Sprintf("$_iptvStackEditOpen=true; $iptvStackEditId=%s; $iptvStackName=%s; $iptvStackWanIp=%s", jsStr(s.ID), jsStr(s.Name), jsStr(s.WanIP)) }
+										data-on:click={ fmt.Sprintf("$_iptvStackEditOpen=true; $iptvStackEditId=%s; $iptvStackName=%s; $iptvStackWanIp=%s; $iptvStackWanIface=%s; $iptvStackCluster=%s; $iptvStackNode=%s; $iptvStackWanNet=%s; $iptvStackOverlayNet=%s; $iptvStackWanName=%s; $iptvStackOverlayName=%s; @get('/sse/iptv/select/edit-clusters'); @get('/sse/iptv/select/edit-cluster-deps')", jsStr(s.ID), jsStr(s.Name), jsStr(s.WanIP), jsStr(s.WANInterface), jsStr(s.ClusterID), jsStr(s.NodeID), jsStr(s.WANNetworkID), jsStr(s.OverlayNetworkID), jsStr(s.WANNetworkName), jsStr(s.OverlayNetworkName)) }
 										class="text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
 									>Edit</button>
+									<button
+										type="button"
+										data-on:click={ fmt.Sprintf("$_iptvStackCloneOpen=true; $iptvStackCloneSrc=%s; $iptvStackName=\"Copy of \"+%s; $iptvStackCluster=''; $iptvStackNode=''; $iptvStackWanNet=''; $iptvStackOverlayNet=''; $iptvStackWanIp=''; $iptvStackWanIface=''; @get('/sse/iptv/select/clone-clusters')", jsStr(s.ID), jsStr(s.Name)) }
+										class="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+									>Clone</button>
 									<button
 										type="button"
 										data-on:click={ fmt.Sprintf("@delete('/api/iptv/stacks/%s')", s.ID) }
@@ -859,6 +922,7 @@ templ IPTVStackDetailPage(stack queries.IPTVStackReadModel) {
 				<div><span class="text-neutral-500">Overlay Network</span> <span class="text-neutral-400 ml-2">{ stack.OverlayNetworkName }</span></div>
 				<div><span class="text-neutral-500">Node ID</span> <span class="text-neutral-400 ml-2 font-mono text-xs">{ stack.NodeID }</span></div>
 				<div><span class="text-neutral-500">WAN IP</span> <span class="text-neutral-400 ml-2 font-mono text-xs">{ stack.WanIP }</span></div>
+				<div><span class="text-neutral-500">WAN Interface</span> <span class="text-neutral-400 ml-2 font-mono text-xs">{ stack.WANInterface }</span></div>
 				<div>
 					<span class="text-neutral-500">Last Deploy</span>
 					if stack.LastDeployedAt != nil {
@@ -1173,5 +1237,149 @@ templ IPTVSelectEditSubPackage(packages []queries.PackageReadModel) {
 				<option value={ p.ID }>{ p.Name }</option>
 			}
 		</select>
+	</div>
+}
+
+templ IPTVSelectEditClusters(clusters []ClusterOption) {
+	<div id="iptv-sel-edit-cluster">
+		<select
+			class={ iptvSelect() }
+			data-bind:iptv-stack-cluster
+			data-on:change="@get('/sse/iptv/select/edit-cluster-deps')"
+		>
+			<option value="">— select cluster —</option>
+			for _, c := range clusters {
+				<option value={ c.ID }>{ c.Name }</option>
+			}
+		</select>
+	</div>
+}
+
+templ IPTVSelectEditNodes(nodes []NodeOption) {
+	<div id="iptv-sel-edit-nodes">
+		if len(nodes) == 0 {
+			<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
+		} else {
+			<select
+				class={ iptvSelect() }
+				data-bind:iptv-stack-node
+				data-on:change="$iptvStackWanIp = $el.options[$el.selectedIndex].dataset.vpnip"
+			>
+				<option value="" data-vpnip="">— select node —</option>
+				for _, n := range nodes {
+					<option value={ n.ID } data-vpnip={ n.VpnIP }>{ n.Name } ({ n.VpnIP })</option>
+				}
+			</select>
+		}
+	</div>
+}
+
+templ IPTVSelectEditWANNetworks(nets []NetworkOption) {
+	<div id="iptv-sel-edit-wan-nets">
+		if len(nets) == 0 {
+			<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
+		} else {
+			<select
+				class={ iptvSelect() }
+				data-bind:iptv-stack-wan-net
+				data-on:change="$iptvStackWanName = $el.options[$el.selectedIndex].dataset.name"
+			>
+				<option value="" data-name="">— select WAN network —</option>
+				for _, n := range nets {
+					<option value={ n.ID } data-name={ n.Name }>{ n.Name }</option>
+				}
+			</select>
+		}
+	</div>
+}
+
+templ IPTVSelectEditOverlayNetworks(nets []NetworkOption) {
+	<div id="iptv-sel-edit-overlay-nets">
+		if len(nets) == 0 {
+			<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
+		} else {
+			<select
+				class={ iptvSelect() }
+				data-bind:iptv-stack-overlay-net
+				data-on:change="$iptvStackOverlayName = $el.options[$el.selectedIndex].dataset.name"
+			>
+				<option value="" data-name="">— select Overlay network —</option>
+				for _, n := range nets {
+					<option value={ n.ID } data-name={ n.Name }>{ n.Name }</option>
+				}
+			</select>
+		}
+	</div>
+}
+
+templ IPTVSelectCloneClusters(clusters []ClusterOption) {
+	<div id="iptv-sel-clone-cluster">
+		<select
+			class={ iptvSelect() }
+			data-bind:iptv-stack-cluster
+			data-on:change="@get('/sse/iptv/select/clone-cluster-deps')"
+		>
+			<option value="">— select cluster —</option>
+			for _, c := range clusters {
+				<option value={ c.ID }>{ c.Name }</option>
+			}
+		</select>
+	</div>
+}
+
+templ IPTVSelectCloneNodes(nodes []NodeOption) {
+	<div id="iptv-sel-clone-nodes">
+		if len(nodes) == 0 {
+			<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
+		} else {
+			<select
+				class={ iptvSelect() }
+				data-bind:iptv-stack-node
+				data-on:change="$iptvStackWanIp = $el.options[$el.selectedIndex].dataset.vpnip"
+			>
+				<option value="" data-vpnip="">— select node —</option>
+				for _, n := range nodes {
+					<option value={ n.ID } data-vpnip={ n.VpnIP }>{ n.Name } ({ n.VpnIP })</option>
+				}
+			</select>
+		}
+	</div>
+}
+
+templ IPTVSelectCloneWANNetworks(nets []NetworkOption) {
+	<div id="iptv-sel-clone-wan-nets">
+		if len(nets) == 0 {
+			<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
+		} else {
+			<select
+				class={ iptvSelect() }
+				data-bind:iptv-stack-wan-net
+				data-on:change="$iptvStackWanName = $el.options[$el.selectedIndex].dataset.name"
+			>
+				<option value="" data-name="">— select WAN network —</option>
+				for _, n := range nets {
+					<option value={ n.ID } data-name={ n.Name }>{ n.Name }</option>
+				}
+			</select>
+		}
+	</div>
+}
+
+templ IPTVSelectCloneOverlayNetworks(nets []NetworkOption) {
+	<div id="iptv-sel-clone-overlay-nets">
+		if len(nets) == 0 {
+			<select class={ iptvSelect() } disabled><option>— select cluster first —</option></select>
+		} else {
+			<select
+				class={ iptvSelect() }
+				data-bind:iptv-stack-overlay-net
+				data-on:change="$iptvStackOverlayName = $el.options[$el.selectedIndex].dataset.name"
+			>
+				<option value="" data-name="">— select Overlay network —</option>
+				for _, n := range nets {
+					<option value={ n.ID } data-name={ n.Name }>{ n.Name }</option>
+				}
+			</select>
+		}
 	</div>
 }

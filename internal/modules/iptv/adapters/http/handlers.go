@@ -99,6 +99,7 @@ type IPTVHandlers struct {
 	createStack       *commands.CreateIPTVStackHandler
 	updateStack       *commands.UpdateIPTVStackHandler
 	deleteStack       *commands.DeleteIPTVStackHandler
+	cloneStack        *commands.CloneIPTVStackHandler
 	addChToStack      *commands.AddChannelToIPTVStackHandler
 	removeChFromStack *commands.RemoveChannelFromIPTVStackHandler
 	deployStack       *commands.DeployIPTVStackHandler
@@ -148,6 +149,7 @@ func NewIPTVHandlers(
 	createStack *commands.CreateIPTVStackHandler,
 	updateStack *commands.UpdateIPTVStackHandler,
 	deleteStack *commands.DeleteIPTVStackHandler,
+	cloneStack *commands.CloneIPTVStackHandler,
 	addChToStack *commands.AddChannelToIPTVStackHandler,
 	removeChFromStack *commands.RemoveChannelFromIPTVStackHandler,
 	deployStack *commands.DeployIPTVStackHandler,
@@ -192,6 +194,7 @@ func NewIPTVHandlers(
 		createStack:       createStack,
 		updateStack:       updateStack,
 		deleteStack:       deleteStack,
+		cloneStack:        cloneStack,
 		addChToStack:      addChToStack,
 		removeChFromStack: removeChFromStack,
 		deployStack:       deployStack,
@@ -274,10 +277,15 @@ func (h *IPTVHandlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/iptv/stacks/{id}/channels", h.addChannelToStackSSE)
 	r.Delete("/api/iptv/stacks/{id}/channels/{cid}", h.removeChannelFromStackSSE)
 	r.Post("/api/iptv/stacks/{id}/deploy", h.deployStackSSE)
+	r.Post("/api/iptv/stacks/{id}/clone", h.cloneStackSSE)
 
 	// Cascading select SSE endpoints
 	r.Get("/sse/iptv/select/clusters", h.selectClustersSSE)
 	r.Get("/sse/iptv/select/cluster-deps", h.selectClusterDepsSSE)
+	r.Get("/sse/iptv/select/edit-clusters", h.selectEditClustersSSE)
+	r.Get("/sse/iptv/select/edit-cluster-deps", h.selectEditClusterDepsSSE)
+	r.Get("/sse/iptv/select/clone-clusters", h.selectCloneClustersSSE)
+	r.Get("/sse/iptv/select/clone-cluster-deps", h.selectCloneClusterDepsSSE)
 	r.Get("/sse/iptv/select/channels", h.selectChannelsSSE)
 	r.Get("/sse/iptv/select/channel-providers", h.selectChannelProvidersSSE)
 	r.Get("/sse/iptv/select/sub-deps", h.selectSubDepsSSE)
@@ -325,6 +333,7 @@ func (h *IPTVHandlers) stackDetailPage(w http.ResponseWriter, r *http.Request) {
 		WANNetworkName:     stack.WANNetworkName,
 		OverlayNetworkName: stack.OverlayNetworkName,
 		WanIP:              stack.WanIP,
+		WANInterface:       stack.WANInterface,
 		Status:             string(stack.Status),
 		LastDeployedAt:     stack.LastDeployedAt,
 		CreatedAt:          stack.CreatedAt,
@@ -818,6 +827,7 @@ func (h *IPTVHandlers) createStackSSE(w http.ResponseWriter, r *http.Request) {
 		WANNetworkName     string `json:"iptvStackWanName"`
 		OverlayNetworkName string `json:"iptvStackOverlayName"`
 		WanIP              string `json:"iptvStackWanIp"`
+		WANInterface       string `json:"iptvStackWanIface"`
 	}
 	if err := datastar.ReadSignals(r, &sig); err != nil {
 		sse := datastar.NewSSE(w, r)
@@ -834,6 +844,7 @@ func (h *IPTVHandlers) createStackSSE(w http.ResponseWriter, r *http.Request) {
 		WANNetworkName:     sig.WANNetworkName,
 		OverlayNetworkName: sig.OverlayNetworkName,
 		WanIP:              sig.WanIP,
+		WANInterface:       sig.WANInterface,
 	}); err != nil {
 		log.Printf("iptv: createStack: %v", err)
 		sse.PatchElementTempl(iptvFormError("Failed to create stack"))
@@ -844,6 +855,7 @@ func (h *IPTVHandlers) createStackSSE(w http.ResponseWriter, r *http.Request) {
 		"_iptvStackOpen": false, "iptvStackName": "", "iptvStackCluster": "",
 		"iptvStackNode": "", "iptvStackWanNet": "", "iptvStackOverlayNet": "",
 		"iptvStackWanName": "", "iptvStackOverlayName": "", "iptvStackWanIp": "",
+		"iptvStackWanIface": "", "iptvStackCloneSrc": "",
 	})
 }
 
@@ -861,8 +873,15 @@ func (h *IPTVHandlers) deleteStackSSE(w http.ResponseWriter, r *http.Request) {
 func (h *IPTVHandlers) updateStackSSE(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var sig struct {
-		Name  string `json:"iptvStackName"`
-		WanIP string `json:"iptvStackWanIp"`
+		Name               string `json:"iptvStackName"`
+		ClusterID          string `json:"iptvStackCluster"`
+		NodeID             string `json:"iptvStackNode"`
+		WANNetworkID       string `json:"iptvStackWanNet"`
+		OverlayNetworkID   string `json:"iptvStackOverlayNet"`
+		WANNetworkName     string `json:"iptvStackWanName"`
+		OverlayNetworkName string `json:"iptvStackOverlayName"`
+		WanIP              string `json:"iptvStackWanIp"`
+		WANInterface       string `json:"iptvStackWanIface"`
 	}
 	if err := datastar.ReadSignals(r, &sig); err != nil {
 		sse := datastar.NewSSE(w, r)
@@ -870,19 +889,17 @@ func (h *IPTVHandlers) updateStackSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sse := datastar.NewSSE(w, r)
-	stack, err := h.stackRepo.FindByID(r.Context(), id)
-	if err != nil {
-		sse.PatchElementTempl(iptvFormError("Stack not found"))
-		return
-	}
 	if err := h.updateStack.Handle(r.Context(), commands.UpdateIPTVStackCommand{
 		ID:                 id,
 		Name:               sig.Name,
-		WANNetworkID:       stack.WANNetworkID,
-		OverlayNetworkID:   stack.OverlayNetworkID,
-		WANNetworkName:     stack.WANNetworkName,
-		OverlayNetworkName: stack.OverlayNetworkName,
+		ClusterID:          sig.ClusterID,
+		NodeID:             sig.NodeID,
+		WANNetworkID:       sig.WANNetworkID,
+		OverlayNetworkID:   sig.OverlayNetworkID,
+		WANNetworkName:     sig.WANNetworkName,
+		OverlayNetworkName: sig.OverlayNetworkName,
 		WanIP:              sig.WanIP,
+		WANInterface:       sig.WANInterface,
 	}); err != nil {
 		log.Printf("iptv: updateStack: %v", err)
 		sse.PatchElementTempl(iptvFormError("Failed to update stack"))
@@ -1109,6 +1126,125 @@ func (h *IPTVHandlers) selectClusterDepsSSE(w http.ResponseWriter, r *http.Reque
 	sse.PatchElementTempl(IPTVSelectNodes(nodes))
 	sse.PatchElementTempl(IPTVSelectWANNetworks(nets))
 	sse.PatchElementTempl(IPTVSelectOverlayNetworks(nets))
+}
+
+func (h *IPTVHandlers) cloneStackSSE(w http.ResponseWriter, r *http.Request) {
+	srcID := chi.URLParam(r, "id")
+	var sig struct {
+		Name               string `json:"iptvStackName"`
+		ClusterID          string `json:"iptvStackCluster"`
+		NodeID             string `json:"iptvStackNode"`
+		WANNetworkID       string `json:"iptvStackWanNet"`
+		OverlayNetworkID   string `json:"iptvStackOverlayNet"`
+		WANNetworkName     string `json:"iptvStackWanName"`
+		OverlayNetworkName string `json:"iptvStackOverlayName"`
+		WanIP              string `json:"iptvStackWanIp"`
+		WANInterface       string `json:"iptvStackWanIface"`
+	}
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
+		sse.PatchElementTempl(iptvFormError("Invalid input"))
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	if _, err := h.cloneStack.Handle(r.Context(), commands.CloneIPTVStackCommand{
+		SourceID:           srcID,
+		Name:               sig.Name,
+		ClusterID:          sig.ClusterID,
+		NodeID:             sig.NodeID,
+		WANNetworkID:       sig.WANNetworkID,
+		OverlayNetworkID:   sig.OverlayNetworkID,
+		WANNetworkName:     sig.WANNetworkName,
+		OverlayNetworkName: sig.OverlayNetworkName,
+		WanIP:              sig.WanIP,
+		WANInterface:       sig.WANInterface,
+	}); err != nil {
+		log.Printf("iptv: cloneStack: %v", err)
+		sse.PatchElementTempl(iptvFormError("Failed to clone stack"))
+		return
+	}
+	h.patchStackTable(w, r, sse)
+	clearSignals(sse, map[string]any{
+		"_iptvStackCloneOpen": false, "iptvStackCloneSrc": "",
+		"iptvStackName": "", "iptvStackCluster": "", "iptvStackNode": "",
+		"iptvStackWanNet": "", "iptvStackOverlayNet": "",
+		"iptvStackWanName": "", "iptvStackOverlayName": "",
+		"iptvStackWanIp": "", "iptvStackWanIface": "",
+	})
+}
+
+func (h *IPTVHandlers) selectEditClustersSSE(w http.ResponseWriter, r *http.Request) {
+	sse := datastar.NewSSE(w, r)
+	if h.swarmClusters == nil {
+		sse.PatchElementTempl(IPTVSelectEditClusters(nil))
+		return
+	}
+	clusters, err := h.swarmClusters.FindAll(r.Context())
+	if err != nil {
+		log.Printf("iptv: selectEditClusters: %v", err)
+		sse.PatchElementTempl(IPTVSelectEditClusters(nil))
+		return
+	}
+	sse.PatchElementTempl(IPTVSelectEditClusters(clusters))
+}
+
+func (h *IPTVHandlers) selectEditClusterDepsSSE(w http.ResponseWriter, r *http.Request) {
+	var sig struct {
+		ClusterID string `json:"iptvStackCluster"`
+	}
+	sse := datastar.NewSSE(w, r)
+	_ = datastar.ReadSignals(r, &sig)
+
+	var nodes []NodeOption
+	var nets []NetworkOption
+	if sig.ClusterID != "" {
+		if h.swarmNodes != nil {
+			nodes, _ = h.swarmNodes.FindByClusterID(r.Context(), sig.ClusterID)
+		}
+		if h.swarmNetworks != nil {
+			nets, _ = h.swarmNetworks.FindByClusterID(r.Context(), sig.ClusterID)
+		}
+	}
+	sse.PatchElementTempl(IPTVSelectEditNodes(nodes))
+	sse.PatchElementTempl(IPTVSelectEditWANNetworks(nets))
+	sse.PatchElementTempl(IPTVSelectEditOverlayNetworks(nets))
+}
+
+func (h *IPTVHandlers) selectCloneClustersSSE(w http.ResponseWriter, r *http.Request) {
+	sse := datastar.NewSSE(w, r)
+	if h.swarmClusters == nil {
+		sse.PatchElementTempl(IPTVSelectCloneClusters(nil))
+		return
+	}
+	clusters, err := h.swarmClusters.FindAll(r.Context())
+	if err != nil {
+		log.Printf("iptv: selectCloneClusters: %v", err)
+		sse.PatchElementTempl(IPTVSelectCloneClusters(nil))
+		return
+	}
+	sse.PatchElementTempl(IPTVSelectCloneClusters(clusters))
+}
+
+func (h *IPTVHandlers) selectCloneClusterDepsSSE(w http.ResponseWriter, r *http.Request) {
+	var sig struct {
+		ClusterID string `json:"iptvStackCluster"`
+	}
+	sse := datastar.NewSSE(w, r)
+	_ = datastar.ReadSignals(r, &sig)
+
+	var nodes []NodeOption
+	var nets []NetworkOption
+	if sig.ClusterID != "" {
+		if h.swarmNodes != nil {
+			nodes, _ = h.swarmNodes.FindByClusterID(r.Context(), sig.ClusterID)
+		}
+		if h.swarmNetworks != nil {
+			nets, _ = h.swarmNetworks.FindByClusterID(r.Context(), sig.ClusterID)
+		}
+	}
+	sse.PatchElementTempl(IPTVSelectCloneNodes(nodes))
+	sse.PatchElementTempl(IPTVSelectCloneWANNetworks(nets))
+	sse.PatchElementTempl(IPTVSelectCloneOverlayNetworks(nets))
 }
 
 func (h *IPTVHandlers) selectChannelsSSE(w http.ResponseWriter, r *http.Request) {

@@ -128,6 +128,7 @@ type IPTVStackModel struct {
 	WANNetworkName     string     `gorm:"column:wan_network_name;type:text;not null;default:''"`
 	OverlayNetworkName string     `gorm:"column:overlay_network_name;type:text;not null;default:''"`
 	WanIP              string     `gorm:"column:wan_ip;type:text;not null;default:''"`
+	WANInterface       string     `gorm:"column:wan_interface;type:text;not null;default:''"`
 	Status             string     `gorm:"type:text;not null;default:'pending'"`
 	LastDeployedAt     *time.Time `gorm:"column:last_deployed_at;type:datetime"`
 	CreatedAt          time.Time
@@ -141,7 +142,7 @@ func toIPTVStackModel(s *domain.IPTVStack) IPTVStackModel {
 		ID: s.ID, Name: s.Name, ClusterID: s.ClusterID, NodeID: s.NodeID,
 		WANNetworkID: s.WANNetworkID, OverlayNetworkID: s.OverlayNetworkID,
 		WANNetworkName: s.WANNetworkName, OverlayNetworkName: s.OverlayNetworkName,
-		WanIP: s.WanIP, Status: string(s.Status),
+		WanIP: s.WanIP, WANInterface: s.WANInterface, Status: string(s.Status),
 		LastDeployedAt: s.LastDeployedAt, CreatedAt: s.CreatedAt, UpdatedAt: s.UpdatedAt,
 	}
 }
@@ -151,7 +152,7 @@ func (m *IPTVStackModel) toDomain() *domain.IPTVStack {
 		ID: m.ID, Name: m.Name, ClusterID: m.ClusterID, NodeID: m.NodeID,
 		WANNetworkID: m.WANNetworkID, OverlayNetworkID: m.OverlayNetworkID,
 		WANNetworkName: m.WANNetworkName, OverlayNetworkName: m.OverlayNetworkName,
-		WanIP: m.WanIP, Status: domain.IPTVStackStatus(m.Status),
+		WanIP: m.WanIP, WANInterface: m.WANInterface, Status: domain.IPTVStackStatus(m.Status),
 		LastDeployedAt: m.LastDeployedAt, CreatedAt: m.CreatedAt, UpdatedAt: m.UpdatedAt,
 	}
 }

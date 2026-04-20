@@ -181,6 +181,7 @@ func wireIPTV(gdb *gormsqlite.DB, docker *dockerWired, cust *customerWired) *ipt
 		iptvcommands.NewCreateIPTVStackHandler(stackRepo),
 		iptvcommands.NewUpdateIPTVStackHandler(stackRepo),
 		iptvcommands.NewDeleteIPTVStackHandler(stackRepo, stackChRepo),
+		iptvcommands.NewCloneIPTVStackHandler(stackRepo, stackChRepo),
 		iptvcommands.NewAddChannelToIPTVStackHandler(stackRepo, stackChRepo),
 		iptvcommands.NewRemoveChannelFromIPTVStackHandler(stackRepo, stackChRepo),
 		iptvcommands.NewDeployIPTVStackHandler(stackRepo, stackChRepo, providerRepo, channelRepo),

@@ -26,9 +26,10 @@ type IPTVStack struct {
 	NodeID           string
 	WANNetworkID     string
 	OverlayNetworkID string
-	WANNetworkName   string // Docker network name for compose
+	WANNetworkName     string // Docker network name for compose
 	OverlayNetworkName string
-	WanIP            string
+	WanIP              string
+	WANInterface       string // host network interface name (e.g. eth0, ens3)
 	Status           IPTVStackStatus
 	LastDeployedAt   *time.Time
 	CreatedAt        time.Time
@@ -100,11 +101,15 @@ func GenerateIPTVCompose(stack *IPTVStack, channels []IPTVStackChannelDetail) st
 `, slug, slug, safeURL))
 	}
 
-	// Caddy file-server
+	// Caddy file-server — bind to WAN IP if set, otherwise all interfaces
+	caddyListen := ":80"
+	if stack.WanIP != "" {
+		caddyListen = stack.WanIP + ":80"
+	}
 	sb.WriteString(fmt.Sprintf(`
   caddy:
     image: caddy:alpine
-    entrypoint: sh -c "caddy file-server --root /data --browse --listen :80"
+    entrypoint: sh -c "caddy file-server --root /data --browse --listen %s"
     restart: unless-stopped
     volumes:
       - /dev/shm:/data
@@ -112,7 +117,7 @@ func GenerateIPTVCompose(stack *IPTVStack, channels []IPTVStackChannelDetail) st
       %s:
         ipv4_address: %s
       %s:
-`, stack.WANNetworkName, stack.WanIP, stack.OverlayNetworkName))
+`, caddyListen, stack.WANNetworkName, stack.WanIP, stack.OverlayNetworkName))
 
 	// Networks block
 	sb.WriteString("\nnetworks:\n")
