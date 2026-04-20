@@ -37,6 +37,26 @@ func swarmNodeStatusClass(status string) string {
 	}
 }
 
+// swarmCanInit returns true when there is at least one provisioned manager node
+// (has VPN IP) but no manager has joined the swarm yet (SwarmNodeID == "").
+// This covers both first-time init and re-init after all nodes are removed.
+func swarmCanInit(nodes []queries.SwarmNodeReadModel) bool {
+	hasProvisionedManager := false
+	hasActiveManager := false
+	for _, n := range nodes {
+		if n.Role != "manager" {
+			continue
+		}
+		if n.VpnIP != "" {
+			hasProvisionedManager = true
+		}
+		if n.SwarmNodeID != "" {
+			hasActiveManager = true
+		}
+	}
+	return hasProvisionedManager && !hasActiveManager
+}
+
 func swarmStackStatusClass(status string) string {
 	switch status {
 	case "running":
@@ -236,7 +256,7 @@ templ SwarmClusterDetailPage(cluster queries.SwarmClusterReadModel, nodes []quer
 					<h1 class="text-xl font-semibold text-neutral-100">{ cluster.Name }</h1>
 					<span class={ swarmClusterStatusClass(cluster.Status) }>{ cluster.Status }</span>
 				</div>
-				if cluster.Status == "initializing" {
+				if swarmCanInit(nodes) {
 					<button
 						type="button"
 						data-on:click={ "@post('/api/swarm/clusters/" + cluster.ID + "/init')" }
