@@ -97,9 +97,9 @@ func ExecSSH(sshHost, sshUser string, sshPort int, sshKey []byte, cmd string) (s
 	}
 	defer sess.Close()
 
-	out, err := sess.Output(cmd)
+	out, err := sess.CombinedOutput(cmd)
 	if err != nil {
-		return "", fmt.Errorf("ssh exec %q: %w", cmd, err)
+		return "", fmt.Errorf("ssh exec %q: %w\n%s", cmd, err, string(out))
 	}
 	return string(out), nil
 }
