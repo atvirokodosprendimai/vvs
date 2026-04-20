@@ -660,6 +660,7 @@ templ SwarmStackTable(stacks []queries.SwarmStackReadModel) {
 				<thead class="text-left text-neutral-500 border-b border-neutral-700">
 					<tr>
 						<th class="pb-2 pr-4 pl-4">Name</th>
+						<th class="pb-2 pr-4">Node</th>
 						<th class="pb-2 pr-4">Status</th>
 						<th class="pb-2 pr-4">Routes</th>
 						<th class="pb-2 pr-4"></th>
@@ -670,6 +671,13 @@ templ SwarmStackTable(stacks []queries.SwarmStackReadModel) {
 						<tr id={ "swarm-stack-row-" + s.ID } class="hover:bg-neutral-800/30">
 							<td class="py-2 pr-4 pl-4 font-medium">
 								<a href={ templ.SafeURL("/swarm/stacks/" + s.ID) } class="hover:text-amber-400">{ s.Name }</a>
+							</td>
+							<td class="py-2 pr-4 text-neutral-400 text-xs font-mono">
+								if s.TargetNodeName != "" {
+									{ s.TargetNodeName }
+								} else {
+									<span class="text-neutral-600">—</span>
+								}
 							</td>
 							<td class="py-2 pr-4">
 								<span class={ swarmStackStatusClass(s.Status) }>{ s.Status }</span>
@@ -692,7 +700,7 @@ templ SwarmStackTable(stacks []queries.SwarmStackReadModel) {
 
 // ── Stack form page ───────────────────────────────────────────────────────────
 
-templ SwarmStackFormPage(clusterID string, stack *queries.SwarmStackReadModel, clusters []queries.SwarmClusterReadModel) {
+templ SwarmStackFormPage(clusterID string, stack *queries.SwarmStackReadModel, clusters []queries.SwarmClusterReadModel, nodes []queries.SwarmNodeReadModel) {
 	@templates.Layout(swarmStackFormTitle(stack)) {
 		<div class="p-6 max-w-3xl space-y-4">
 			<div class="flex items-center gap-3">
@@ -720,6 +728,15 @@ templ SwarmStackFormPage(clusterID string, stack *queries.SwarmStackReadModel, c
 							}
 						</select>
 					</div>
+				</div>
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Target Node</label>
+					<select data-bind:targetnodeid class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+						<option value="">Auto (first manager)</option>
+						for _, n := range nodes {
+							<option value={ n.ID }>{ n.Name } ({ n.Role })</option>
+						}
+					</select>
 				</div>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Compose YAML *</label>
@@ -758,12 +775,14 @@ func swarmStackFormTitle(stack *queries.SwarmStackReadModel) string {
 func swarmStackFormSignals(clusterID string, stack *queries.SwarmStackReadModel) string {
 	composeYAML := ""
 	name := ""
+	targetNodeID := ""
 	if stack != nil {
 		composeYAML = stack.ComposeYAML
 		name = stack.Name
 		clusterID = stack.ClusterID
+		targetNodeID = stack.TargetNodeID
 	}
-	return fmt.Sprintf(`{"name":%q,"clusterid":%q,"composeyaml":%q}`, name, clusterID, composeYAML)
+	return fmt.Sprintf(`{"name":%q,"clusterid":%q,"composeyaml":%q,"targetnodeid":%q}`, name, clusterID, composeYAML, targetNodeID)
 }
 
 // ── Hetzner order panel (inline on cluster detail) ────────────────────────────
@@ -892,6 +911,9 @@ templ SwarmStackDetailPage(stack queries.SwarmStackReadModel) {
 					<a href={ templ.SafeURL("/swarm/clusters/" + stack.ClusterID) } class="text-neutral-400 hover:text-neutral-200">← Cluster</a>
 					<h1 class="text-xl font-semibold text-neutral-100">{ stack.Name }</h1>
 					<span id={ "swarm-stack-status-" + stack.ID } class={ swarmStackStatusClass(stack.Status) }>{ stack.Status }</span>
+					if stack.TargetNodeName != "" {
+						<span class="text-xs text-neutral-500 font-mono">{ "@ " + stack.TargetNodeName }</span>
+					}
 				</div>
 				<a href={ templ.SafeURL("/swarm/stacks/" + stack.ID + "/edit") } class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded-md">Edit</a>
 			</div>

@@ -746,7 +746,8 @@ func (h *SwarmHandlers) networkTraefikConfig(w http.ResponseWriter, r *http.Requ
 func (h *SwarmHandlers) stackCreatePage(w http.ResponseWriter, r *http.Request) {
 	clusterID := r.URL.Query().Get("cluster")
 	clusters, _ := h.listClusters.Handle(r.Context())
-	SwarmStackFormPage(clusterID, nil, clusters).Render(r.Context(), w)
+	nodes, _ := h.listNodes.Handle(r.Context(), clusterID)
+	SwarmStackFormPage(clusterID, nil, clusters, nodes).Render(r.Context(), w)
 }
 
 func (h *SwarmHandlers) stackDetailPage(w http.ResponseWriter, r *http.Request) {
@@ -767,7 +768,8 @@ func (h *SwarmHandlers) stackEditPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	clusters, _ := h.listClusters.Handle(r.Context())
-	SwarmStackFormPage(stack.ClusterID, stack, clusters).Render(r.Context(), w)
+	nodes, _ := h.listNodes.Handle(r.Context(), stack.ClusterID)
+	SwarmStackFormPage(stack.ClusterID, stack, clusters, nodes).Render(r.Context(), w)
 }
 
 // ── Stack SSE handlers ────────────────────────────────────────────────────────
@@ -777,9 +779,10 @@ func (h *SwarmHandlers) stackDeploySSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var sig struct {
-		ClusterID   string `json:"clusterid"`
-		Name        string `json:"name"`
-		ComposeYAML string `json:"composeyaml"`
+		ClusterID    string `json:"clusterid"`
+		Name         string `json:"name"`
+		ComposeYAML  string `json:"composeyaml"`
+		TargetNodeID string `json:"targetnodeid"`
 	}
 	if err := datastar.ReadSignals(r, &sig); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
@@ -792,9 +795,10 @@ func (h *SwarmHandlers) stackDeploySSE(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(SwarmProgressNotice(msg))
 	})
 	stack, err := handler.Handle(r.Context(), commands.DeploySwarmStackCommand{
-		ClusterID:   sig.ClusterID,
-		Name:        sig.Name,
-		ComposeYAML: sig.ComposeYAML,
+		ClusterID:    sig.ClusterID,
+		Name:         sig.Name,
+		ComposeYAML:  sig.ComposeYAML,
+		TargetNodeID: sig.TargetNodeID,
 	})
 	if err != nil {
 		slog.Error("swarm: deploy stack", "err", err)
