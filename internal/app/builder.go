@@ -104,7 +104,7 @@ func New(cfg Config) (*App, error) {
 	inv     := wireInvoice(gdb, pub, sub, nc, cust, svc, email, cfg)
 	aud     := wireAudit(gdb, sub, cust, crm, svc, inv)
 	docker  := wireDocker(gdb, nc, pub, sub, cfg)
-	iptv    := wireIPTV(gdb, docker)
+	iptv    := wireIPTV(gdb, docker, cust)
 	billing := wireBilling(gdb, pub)
 	if cust.routes != nil {
 		cust.routes.WithBalanceHandlers(billing.getBalance, billing.adjustBalance)

@@ -203,13 +203,13 @@ templ IPTVPackageTable(packages []queries.PackageReadModel) {
 templ IPTVSubscriptionListPage() {
 	@templates.Layout("IPTV Subscriptions") {
 		<div
-			data-signals="{_iptvSubOpen:false, iptvSubCustomer:'', iptvSubPackage:''}"
+			data-signals="{_iptvSubOpen:false, iptvSubCustomer:'', iptvSubPackage:'', _iptvSubLoaded:false}"
 		>
 			@templates.PageHeaderRow("IPTV — Subscriptions", "Active customer subscriptions") {
 				@iptvNavLinks("subscriptions")
 				<button
 					type="button"
-					data-on:click="$_iptvSubOpen = true"
+					data-on:click="$_iptvSubOpen = true; $_iptvSubLoaded || (@get('/sse/iptv/select/sub-deps'), $_iptvSubLoaded = true)"
 					class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
 				>+ Subscribe</button>
 			}
@@ -230,8 +230,12 @@ templ IPTVSubscriptionListPage() {
 				<div class="bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6">
 					<h2 class="text-neutral-100 font-semibold mb-4">New Subscription</h2>
 					<div class="flex flex-col gap-3">
-						<input data-bind:iptv-sub-customer placeholder="Customer ID" class={ iptvInput() }/>
-						<input data-bind:iptv-sub-package placeholder="Package ID" class={ iptvInput() }/>
+						<div id="iptv-sel-sub-customer">
+							<select class={ iptvSelect() } disabled><option>Loading customers...</option></select>
+						</div>
+						<div id="iptv-sel-sub-package">
+							<select class={ iptvSelect() } disabled><option>Loading packages...</option></select>
+						</div>
 					</div>
 					<div id="iptv-sub-form-error"></div>
 					<div class="flex gap-2 mt-4 justify-end">
@@ -319,13 +323,13 @@ templ iptvSubBadge(status string) {
 templ IPTVSTBListPage() {
 	@templates.Layout("IPTV STBs") {
 		<div
-			data-signals="{_iptvStbOpen:false, iptvStbMac:'', iptvStbModel:'', iptvStbCustomer:'', iptvStbNotes:''}"
+			data-signals="{_iptvStbOpen:false, iptvStbMac:'', iptvStbModel:'', iptvStbCustomer:'', iptvStbNotes:'', _iptvStbLoaded:false}"
 		>
 			@templates.PageHeaderRow("IPTV — Set-Top Boxes", "Device inventory") {
 				@iptvNavLinks("stbs")
 				<button
 					type="button"
-					data-on:click="$_iptvStbOpen = true"
+					data-on:click="$_iptvStbOpen = true; $_iptvStbLoaded || (@get('/sse/iptv/select/stb-deps'), $_iptvStbLoaded = true)"
 					class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
 				>+ Register STB</button>
 			}
@@ -348,7 +352,9 @@ templ IPTVSTBListPage() {
 					<div class="flex flex-col gap-3">
 						<input data-bind:iptv-stb-mac placeholder="MAC (00:1A:2B:3C:4D:5E)" class={ iptvInput() }/>
 						<input data-bind:iptv-stb-model placeholder="Model (e.g. MAG 522W3)" class={ iptvInput() }/>
-						<input data-bind:iptv-stb-customer placeholder="Customer ID" class={ iptvInput() }/>
+						<div id="iptv-sel-stb-customer">
+							<select class={ iptvSelect() } disabled><option>Loading customers...</option></select>
+						</div>
 						<input data-bind:iptv-stb-notes placeholder="Notes (optional)" class={ iptvInput() }/>
 					</div>
 					<div id="iptv-stb-form-error"></div>
@@ -929,6 +935,39 @@ templ IPTVSelectProviders(providers []queries.ChannelProviderReadModel) {
 				if p.Active {
 					<option value={ p.ID }>{ p.Name } ({ p.Type })</option>
 				}
+			}
+		</select>
+	</div>
+}
+
+templ IPTVSelectCustomers(customers []CustomerOption) {
+	<div id="iptv-sel-sub-customer">
+		<select class={ iptvSelect() } data-bind:iptv-sub-customer>
+			<option value="">— select customer —</option>
+			for _, c := range customers {
+				<option value={ c.ID }>{ c.Name }</option>
+			}
+		</select>
+	</div>
+}
+
+templ IPTVSelectSTBCustomer(customers []CustomerOption) {
+	<div id="iptv-sel-stb-customer">
+		<select class={ iptvSelect() } data-bind:iptv-stb-customer>
+			<option value="">— select customer —</option>
+			for _, c := range customers {
+				<option value={ c.ID }>{ c.Name }</option>
+			}
+		</select>
+	</div>
+}
+
+templ IPTVSelectPackages(packages []queries.PackageReadModel) {
+	<div id="iptv-sel-sub-package">
+		<select class={ iptvSelect() } data-bind:iptv-sub-package>
+			<option value="">— select package —</option>
+			for _, p := range packages {
+				<option value={ p.ID }>{ p.Name }</option>
 			}
 		</select>
 	</div>

@@ -62,6 +62,14 @@ type SwarmNetworksLookup interface {
 	FindByClusterID(ctx context.Context, clusterID string) ([]NetworkOption, error)
 }
 
+// CustomerOption is one entry in the customer select.
+type CustomerOption struct{ ID, Name string }
+
+// CustomerLookup lists customers (optionally filtered by search string).
+type CustomerLookup interface {
+	FindAll(ctx context.Context, search string) ([]CustomerOption, error)
+}
+
 // IPTVHandlers serves the IPTV admin module routes.
 type IPTVHandlers struct {
 	// Commands
@@ -105,9 +113,10 @@ type IPTVHandlers struct {
 	nodeLookup NodeSSHLookup
 	stackRepo  stackReader
 	// Cascading select lookups (cross-module, optional)
-	swarmClusters SwarmClustersLookup
-	swarmNodes    SwarmNodesLookup
-	swarmNetworks SwarmNetworksLookup
+	swarmClusters  SwarmClustersLookup
+	swarmNodes     SwarmNodesLookup
+	swarmNetworks  SwarmNetworksLookup
+	customerLookup CustomerLookup
 }
 
 func NewIPTVHandlers(
@@ -148,6 +157,7 @@ func NewIPTVHandlers(
 	swarmClusters SwarmClustersLookup,
 	swarmNodes SwarmNodesLookup,
 	swarmNetworks SwarmNetworksLookup,
+	customerLookup CustomerLookup,
 ) *IPTVHandlers {
 	return &IPTVHandlers{
 		createChannel:     createChannel,
@@ -187,6 +197,7 @@ func NewIPTVHandlers(
 		swarmClusters:     swarmClusters,
 		swarmNodes:        swarmNodes,
 		swarmNetworks:     swarmNetworks,
+		customerLookup:    customerLookup,
 	}
 }
 
@@ -251,6 +262,8 @@ func (h *IPTVHandlers) RegisterRoutes(r chi.Router) {
 	r.Get("/sse/iptv/select/cluster-deps", h.selectClusterDepsSSE)
 	r.Get("/sse/iptv/select/channels", h.selectChannelsSSE)
 	r.Get("/sse/iptv/select/channel-providers", h.selectChannelProvidersSSE)
+	r.Get("/sse/iptv/select/sub-deps", h.selectSubDepsSSE)
+	r.Get("/sse/iptv/select/stb-deps", h.selectSTBDepsSSE)
 
 	// EPG
 	r.Post("/api/iptv/epg/import", h.epgImport)
@@ -982,6 +995,34 @@ func (h *IPTVHandlers) selectChannelProvidersSSE(w http.ResponseWriter, r *http.
 		providers, _ = h.listProviders.Handle(r.Context(), sig.ChannelID)
 	}
 	sse.PatchElementTempl(IPTVSelectProviders(providers))
+}
+
+func (h *IPTVHandlers) selectSubDepsSSE(w http.ResponseWriter, r *http.Request) {
+	sse := datastar.NewSSE(w, r)
+
+	// Customers
+	var customers []CustomerOption
+	if h.customerLookup != nil {
+		customers, _ = h.customerLookup.FindAll(r.Context(), "")
+	}
+	sse.PatchElementTempl(IPTVSelectCustomers(customers))
+
+	// Packages
+	packages, err := h.listPackages.Handle(r.Context())
+	if err != nil {
+		log.Printf("iptv: selectSubDeps packages: %v", err)
+		packages = nil
+	}
+	sse.PatchElementTempl(IPTVSelectPackages(packages))
+}
+
+func (h *IPTVHandlers) selectSTBDepsSSE(w http.ResponseWriter, r *http.Request) {
+	sse := datastar.NewSSE(w, r)
+	var customers []CustomerOption
+	if h.customerLookup != nil {
+		customers, _ = h.customerLookup.FindAll(r.Context(), "")
+	}
+	sse.PatchElementTempl(IPTVSelectSTBCustomer(customers))
 }
 
 // ── EPG ───────────────────────────────────────────────────────────────────────

@@ -748,7 +748,7 @@ func IPTVSubscriptionListPage() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<div data-signals=\"{_iptvSubOpen:false, iptvSubCustomer:'', iptvSubPackage:''}\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<div data-signals=\"{_iptvSubOpen:false, iptvSubCustomer:'', iptvSubPackage:'', _iptvSubLoaded:false}\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -768,7 +768,7 @@ func IPTVSubscriptionListPage() templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, " <button type=\"button\" data-on:click=\"$_iptvSubOpen = true\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors\">+ Subscribe</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, " <button type=\"button\" data-on:click=\"$_iptvSubOpen = true; $_iptvSubLoaded || (@get('/sse/iptv/select/sub-deps'), $_iptvSubLoaded = true)\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors\">+ Subscribe</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -778,16 +778,16 @@ func IPTVSubscriptionListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<div id=\"iptv-sub-content\" data-init=\"@get('/sse/iptv/subscriptions', {openWhenHidden: false})\"><div id=\"iptv-sub-table\"><div class=\"text-neutral-600 py-8 text-center text-sm\">Loading...</div></div></div><!-- Create modal --><div data-show=\"$_iptvSubOpen\" style=\"display:none\" class=\"fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4\"><div class=\"bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6\"><h2 class=\"text-neutral-100 font-semibold mb-4\">New Subscription</h2><div class=\"flex flex-col gap-3\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<div id=\"iptv-sub-content\" data-init=\"@get('/sse/iptv/subscriptions', {openWhenHidden: false})\"><div id=\"iptv-sub-table\"><div class=\"text-neutral-600 py-8 text-center text-sm\">Loading...</div></div></div><!-- Create modal --><div data-show=\"$_iptvSubOpen\" style=\"display:none\" class=\"fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4\"><div class=\"bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6\"><h2 class=\"text-neutral-100 font-semibold mb-4\">New Subscription</h2><div class=\"flex flex-col gap-3\"><div id=\"iptv-sel-sub-customer\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var48 = []any{iptvInput()}
+			var templ_7745c5c3_Var48 = []any{iptvSelect()}
 			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var48...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<input data-bind:iptv-sub-customer placeholder=\"Customer ID\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<select class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -800,16 +800,16 @@ func IPTVSubscriptionListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "\"> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "\" disabled><option>Loading customers...</option></select></div><div id=\"iptv-sel-sub-package\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var50 = []any{iptvInput()}
+			var templ_7745c5c3_Var50 = []any{iptvSelect()}
 			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var50...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<input data-bind:iptv-sub-package placeholder=\"Package ID\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<select class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -822,7 +822,7 @@ func IPTVSubscriptionListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\"></div><div id=\"iptv-sub-form-error\"></div><div class=\"flex gap-2 mt-4 justify-end\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\" disabled><option>Loading packages...</option></select></div></div><div id=\"iptv-sub-form-error\"></div><div class=\"flex gap-2 mt-4 justify-end\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -923,7 +923,7 @@ func IPTVSubscriptionTable(subs []queries.SubscriptionReadModel) templ.Component
 				var templ_7745c5c3_Var57 string
 				templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("iptv-sub-%s", s.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 269, Col: 98}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 273, Col: 98}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 				if templ_7745c5c3_Err != nil {
@@ -936,7 +936,7 @@ func IPTVSubscriptionTable(subs []queries.SubscriptionReadModel) templ.Component
 				var templ_7745c5c3_Var58 string
 				templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(s.CustomerID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 270, Col: 79}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 274, Col: 79}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 				if templ_7745c5c3_Err != nil {
@@ -949,7 +949,7 @@ func IPTVSubscriptionTable(subs []queries.SubscriptionReadModel) templ.Component
 				var templ_7745c5c3_Var59 string
 				templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(s.PackageName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 271, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 275, Col: 70}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 				if templ_7745c5c3_Err != nil {
@@ -970,7 +970,7 @@ func IPTVSubscriptionTable(subs []queries.SubscriptionReadModel) templ.Component
 				var templ_7745c5c3_Var60 string
 				templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(s.StartsAt.Format("2006-01-02"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 273, Col: 88}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 277, Col: 88}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 				if templ_7745c5c3_Err != nil {
@@ -988,7 +988,7 @@ func IPTVSubscriptionTable(subs []queries.SubscriptionReadModel) templ.Component
 					var templ_7745c5c3_Var61 string
 					templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/iptv/subscriptions/%s/suspend')", s.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 278, Col: 90}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 282, Col: 90}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 					if templ_7745c5c3_Err != nil {
@@ -1007,7 +1007,7 @@ func IPTVSubscriptionTable(subs []queries.SubscriptionReadModel) templ.Component
 					var templ_7745c5c3_Var62 string
 					templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@put('/api/iptv/subscriptions/%s/reactivate')", s.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 285, Col: 93}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 289, Col: 93}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 					if templ_7745c5c3_Err != nil {
@@ -1026,7 +1026,7 @@ func IPTVSubscriptionTable(subs []queries.SubscriptionReadModel) templ.Component
 					var templ_7745c5c3_Var63 string
 					templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/iptv/subscriptions/%s')", s.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 292, Col: 85}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 296, Col: 85}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
 					if templ_7745c5c3_Err != nil {
@@ -1085,7 +1085,7 @@ func iptvSubBadge(status string) templ.Component {
 			var templ_7745c5c3_Var65 string
 			templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 309, Col: 114}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 313, Col: 114}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
 			if templ_7745c5c3_Err != nil {
@@ -1103,7 +1103,7 @@ func iptvSubBadge(status string) templ.Component {
 			var templ_7745c5c3_Var66 string
 			templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 311, Col: 108}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 315, Col: 108}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
 			if templ_7745c5c3_Err != nil {
@@ -1121,7 +1121,7 @@ func iptvSubBadge(status string) templ.Component {
 			var templ_7745c5c3_Var67 string
 			templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 313, Col: 111}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 317, Col: 111}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
 			if templ_7745c5c3_Err != nil {
@@ -1170,7 +1170,7 @@ func IPTVSTBListPage() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<div data-signals=\"{_iptvStbOpen:false, iptvStbMac:'', iptvStbModel:'', iptvStbCustomer:'', iptvStbNotes:''}\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<div data-signals=\"{_iptvStbOpen:false, iptvStbMac:'', iptvStbModel:'', iptvStbCustomer:'', iptvStbNotes:'', _iptvStbLoaded:false}\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1190,7 +1190,7 @@ func IPTVSTBListPage() templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, " <button type=\"button\" data-on:click=\"$_iptvStbOpen = true\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors\">+ Register STB</button>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, " <button type=\"button\" data-on:click=\"$_iptvStbOpen = true; $_iptvStbLoaded || (@get('/sse/iptv/select/stb-deps'), $_iptvStbLoaded = true)\" class=\"bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors\">+ Register STB</button>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1244,16 +1244,16 @@ func IPTVSTBListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "\"> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "\"><div id=\"iptv-sel-stb-customer\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var75 = []any{iptvInput()}
+			var templ_7745c5c3_Var75 = []any{iptvSelect()}
 			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var75...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "<input data-bind:iptv-stb-customer placeholder=\"Customer ID\" class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "<select class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1266,7 +1266,7 @@ func IPTVSTBListPage() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "\"> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "\" disabled><option>Loading customers...</option></select></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1389,7 +1389,7 @@ func IPTVSTBTable(stbs []queries.STBReadModel) templ.Component {
 				var templ_7745c5c3_Var84 string
 				templ_7745c5c3_Var84, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("iptv-stb-%s", stb.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 387, Col: 100}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 393, Col: 100}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var84))
 				if templ_7745c5c3_Err != nil {
@@ -1402,7 +1402,7 @@ func IPTVSTBTable(stbs []queries.STBReadModel) templ.Component {
 				var templ_7745c5c3_Var85 string
 				templ_7745c5c3_Var85, templ_7745c5c3_Err = templ.JoinStringErrs(stb.MAC)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 388, Col: 74}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 394, Col: 74}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var85))
 				if templ_7745c5c3_Err != nil {
@@ -1415,7 +1415,7 @@ func IPTVSTBTable(stbs []queries.STBReadModel) templ.Component {
 				var templ_7745c5c3_Var86 string
 				templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.JoinStringErrs(stb.Model)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 389, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 395, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var86))
 				if templ_7745c5c3_Err != nil {
@@ -1428,7 +1428,7 @@ func IPTVSTBTable(stbs []queries.STBReadModel) templ.Component {
 				var templ_7745c5c3_Var87 string
 				templ_7745c5c3_Var87, templ_7745c5c3_Err = templ.JoinStringErrs(stb.CustomerID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 390, Col: 81}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 396, Col: 81}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var87))
 				if templ_7745c5c3_Err != nil {
@@ -1441,7 +1441,7 @@ func IPTVSTBTable(stbs []queries.STBReadModel) templ.Component {
 				var templ_7745c5c3_Var88 string
 				templ_7745c5c3_Var88, templ_7745c5c3_Err = templ.JoinStringErrs(stb.AssignedAt.Format("2006-01-02"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 391, Col: 92}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 397, Col: 92}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var88))
 				if templ_7745c5c3_Err != nil {
@@ -1454,7 +1454,7 @@ func IPTVSTBTable(stbs []queries.STBReadModel) templ.Component {
 				var templ_7745c5c3_Var89 string
 				templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/iptv/stbs/%s')", stb.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 395, Col: 77}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 401, Col: 77}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var89))
 				if templ_7745c5c3_Err != nil {
@@ -1545,7 +1545,7 @@ func IPTVChannelDetailPage(ch queries.ChannelReadModel) templ.Component {
 			var templ_7745c5c3_Var93 string
 			templ_7745c5c3_Var93, templ_7745c5c3_Err = templ.JoinStringErrs(ch.Slug)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 423, Col: 107}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 429, Col: 107}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var93))
 			if templ_7745c5c3_Err != nil {
@@ -1558,7 +1558,7 @@ func IPTVChannelDetailPage(ch queries.ChannelReadModel) templ.Component {
 			var templ_7745c5c3_Var94 string
 			templ_7745c5c3_Var94, templ_7745c5c3_Err = templ.JoinStringErrs(ch.StreamURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 424, Col: 117}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 430, Col: 117}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var94))
 			if templ_7745c5c3_Err != nil {
@@ -1571,7 +1571,7 @@ func IPTVChannelDetailPage(ch queries.ChannelReadModel) templ.Component {
 			var templ_7745c5c3_Var95 string
 			templ_7745c5c3_Var95, templ_7745c5c3_Err = templ.JoinStringErrs(ch.EPGSource)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 425, Col: 101}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 431, Col: 101}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var95))
 			if templ_7745c5c3_Err != nil {
@@ -1599,7 +1599,7 @@ func IPTVChannelDetailPage(ch queries.ChannelReadModel) templ.Component {
 			var templ_7745c5c3_Var96 string
 			templ_7745c5c3_Var96, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@get('/sse/iptv/channels/%s/providers', {openWhenHidden: false})", ch.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 437, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 443, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var96))
 			if templ_7745c5c3_Err != nil {
@@ -1753,7 +1753,7 @@ func IPTVChannelDetailPage(ch queries.ChannelReadModel) templ.Component {
 			var templ_7745c5c3_Var110 string
 			templ_7745c5c3_Var110, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/iptv/channels/%s/providers')", ch.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 466, Col: 85}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 472, Col: 85}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var110))
 			if templ_7745c5c3_Err != nil {
@@ -1829,7 +1829,7 @@ func IPTVChannelProviderTable(channelID string, providers []queries.ChannelProvi
 				var templ_7745c5c3_Var113 string
 				templ_7745c5c3_Var113, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("iptv-provider-%s", p.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 495, Col: 103}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 501, Col: 103}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var113))
 				if templ_7745c5c3_Err != nil {
@@ -1842,7 +1842,7 @@ func IPTVChannelProviderTable(channelID string, providers []queries.ChannelProvi
 				var templ_7745c5c3_Var114 string
 				templ_7745c5c3_Var114, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 496, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 502, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var114))
 				if templ_7745c5c3_Err != nil {
@@ -1870,7 +1870,7 @@ func IPTVChannelProviderTable(channelID string, providers []queries.ChannelProvi
 				var templ_7745c5c3_Var115 string
 				templ_7745c5c3_Var115, templ_7745c5c3_Err = templ.JoinStringErrs(p.URLTemplate)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 504, Col: 98}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 510, Col: 98}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var115))
 				if templ_7745c5c3_Err != nil {
@@ -1883,7 +1883,7 @@ func IPTVChannelProviderTable(channelID string, providers []queries.ChannelProvi
 				var templ_7745c5c3_Var116 string
 				templ_7745c5c3_Var116, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", p.Priority))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 505, Col: 86}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 511, Col: 86}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var116))
 				if templ_7745c5c3_Err != nil {
@@ -1911,7 +1911,7 @@ func IPTVChannelProviderTable(channelID string, providers []queries.ChannelProvi
 				var templ_7745c5c3_Var117 string
 				templ_7745c5c3_Var117, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/iptv/channels/%s/providers/%s')", channelID, p.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 516, Col: 103}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 522, Col: 103}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var117))
 				if templ_7745c5c3_Err != nil {
@@ -2232,7 +2232,7 @@ func IPTVStackTable(stacks []queries.IPTVStackReadModel) templ.Component {
 				var templ_7745c5c3_Var138 string
 				templ_7745c5c3_Var138, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("iptv-stack-%s", s.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 614, Col: 100}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 620, Col: 100}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var138))
 				if templ_7745c5c3_Err != nil {
@@ -2245,7 +2245,7 @@ func IPTVStackTable(stacks []queries.IPTVStackReadModel) templ.Component {
 				var templ_7745c5c3_Var139 templ.SafeURL
 				templ_7745c5c3_Var139, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/iptv/stacks/" + s.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 616, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 622, Col: 56}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var139))
 				if templ_7745c5c3_Err != nil {
@@ -2258,7 +2258,7 @@ func IPTVStackTable(stacks []queries.IPTVStackReadModel) templ.Component {
 				var templ_7745c5c3_Var140 string
 				templ_7745c5c3_Var140, templ_7745c5c3_Err = templ.JoinStringErrs(s.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 616, Col: 141}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 622, Col: 141}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var140))
 				if templ_7745c5c3_Err != nil {
@@ -2271,7 +2271,7 @@ func IPTVStackTable(stacks []queries.IPTVStackReadModel) templ.Component {
 				var templ_7745c5c3_Var141 string
 				templ_7745c5c3_Var141, templ_7745c5c3_Err = templ.JoinStringErrs(s.WanIP)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 618, Col: 74}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 624, Col: 74}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var141))
 				if templ_7745c5c3_Err != nil {
@@ -2284,7 +2284,7 @@ func IPTVStackTable(stacks []queries.IPTVStackReadModel) templ.Component {
 				var templ_7745c5c3_Var142 string
 				templ_7745c5c3_Var142, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", s.ChannelCount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 619, Col: 90}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 625, Col: 90}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var142))
 				if templ_7745c5c3_Err != nil {
@@ -2306,7 +2306,7 @@ func IPTVStackTable(stacks []queries.IPTVStackReadModel) templ.Component {
 					var templ_7745c5c3_Var143 string
 					templ_7745c5c3_Var143, templ_7745c5c3_Err = templ.JoinStringErrs(s.LastDeployedAt.Format("2006-01-02 15:04"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 623, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 629, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var143))
 					if templ_7745c5c3_Err != nil {
@@ -2325,7 +2325,7 @@ func IPTVStackTable(stacks []queries.IPTVStackReadModel) templ.Component {
 				var templ_7745c5c3_Var144 templ.SafeURL
 				templ_7745c5c3_Var144, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/iptv/stacks/" + s.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 629, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 635, Col: 56}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var144))
 				if templ_7745c5c3_Err != nil {
@@ -2338,7 +2338,7 @@ func IPTVStackTable(stacks []queries.IPTVStackReadModel) templ.Component {
 				var templ_7745c5c3_Var145 string
 				templ_7745c5c3_Var145, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/iptv/stacks/%s')", s.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 632, Col: 77}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 638, Col: 77}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var145))
 				if templ_7745c5c3_Err != nil {
@@ -2418,7 +2418,7 @@ func IPTVStackDetailPage(stack queries.IPTVStackReadModel) templ.Component {
 				var templ_7745c5c3_Var149 string
 				templ_7745c5c3_Var149, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/iptv/stacks/%s/deploy')", stack.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 653, Col: 81}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 659, Col: 81}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var149))
 				if templ_7745c5c3_Err != nil {
@@ -2449,7 +2449,7 @@ func IPTVStackDetailPage(stack queries.IPTVStackReadModel) templ.Component {
 			var templ_7745c5c3_Var150 string
 			templ_7745c5c3_Var150, templ_7745c5c3_Err = templ.JoinStringErrs(stack.WANNetworkName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 664, Col: 117}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 670, Col: 117}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var150))
 			if templ_7745c5c3_Err != nil {
@@ -2462,7 +2462,7 @@ func IPTVStackDetailPage(stack queries.IPTVStackReadModel) templ.Component {
 			var templ_7745c5c3_Var151 string
 			templ_7745c5c3_Var151, templ_7745c5c3_Err = templ.JoinStringErrs(stack.OverlayNetworkName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 665, Col: 125}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 671, Col: 125}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var151))
 			if templ_7745c5c3_Err != nil {
@@ -2475,7 +2475,7 @@ func IPTVStackDetailPage(stack queries.IPTVStackReadModel) templ.Component {
 			var templ_7745c5c3_Var152 string
 			templ_7745c5c3_Var152, templ_7745c5c3_Err = templ.JoinStringErrs(stack.NodeID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 666, Col: 123}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 672, Col: 123}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var152))
 			if templ_7745c5c3_Err != nil {
@@ -2488,7 +2488,7 @@ func IPTVStackDetailPage(stack queries.IPTVStackReadModel) templ.Component {
 			var templ_7745c5c3_Var153 string
 			templ_7745c5c3_Var153, templ_7745c5c3_Err = templ.JoinStringErrs(stack.WanIP)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 667, Col: 121}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 673, Col: 121}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var153))
 			if templ_7745c5c3_Err != nil {
@@ -2506,7 +2506,7 @@ func IPTVStackDetailPage(stack queries.IPTVStackReadModel) templ.Component {
 				var templ_7745c5c3_Var154 string
 				templ_7745c5c3_Var154, templ_7745c5c3_Err = templ.JoinStringErrs(stack.LastDeployedAt.Format("2006-01-02 15:04"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 671, Col: 91}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 677, Col: 91}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var154))
 				if templ_7745c5c3_Err != nil {
@@ -2529,7 +2529,7 @@ func IPTVStackDetailPage(stack queries.IPTVStackReadModel) templ.Component {
 			var templ_7745c5c3_Var155 string
 			templ_7745c5c3_Var155, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@get('/sse/iptv/stacks/%s/channels', {openWhenHidden: false})", stack.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 682, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 688, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var155))
 			if templ_7745c5c3_Err != nil {
@@ -2542,7 +2542,7 @@ func IPTVStackDetailPage(stack queries.IPTVStackReadModel) templ.Component {
 			var templ_7745c5c3_Var156 string
 			templ_7745c5c3_Var156, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("iptv-stack-chan-%s", stack.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 684, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 690, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var156))
 			if templ_7745c5c3_Err != nil {
@@ -2630,7 +2630,7 @@ func IPTVStackDetailPage(stack queries.IPTVStackReadModel) templ.Component {
 			var templ_7745c5c3_Var164 string
 			templ_7745c5c3_Var164, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@post('/api/iptv/stacks/%s/channels')", stack.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 711, Col: 85}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 717, Col: 85}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var164))
 			if templ_7745c5c3_Err != nil {
@@ -2691,7 +2691,7 @@ func IPTVStackChannelTable(stackID string, channels []queries.IPTVStackChannelRe
 		var templ_7745c5c3_Var167 string
 		templ_7745c5c3_Var167, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("iptv-stack-chan-%s", stackID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 722, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 728, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var167))
 		if templ_7745c5c3_Err != nil {
@@ -2719,7 +2719,7 @@ func IPTVStackChannelTable(stackID string, channels []queries.IPTVStackChannelRe
 				var templ_7745c5c3_Var168 string
 				templ_7745c5c3_Var168, templ_7745c5c3_Err = templ.JoinStringErrs(c.ChannelName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 740, Col: 74}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 746, Col: 74}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var168))
 				if templ_7745c5c3_Err != nil {
@@ -2732,7 +2732,7 @@ func IPTVStackChannelTable(stackID string, channels []queries.IPTVStackChannelRe
 				var templ_7745c5c3_Var169 string
 				templ_7745c5c3_Var169, templ_7745c5c3_Err = templ.JoinStringErrs(c.ChannelSlug)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 741, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 747, Col: 80}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var169))
 				if templ_7745c5c3_Err != nil {
@@ -2746,7 +2746,7 @@ func IPTVStackChannelTable(stackID string, channels []queries.IPTVStackChannelRe
 					var templ_7745c5c3_Var170 string
 					templ_7745c5c3_Var170, templ_7745c5c3_Err = templ.JoinStringErrs(c.ProviderName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 744, Col: 26}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 750, Col: 26}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var170))
 					if templ_7745c5c3_Err != nil {
@@ -2785,7 +2785,7 @@ func IPTVStackChannelTable(stackID string, channels []queries.IPTVStackChannelRe
 				var templ_7745c5c3_Var171 string
 				templ_7745c5c3_Var171, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("@delete('/api/iptv/stacks/%s/channels/%s')", stackID, c.ChannelID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 761, Col: 105}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 767, Col: 105}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var171))
 				if templ_7745c5c3_Err != nil {
@@ -2837,7 +2837,7 @@ func IPTVDeployLog(msg string) templ.Component {
 		var templ_7745c5c3_Var173 string
 		templ_7745c5c3_Var173, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 775, Col: 136}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 781, Col: 136}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var173))
 		if templ_7745c5c3_Err != nil {
@@ -2881,7 +2881,7 @@ func iptvStackStatusBadge(status string) templ.Component {
 			var templ_7745c5c3_Var175 string
 			templ_7745c5c3_Var175, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 781, Col: 114}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 787, Col: 114}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var175))
 			if templ_7745c5c3_Err != nil {
@@ -2899,7 +2899,7 @@ func iptvStackStatusBadge(status string) templ.Component {
 			var templ_7745c5c3_Var176 string
 			templ_7745c5c3_Var176, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 783, Col: 105}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 789, Col: 105}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var176))
 			if templ_7745c5c3_Err != nil {
@@ -2917,7 +2917,7 @@ func iptvStackStatusBadge(status string) templ.Component {
 			var templ_7745c5c3_Var177 string
 			templ_7745c5c3_Var177, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 785, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 791, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var177))
 			if templ_7745c5c3_Err != nil {
@@ -2935,7 +2935,7 @@ func iptvStackStatusBadge(status string) templ.Component {
 			var templ_7745c5c3_Var178 string
 			templ_7745c5c3_Var178, templ_7745c5c3_Err = templ.JoinStringErrs(status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 787, Col: 111}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 793, Col: 111}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var178))
 			if templ_7745c5c3_Err != nil {
@@ -2979,7 +2979,7 @@ func iptvFormError(msg string) templ.Component {
 		var templ_7745c5c3_Var180 string
 		templ_7745c5c3_Var180, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 794, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 800, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var180))
 		if templ_7745c5c3_Err != nil {
@@ -3030,7 +3030,7 @@ func iptvNavLinks(active string) templ.Component {
 				var templ_7745c5c3_Var182 templ.SafeURL
 				templ_7745c5c3_Var182, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(item.Href))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 808, Col: 37}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 814, Col: 37}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var182))
 				if templ_7745c5c3_Err != nil {
@@ -3043,7 +3043,7 @@ func iptvNavLinks(active string) templ.Component {
 				var templ_7745c5c3_Var183 string
 				templ_7745c5c3_Var183, templ_7745c5c3_Err = templ.JoinStringErrs(item.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 808, Col: 155}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 814, Col: 155}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var183))
 				if templ_7745c5c3_Err != nil {
@@ -3061,7 +3061,7 @@ func iptvNavLinks(active string) templ.Component {
 				var templ_7745c5c3_Var184 templ.SafeURL
 				templ_7745c5c3_Var184, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(item.Href))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 810, Col: 37}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 816, Col: 37}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var184))
 				if templ_7745c5c3_Err != nil {
@@ -3074,7 +3074,7 @@ func iptvNavLinks(active string) templ.Component {
 				var templ_7745c5c3_Var185 string
 				templ_7745c5c3_Var185, templ_7745c5c3_Err = templ.JoinStringErrs(item.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 810, Col: 197}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 816, Col: 197}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var185))
 				if templ_7745c5c3_Err != nil {
@@ -3166,7 +3166,7 @@ func IPTVSelectClusters(clusters []ClusterOption) templ.Component {
 			var templ_7745c5c3_Var189 string
 			templ_7745c5c3_Var189, templ_7745c5c3_Err = templ.JoinStringErrs(c.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 846, Col: 24}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 852, Col: 24}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var189))
 			if templ_7745c5c3_Err != nil {
@@ -3179,7 +3179,7 @@ func IPTVSelectClusters(clusters []ClusterOption) templ.Component {
 			var templ_7745c5c3_Var190 string
 			templ_7745c5c3_Var190, templ_7745c5c3_Err = templ.JoinStringErrs(c.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 846, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 852, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var190))
 			if templ_7745c5c3_Err != nil {
@@ -3277,7 +3277,7 @@ func IPTVSelectNodes(nodes []NodeOption) templ.Component {
 				var templ_7745c5c3_Var196 string
 				templ_7745c5c3_Var196, templ_7745c5c3_Err = templ.JoinStringErrs(n.ID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 864, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 870, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var196))
 				if templ_7745c5c3_Err != nil {
@@ -3290,7 +3290,7 @@ func IPTVSelectNodes(nodes []NodeOption) templ.Component {
 				var templ_7745c5c3_Var197 string
 				templ_7745c5c3_Var197, templ_7745c5c3_Err = templ.JoinStringErrs(n.VpnIP)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 864, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 870, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var197))
 				if templ_7745c5c3_Err != nil {
@@ -3303,7 +3303,7 @@ func IPTVSelectNodes(nodes []NodeOption) templ.Component {
 				var templ_7745c5c3_Var198 string
 				templ_7745c5c3_Var198, templ_7745c5c3_Err = templ.JoinStringErrs(n.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 864, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 870, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var198))
 				if templ_7745c5c3_Err != nil {
@@ -3316,7 +3316,7 @@ func IPTVSelectNodes(nodes []NodeOption) templ.Component {
 				var templ_7745c5c3_Var199 string
 				templ_7745c5c3_Var199, templ_7745c5c3_Err = templ.JoinStringErrs(n.VpnIP)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 864, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 870, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var199))
 				if templ_7745c5c3_Err != nil {
@@ -3419,7 +3419,7 @@ func IPTVSelectWANNetworks(nets []NetworkOption) templ.Component {
 				var templ_7745c5c3_Var205 string
 				templ_7745c5c3_Var205, templ_7745c5c3_Err = templ.JoinStringErrs(n.ID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 883, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 889, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var205))
 				if templ_7745c5c3_Err != nil {
@@ -3432,7 +3432,7 @@ func IPTVSelectWANNetworks(nets []NetworkOption) templ.Component {
 				var templ_7745c5c3_Var206 string
 				templ_7745c5c3_Var206, templ_7745c5c3_Err = templ.JoinStringErrs(n.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 883, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 889, Col: 46}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var206))
 				if templ_7745c5c3_Err != nil {
@@ -3445,7 +3445,7 @@ func IPTVSelectWANNetworks(nets []NetworkOption) templ.Component {
 				var templ_7745c5c3_Var207 string
 				templ_7745c5c3_Var207, templ_7745c5c3_Err = templ.JoinStringErrs(n.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 883, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 889, Col: 57}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var207))
 				if templ_7745c5c3_Err != nil {
@@ -3548,7 +3548,7 @@ func IPTVSelectOverlayNetworks(nets []NetworkOption) templ.Component {
 				var templ_7745c5c3_Var213 string
 				templ_7745c5c3_Var213, templ_7745c5c3_Err = templ.JoinStringErrs(n.ID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 902, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 908, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var213))
 				if templ_7745c5c3_Err != nil {
@@ -3561,7 +3561,7 @@ func IPTVSelectOverlayNetworks(nets []NetworkOption) templ.Component {
 				var templ_7745c5c3_Var214 string
 				templ_7745c5c3_Var214, templ_7745c5c3_Err = templ.JoinStringErrs(n.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 902, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 908, Col: 46}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var214))
 				if templ_7745c5c3_Err != nil {
@@ -3574,7 +3574,7 @@ func IPTVSelectOverlayNetworks(nets []NetworkOption) templ.Component {
 				var templ_7745c5c3_Var215 string
 				templ_7745c5c3_Var215, templ_7745c5c3_Err = templ.JoinStringErrs(n.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 902, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 908, Col: 57}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var215))
 				if templ_7745c5c3_Err != nil {
@@ -3653,7 +3653,7 @@ func IPTVSelectChannels(channels []queries.ChannelReadModel) templ.Component {
 			var templ_7745c5c3_Var219 string
 			templ_7745c5c3_Var219, templ_7745c5c3_Err = templ.JoinStringErrs(ch.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 918, Col: 25}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 924, Col: 25}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var219))
 			if templ_7745c5c3_Err != nil {
@@ -3666,7 +3666,7 @@ func IPTVSelectChannels(channels []queries.ChannelReadModel) templ.Component {
 			var templ_7745c5c3_Var220 string
 			templ_7745c5c3_Var220, templ_7745c5c3_Err = templ.JoinStringErrs(ch.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 918, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 924, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var220))
 			if templ_7745c5c3_Err != nil {
@@ -3741,7 +3741,7 @@ func IPTVSelectProviders(providers []queries.ChannelProviderReadModel) templ.Com
 				var templ_7745c5c3_Var224 string
 				templ_7745c5c3_Var224, templ_7745c5c3_Err = templ.JoinStringErrs(p.ID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 930, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 936, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var224))
 				if templ_7745c5c3_Err != nil {
@@ -3754,7 +3754,7 @@ func IPTVSelectProviders(providers []queries.ChannelProviderReadModel) templ.Com
 				var templ_7745c5c3_Var225 string
 				templ_7745c5c3_Var225, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 930, Col: 36}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 936, Col: 36}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var225))
 				if templ_7745c5c3_Err != nil {
@@ -3767,7 +3767,7 @@ func IPTVSelectProviders(providers []queries.ChannelProviderReadModel) templ.Com
 				var templ_7745c5c3_Var226 string
 				templ_7745c5c3_Var226, templ_7745c5c3_Err = templ.JoinStringErrs(p.Type)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 930, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 936, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var226))
 				if templ_7745c5c3_Err != nil {
@@ -3780,6 +3780,267 @@ func IPTVSelectProviders(providers []queries.ChannelProviderReadModel) templ.Com
 			}
 		}
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 303, "</select></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func IPTVSelectCustomers(customers []CustomerOption) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var227 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var227 == nil {
+			templ_7745c5c3_Var227 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 304, "<div id=\"iptv-sel-sub-customer\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var228 = []any{iptvSelect()}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var228...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 305, "<select class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var229 string
+		templ_7745c5c3_Var229, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var228).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var229))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 306, "\" data-bind:iptv-sub-customer><option value=\"\">— select customer —</option> ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, c := range customers {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 307, "<option value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var230 string
+			templ_7745c5c3_Var230, templ_7745c5c3_Err = templ.JoinStringErrs(c.ID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 948, Col: 24}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var230))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 308, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var231 string
+			templ_7745c5c3_Var231, templ_7745c5c3_Err = templ.JoinStringErrs(c.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 948, Col: 35}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var231))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 309, "</option>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 310, "</select></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func IPTVSelectSTBCustomer(customers []CustomerOption) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var232 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var232 == nil {
+			templ_7745c5c3_Var232 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 311, "<div id=\"iptv-sel-stb-customer\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var233 = []any{iptvSelect()}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var233...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 312, "<select class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var234 string
+		templ_7745c5c3_Var234, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var233).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var234))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 313, "\" data-bind:iptv-stb-customer><option value=\"\">— select customer —</option> ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, c := range customers {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 314, "<option value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var235 string
+			templ_7745c5c3_Var235, templ_7745c5c3_Err = templ.JoinStringErrs(c.ID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 959, Col: 24}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var235))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 315, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var236 string
+			templ_7745c5c3_Var236, templ_7745c5c3_Err = templ.JoinStringErrs(c.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 959, Col: 35}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var236))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 316, "</option>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 317, "</select></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func IPTVSelectPackages(packages []queries.PackageReadModel) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var237 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var237 == nil {
+			templ_7745c5c3_Var237 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 318, "<div id=\"iptv-sel-sub-package\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var238 = []any{iptvSelect()}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var238...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 319, "<select class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var239 string
+		templ_7745c5c3_Var239, templ_7745c5c3_Err = templ.JoinStringErrs(templ.CSSClasses(templ_7745c5c3_Var238).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var239))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 320, "\" data-bind:iptv-sub-package><option value=\"\">— select package —</option> ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, p := range packages {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 321, "<option value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var240 string
+			templ_7745c5c3_Var240, templ_7745c5c3_Err = templ.JoinStringErrs(p.ID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 970, Col: 24}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var240))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 322, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var241 string
+			templ_7745c5c3_Var241, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/iptv/adapters/http/templates.templ`, Line: 970, Col: 35}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var241))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 323, "</option>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 324, "</select></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
