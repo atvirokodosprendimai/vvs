@@ -279,6 +279,42 @@ var InvoicePaid Subject = "isp.invoice.paid"
 var InvoiceVoided Subject = "isp.invoice.voided"
 
 // ────────────────────────────────────────────────────────────────────
+// Proxmox
+// ────────────────────────────────────────────────────────────────────
+
+var ProxmoxVMAll Subject = "isp.proxmox.vm.*"
+
+// Pub: proxmox/app/commands/create_vm.go
+var ProxmoxVMCreated Subject = "isp.proxmox.vm.created"
+
+// Pub: proxmox/app/commands/suspend_vm.go
+var ProxmoxVMSuspended Subject = "isp.proxmox.vm.suspended"
+
+// Pub: proxmox/app/commands/resume_vm.go
+var ProxmoxVMResumed Subject = "isp.proxmox.vm.resumed"
+
+// Pub: proxmox/app/commands/restart_vm.go
+var ProxmoxVMRestarted Subject = "isp.proxmox.vm.restarted"
+
+// Pub: proxmox/app/commands/delete_vm.go
+var ProxmoxVMDeleted Subject = "isp.proxmox.vm.deleted"
+
+// Pub: proxmox/app/commands/create_vm.go, suspend_vm.go, resume_vm.go, restart_vm.go
+// Carries updated VM status for SSE refresh.
+var ProxmoxVMStatusChanged Subject = "isp.proxmox.vm.status_changed"
+
+var ProxmoxNodeAll Subject = "isp.proxmox.node.*"
+
+// Pub: proxmox/app/commands/create_node.go
+var ProxmoxNodeCreated Subject = "isp.proxmox.node.created"
+
+// Pub: proxmox/app/commands/update_node.go
+var ProxmoxNodeUpdated Subject = "isp.proxmox.node.updated"
+
+// Pub: proxmox/app/commands/delete_node.go
+var ProxmoxNodeDeleted Subject = "isp.proxmox.node.deleted"
+
+// ────────────────────────────────────────────────────────────────────
 // Notifications
 // ────────────────────────────────────────────────────────────────────
 
