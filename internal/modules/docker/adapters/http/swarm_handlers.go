@@ -1,12 +1,14 @@
 package http
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/adapters/hetzner"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/app/commands"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/app/queries"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/domain"
@@ -43,8 +45,9 @@ type SwarmHandlers struct {
 	getNetwork    *queries.GetSwarmNetworkHandler
 	listStacks    *queries.ListSwarmStacksHandler
 	getStack      *queries.GetSwarmStackHandler
-	// Repos (for reserved IP editing)
+	// Repos
 	networkRepo domain.SwarmNetworkRepository
+	clusterRepo domain.SwarmClusterRepository
 }
 
 func NewSwarmHandlers(
@@ -73,6 +76,7 @@ func NewSwarmHandlers(
 	listStacks *queries.ListSwarmStacksHandler,
 	getStack *queries.GetSwarmStackHandler,
 	networkRepo domain.SwarmNetworkRepository,
+	clusterRepo domain.SwarmClusterRepository,
 ) *SwarmHandlers {
 	return &SwarmHandlers{
 		createCluster: createCluster, importCluster: importCluster,
@@ -87,6 +91,7 @@ func NewSwarmHandlers(
 		listNetworks: listNetworks, getNetwork: getNetwork,
 		listStacks: listStacks, getStack: getStack,
 		networkRepo: networkRepo,
+		clusterRepo: clusterRepo,
 	}
 }
 
@@ -106,6 +111,7 @@ func (h *SwarmHandlers) RegisterRoutes(r chi.Router) {
 	r.Get("/swarm/clusters/{id}/hetzner", h.clusterHetznerConfigPage)
 	r.Post("/api/swarm/clusters/{id}/hetzner", h.clusterHetznerConfigSSE)
 	r.Post("/api/swarm/clusters/{id}/order-hetzner", h.clusterOrderHetznerSSE)
+	r.Get("/api/swarm/clusters/{id}/hetzner-options", h.clusterHetznerOptionsSSE)
 
 	// ── Node pages ─────────────────────────────────────────────────────────────
 	r.Get("/swarm/nodes/new", h.nodeCreatePage)
@@ -359,6 +365,28 @@ func (h *SwarmHandlers) clusterOrderHetznerSSE(w http.ResponseWriter, r *http.Re
 		return
 	}
 	sse.Redirect("/swarm/clusters/" + node.ClusterID)
+}
+
+func (h *SwarmHandlers) clusterHetznerOptionsSSE(w http.ResponseWriter, r *http.Request) {
+	clusterID := chi.URLParam(r, "id")
+	apiKey := h.hetznerAPIKeyFor(r.Context(), clusterID)
+	serverTypes, _ := hetzner.ListServerTypes(r.Context(), apiKey)
+	locations, _ := hetzner.ListLocations(r.Context(), apiKey)
+	sse := datastar.NewSSE(w, r)
+	_ = sse.PatchElementTempl(SwarmHetznerOptions(serverTypes, locations))
+	_ = sse.PatchSignals([]byte(`{"_hetzner_opts_loaded":true}`))
+}
+
+// hetznerAPIKeyFor loads the decrypted Hetzner API key for a cluster.
+func (h *SwarmHandlers) hetznerAPIKeyFor(ctx context.Context, clusterID string) string {
+	if h.clusterRepo == nil {
+		return ""
+	}
+	c, err := h.clusterRepo.FindByID(ctx, clusterID)
+	if err != nil || c == nil {
+		return ""
+	}
+	return c.HetznerAPIKey
 }
 
 func (h *SwarmHandlers) clusterDeleteSSE(w http.ResponseWriter, r *http.Request) {

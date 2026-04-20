@@ -111,6 +111,7 @@ func wireDocker(
 			listNetworksQuery, getNetworkQuery,
 			listStacksQuery, getStackQuery,
 			networkRepo,
+			clusterRepo,
 		)
 		log.Printf("module enabled: docker")
 	}

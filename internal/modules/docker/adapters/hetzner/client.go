@@ -238,6 +238,64 @@ func sshKeyMaterial(key string) string {
 	return key
 }
 
+// ServerType is a Hetzner server type.
+type ServerType struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Cores       int    `json:"cores"`
+	Memory      float64 `json:"memory"`
+	Disk        int    `json:"disk"`
+}
+
+// Location is a Hetzner datacenter location.
+type Location struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Country     string `json:"country"`
+}
+
+// ListServerTypes returns all available server types for the account.
+func ListServerTypes(ctx context.Context, apiKey string) ([]ServerType, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiBase+"/server_types?per_page=50", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("list server types: %w", err)
+	}
+	defer resp.Body.Close()
+	var list struct {
+		ServerTypes []ServerType `json:"server_types"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+		return nil, fmt.Errorf("decode server types: %w", err)
+	}
+	return list.ServerTypes, nil
+}
+
+// ListLocations returns all available datacenter locations.
+func ListLocations(ctx context.Context, apiKey string) ([]Location, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiBase+"/locations", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("list locations: %w", err)
+	}
+	defer resp.Body.Close()
+	var list struct {
+		Locations []Location `json:"locations"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+		return nil, fmt.Errorf("decode locations: %w", err)
+	}
+	return list.Locations, nil
+}
+
 // DeleteServer deletes a Hetzner server by ID.
 func DeleteServer(ctx context.Context, apiKey string, serverID int) error {
 	url := fmt.Sprintf("%s/servers/%d", apiBase, serverID)
