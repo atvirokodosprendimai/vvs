@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -146,6 +147,95 @@ func PollUntilRunning(ctx context.Context, apiKey string, serverID int, timeout 
 		time.Sleep(interval)
 	}
 	return "", fmt.Errorf("server not running after %s", timeout)
+}
+
+// EnsureSSHKey creates the SSH key in Hetzner if it doesn't exist yet and
+// returns its numeric ID. If a key with the same public key already exists
+// (uniqueness_error), it fetches and returns the existing key's ID.
+func EnsureSSHKey(ctx context.Context, apiKey, name, publicKey string) (int, error) {
+	body, _ := json.Marshal(map[string]string{"name": name, "public_key": publicKey})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiBase+"/ssh_keys", bytes.NewReader(body))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("create ssh key: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var raw struct {
+		SSHKey struct {
+			ID int `json:"id"`
+		} `json:"ssh_key"`
+		Error struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	_ = json.NewDecoder(resp.Body).Decode(&raw)
+
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		return raw.SSHKey.ID, nil
+	}
+	if raw.Error.Code == "uniqueness_error" {
+		// Key already registered — find it by listing and matching public key
+		return findSSHKeyByPublicKey(ctx, apiKey, publicKey)
+	}
+	return 0, fmt.Errorf("hetzner create ssh key %d: %s (%s)", resp.StatusCode, raw.Error.Message, raw.Error.Code)
+}
+
+func findSSHKeyByPublicKey(ctx context.Context, apiKey, publicKey string) (int, error) {
+	keys, err := ListSSHKeys(ctx, apiKey)
+	if err != nil {
+		return 0, err
+	}
+	for _, k := range keys {
+		if sshKeyMaterial(k.PublicKey) == sshKeyMaterial(publicKey) {
+			return k.ID, nil
+		}
+	}
+	return 0, fmt.Errorf("ssh key not found in Hetzner account")
+}
+
+// SSHKey is a key registered in the Hetzner account.
+type SSHKey struct {
+	ID        int    `json:"id"`
+	PublicKey string `json:"public_key"`
+}
+
+// ListSSHKeys returns all SSH keys registered in the account.
+func ListSSHKeys(ctx context.Context, apiKey string) ([]SSHKey, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiBase+"/ssh_keys", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("list ssh keys: %w", err)
+	}
+	defer resp.Body.Close()
+
+	var list struct {
+		SSHKeys []SSHKey `json:"ssh_keys"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+		return nil, fmt.Errorf("decode ssh keys: %w", err)
+	}
+	return list.SSHKeys, nil
+}
+
+// sshKeyMaterial returns only the algorithm + base64 part (drops optional comment).
+func sshKeyMaterial(key string) string {
+	parts := strings.SplitN(strings.TrimSpace(key), " ", 3)
+	if len(parts) >= 2 {
+		return parts[0] + " " + parts[1]
+	}
+	return key
 }
 
 // DeleteServer deletes a Hetzner server by ID.
