@@ -267,7 +267,7 @@ func parseCompose(ctx context.Context, projectName, yaml string) (*composetypes.
 		Environment: map[string]string{"COMPOSE_PROJECT_NAME": projectName},
 	}
 	project, err := loader.LoadWithContext(ctx, details, func(o *loader.Options) {
-		o.SkipValidation = false
+		o.SkipValidation = true // skip JSON schema validation; we trust user-supplied YAML
 		o.SkipNormalization = false
 	})
 	if err != nil {

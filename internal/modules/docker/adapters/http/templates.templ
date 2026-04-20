@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/app/queries"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/domain"
@@ -291,6 +292,7 @@ templ DockerServiceRow(s queries.ServiceReadModel) {
 		</td>
 		<td class="py-2 text-right space-x-3">
 			<a href={ templ.SafeURL("/docker/services/" + s.ID + "/logs") } class="text-xs text-neutral-400 hover:text-amber-400">Logs</a>
+			<a href={ templ.SafeURL("/docker/services/" + s.ID + "/edit") } class="text-xs text-neutral-400 hover:text-amber-400">Edit</a>
 			<a href={ templ.SafeURL("/docker/services/" + s.ID) } class="text-xs text-neutral-400 hover:text-amber-400">Details</a>
 		</td>
 	</tr>
@@ -381,6 +383,74 @@ func firstNodeID(nodes []queries.NodeReadModel) string {
 	return nodes[0].ID
 }
 
+// ── Service edit page ─────────────────────────────────────────────────────────
+
+templ DockerServiceEditPage(svc *queries.ServiceReadModel) {
+	@templates.Layout("Edit Service: " + svc.Name) {
+		<div class="p-6 max-w-3xl space-y-4">
+			<div class="flex items-center gap-3">
+				<a href={ templ.SafeURL("/docker/services/" + svc.ID) } class="text-neutral-400 hover:text-amber-400 text-sm">← Service</a>
+				<h1 class="text-xl font-semibold text-neutral-100">Edit: { svc.Name }</h1>
+			</div>
+			<div id="docker-service-form-error" style="display:none"></div>
+			@DockerServiceEditForm(svc)
+		</div>
+		<!-- CodeMirror 5 (YAML + Dracula) -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css"/>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css"/>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/yaml/yaml.min.js"></script>
+		<script>
+			(function() {
+				var ta = document.getElementById('compose-yaml-ta');
+				if (!ta) return;
+				var cm = CodeMirror.fromTextArea(ta, {
+					mode: 'yaml',
+					theme: 'dracula',
+					lineNumbers: true,
+					indentWithTabs: false,
+					tabSize: 2,
+					indentUnit: 2,
+					extraKeys: { Tab: function(cm) { cm.replaceSelection('  ', 'end'); } }
+				});
+				cm.on('change', function() {
+					ta.value = cm.getValue();
+					ta.dispatchEvent(new Event('input', { bubbles: true }));
+				});
+			})();
+		</script>
+	}
+}
+
+templ DockerServiceEditForm(svc *queries.ServiceReadModel) {
+	<form
+		data-signals={ `{"composeYaml":` + jsonQuote(svc.ComposeYAML) + `}` }
+		data-on:submit__prevent={ "@put('/api/docker/services/" + svc.ID + "')" }
+		class="space-y-4"
+	>
+		<div>
+			<label class="block text-sm text-neutral-400 mb-1">Compose YAML</label>
+			<textarea
+				id="compose-yaml-ta"
+				data-bind:compose-yaml
+				class="input-field w-full font-mono text-xs"
+				style="min-height:320px"
+			>{ svc.ComposeYAML }</textarea>
+		</div>
+		<div class="flex gap-3">
+			<button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm rounded-md">
+				Redeploy
+			</button>
+			<a href={ templ.SafeURL("/docker/services/" + svc.ID) } class="px-4 py-2 text-neutral-400 hover:text-neutral-200 text-sm">Cancel</a>
+		</div>
+	</form>
+}
+
+func jsonQuote(s string) string {
+	b, _ := json.Marshal(s)
+	return string(b)
+}
+
 // ── Service detail page ───────────────────────────────────────────────────────
 
 templ DockerServiceDetailPage(svc *queries.ServiceReadModel) {
@@ -413,6 +483,10 @@ templ DockerServiceDetailPage(svc *queries.ServiceReadModel) {
 						data-on:click={ "@post('/api/docker/services/" + svc.ID + "/start')" }
 					>Start</button>
 				}
+				<a
+					href={ templ.SafeURL("/docker/services/" + svc.ID + "/edit") }
+					class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded-md"
+				>Edit</a>
 				<a
 					href={ templ.SafeURL("/docker/services/" + svc.ID + "/logs") }
 					class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded-md"

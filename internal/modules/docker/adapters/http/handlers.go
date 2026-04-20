@@ -27,6 +27,7 @@ type Handlers struct {
 	deleteNode *commands.DeleteNodeHandler
 	// Service commands
 	deployService *commands.DeployServiceHandler
+	updateService *commands.UpdateServiceHandler
 	stopService   *commands.StopServiceHandler
 	startService  *commands.StartServiceHandler
 	removeService *commands.RemoveServiceHandler
@@ -47,6 +48,7 @@ func NewHandlers(
 	updateNode *commands.UpdateNodeHandler,
 	deleteNode *commands.DeleteNodeHandler,
 	deployService *commands.DeployServiceHandler,
+	updateService *commands.UpdateServiceHandler,
 	stopService *commands.StopServiceHandler,
 	startService *commands.StartServiceHandler,
 	removeService *commands.RemoveServiceHandler,
@@ -61,8 +63,8 @@ func NewHandlers(
 ) *Handlers {
 	return &Handlers{
 		createNode: createNode, updateNode: updateNode, deleteNode: deleteNode,
-		deployService: deployService, stopService: stopService,
-		startService: startService, removeService: removeService,
+		deployService: deployService, updateService: updateService,
+		stopService: stopService, startService: startService, removeService: removeService,
 		listNodes: listNodes, getNode: getNode,
 		listServices: listServices, getService: getService,
 		subscriber:    subscriber,
@@ -89,11 +91,13 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/docker/services", h.serviceListPage)
 	r.Get("/docker/services/new", h.serviceCreatePage)
 	r.Get("/docker/services/{id}", h.serviceDetailPage)
+	r.Get("/docker/services/{id}/edit", h.serviceEditPage)
 	r.Get("/docker/services/{id}/logs", h.serviceLogsPage)
 
 	// ── Service SSE / API ──────────────────────────────────────────────────────
 	r.Get("/api/docker/services", h.serviceListSSE)
 	r.Post("/api/docker/services", h.serviceDeploySSE)
+	r.Put("/api/docker/services/{id}", h.serviceUpdateSSE)
 	r.Get("/api/docker/services/{id}/containers", h.serviceContainersSSE)
 	r.Get("/api/docker/services/{id}/logs", h.serviceLogsSSE)
 	r.Post("/api/docker/services/{id}/stop", h.serviceStopSSE)
@@ -292,6 +296,16 @@ func (h *Handlers) serviceDetailPage(w http.ResponseWriter, r *http.Request) {
 	DockerServiceDetailPage(svc).Render(r.Context(), w)
 }
 
+func (h *Handlers) serviceEditPage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	svc, err := h.getService.Handle(r.Context(), id)
+	if err != nil {
+		http.Error(w, "service not found", http.StatusNotFound)
+		return
+	}
+	DockerServiceEditPage(svc).Render(r.Context(), w)
+}
+
 func (h *Handlers) serviceLogsPage(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	svc, err := h.getService.Handle(r.Context(), id)
@@ -357,6 +371,30 @@ func (h *Handlers) serviceDeploySSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sse.Redirect("/docker/services/" + svc.ID)
+}
+
+func (h *Handlers) serviceUpdateSSE(w http.ResponseWriter, r *http.Request) {
+	if !requireAdmin(w, r) {
+		return
+	}
+	id := chi.URLParam(r, "id")
+	var sig struct {
+		ComposeYAML string `json:"composeYaml"`
+	}
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	if err := h.updateService.Handle(r.Context(), commands.UpdateServiceCommand{
+		ID:          id,
+		ComposeYAML: sig.ComposeYAML,
+	}); err != nil {
+		slog.Error("docker: update service", "err", err)
+		sse.PatchElementTempl(DockerServiceFormError(err.Error()))
+		return
+	}
+	sse.Redirect("/docker/services/" + id)
 }
 
 func (h *Handlers) serviceContainersSSE(w http.ResponseWriter, r *http.Request) {
