@@ -187,6 +187,77 @@ func (h *StartServiceHandler) Handle(ctx context.Context, cmd StartServiceComman
 	return nil
 }
 
+// ── UpdateService ─────────────────────────────────────────────────────────────
+
+type UpdateServiceCommand struct {
+	ID          string
+	ComposeYAML string
+}
+
+type UpdateServiceHandler struct {
+	nodeRepo    domain.DockerNodeRepository
+	serviceRepo domain.DockerServiceRepository
+	factory     domain.DockerClientFactory
+	publisher   events.EventPublisher
+}
+
+func NewUpdateServiceHandler(
+	nodeRepo domain.DockerNodeRepository,
+	serviceRepo domain.DockerServiceRepository,
+	factory domain.DockerClientFactory,
+	pub events.EventPublisher,
+) *UpdateServiceHandler {
+	return &UpdateServiceHandler{nodeRepo: nodeRepo, serviceRepo: serviceRepo, factory: factory, publisher: pub}
+}
+
+func (h *UpdateServiceHandler) Handle(ctx context.Context, cmd UpdateServiceCommand) error {
+	svc, err := h.serviceRepo.FindByID(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+	node, err := h.nodeRepo.FindByID(ctx, svc.NodeID)
+	if err != nil {
+		return err
+	}
+	if err := svc.UpdateYAML(cmd.ComposeYAML); err != nil {
+		return err
+	}
+	if err := h.serviceRepo.Save(ctx, svc); err != nil {
+		return err
+	}
+
+	client, err := h.factory.ForNode(node)
+	if err != nil {
+		svc.MarkError(fmt.Sprintf("build docker client: %s", err))
+		_ = h.serviceRepo.Save(ctx, svc)
+		h.publishStatus(ctx, svc)
+		return nil
+	}
+
+	// Remove old containers before re-deploying with updated YAML
+	_ = client.RemoveContainers(ctx, svc.Name)
+
+	if deployErr := client.Deploy(ctx, svc.Name, svc.ComposeYAML); deployErr != nil {
+		svc.MarkError(deployErr.Error())
+	} else {
+		svc.MarkRunning()
+	}
+
+	if err := h.serviceRepo.Save(ctx, svc); err != nil {
+		return err
+	}
+	h.publishStatus(ctx, svc)
+	return nil
+}
+
+func (h *UpdateServiceHandler) publishStatus(ctx context.Context, svc *domain.DockerService) {
+	data, _ := json.Marshal(map[string]string{"id": svc.ID, "status": string(svc.Status), "errorMsg": svc.ErrorMsg})
+	h.publisher.Publish(ctx, events.DockerServiceStatusChanged.String(), events.DomainEvent{
+		ID: uuid.Must(uuid.NewV7()).String(), Type: "docker.service.status_changed",
+		AggregateID: svc.ID, OccurredAt: time.Now().UTC(), Data: data,
+	})
+}
+
 // ── RemoveService ─────────────────────────────────────────────────────────────
 
 type RemoveServiceCommand struct{ ID string }

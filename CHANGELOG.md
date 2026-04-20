@@ -147,3 +147,6 @@
 - 2026-04-20 `08cca1f` spec(docker): multi-node docker orchestrator with compose YAML and live logs
 - 2026-04-20 `3a800e7` feat(docker): Phase 1 — domain, migrations, persistence, NATS subjects
 - 2026-04-20 `f0e087b` feat(docker): Phase 2 — docker client adapter, log streamer, commands, queries
+- 2026-04-20 `ee64c84` feat(docker): Phase 3-6 complete — HTTP handlers, templates, wiring
+- 2026-04-20 `08b44a3` docs(plan): mark docker orchestrator plan completed
+- 2026-04-20 `2a5a51d` fix(docker): pass COMPOSE_PROJECT_NAME env to compose-go loader

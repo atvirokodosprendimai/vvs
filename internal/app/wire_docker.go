@@ -40,6 +40,7 @@ func wireDocker(
 	updateNodeCmd := dockercommands.NewUpdateNodeHandler(nodeRepo, pub)
 	deleteNodeCmd := dockercommands.NewDeleteNodeHandler(nodeRepo, serviceRepo, pub)
 	deployServiceCmd := dockercommands.NewDeployServiceHandler(nodeRepo, serviceRepo, factory, pub)
+	updateServiceCmd := dockercommands.NewUpdateServiceHandler(nodeRepo, serviceRepo, factory, pub)
 	stopServiceCmd := dockercommands.NewStopServiceHandler(nodeRepo, serviceRepo, factory, pub)
 	startServiceCmd := dockercommands.NewStartServiceHandler(nodeRepo, serviceRepo, factory, pub)
 	removeServiceCmd := dockercommands.NewRemoveServiceHandler(nodeRepo, serviceRepo, factory, pub)
@@ -53,7 +54,7 @@ func wireDocker(
 	if cfg.IsEnabled("docker") {
 		routes = dockerhttp.NewHandlers(
 			createNodeCmd, updateNodeCmd, deleteNodeCmd,
-			deployServiceCmd, stopServiceCmd, startServiceCmd, removeServiceCmd,
+			deployServiceCmd, updateServiceCmd, stopServiceCmd, startServiceCmd, removeServiceCmd,
 			listNodesQuery, getNodeQuery, listServicesQuery, getServiceQuery,
 			sub, nodeRepo, serviceRepo, factory,
 		)
