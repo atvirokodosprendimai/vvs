@@ -451,7 +451,7 @@ templ CRMTabBar(serviceCount, contactCount, dealCount, ticketCount, taskCount, e
 		@crmTab("tasks", "Tasks", taskCount)
 		@crmTab("emails", "Emails", emailCount)
 		@crmTab("invoices", "Invoices", invoiceCount)
-		@crmTab("auditlog", "Audit Log", 0)
+		@crmTab("auditlog", "Audit Log", -1)
 	</div>
 }
 
@@ -466,7 +466,7 @@ templ crmTab(key, label string, count int) {
 		class="px-3 py-2 text-xs font-medium uppercase tracking-wider border-b-2 transition-colors hover:text-neutral-300"
 	>
 		{ label }
-		if count > 0 {
+		if count >= 0 {
 			<span class="ml-1 text-neutral-600">{ fmt.Sprintf("%d", count) }</span>
 		}
 	</button>
