@@ -18,7 +18,8 @@ import (
 )
 
 type dockerWired struct {
-	routes infrahttp.ModuleRoutes
+	routes      infrahttp.ModuleRoutes
+	swarmRoutes infrahttp.ModuleRoutes
 }
 
 func wireDocker(
@@ -29,6 +30,8 @@ func wireDocker(
 	cfg Config,
 ) *dockerWired {
 	encKey := []byte(cfg.DockerEncKey)
+
+	// ── Docker node/service repos + commands ──────────────────────────────────
 	nodeRepo := dockerpersistence.NewGormDockerNodeRepository(gdb, encKey)
 	serviceRepo := dockerpersistence.NewGormDockerServiceRepository(gdb)
 
@@ -50,7 +53,43 @@ func wireDocker(
 	listServicesQuery := dockerqueries.NewListServicesHandler(serviceRepo, nodeRepo)
 	getServiceQuery := dockerqueries.NewGetServiceHandler(serviceRepo, nodeRepo)
 
+	// ── Swarm repos + commands ────────────────────────────────────────────────
+	swarmFactory := &dockerclientadapter.SSHSwarmFactory{}
+	clusterRepo := dockerpersistence.NewGormSwarmClusterRepository(gdb, encKey)
+	swarmNodeRepo := dockerpersistence.NewGormSwarmNodeRepository(gdb, encKey)
+	networkRepo := dockerpersistence.NewGormSwarmNetworkRepository(gdb)
+	stackRepo := dockerpersistence.NewGormSwarmStackRepository(gdb)
+
+	createClusterCmd := dockercommands.NewCreateSwarmClusterHandler(clusterRepo, pub)
+	importClusterCmd := dockercommands.NewImportSwarmClusterHandler(clusterRepo, pub)
+	initSwarmCmd := dockercommands.NewInitSwarmHandler(clusterRepo, swarmNodeRepo, swarmFactory, pub)
+	deleteClusterCmd := dockercommands.NewDeleteSwarmClusterHandler(clusterRepo, pub)
+
+	createSwarmNodeCmd := dockercommands.NewCreateSwarmNodeHandler(swarmNodeRepo)
+	provisionNodeCmd := dockercommands.NewProvisionSwarmNodeHandler(swarmNodeRepo, clusterRepo, pub)
+	addNodeCmd := dockercommands.NewAddSwarmNodeHandler(clusterRepo, swarmNodeRepo, swarmFactory, pub)
+	removeNodeCmd := dockercommands.NewRemoveSwarmNodeHandler(clusterRepo, swarmNodeRepo, swarmFactory, pub)
+
+	createNetworkCmd := dockercommands.NewCreateSwarmNetworkHandler(clusterRepo, swarmNodeRepo, networkRepo, swarmFactory, pub)
+	deleteNetworkCmd := dockercommands.NewDeleteSwarmNetworkHandler(clusterRepo, swarmNodeRepo, networkRepo, swarmFactory, pub)
+	updateReservedIPCmd := dockercommands.NewUpdateSwarmNetworkReservedIPsHandler(networkRepo)
+
+	deployStackCmd := dockercommands.NewDeploySwarmStackHandler(clusterRepo, swarmNodeRepo, stackRepo, swarmFactory, pub)
+	updateStackCmd := dockercommands.NewUpdateSwarmStackHandler(swarmNodeRepo, stackRepo, swarmFactory)
+	removeStackCmd := dockercommands.NewRemoveSwarmStackHandler(swarmNodeRepo, stackRepo, swarmFactory, pub)
+
+	listClustersQuery := dockerqueries.NewListSwarmClustersHandler(clusterRepo, swarmNodeRepo)
+	getClusterQuery := dockerqueries.NewGetSwarmClusterHandler(clusterRepo)
+	listSwarmNodesQuery := dockerqueries.NewListSwarmNodesHandler(swarmNodeRepo)
+	getSwarmNodeQuery := dockerqueries.NewGetSwarmNodeHandler(swarmNodeRepo)
+	listNetworksQuery := dockerqueries.NewListSwarmNetworksHandler(networkRepo)
+	getNetworkQuery := dockerqueries.NewGetSwarmNetworkHandler(networkRepo)
+	listStacksQuery := dockerqueries.NewListSwarmStacksHandler(stackRepo)
+	getStackQuery := dockerqueries.NewGetSwarmStackHandler(stackRepo)
+
 	var routes infrahttp.ModuleRoutes
+	var swarmRoutes infrahttp.ModuleRoutes
+
 	if cfg.IsEnabled("docker") {
 		routes = dockerhttp.NewHandlers(
 			createNodeCmd, updateNodeCmd, deleteNodeCmd,
@@ -58,8 +97,19 @@ func wireDocker(
 			listNodesQuery, getNodeQuery, listServicesQuery, getServiceQuery,
 			sub, nodeRepo, serviceRepo, factory,
 		)
+		swarmRoutes = dockerhttp.NewSwarmHandlers(
+			createClusterCmd, importClusterCmd, initSwarmCmd, deleteClusterCmd,
+			provisionNodeCmd, addNodeCmd, removeNodeCmd, createSwarmNodeCmd,
+			createNetworkCmd, deleteNetworkCmd, updateReservedIPCmd,
+			deployStackCmd, updateStackCmd, removeStackCmd,
+			listClustersQuery, getClusterQuery,
+			listSwarmNodesQuery, getSwarmNodeQuery,
+			listNetworksQuery, getNetworkQuery,
+			listStacksQuery, getStackQuery,
+			networkRepo,
+		)
 		log.Printf("module enabled: docker")
 	}
 
-	return &dockerWired{routes: routes}
+	return &dockerWired{routes: routes, swarmRoutes: swarmRoutes}
 }

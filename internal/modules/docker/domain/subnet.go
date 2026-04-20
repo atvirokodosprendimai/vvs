@@ -49,3 +49,19 @@ func intToIP(n uint32) string {
 	binary.BigEndian.PutUint32(b, n)
 	return net.IP(b).String()
 }
+
+// DHCPRangeCIDR returns the CIDR for the lower half of cidr — the DHCP pool boundary
+// passed as --ip-range to Docker NetworkCreate to constrain auto-assignment.
+// Returns empty string if cidr cannot be parsed.
+func DHCPRangeCIDR(cidr string) string {
+	_, network, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return ""
+	}
+	ones, bits := network.Mask.Size()
+	if bits != 32 || ones >= 31 {
+		return ""
+	}
+	// Lower half has one extra bit set → prefix length = ones+1
+	return fmt.Sprintf("%s/%d", network.IP.String(), ones+1)
+}

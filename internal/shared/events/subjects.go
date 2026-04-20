@@ -370,3 +370,37 @@ var DockerServiceRemoved Subject = "isp.docker.service.removed"
 // Pub: docker/app/services/log_streamer.go (dynamic — one subject per container)
 // Use Format(containerID) to publish/subscribe.
 var DockerLogsLine Subject = "isp.docker.logs.%s"
+
+// Docker Swarm
+// Pub: docker/app/commands/swarm_node_commands.go
+var SwarmClusterCreated Subject = "isp.swarm.cluster.created"
+
+// Pub: docker/app/commands/swarm_node_commands.go
+var SwarmClusterInitialised Subject = "isp.swarm.cluster.initialised"
+
+// Pub: docker/app/commands/swarm_node_commands.go
+var SwarmClusterImported Subject = "isp.swarm.cluster.imported"
+
+// Pub: docker/app/commands/swarm_node_commands.go
+var SwarmClusterDeleted Subject = "isp.swarm.cluster.deleted"
+
+// Pub: docker/app/commands/swarm_node_commands.go
+var SwarmNodeProvisioned Subject = "isp.swarm.node.provisioned"
+
+// Pub: docker/app/commands/swarm_node_commands.go
+var SwarmNodeJoined Subject = "isp.swarm.node.joined"
+
+// Pub: docker/app/commands/swarm_node_commands.go
+var SwarmNodeRemoved Subject = "isp.swarm.node.removed"
+
+// Pub: docker/app/commands/swarm_network_commands.go
+var SwarmNetworkCreated Subject = "isp.swarm.network.created"
+
+// Pub: docker/app/commands/swarm_network_commands.go
+var SwarmNetworkDeleted Subject = "isp.swarm.network.deleted"
+
+// Pub: docker/app/commands/swarm_stack_commands.go
+var SwarmStackDeployed Subject = "isp.swarm.stack.deployed"
+
+// Pub: docker/app/commands/swarm_stack_commands.go
+var SwarmStackRemoved Subject = "isp.swarm.stack.removed"

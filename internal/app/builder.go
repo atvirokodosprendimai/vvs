@@ -195,6 +195,7 @@ func collectRoutes(
 	add(iptv.routes)
 	add(proxmox.routes)
 	add(docker.routes)
+	add(docker.swarmRoutes)
 	for _, r := range infra.routes {
 		add(r)
 	}
