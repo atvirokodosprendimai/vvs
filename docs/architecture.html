@@ -334,6 +334,7 @@ function baseStyle() {
     {
       selector: 'node',
       style: {
+        'content':           'data(label)',
         'background-color':  'data(color)',
         'background-opacity': 0.15,
         'border-color':      'data(color)',
@@ -387,6 +388,7 @@ function groupStyle() {
     {
       selector: 'node[?isGroup]',
       style: {
+        'content':           'data(label)',
         'background-color':  'data(color)',
         'background-opacity': 0.07,
         'border-color':      'data(color)',
@@ -407,6 +409,7 @@ function groupStyle() {
     {
       selector: 'node:child',
       style: {
+        'content':           'data(label)',
         'background-color':  'data(color)',
         'background-opacity': 0.18,
         'border-color':      'data(color)',
