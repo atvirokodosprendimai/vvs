@@ -1,6 +1,6 @@
 ---
 tldr: Docker orchestrator module — manage multi-node Docker hosts, deploy compose YAML services, stream live logs from the VVS admin UI
-status: active
+status: completed
 ---
 
 # Plan: Docker Orchestrator Module
@@ -84,68 +84,58 @@ status: active
     - => `NodeReadModel.HasTLS` = len(TLSCert) > 0 (never exposes raw cert bytes)
     - => `ServiceReadModel` joins NodeName from node repo
 
-### Phase 3 — Admin UI: Node Management — status: open
+### Phase 3 — Admin UI: Node Management — status: completed
 
-12. [ ] HTTP handlers: node CRUD
-    - file: `internal/modules/docker/adapters/http/handlers.go`
-    - routes: `GET /docker/nodes`, `GET /docker/nodes/new`, `POST /docker/nodes`, `GET /docker/nodes/{id}/edit`, `PUT /docker/nodes/{id}`, `DELETE /docker/nodes/{id}`
-    - `POST /docker/nodes/{id}/ping` — test connectivity, return success/error badge inline
+12. [x] HTTP handlers: node CRUD
+    - => `internal/modules/docker/adapters/http/handlers.go`
+    - => routes: GET/new/edit pages + GET/POST/PUT/DELETE/ping SSE API
+    - => `requireAdmin` guard on all mutations
 
-13. [ ] Templ: node list + form
-    - `DockerNodeListPage`, `DockerNodeTable`, `DockerNodeRow`
-    - `DockerNodeFormPage`, `DockerNodeForm`
-    - Form: name, host URL, isLocal toggle (hides TLS cert fields when local), tls_cert/key/ca textareas
-    - Connectivity test button with inline result badge (no page reload)
+13. [x] Templ: node list + form
+    - => `DockerNodesPage`, `DockerNodeTable`, `DockerNodeRow`
+    - => `DockerNodeFormPage`, `DockerNodeForm`
+    - => `data-show="!$isLocal"` hides TLS cert textareas for local nodes
+    - => `DockerPingResult(nodeID, ok, msg)` replaces `#ping-result-{id}` inline
 
-### Phase 4 — Admin UI: Service Management — status: open
+### Phase 4 — Admin UI: Service Management — status: completed
 
-14. [ ] HTTP handlers: service CRUD + actions
-    - `GET /docker/services` — list all services across nodes
-    - `GET /docker/services/new` — deploy form (select node + YAML editor)
-    - `POST /docker/services` — deploy
-    - `GET /docker/services/{id}` — service detail (containers, status)
-    - `POST /docker/services/{id}/stop`
-    - `POST /docker/services/{id}/start`
-    - `DELETE /docker/services/{id}` — remove + cleanup containers
+14. [x] HTTP handlers: service CRUD + actions
+    - => handlers merged with Phase 3 in same file (handlers.go)
+    - => `serviceLogsSSE`: fans in Docker goroutines directly to SSE channel (no NATS)
 
-15. [ ] Templ: service list + deploy form
-    - `DockerServiceListPage`, `DockerServiceTable`, `DockerServiceRow` (status badge)
-    - `DockerServiceFormPage` — node selector + CodeMirror YAML editor
-      - Load CodeMirror 5 via CDN: codemirror.net/5 (JS+CSS+YAML mode+Dracula theme)
-      - textarea with `id="compose-yaml"`, small JS init block to mount CodeMirror
-      - On submit: sync CodeMirror value back to hidden textarea → Datastar sends signal
-    - `DockerServiceDetailPage` — container table + start/stop/logs buttons
+15. [x] Templ: service list + deploy form
+    - => `DockerServicesPage`, `DockerServiceTable`, `DockerServiceRow` with status badge
+    - => `DockerServiceFormPage` / `DockerServiceForm` — node selector + CodeMirror 5 YAML
+    - => CodeMirror `onChange` syncs to textarea + dispatches 'input' event for Datastar
+    - => `DockerServiceDetailPage` — containers table + start/stop/logs/remove actions
 
-### Phase 5 — Live Log Streaming — status: open
+### Phase 5 — Live Log Streaming — status: completed
 
-16. [ ] SSE log endpoint
-    - `GET /docker/services/{id}/logs` — SSE handler
-    - Subscribes NATS `isp.docker.logs.*` wildcard for service's containers
-    - Calls `logStreamer.Stream(ctx, nodeID, containerID)` for each container in the service
-    - Each line → `PatchElementTempl` appending to `#log-output`
+16. [x] SSE log endpoint
+    - => `GET /api/docker/services/{id}/logs` — direct Docker fan-in (not NATS)
+    - => goroutine per container → logCh channel → SSE PatchElementTempl
 
-17. [ ] Templ: log viewer
-    - `DockerLogPage` — dark terminal `#log-output` pre/code block
-    - `DockerLogLine(ts, line string)` fragment — dim timestamp + text
-    - Auto-scroll: inline `<script>` sets `scrollTop = scrollHeight` after each patch
+17. [x] Templ: log viewer
+    - => `DockerLogPage` — dark terminal `#log-output` pre block, `min-height: calc(100vh-180px)`
+    - => `DockerLogLine(line)` — `data-patch-mode="append"` on `#log-output`
+    - => Auto-scroll: MutationObserver watches `#log-output` childList, scrollTop = scrollHeight
 
-### Phase 6 — Wiring + Nav — status: open
+### Phase 6 — Wiring + Nav — status: completed
 
-18. [ ] Wire: `internal/app/wire_docker.go`
-    - `dockerWired{nodeRepo, serviceRepo, logStreamer, commands, queries}`
-    - Register HTTP routes, inject enc key
-    - Add to `builder.go` module chain + `allMigrations()`
-    - Add `"docker"` to modules enum in `cmd/server/main.go` + `app/config.go`
+18. [x] Wire: `internal/app/wire_docker.go`
+    - => `dockerWired{routes}` — nc passed for LogStreamer NATSPublisher interface
+    - => `&dockerclientadapter.Factory{}` (value, not constructor)
+    - => wired in builder.go `New()` + `collectRoutes()` + `allMigrations()`
 
-19. [ ] Nav: "Services" group in sidebar
-    - `internal/infrastructure/http/layout.templ` — new collapsible group
-    - Items: Docker Nodes (`/docker/nodes`), Services (`/docker/services`)
-    - Guarded by `RequireModuleAccess("docker")` middleware
+19. [x] Nav: "Services" group in sidebar
+    - => `internal/infrastructure/http/templates/layout.templ` — new collapsible group after Compute
+    - => `_navDocker` signal persisted to localStorage; `dockerVisible` from `ModuleDocker`
+    - => Items: Nodes (`/docker/nodes`), Services (`/docker/services`)
 
-20. [ ] Config: `--docker-enc-key` / `VVS_DOCKER_ENC_KEY`
-    - `internal/app/config.go`: `DockerEncKey string`
-    - `cmd/server/main.go`: flag + env var
-    - `.env.example`: add to encryption keys section
+20. [x] Config: `--docker-enc-key` / `VVS_DOCKER_ENC_KEY`
+    - => `internal/app/config.go`: `DockerEncKey string`
+    - => `cmd/server/main.go`: flag + env var wired
+    - => `.env.example`: `VVS_DOCKER_ENC_KEY=` added
 
 ---
 
@@ -173,3 +163,4 @@ status: active
 - **2026-04-20** Plan created
 - **2026-04-20** Phase 1 complete: spec created + domain (node/service/client port) + migrations + persistence + NATS subjects
 - **2026-04-20** Phase 2 complete: docker client adapter (compose-go + docker SDK), log streamer, node/service commands, queries
+- **2026-04-20** Phases 3-6 complete: HTTP handlers, templ templates, wire_docker.go, ModuleDocker, nav group — full build clean (ee64c84)
