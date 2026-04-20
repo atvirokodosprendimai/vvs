@@ -44,12 +44,37 @@ Manage a Docker Swarm cluster entirely from the VVS admin UI:
 
 ### Networks
 
-- `SwarmNetwork` entity: ID, clusterID (nullable — local networks are not swarm-scoped), name, driver (`overlay | macvlan | bridge`), subnet (CIDR), gateway (optional), parent (macvlan only — physical interface name), options (JSON map for driver-specific opts), reservedIPs (JSON array of `{ip, label}`), scope (`swarm | local`)
+- `SwarmNetwork` entity: ID, clusterID (nullable), name, driver (`overlay | macvlan | bridge`), subnet (CIDR), gateway (optional), dhcpRangeStart, dhcpRangeEnd, parent (macvlan only), options (JSON map), reservedIPs (JSON array of `{ip, hostname, label}`), scope (`swarm | local`)
 - **Overlay**: multi-host, requires active swarm cluster, `attachable: true` flag optional
-- **Macvlan**: requires parent interface — shown as dropdown populated from the node's interface list via Docker API; if the API call fails, falls back to free-text input. Requires subnet (CIDR) and gateway
+- **Macvlan**: requires parent interface — free-text input (predefined in VVS, not pulled from Docker API). Requires subnet (CIDR) and gateway
 - **Bridge**: single-host, standard Docker bridge, subnet and gateway optional
-- Reserved IPs are stored as metadata only — VVS does not enforce them via IPAM. They serve as assignment documentation (e.g. "10.10.100.100 — internal DNS")
-- The swarm internal DNS convention: when creating a macvlan/overlay network the UI pre-populates one reserved IP entry: `10.10.100.100 / internal DNS`; admin can edit or remove it
+
+#### Subnet Split — DHCP pool vs Reserved range
+
+A network subnet is divided into two halves in VVS:
+
+- **Lower half (DHCP pool)**: defined by `dhcpRangeStart`/`dhcpRangeEnd`. Docker auto-assigns IPs from this range when containers start. Services/stacks always land here.
+- **Upper half (Reserved range)**: IPs pre-allocated in VVS panel by admin. Each entry has an IP, hostname, and label. Used for infrastructure components (Traefik, internal DNS, gateways). VVS owns these definitions — they are not pulled from Docker.
+
+Example for `10.100.0.0/17`:
+- DHCP pool: `10.100.0.1 – 10.100.63.254` (lower half)
+- Reserved: `10.100.64.0 – 10.100.127.254` (upper half, managed in VVS)
+  - `10.100.100.1` — `traefik` — HTTP router
+  - `10.100.100.100` — `dns` — internal DNS
+
+Reserved IPs are stored in VVS only; Docker does not enforce them via IPAM. They serve as assignment documentation and as input for generated configs (see Traefik routing below).
+
+### HTTP Routing — Traefik Integration
+
+VVS generates a Traefik [file provider](https://doc.traefik.io/traefik/providers/file/) config from the service + network registry:
+
+- Admin assigns a reserved IP to a Traefik instance on the network
+- Each deployed stack/service can be tagged with a hostname route (e.g. `nginx.internal`)
+- VVS generates a `traefik-routes.yml` (dynamic config) mapping hostnames → services by container name/IP
+- Config is available for download or can be volume-mounted into the Traefik container via a stack YAML
+- No live sync to Docker — admin re-downloads/re-deploys when routes change
+
+`SwarmRoute` entity (lightweight, attached to SwarmStack): ID, stackID, hostname, port, stripPrefix (bool)
 
 ### Stack Deploy (Swarm)
 
@@ -66,6 +91,10 @@ Manage a Docker Swarm cluster entirely from the VVS admin UI:
 - Nav items: Clusters, Nodes, Networks, Stacks
 - Cluster detail page: summary (node count, status), node table, network table, stack table
 - Node form: SSH connection test button (Ping via SSH → Docker info)
+- Network form: subnet CIDR input auto-calculates suggested DHCP range (lower half) and reserved range (upper half); both boundaries are editable
+- Reserved IPs table: IP / hostname / label columns, add/remove rows inline, no Docker API call — pure VVS data
+- Stack form: optional "Routes" section — add hostname + port entries; generates `SwarmRoute` records
+- Network detail page: "Download Traefik config" button generates `traefik-routes.yml` for all stacks on that network
 
 ## Design
 
@@ -86,8 +115,9 @@ adapters/dockerclient/ssh_client.go
 ```
 domain/swarm_cluster.go   — SwarmCluster, SwarmClusterRepository
 domain/swarm_node.go      — SwarmNode, SwarmNodeRepository
-domain/swarm_network.go   — SwarmNetwork, SwarmNetworkRepository
-domain/swarm_stack.go     — SwarmStack, SwarmStackRepository
+domain/swarm_network.go   — SwarmNetwork (+ ReservedIP, DHCPRange), SwarmNetworkRepository
+domain/swarm_stack.go     — SwarmStack, SwarmRoute, SwarmStackRepository
+domain/traefik_config.go  — GenerateTraefikConfig(network *SwarmNetwork, stacks []SwarmStack) string
 ```
 
 ### New Migrations
@@ -136,10 +166,11 @@ isp.docker.swarm.stack.*     — deployed/updated/removed/status_changed
 - Add swarm node with SSH key → Ping returns Docker version (SSH dial successful)
 - VVS-init: select node → cluster created, join tokens stored masked
 - Import: paste tokens → add worker node → node appears in cluster node list with role=worker
-- Create overlay network on cluster → `docker network ls` on manager shows network with driver=overlay
-- Create macvlan network → parent interface dropdown populated from node's interface list
-- Reserved IP entry at 10.10.100.100 pre-populated for new macvlan/overlay networks
-- Deploy nginx stack (compose YAML) → stack appears with replicated services
+- Create overlay network `10.100.0.0/17` → DHCP range auto-calculates lower half, reserved range shows upper half
+- Add reserved IP `10.100.100.1 / traefik / HTTP router` in VVS panel → visible in reserved IP table, not fetched from Docker
+- Deploy nginx stack → container gets auto-assigned IP from DHCP lower half
+- Add route `nginx.local:80` to nginx stack → "Download Traefik config" generates valid `traefik-routes.yml`
+- Create macvlan network → parent interface entered as free text (not from Docker API)
 - Edit stack YAML → redeploy updates services (rolling update)
 - Remove stack → services gone from `docker service ls`
 
@@ -147,10 +178,10 @@ isp.docker.swarm.stack.*     — deployed/updated/removed/status_changed
 
 - SSH dialing in Go requires `golang.org/x/crypto/ssh` — not in current go.mod; needs `go get`
 - Docker SDK has no built-in SSH transport helper; must implement custom `http.Transport` with SSH dial function
-- `InterfaceList` — Docker API does not expose host interfaces directly; may need to exec `ip link` via Docker API `ContainerExec` or fall back to free-text with a note
 - `docker stack deploy` requires compose v3 format with `deploy:` keys; v2-only compose files will fail at the swarm scheduler
 - SwarmJoin via Docker API requires the target node's Docker daemon to be reachable; ordering matters (manager must be up first)
 - Macvlan networks require kernel macvlan support and appropriate NIC promiscuous mode — VVS cannot verify this; surface as a warning in the UI
+- Docker does not enforce the VVS-defined DHCP range boundary — it allocates from the full subnet unless the network is created with an explicit `--ip-range` flag; VVS should pass `IPRange` in the `NetworkCreate` call to constrain Docker's pool to the lower half
 
 ## Interactions
 
