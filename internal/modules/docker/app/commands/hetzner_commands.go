@@ -95,7 +95,16 @@ func (h *UpdateClusterHetznerConfigHandler) Handle(ctx context.Context, cmd Upda
 	if err != nil {
 		return err
 	}
-	cluster.SetHetznerConfig(cmd.APIKey, cmd.SSHKeyID, cmd.SSHPrivateKey, cmd.SSHPublicKey)
+	keyID := cmd.SSHKeyID
+	// Auto-register public key in Hetzner if API key + public key are provided
+	if cmd.APIKey != "" && cmd.SSHPublicKey != "" {
+		id, err := hetzner.EnsureSSHKey(ctx, cmd.APIKey, "vvs-"+cluster.Name, cmd.SSHPublicKey)
+		if err != nil {
+			return fmt.Errorf("register SSH key in Hetzner: %w", err)
+		}
+		keyID = id
+	}
+	cluster.SetHetznerConfig(cmd.APIKey, keyID, cmd.SSHPrivateKey, cmd.SSHPublicKey)
 	return h.clusterRepo.Save(ctx, cluster)
 }
 
@@ -166,14 +175,23 @@ func (h *OrderHetznerNodeHandler) Handle(ctx context.Context, cmd OrderHetznerNo
 		return nil, fmt.Errorf("cluster %s has no SSH private key — cannot connect after provisioning", cluster.Name)
 	}
 
-	// 1. Create Hetzner VPS
+	// 1. Create Hetzner VPS — inject all SSH keys from the account so the user
+	//    can also access the node with their personal key.
 	h.emit(fmt.Sprintf("Ordering Hetzner VPS: %s (%s in %s)…", cmd.Name, cmd.ServerType, cmd.Location))
+	allKeys, _ := hetzner.ListSSHKeys(ctx, cluster.HetznerAPIKey)
+	sshKeyIDs := make([]int, 0, len(allKeys))
+	for _, k := range allKeys {
+		sshKeyIDs = append(sshKeyIDs, k.ID)
+	}
+	if len(sshKeyIDs) == 0 {
+		sshKeyIDs = []int{cluster.HetznerSSHKeyID}
+	}
 	serverID, err := hetzner.CreateServer(ctx, cluster.HetznerAPIKey, hetzner.CreateServerRequest{
 		Name:       cmd.Name,
 		ServerType: cmd.ServerType,
 		Image:      cmd.Image,
 		Location:   cmd.Location,
-		SSHKeys:    []int{cluster.HetznerSSHKeyID},
+		SSHKeys:    sshKeyIDs,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create Hetzner server: %w", err)
@@ -193,13 +211,14 @@ func (h *OrderHetznerNodeHandler) Handle(ctx context.Context, cmd OrderHetznerNo
 
 	// 3. Create SwarmNode record
 	node, err := h.createNode.Handle(ctx, CreateSwarmNodeCommand{
-		ClusterID: cmd.ClusterID,
-		Name:      cmd.Name,
-		SshHost:   ip,
-		SshUser:   "root",
-		SshPort:   22,
-		SshKey:    cluster.SSHPrivateKey,
-		Role:      cmd.Role,
+		ClusterID:       cmd.ClusterID,
+		Name:            cmd.Name,
+		SshHost:         ip,
+		SshUser:         "root",
+		SshPort:         22,
+		SshKey:          cluster.SSHPrivateKey,
+		Role:            cmd.Role,
+		HetznerServerID: serverID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create node record: %w", err)

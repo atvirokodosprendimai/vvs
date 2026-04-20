@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/adapters/dockerclient"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/adapters/hetzner"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/domain"
 	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 	"github.com/google/uuid"
@@ -15,13 +16,14 @@ import (
 // ── CreateSwarmNode ───────────────────────────────────────────────────────────
 
 type CreateSwarmNodeCommand struct {
-	ClusterID string
-	Name      string
-	SshHost   string
-	SshUser   string
-	SshPort   int
-	SshKey    []byte
-	Role      domain.SwarmNodeRole
+	ClusterID       string
+	Name            string
+	SshHost         string
+	SshUser         string
+	SshPort         int
+	SshKey          []byte
+	Role            domain.SwarmNodeRole
+	HetznerServerID int // >0 when node was ordered via Hetzner API
 }
 
 type CreateSwarmNodeHandler struct {
@@ -38,6 +40,7 @@ func (h *CreateSwarmNodeHandler) Handle(ctx context.Context, cmd CreateSwarmNode
 		return nil, err
 	}
 	node.SshKey = cmd.SshKey
+	node.HetznerServerID = cmd.HetznerServerID
 	if err := h.nodeRepo.Save(ctx, node); err != nil {
 		return nil, fmt.Errorf("save node: %w", err)
 	}
@@ -495,6 +498,13 @@ func (h *RemoveSwarmNodeHandler) Handle(ctx context.Context, cmd RemoveSwarmNode
 
 	if err := h.nodeRepo.Delete(ctx, node.ID); err != nil {
 		return fmt.Errorf("delete node record: %w", err)
+	}
+
+	// Delete Hetzner VPS if this node was provisioned via Hetzner API
+	if node.HetznerServerID > 0 && node.ClusterID != "" {
+		if cluster, err := h.clusterRepo.FindByID(ctx, node.ClusterID); err == nil && cluster.HetznerAPIKey != "" {
+			_ = hetzner.DeleteServer(ctx, cluster.HetznerAPIKey, node.HetznerServerID)
+		}
 	}
 
 	_ = h.publisher.Publish(ctx, events.SwarmNodeRemoved.String(), events.DomainEvent{

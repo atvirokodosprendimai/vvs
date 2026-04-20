@@ -35,19 +35,20 @@ const (
 // SshKey is stored AES-256-GCM encrypted at rest.
 // VpnIP is the wgmesh0 WireGuard interface IP — auto-populated after provisioning.
 type SwarmNode struct {
-	ID          string
-	ClusterID   string        // nullable — standalone SSH nodes are valid
-	Role        SwarmNodeRole
-	Name        string
-	SshHost     string // physical/public IP or hostname for SSH provisioning only
-	SshUser     string // defaults to "root"
-	SshPort     int    // defaults to 22
-	SshKey      []byte // PEM private key, encrypted at rest
-	VpnIP       string // wgmesh0 IP — set after wgmesh deploy; empty until provisioned
-	SwarmNodeID string // Docker's internal node ID after joining swarm
-	Status      SwarmNodeStatus
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID               string
+	ClusterID        string        // nullable — standalone SSH nodes are valid
+	Role             SwarmNodeRole
+	Name             string
+	SshHost          string // physical/public IP or hostname for SSH provisioning only
+	SshUser          string // defaults to "root"
+	SshPort          int    // defaults to 22
+	SshKey           []byte // PEM private key, encrypted at rest
+	VpnIP            string // wgmesh0 IP — set after wgmesh deploy; empty until provisioned
+	SwarmNodeID      string // Docker's internal node ID after joining swarm
+	HetznerServerID  int    // Hetzner VPS ID; >0 means node was ordered via Hetzner API
+	Status           SwarmNodeStatus
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
 
 func NewSwarmNode(clusterID, name, sshHost, sshUser string, sshPort int, role SwarmNodeRole) (*SwarmNode, error) {

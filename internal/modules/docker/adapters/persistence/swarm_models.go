@@ -59,52 +59,55 @@ func toSwarmClusterDomain(m *SwarmClusterModel) *domain.SwarmCluster {
 // ── SwarmNode model ───────────────────────────────────────────────────────────
 
 type SwarmNodeModel struct {
-	ID          string `gorm:"primaryKey;type:text"`
-	ClusterID   string `gorm:"column:cluster_id;type:text;not null;default:''"`
-	Role        string `gorm:"type:text;not null;default:'worker'"`
-	Name        string `gorm:"type:text;not null"`
-	SshHost     string `gorm:"column:ssh_host;type:text;not null"`
-	SshUser     string `gorm:"column:ssh_user;type:text;not null;default:'root'"`
-	SshPort     int    `gorm:"column:ssh_port;not null;default:22"`
-	SshKey      []byte `gorm:"column:ssh_key"`
-	VpnIP       string `gorm:"column:vpn_ip;type:text;not null;default:''"`
-	SwarmNodeID string `gorm:"column:swarm_node_id;type:text;not null;default:''"`
-	Status      string `gorm:"type:text;not null;default:'provisioning'"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID              string `gorm:"primaryKey;type:text"`
+	ClusterID       string `gorm:"column:cluster_id;type:text;not null;default:''"`
+	Role            string `gorm:"type:text;not null;default:'worker'"`
+	Name            string `gorm:"type:text;not null"`
+	SshHost         string `gorm:"column:ssh_host;type:text;not null"`
+	SshUser         string `gorm:"column:ssh_user;type:text;not null;default:'root'"`
+	SshPort         int    `gorm:"column:ssh_port;not null;default:22"`
+	SshKey          []byte `gorm:"column:ssh_key"`
+	VpnIP           string `gorm:"column:vpn_ip;type:text;not null;default:''"`
+	SwarmNodeID     string `gorm:"column:swarm_node_id;type:text;not null;default:''"`
+	HetznerServerID int    `gorm:"column:hetzner_server_id;not null;default:0"`
+	Status          string `gorm:"type:text;not null;default:'provisioning'"`
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 func (SwarmNodeModel) TableName() string { return "swarm_nodes" }
 
 func toSwarmNodeModel(n *domain.SwarmNode) *SwarmNodeModel {
 	return &SwarmNodeModel{
-		ID:          n.ID,
-		ClusterID:   n.ClusterID,
-		Role:        string(n.Role),
-		Name:        n.Name,
-		SshHost:     n.SshHost,
-		SshUser:     n.SshUser,
-		SshPort:     n.SshPort,
-		VpnIP:       n.VpnIP,
-		SwarmNodeID: n.SwarmNodeID,
-		Status:      string(n.Status),
-		CreatedAt:   n.CreatedAt,
-		UpdatedAt:   n.UpdatedAt,
+		ID:              n.ID,
+		ClusterID:       n.ClusterID,
+		Role:            string(n.Role),
+		Name:            n.Name,
+		SshHost:         n.SshHost,
+		SshUser:         n.SshUser,
+		SshPort:         n.SshPort,
+		VpnIP:           n.VpnIP,
+		SwarmNodeID:     n.SwarmNodeID,
+		HetznerServerID: n.HetznerServerID,
+		Status:          string(n.Status),
+		CreatedAt:       n.CreatedAt,
+		UpdatedAt:       n.UpdatedAt,
 	}
 }
 
 func toSwarmNodeDomain(m *SwarmNodeModel) *domain.SwarmNode {
 	return &domain.SwarmNode{
-		ID:          m.ID,
-		ClusterID:   m.ClusterID,
-		Role:        domain.SwarmNodeRole(m.Role),
-		Name:        m.Name,
-		SshHost:     m.SshHost,
-		SshUser:     m.SshUser,
-		SshPort:     m.SshPort,
-		VpnIP:       m.VpnIP,
-		SwarmNodeID: m.SwarmNodeID,
-		Status:      domain.SwarmNodeStatus(m.Status),
+		ID:              m.ID,
+		ClusterID:       m.ClusterID,
+		Role:            domain.SwarmNodeRole(m.Role),
+		Name:            m.Name,
+		SshHost:         m.SshHost,
+		SshUser:         m.SshUser,
+		SshPort:         m.SshPort,
+		VpnIP:           m.VpnIP,
+		SwarmNodeID:     m.SwarmNodeID,
+		HetznerServerID: m.HetznerServerID,
+		Status:          domain.SwarmNodeStatus(m.Status),
 		CreatedAt:   m.CreatedAt,
 		UpdatedAt:   m.UpdatedAt,
 	}
