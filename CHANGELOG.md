@@ -132,3 +132,16 @@
 - 2026-04-20 `8dd0069` feat(proxmox): node/VM commands and queries
 - 2026-04-20 `a5ad327` feat(proxmox): full Proxmox VE integration — nodes, VMs, CRM tab, sidebar nav
 - 2026-04-20 `dfc6d2f` fix(proxmox): address 4 HIGH security/correctness issues from Codex review
+- 2026-04-20 `04cc849` Merge task/crm-tab-zero-counts: Proxmox VE integration + CRM tab fixes
+- 2026-04-20 `710ded8` plan: portal VM self-service with Stripe payments and customer balance
+- 2026-04-20 `ca558a6` feat(proxmox): VM Plan catalog — admin CRUD with SSE, routes, nav
+- 2026-04-20 `24f25fd` feat(billing): customer balance ledger with credit/deduct/adjust
+- 2026-04-20 `e9606a4` feat(stripe): Stripe SDK client adapter + config flags
+- 2026-04-20 `33f0971` feat(portal-bridge): VM plans, VMs, balance + Stripe webhook RPC subjects
+- 2026-04-20 `170366b` feat(portal): VM self-service with Stripe checkout and balance top-up (phases 5-8)
+- 2026-04-20 `5d96c46` docs: update README for current modules + add .env.example
+- 2026-04-20 `ec01b45` docs: interactive architecture diagram (Cytoscape.js)
+- 2026-04-20 `3ed2457` fix(docs): fix Cytoscape CDN URLs and canvas height causing black screen
+- 2026-04-20 `6b0c11a` fix(docs): add missing content: data(label) to Cytoscape node styles
+- 2026-04-20 `3be8492` plan(docker): docker orchestrator module — multi-node, compose YAML, live logs
+- 2026-04-20 `08cca1f` spec(docker): multi-node docker orchestrator with compose YAML and live logs

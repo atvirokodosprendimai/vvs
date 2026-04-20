@@ -338,3 +338,35 @@ var BillingBalanceDebited Subject = "isp.billing.balance_debited"
 // Pub: infrastructure/notifications/worker.go
 // Sub: notification SSE, global SSE
 var Notifications Subject = "isp.notifications"
+
+// ────────────────────────────────────────────────────────────────────
+// Docker Orchestrator
+// ────────────────────────────────────────────────────────────────────
+
+// Pub: docker/app/commands/node_commands.go
+var DockerNodeAll Subject = "isp.docker.node.*"
+
+// Pub: docker/app/commands/node_commands.go
+var DockerNodeCreated Subject = "isp.docker.node.created"
+
+// Pub: docker/app/commands/node_commands.go
+var DockerNodeUpdated Subject = "isp.docker.node.updated"
+
+// Pub: docker/app/commands/node_commands.go
+var DockerNodeDeleted Subject = "isp.docker.node.deleted"
+
+// Pub: docker/app/commands/service_commands.go
+var DockerServiceAll Subject = "isp.docker.service.*"
+
+// Pub: docker/app/commands/service_commands.go
+var DockerServiceDeployed Subject = "isp.docker.service.deployed"
+
+// Pub: docker/app/commands/service_commands.go
+var DockerServiceStatusChanged Subject = "isp.docker.service.status_changed"
+
+// Pub: docker/app/commands/service_commands.go
+var DockerServiceRemoved Subject = "isp.docker.service.removed"
+
+// Pub: docker/app/services/log_streamer.go (dynamic — one subject per container)
+// Use Format(containerID) to publish/subscribe.
+var DockerLogsLine Subject = "isp.docker.logs.%s"
