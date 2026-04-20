@@ -2216,22 +2216,22 @@ func SwarmHetznerOrderPanel(clusterID string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var111 string
-		templ_7745c5c3_Var111, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(`{"hetzner_name":"","hetzner_servertype":"cx22","hetzner_location":"nbg1","hetzner_image":"ubuntu-24.04","hetzner_role":"worker","hetzner_clusterid":%q}`, clusterID))
+		templ_7745c5c3_Var111, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(`{"hetzner_name":"","hetzner_servertype":"cpx11","hetzner_location":"nbg1","hetzner_image":"ubuntu-24.04","hetzner_role":"worker","hetzner_clusterid":%q}`, clusterID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 795, Col: 194}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 795, Col: 195}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var111))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 177, "\"><h3 class=\"text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3\">Order Hetzner VPS</h3><div class=\"grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs text-neutral-500\">Node Name *</label> <input type=\"text\" data-bind:hetzner_name placeholder=\"node-03\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs text-neutral-500\">Server Type</label> <select data-bind:hetzner_servertype class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500\"><option value=\"cx22\">cx22 (2 vCPU, 4 GB)</option> <option value=\"cx32\">cx32 (4 vCPU, 8 GB)</option> <option value=\"cx42\">cx42 (8 vCPU, 16 GB)</option> <option value=\"cx52\">cx52 (16 vCPU, 32 GB)</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs text-neutral-500\">Location</label> <select data-bind:hetzner_location class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500\"><option value=\"nbg1\">Nuremberg (nbg1)</option> <option value=\"fsn1\">Falkenstein (fsn1)</option> <option value=\"hel1\">Helsinki (hel1)</option> <option value=\"ash\">Ashburn (ash)</option> <option value=\"hil\">Hillsboro (hil)</option> <option value=\"sin\">Singapore (sin)</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs text-neutral-500\">Image</label> <select data-bind:hetzner_image class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500\"><option value=\"ubuntu-24.04\">Ubuntu 24.04</option> <option value=\"ubuntu-22.04\">Ubuntu 22.04</option> <option value=\"debian-12\">Debian 12</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs text-neutral-500\">Role</label> <select data-bind:hetzner_role class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500\"><option value=\"worker\">Worker</option> <option value=\"manager\">Manager</option></select></div><div class=\"flex flex-col gap-1 justify-end\"><button type=\"button\" data-on:click=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 177, "\"><h3 class=\"text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3\">Order Hetzner VPS</h3><div class=\"grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6\"><div class=\"flex flex-col gap-1\"><label class=\"text-xs text-neutral-500\">Node Name *</label> <input type=\"text\" data-bind:hetzner_name placeholder=\"node-03\" class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500\"></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs text-neutral-500\">Server Type</label> <select data-bind:hetzner_servertype class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500\"><optgroup label=\"AMD (cpx)\"><option value=\"cpx11\">cpx11 (2 vCPU, 2 GB)</option> <option value=\"cpx21\">cpx21 (3 vCPU, 4 GB)</option> <option value=\"cpx31\">cpx31 (4 vCPU, 8 GB)</option> <option value=\"cpx41\">cpx41 (8 vCPU, 16 GB)</option> <option value=\"cpx51\">cpx51 (16 vCPU, 32 GB)</option></optgroup> <optgroup label=\"ARM (cax)\"><option value=\"cax11\">cax11 (2 vCPU, 4 GB)</option> <option value=\"cax21\">cax21 (4 vCPU, 8 GB)</option> <option value=\"cax31\">cax31 (8 vCPU, 16 GB)</option> <option value=\"cax41\">cax41 (16 vCPU, 32 GB)</option></optgroup></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs text-neutral-500\">Location</label> <select data-bind:hetzner_location class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500\"><option value=\"nbg1\">Nuremberg (nbg1)</option> <option value=\"fsn1\">Falkenstein (fsn1)</option> <option value=\"hel1\">Helsinki (hel1)</option> <option value=\"ash\">Ashburn (ash)</option> <option value=\"hil\">Hillsboro (hil)</option> <option value=\"sin\">Singapore (sin)</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs text-neutral-500\">Image</label> <select data-bind:hetzner_image class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500\"><option value=\"ubuntu-24.04\">Ubuntu 24.04</option> <option value=\"ubuntu-22.04\">Ubuntu 22.04</option> <option value=\"debian-12\">Debian 12</option></select></div><div class=\"flex flex-col gap-1\"><label class=\"text-xs text-neutral-500\">Role</label> <select data-bind:hetzner_role class=\"bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500\"><option value=\"worker\">Worker</option> <option value=\"manager\">Manager</option></select></div><div class=\"flex flex-col gap-1 justify-end\"><button type=\"button\" data-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var112 string
 		templ_7745c5c3_Var112, templ_7745c5c3_Err = templ.JoinStringErrs("@post('/api/swarm/clusters/" + clusterID + "/order-hetzner')")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 841, Col: 83}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 850, Col: 83}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var112))
 		if templ_7745c5c3_Err != nil {
@@ -2286,7 +2286,7 @@ func SwarmClusterHetznerConfigPage(cluster queries.SwarmClusterReadModel) templ.
 			var templ_7745c5c3_Var115 templ.SafeURL
 			templ_7745c5c3_Var115, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/swarm/clusters/" + cluster.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 857, Col: 60}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 866, Col: 60}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var115))
 			if templ_7745c5c3_Err != nil {
@@ -2299,7 +2299,7 @@ func SwarmClusterHetznerConfigPage(cluster queries.SwarmClusterReadModel) templ.
 			var templ_7745c5c3_Var116 string
 			templ_7745c5c3_Var116, templ_7745c5c3_Err = templ.JoinStringErrs(cluster.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 857, Col: 129}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 866, Col: 129}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var116))
 			if templ_7745c5c3_Err != nil {
@@ -2312,7 +2312,7 @@ func SwarmClusterHetznerConfigPage(cluster queries.SwarmClusterReadModel) templ.
 			var templ_7745c5c3_Var117 string
 			templ_7745c5c3_Var117, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(`{"hetzner_apikey":"","hetzner_sshkeyid":"","hetzner_sshprivkey":"","hetzner_sshpubkey":"","hetzner_clusterid":%q}`, cluster.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 863, Col: 159}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 872, Col: 159}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var117))
 			if templ_7745c5c3_Err != nil {
@@ -2330,7 +2330,7 @@ func SwarmClusterHetznerConfigPage(cluster queries.SwarmClusterReadModel) templ.
 				var templ_7745c5c3_Var118 string
 				templ_7745c5c3_Var118, templ_7745c5c3_Err = templ.JoinStringErrs(cluster.SSHPublicKey[:min(60, len(cluster.SSHPublicKey))])
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 884, Col: 108}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 893, Col: 108}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var118))
 				if templ_7745c5c3_Err != nil {
@@ -2348,7 +2348,7 @@ func SwarmClusterHetznerConfigPage(cluster queries.SwarmClusterReadModel) templ.
 			var templ_7745c5c3_Var119 string
 			templ_7745c5c3_Var119, templ_7745c5c3_Err = templ.JoinStringErrs("@post('/api/swarm/clusters/" + cluster.ID + "/hetzner')")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 889, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 898, Col: 100}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var119))
 			if templ_7745c5c3_Err != nil {
@@ -2361,7 +2361,7 @@ func SwarmClusterHetznerConfigPage(cluster queries.SwarmClusterReadModel) templ.
 			var templ_7745c5c3_Var120 templ.SafeURL
 			templ_7745c5c3_Var120, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/swarm/clusters/" + cluster.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 892, Col: 61}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 901, Col: 61}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var120))
 			if templ_7745c5c3_Err != nil {
@@ -2410,7 +2410,7 @@ func SwarmHetznerProgress(msg string) templ.Component {
 		var templ_7745c5c3_Var122 string
 		templ_7745c5c3_Var122, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 901, Col: 87}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 910, Col: 87}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var122))
 		if templ_7745c5c3_Err != nil {
@@ -2465,7 +2465,7 @@ func SwarmStackDetailPage(stack queries.SwarmStackReadModel) templ.Component {
 			var templ_7745c5c3_Var125 templ.SafeURL
 			templ_7745c5c3_Var125, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/swarm/clusters/" + stack.ClusterID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 911, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 920, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var125))
 			if templ_7745c5c3_Err != nil {
@@ -2478,7 +2478,7 @@ func SwarmStackDetailPage(stack queries.SwarmStackReadModel) templ.Component {
 			var templ_7745c5c3_Var126 string
 			templ_7745c5c3_Var126, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 912, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 921, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var126))
 			if templ_7745c5c3_Err != nil {
@@ -2500,7 +2500,7 @@ func SwarmStackDetailPage(stack queries.SwarmStackReadModel) templ.Component {
 			var templ_7745c5c3_Var128 string
 			templ_7745c5c3_Var128, templ_7745c5c3_Err = templ.JoinStringErrs("swarm-stack-status-" + stack.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 913, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 922, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var128))
 			if templ_7745c5c3_Err != nil {
@@ -2526,7 +2526,7 @@ func SwarmStackDetailPage(stack queries.SwarmStackReadModel) templ.Component {
 			var templ_7745c5c3_Var130 string
 			templ_7745c5c3_Var130, templ_7745c5c3_Err = templ.JoinStringErrs(stack.Status)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 913, Col: 111}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 922, Col: 111}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var130))
 			if templ_7745c5c3_Err != nil {
@@ -2544,7 +2544,7 @@ func SwarmStackDetailPage(stack queries.SwarmStackReadModel) templ.Component {
 				var templ_7745c5c3_Var131 string
 				templ_7745c5c3_Var131, templ_7745c5c3_Err = templ.JoinStringErrs("@ " + stack.TargetNodeName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 915, Col: 84}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 924, Col: 84}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var131))
 				if templ_7745c5c3_Err != nil {
@@ -2562,7 +2562,7 @@ func SwarmStackDetailPage(stack queries.SwarmStackReadModel) templ.Component {
 			var templ_7745c5c3_Var132 templ.SafeURL
 			templ_7745c5c3_Var132, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/swarm/stacks/" + stack.ID + "/edit"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 918, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 927, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var132))
 			if templ_7745c5c3_Err != nil {
@@ -2580,7 +2580,7 @@ func SwarmStackDetailPage(stack queries.SwarmStackReadModel) templ.Component {
 				var templ_7745c5c3_Var133 string
 				templ_7745c5c3_Var133, templ_7745c5c3_Err = templ.JoinStringErrs(stack.ErrorMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 921, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 930, Col: 80}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var133))
 				if templ_7745c5c3_Err != nil {
@@ -2613,7 +2613,7 @@ func SwarmStackDetailPage(stack queries.SwarmStackReadModel) templ.Component {
 					var templ_7745c5c3_Var134 string
 					templ_7745c5c3_Var134, templ_7745c5c3_Err = templ.JoinStringErrs(r.Hostname)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 943, Col: 66}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 952, Col: 66}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var134))
 					if templ_7745c5c3_Err != nil {
@@ -2626,7 +2626,7 @@ func SwarmStackDetailPage(stack queries.SwarmStackReadModel) templ.Component {
 					var templ_7745c5c3_Var135 string
 					templ_7745c5c3_Var135, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(r.Port))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 944, Col: 70}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 953, Col: 70}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var135))
 					if templ_7745c5c3_Err != nil {
