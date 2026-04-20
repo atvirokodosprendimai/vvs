@@ -92,6 +92,21 @@ func serveCommand() *cli.Command {
 				Usage:   "Disable Secure flag on session cookies (only for local dev without HTTPS)",
 				Sources: cli.EnvVars("PORTAL_INSECURE_COOKIE"),
 			},
+			&cli.StringFlag{
+				Name:    "stripe-secret-key",
+				Usage:   "Stripe secret key (sk_live_... or sk_test_...)",
+				Sources: cli.EnvVars("VVS_STRIPE_SECRET_KEY"),
+			},
+			&cli.StringFlag{
+				Name:    "stripe-webhook-secret",
+				Usage:   "Stripe webhook signing secret (whsec_...)",
+				Sources: cli.EnvVars("VVS_STRIPE_WEBHOOK_SECRET"),
+			},
+			&cli.StringFlag{
+				Name:    "stripe-publishable-key",
+				Usage:   "Stripe publishable key (pk_live_... or pk_test_...)",
+				Sources: cli.EnvVars("VVS_STRIPE_PUBLISHABLE_KEY"),
+			},
 		},
 		Action: runPortal,
 	}
