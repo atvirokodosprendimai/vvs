@@ -41,6 +41,7 @@ const (
 	ModuleReports   Module = "reports"
 	ModuleIPTV      Module = "iptv"
 	ModuleProxmox   Module = "proxmox"
+	ModuleDocker    Module = "docker"
 )
 
 // AllModules lists every module in a stable order (used for seeding and UI rendering).
@@ -48,7 +49,7 @@ var AllModules = []Module{
 	ModuleCustomers, ModuleTickets, ModuleDeals, ModuleTasks, ModuleContacts,
 	ModuleInvoices, ModuleProducts, ModulePayments, ModuleReports,
 	ModuleIPTV,
-	ModuleNetwork, ModuleProxmox, ModuleEmail, ModuleCron, ModuleAuditLog, ModuleUsers,
+	ModuleNetwork, ModuleProxmox, ModuleDocker, ModuleEmail, ModuleCron, ModuleAuditLog, ModuleUsers,
 }
 
 // RoleModulePermission is a single (role, module) access row.

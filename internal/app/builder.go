@@ -29,6 +29,7 @@ import (
 	iptvmigrations      "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/migrations"
 	networkmigrations   "github.com/atvirokodosprendimai/vvs/internal/modules/network/migrations"
 	proxmoxmigrations   "github.com/atvirokodosprendimai/vvs/internal/modules/proxmox/migrations"
+	dockermigrations    "github.com/atvirokodosprendimai/vvs/internal/modules/docker/migrations"
 	notifmigrations     "github.com/atvirokodosprendimai/vvs/internal/infrastructure/notifications/migrations"
 	portalmigrations    "github.com/atvirokodosprendimai/vvs/internal/modules/portal/migrations"
 	productmigrations   "github.com/atvirokodosprendimai/vvs/internal/modules/product/migrations"
@@ -108,13 +109,14 @@ func New(cfg Config) (*App, error) {
 		cust.routes.WithBalanceHandlers(billing.getBalance, billing.adjustBalance)
 	}
 	proxmox := wireProxmox(gdb, pub, sub, cust, cfg)
+	docker  := wireDocker(gdb, nc, pub, sub, cfg)
 	infra, err := wireInfra(gdb, pub, sub, nc, auth, cust, prod, net, dev, svc, inv, iptv, crm, billing, proxmox, cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	// ── HTTP ──────────────────────────────────────────────────────────────────
-	allRoutes := collectRoutes(auth, prod, cust, svc, net, dev, crm, email, inv, aud, iptv, billing, proxmox, infra)
+	allRoutes := collectRoutes(auth, prod, cust, svc, net, dev, crm, email, inv, aud, iptv, billing, proxmox, docker, infra)
 	router := infrahttp.NewRouter(
 		gdb.R,
 		auth.currentUser,
@@ -163,6 +165,7 @@ func collectRoutes(
 	iptv    *iptvWired,
 	billing *billingWired,
 	proxmox *proxmoxWired,
+	docker  *dockerWired,
 	infra   *infraWired,
 ) []infrahttp.ModuleRoutes {
 	_ = billing // no HTTP routes yet; used in portal bridge (Phase 4)
@@ -191,6 +194,7 @@ func collectRoutes(
 	add(aud.routes)
 	add(iptv.routes)
 	add(proxmox.routes)
+	add(docker.routes)
 	for _, r := range infra.routes {
 		add(r)
 	}
@@ -220,5 +224,6 @@ func allMigrations() []database.ModuleMigration {
 		{Name: "iptv",          FS: iptvmigrations.FS,      TableName: "goose_iptv"},
 		{Name: "proxmox",       FS: proxmoxmigrations.FS,   TableName: "goose_proxmox"},
 		{Name: "billing",       FS: billingmigrations.FS,   TableName: "goose_billing"},
+		{Name: "docker",        FS: dockermigrations.FS,    TableName: "goose_docker"},
 	}
 }

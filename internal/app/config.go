@@ -34,6 +34,10 @@ type Config struct {
 	// Empty = dev mode (tokens stored in plaintext — not for production).
 	ProxmoxEncKey string // VVS_PROXMOX_ENC_KEY env var
 
+	// DockerEncKey is 32 bytes (hex or raw) used to AES-256-GCM encrypt Docker node TLS credentials.
+	// Empty = dev mode (credentials stored in plaintext — not for production).
+	DockerEncKey string // VVS_DOCKER_ENC_KEY env var
+
 	// Stripe keys — required for portal VM purchase and balance top-up flows.
 	// Empty = Stripe integration disabled (portal checkout endpoints return 503).
 	StripeSecretKey      string // VVS_STRIPE_SECRET_KEY env var

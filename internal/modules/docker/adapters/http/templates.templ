@@ -1,0 +1,517 @@
+package http
+
+import (
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/domain"
+)
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+func nodeFormTitle(node *queries.NodeReadModel) string {
+	if node == nil {
+		return "Add Docker Node"
+	}
+	return "Edit Node: " + node.Name
+}
+
+func nodeFormSignals(node *queries.NodeReadModel) string {
+	if node == nil {
+		return `{"name":"","host":"unix:///var/run/docker.sock","isLocal":true,"tlsCert":"","tlsKey":"","tlsCa":"","notes":""}`
+	}
+	isLocal := "true"
+	if !node.IsLocal {
+		isLocal = "false"
+	}
+	return `{"name":"` + node.Name + `","host":"` + node.Host + `","isLocal":` + isLocal + `,"tlsCert":"","tlsKey":"","tlsCa":"","notes":"` + node.Notes + `"}`
+}
+
+func nodeFormSubmit(node *queries.NodeReadModel) string {
+	if node == nil {
+		return "@post('/api/docker/nodes')"
+	}
+	return "@put('/api/docker/nodes/" + node.ID + "')"
+}
+
+func serviceStatusClass(status string) string {
+	switch status {
+	case "running":
+		return "px-2 py-0.5 text-xs rounded-full bg-green-900/40 text-green-400"
+	case "deploying":
+		return "px-2 py-0.5 text-xs rounded-full bg-blue-900/40 text-blue-400 animate-pulse"
+	case "stopped":
+		return "px-2 py-0.5 text-xs rounded-full bg-neutral-700 text-neutral-400"
+	case "error":
+		return "px-2 py-0.5 text-xs rounded-full bg-red-900/40 text-red-400"
+	case "removing":
+		return "px-2 py-0.5 text-xs rounded-full bg-orange-900/40 text-orange-400 animate-pulse"
+	default:
+		return "px-2 py-0.5 text-xs rounded-full bg-neutral-700 text-neutral-500"
+	}
+}
+
+func containerStateClass(state string) string {
+	switch state {
+	case "running":
+		return "px-2 py-0.5 text-xs rounded-full bg-green-900/40 text-green-400"
+	case "exited", "stopped":
+		return "px-2 py-0.5 text-xs rounded-full bg-neutral-700 text-neutral-400"
+	case "paused":
+		return "px-2 py-0.5 text-xs rounded-full bg-yellow-900/40 text-yellow-400"
+	default:
+		return "px-2 py-0.5 text-xs rounded-full bg-neutral-700 text-neutral-500"
+	}
+}
+
+// ── Shared error fragments ────────────────────────────────────────────────────
+
+templ DockerInlineError(id, msg string) {
+	<div id={ id } class="text-red-400 text-sm p-2 bg-red-900/20 rounded">{ msg }</div>
+}
+
+templ DockerNodeFormError(msg string) {
+	<div id="docker-node-form-error" class="text-red-400 text-sm p-2 bg-red-900/20 rounded">{ msg }</div>
+}
+
+templ DockerServiceFormError(msg string) {
+	<div id="docker-service-form-error" class="text-red-400 text-sm p-2 bg-red-900/20 rounded">{ msg }</div>
+}
+
+// DockerPingResult renders inline connectivity result for a node row.
+templ DockerPingResult(nodeID string, ok bool, msg string) {
+	<span id={ "ping-result-" + nodeID }>
+		if ok {
+			<span class="text-xs text-green-400">✓ connected</span>
+		} else {
+			<span class="text-xs text-red-400">✗ { msg }</span>
+		}
+	</span>
+}
+
+// ── Node list page ────────────────────────────────────────────────────────────
+
+templ DockerNodesPage() {
+	@templates.Layout("Docker Nodes") {
+		<div class="p-6 space-y-4">
+			<div class="flex items-center justify-between">
+				<h1 class="text-xl font-semibold text-neutral-100">Docker Nodes</h1>
+				<a href="/docker/nodes/new" class="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-md">
+					+ Add Node
+				</a>
+			</div>
+			<div id="docker-nodes-table" data-init="@get('/api/docker/nodes')">
+				<div class="text-neutral-500 text-sm">Loading...</div>
+			</div>
+		</div>
+	}
+}
+
+templ DockerNodeTable(nodes []queries.NodeReadModel) {
+	<div id="docker-nodes-table">
+		if len(nodes) == 0 {
+			<p class="text-neutral-500 text-sm">No nodes configured. <a href="/docker/nodes/new" class="text-amber-400 hover:underline">Add one</a>.</p>
+		} else {
+			<div id="docker-node-error" style="display:none"></div>
+			<table class="w-full text-sm text-neutral-300">
+				<thead class="text-left text-neutral-500 border-b border-neutral-700">
+					<tr>
+						<th class="pb-2 pr-4">Name</th>
+						<th class="pb-2 pr-4">Host</th>
+						<th class="pb-2 pr-4">Type</th>
+						<th class="pb-2 pr-4">TLS</th>
+						<th class="pb-2 pr-4">Notes</th>
+						<th class="pb-2"></th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-neutral-800">
+					for _, n := range nodes {
+						@DockerNodeRow(n)
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}
+
+templ DockerNodeRow(n queries.NodeReadModel) {
+	<tr id={ "docker-node-row-" + n.ID } class="hover:bg-neutral-800/30">
+		<td class="py-2 pr-4 font-medium">{ n.Name }</td>
+		<td class="py-2 pr-4 text-neutral-400 font-mono text-xs">{ n.Host }</td>
+		<td class="py-2 pr-4 text-neutral-400">
+			if n.IsLocal {
+				<span class="px-2 py-0.5 text-xs rounded-full bg-neutral-700 text-neutral-400">local</span>
+			} else {
+				<span class="px-2 py-0.5 text-xs rounded-full bg-blue-900/30 text-blue-400">remote</span>
+			}
+		</td>
+		<td class="py-2 pr-4 text-neutral-400">
+			if n.HasTLS {
+				<span class="text-green-400 text-xs">✓</span>
+			} else {
+				<span class="text-neutral-600 text-xs">—</span>
+			}
+		</td>
+		<td class="py-2 pr-4 text-neutral-500 text-xs truncate max-w-xs">{ n.Notes }</td>
+		<td class="py-2 text-right space-x-3">
+			<span id={ "ping-result-" + n.ID }></span>
+			<button
+				class="text-xs text-neutral-400 hover:text-amber-400"
+				data-on:click={ "@post('/api/docker/nodes/" + n.ID + "/ping')" }
+			>Ping</button>
+			<a href={ templ.SafeURL("/docker/nodes/" + n.ID + "/edit") } class="text-xs text-neutral-400 hover:text-amber-400">Edit</a>
+			<button
+				class="text-xs text-red-400 hover:text-red-300"
+				data-on:click={ "confirm('Delete node " + n.Name + "?') && @delete('/api/docker/nodes/" + n.ID + "')" }
+			>Delete</button>
+		</td>
+	</tr>
+}
+
+// ── Node form page ────────────────────────────────────────────────────────────
+
+templ DockerNodeFormPage(node *queries.NodeReadModel) {
+	@templates.Layout(nodeFormTitle(node)) {
+		<div class="p-6 max-w-2xl space-y-4">
+			<div class="flex items-center gap-3">
+				<a href="/docker/nodes" class="text-neutral-400 hover:text-amber-400 text-sm">← Nodes</a>
+				<h1 class="text-xl font-semibold text-neutral-100">{ nodeFormTitle(node) }</h1>
+			</div>
+			<div id="docker-node-form-error" style="display:none"></div>
+			@DockerNodeForm(node)
+		</div>
+	}
+}
+
+templ DockerNodeForm(node *queries.NodeReadModel) {
+	<form
+		data-signals={ nodeFormSignals(node) }
+		data-on:submit__prevent={ nodeFormSubmit(node) }
+		class="space-y-4"
+	>
+		<div class="grid grid-cols-2 gap-4">
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">Name</label>
+				<input data-bind:name class="input-field w-full" placeholder="docker-01" required/>
+			</div>
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">Host URL</label>
+				<input data-bind:host class="input-field w-full font-mono text-sm" placeholder="unix:///var/run/docker.sock"/>
+			</div>
+		</div>
+		<div class="flex items-center gap-2">
+			<input data-bind:is-local type="checkbox" id="is-local" class="text-amber-500"/>
+			<label for="is-local" class="text-sm text-neutral-400">Local node (uses Unix socket, ignores TLS)</label>
+		</div>
+		<!-- TLS fields — hidden when isLocal is checked -->
+		<div data-show="!$isLocal" style="display:none" class="space-y-3 p-4 bg-neutral-800/40 rounded-lg border border-neutral-700">
+			<p class="text-xs text-neutral-500">TLS credentials for remote Docker TCP API. Leave blank to keep existing values.</p>
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">TLS Certificate (PEM)</label>
+				<textarea data-bind:tls-cert class="input-field w-full font-mono text-xs h-24" placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"></textarea>
+			</div>
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">TLS Key (PEM)</label>
+				<textarea data-bind:tls-key class="input-field w-full font-mono text-xs h-24" placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;...&#10;-----END RSA PRIVATE KEY-----"></textarea>
+			</div>
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">CA Certificate (PEM)</label>
+				<textarea data-bind:tls-ca class="input-field w-full font-mono text-xs h-24" placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"></textarea>
+			</div>
+		</div>
+		<div>
+			<label class="block text-sm text-neutral-400 mb-1">Notes</label>
+			<textarea data-bind:notes class="input-field w-full h-16" placeholder="Optional notes"></textarea>
+		</div>
+		<div class="flex gap-3">
+			<button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm rounded-md">
+				if node == nil {
+					Add Node
+				} else {
+					Save Changes
+				}
+			</button>
+			<a href="/docker/nodes" class="px-4 py-2 text-neutral-400 hover:text-neutral-200 text-sm">Cancel</a>
+		</div>
+	</form>
+}
+
+// ── Service list page ─────────────────────────────────────────────────────────
+
+templ DockerServicesPage() {
+	@templates.Layout("Docker Services") {
+		<div class="p-6 space-y-4">
+			<div class="flex items-center justify-between">
+				<h1 class="text-xl font-semibold text-neutral-100">Docker Services</h1>
+				<a href="/docker/services/new" class="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-md">
+					+ Deploy Service
+				</a>
+			</div>
+			<div id="docker-services-table" data-init="@get('/api/docker/services')">
+				<div class="text-neutral-500 text-sm">Loading...</div>
+			</div>
+		</div>
+	}
+}
+
+templ DockerServiceTable(svcs []queries.ServiceReadModel) {
+	<div id="docker-services-table">
+		if len(svcs) == 0 {
+			<p class="text-neutral-500 text-sm">No services deployed. <a href="/docker/services/new" class="text-amber-400 hover:underline">Deploy one</a>.</p>
+		} else {
+			<table class="w-full text-sm text-neutral-300">
+				<thead class="text-left text-neutral-500 border-b border-neutral-700">
+					<tr>
+						<th class="pb-2 pr-4">Name</th>
+						<th class="pb-2 pr-4">Node</th>
+						<th class="pb-2 pr-4">Status</th>
+						<th class="pb-2"></th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-neutral-800">
+					for _, s := range svcs {
+						@DockerServiceRow(s)
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}
+
+templ DockerServiceRow(s queries.ServiceReadModel) {
+	<tr id={ "docker-service-row-" + s.ID } class="hover:bg-neutral-800/30">
+		<td class="py-2 pr-4 font-medium">
+			<a href={ templ.SafeURL("/docker/services/" + s.ID) } class="hover:text-amber-400">{ s.Name }</a>
+		</td>
+		<td class="py-2 pr-4 text-neutral-400">{ s.NodeName }</td>
+		<td class="py-2 pr-4">
+			<span class={ serviceStatusClass(s.Status) }>{ s.Status }</span>
+			if s.ErrorMsg != "" {
+				<span class="text-xs text-red-400 ml-2">{ s.ErrorMsg }</span>
+			}
+		</td>
+		<td class="py-2 text-right space-x-3">
+			<a href={ templ.SafeURL("/docker/services/" + s.ID + "/logs") } class="text-xs text-neutral-400 hover:text-amber-400">Logs</a>
+			<a href={ templ.SafeURL("/docker/services/" + s.ID) } class="text-xs text-neutral-400 hover:text-amber-400">Details</a>
+		</td>
+	</tr>
+}
+
+// ── Service deploy form ───────────────────────────────────────────────────────
+
+templ DockerServiceFormPage(nodes []queries.NodeReadModel) {
+	@templates.Layout("Deploy Service") {
+		<div class="p-6 max-w-3xl space-y-4">
+			<div class="flex items-center gap-3">
+				<a href="/docker/services" class="text-neutral-400 hover:text-amber-400 text-sm">← Services</a>
+				<h1 class="text-xl font-semibold text-neutral-100">Deploy Service</h1>
+			</div>
+			<div id="docker-service-form-error" style="display:none"></div>
+			@DockerServiceForm(nodes)
+		</div>
+		<!-- CodeMirror 5 (YAML + Dracula) -->
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css"/>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/theme/dracula.min.css"/>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/yaml/yaml.min.js"></script>
+		<script>
+			(function() {
+				var ta = document.getElementById('compose-yaml-ta');
+				if (!ta) return;
+				var cm = CodeMirror.fromTextArea(ta, {
+					mode: 'yaml',
+					theme: 'dracula',
+					lineNumbers: true,
+					indentWithTabs: false,
+					tabSize: 2,
+					indentUnit: 2,
+					extraKeys: { Tab: function(cm) { cm.replaceSelection('  ', 'end'); } }
+				});
+				cm.on('change', function() {
+					ta.value = cm.getValue();
+					ta.dispatchEvent(new Event('input', { bubbles: true }));
+				});
+			})();
+		</script>
+	}
+}
+
+templ DockerServiceForm(nodes []queries.NodeReadModel) {
+	<form
+		data-signals={ `{"nodeId":"` + firstNodeID(nodes) + `","name":"","composeYaml":""}` }
+		data-on:submit__prevent="@post('/api/docker/services')"
+		class="space-y-4"
+	>
+		<div class="grid grid-cols-2 gap-4">
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">Service Name</label>
+				<input data-bind:name class="input-field w-full" placeholder="my-app" required/>
+			</div>
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">Node</label>
+				<select data-bind:node-id class="input-field w-full">
+					for _, n := range nodes {
+						<option value={ n.ID }>{ n.Name }</option>
+					}
+				</select>
+			</div>
+		</div>
+		<div>
+			<label class="block text-sm text-neutral-400 mb-1">Compose YAML</label>
+			<textarea
+				id="compose-yaml-ta"
+				data-bind:compose-yaml
+				class="input-field w-full font-mono text-xs"
+				style="min-height:320px"
+				placeholder="services:&#10;  web:&#10;    image: nginx:alpine&#10;    ports:&#10;      - &quot;80:80&quot;"
+			></textarea>
+		</div>
+		<div class="flex gap-3">
+			<button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm rounded-md">
+				Deploy
+			</button>
+			<a href="/docker/services" class="px-4 py-2 text-neutral-400 hover:text-neutral-200 text-sm">Cancel</a>
+		</div>
+	</form>
+}
+
+func firstNodeID(nodes []queries.NodeReadModel) string {
+	if len(nodes) == 0 {
+		return ""
+	}
+	return nodes[0].ID
+}
+
+// ── Service detail page ───────────────────────────────────────────────────────
+
+templ DockerServiceDetailPage(svc *queries.ServiceReadModel) {
+	@templates.Layout("Service: " + svc.Name) {
+		<div class="p-6 space-y-6">
+			<div class="flex items-center gap-3">
+				<a href="/docker/services" class="text-neutral-400 hover:text-amber-400 text-sm">← Services</a>
+				<h1 class="text-xl font-semibold text-neutral-100">{ svc.Name }</h1>
+				<span class={ serviceStatusClass(svc.Status) }>{ svc.Status }</span>
+			</div>
+			if svc.ErrorMsg != "" {
+				<div class="p-3 bg-red-900/20 border border-red-800 rounded text-red-400 text-sm">{ svc.ErrorMsg }</div>
+			}
+			<dl class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm max-w-lg">
+				<dt class="text-neutral-500">Node</dt><dd class="text-neutral-200">{ svc.NodeName }</dd>
+				<dt class="text-neutral-500">ID</dt><dd class="text-neutral-200 font-mono text-xs">{ svc.ID }</dd>
+			</dl>
+			<!-- Action buttons -->
+			<div id={ "docker-service-error-" + svc.ID } style="display:none"></div>
+			<div class="flex gap-2">
+				if svc.Status == "running" {
+					<button
+						class="px-3 py-1.5 text-sm bg-yellow-700 hover:bg-yellow-600 text-white rounded-md"
+						data-on:click={ "@post('/api/docker/services/" + svc.ID + "/stop')" }
+					>Stop</button>
+				}
+				if svc.Status == "stopped" || svc.Status == "error" {
+					<button
+						class="px-3 py-1.5 text-sm bg-green-700 hover:bg-green-600 text-white rounded-md"
+						data-on:click={ "@post('/api/docker/services/" + svc.ID + "/start')" }
+					>Start</button>
+				}
+				<a
+					href={ templ.SafeURL("/docker/services/" + svc.ID + "/logs") }
+					class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded-md"
+				>Logs</a>
+				<button
+					class="px-3 py-1.5 text-sm bg-red-800 hover:bg-red-700 text-white rounded-md"
+					data-on:click={ "confirm('Remove service " + svc.Name + " and all containers?') && @delete('/api/docker/services/" + svc.ID + "')" }
+				>Remove</button>
+			</div>
+			<!-- Containers -->
+			<div>
+				<h2 class="text-sm font-semibold text-neutral-300 mb-3">Containers</h2>
+				<div id={ "docker-containers-" + svc.ID } data-init={ "@get('/api/docker/services/" + svc.ID + "/containers')" }>
+					<div class="text-neutral-500 text-sm">Loading containers...</div>
+				</div>
+			</div>
+			<!-- Compose YAML (collapsible) -->
+			<details class="group">
+				<summary class="cursor-pointer text-sm text-neutral-400 hover:text-amber-400 select-none">Show Compose YAML</summary>
+				<pre class="mt-2 p-4 bg-neutral-900 rounded-lg text-xs font-mono text-neutral-300 overflow-x-auto border border-neutral-800">{ svc.ComposeYAML }</pre>
+			</details>
+		</div>
+	}
+}
+
+templ DockerContainerTable(serviceID string, containers []domain.ContainerInfo) {
+	<div id={ "docker-containers-" + serviceID }>
+		if len(containers) == 0 {
+			<p class="text-neutral-500 text-sm">No containers running.</p>
+		} else {
+			<table class="w-full text-sm text-neutral-300">
+				<thead class="text-left text-neutral-500 border-b border-neutral-700">
+					<tr>
+						<th class="pb-2 pr-4">Name</th>
+						<th class="pb-2 pr-4">Image</th>
+						<th class="pb-2 pr-4">State</th>
+						<th class="pb-2 pr-4">Status</th>
+						<th class="pb-2">Ports</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-neutral-800">
+					for _, c := range containers {
+						<tr class="hover:bg-neutral-800/30">
+							<td class="py-2 pr-4 font-mono text-xs">{ c.Name }</td>
+							<td class="py-2 pr-4 text-neutral-400 font-mono text-xs">{ c.Image }</td>
+							<td class="py-2 pr-4"><span class={ containerStateClass(c.State) }>{ c.State }</span></td>
+							<td class="py-2 pr-4 text-neutral-500 text-xs">{ c.Status }</td>
+							<td class="py-2 text-neutral-400 text-xs font-mono">
+								for i, p := range c.Ports {
+									if i > 0 {
+										<span class="text-neutral-600"> · </span>
+									}
+									{ p }
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}
+
+// ── Log viewer ────────────────────────────────────────────────────────────────
+
+templ DockerLogPage(svc *queries.ServiceReadModel) {
+	@templates.Layout("Logs: " + svc.Name) {
+		<div class="p-6 space-y-4 h-full flex flex-col">
+			<div class="flex items-center gap-3">
+				<a href={ templ.SafeURL("/docker/services/" + svc.ID) } class="text-neutral-400 hover:text-amber-400 text-sm">← Service</a>
+				<h1 class="text-lg font-semibold text-neutral-100">{ svc.Name } — Logs</h1>
+				<span class={ serviceStatusClass(svc.Status) }>{ svc.Status }</span>
+			</div>
+			<div
+				class="flex-1 bg-neutral-950 border border-neutral-800 rounded-lg overflow-hidden"
+				data-init={ "@get('/api/docker/services/" + svc.ID + "/logs')" }
+			>
+				<pre
+					id="log-output"
+					class="p-4 text-xs font-mono text-green-400 h-full overflow-y-auto whitespace-pre-wrap break-all"
+					style="min-height: calc(100vh - 180px); max-height: calc(100vh - 180px)"
+				></pre>
+			</div>
+		</div>
+		<script>
+			(function() {
+				var out = document.getElementById('log-output');
+				if (!out) return;
+				var observer = new MutationObserver(function() {
+					out.scrollTop = out.scrollHeight;
+				});
+				observer.observe(out, { childList: true, subtree: true });
+			})();
+		</script>
+	}
+}
+
+// DockerLogLine appends a single log line inside #log-output.
+templ DockerLogLine(line string) {
+	<span id="log-output" data-patch-mode="append">{ line }
+</span>
+}
