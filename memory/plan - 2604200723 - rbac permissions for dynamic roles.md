@@ -29,63 +29,30 @@ status: active
 
 ## Phases
 
-### Phase 1 — Permissions page: dynamic role loading — status: open
+### Phase 1 — Permissions page: dynamic role loading — status: completed
 
 **Goal:** `/settings/permissions` shows all non-admin roles (including custom ones), not just hardcoded Operator + Viewer.
 
-1. [ ] Update `PermissionsGrid` signature in `templates.templ:421`
-   - Old: `templ PermissionsGrid(opPerms domain.PermissionSet, viewerPerms domain.PermissionSet)`
-   - New: `templ PermissionsGrid(roles []domain.RoleDefinition, perms map[domain.Role]domain.PermissionSet)`
-   - Body: `for _, rd := range roles { if rd.Name != domain.RoleAdmin { @permRoleSection(rd.DisplayName, rd.Name, perms[rd.Name]) } }`
-   - `permRoleSection` is unchanged — it already takes `(label string, role domain.Role, ps domain.PermissionSet)`
+1. [x] Update `PermissionsGrid` signature in `templates.templ`
+   - => New: `templ PermissionsGrid(roles []domain.RoleDefinition, perms map[domain.Role]domain.PermissionSet)`
+   - => Uses `roleOptionLabel(rd)` for display name fallback
+2. [x] Update `permissionsSSE` in `handlers.go` — calls `roleRepo.List()`, fetches perms for each non-admin role, falls back to `DefaultPermissions` on error
+3. [x] `templ generate && go build ./...` — clean
 
-2. [ ] Update `permissionsSSE` in `handlers.go:489`
-   - Load all roles: `h.roleRepo.List(ctx)`
-   - For each non-admin role, call `h.permRepo.FindByRole(ctx, role)` — on error fallback to `domain.DefaultPermissions(role)` (deny-all for unknown custom roles)
-   - Build `perms map[domain.Role]domain.PermissionSet`
-   - Call `sse.PatchElementTempl(PermissionsGrid(roles, perms))`
-
-3. [ ] `templ generate && go build ./...` — verify no compile errors
-
-### Phase 2 — Role creation: per-module permission matrix — status: open
+### Phase 2 — Role creation: per-module permission matrix — status: completed
 
 **Goal:** The "Add Role" form on `/settings/roles` includes a module permission matrix. Submitting creates the role AND seeds its `role_module_permissions` rows atomically.
 
-1. [ ] Expand `RolesPage` / `RoleRows` template in `templates.templ:625`
-   - Add module permission section to the "Add role" form below `roleCanWrite` toggle
-   - Signal names: flat, e.g. `rolePerm_customers_view`, `rolePerm_customers_edit`, ... for each module in `domain.AllModules`
-   - Initialize all to `false` in `data-signals`
-   - Render a compact 2-column grid (module name | view checkbox | edit checkbox)
-   - Tie `can_edit` checkbox: `data-on:change` that also clears `can_view` if edit is disabled (edit implies view)
-
-2. [ ] Extend `CreateRoleCommand` in `role_commands.go`
-   ```go
-   type ModulePermInput struct {
-       CanView bool
-       CanEdit bool
-   }
-   type CreateRoleCommand struct {
-       Name        string
-       DisplayName string
-       CanWrite    bool
-       Permissions map[domain.Module]ModulePermInput
-   }
-   ```
-
-3. [ ] Inject `RolePermissionsRepository` into `CreateRoleHandler`
-   - Constructor: `NewCreateRoleHandler(roles domain.RoleRepository, perms domain.RolePermissionsRepository) *CreateRoleHandler`
-   - After `h.roles.Save(ctx, rd)`, iterate `cmd.Permissions` and call `h.perms.Save(ctx, &domain.RoleModulePermission{...})` for each
-   - Skip modules not present in `cmd.Permissions` (they stay deny-all)
-
-4. [ ] Update `createRoleSSE` in `handlers.go:523` to parse module permission signals
-   - Extend `signals` struct with per-module fields matching the template signal names
-   - Build `map[domain.Module]commands.ModulePermInput` from parsed signals
-   - Pass to `CreateRoleCommand.Permissions`
-
-5. [ ] Wire `permRepo` into `CreateRoleHandler` in `internal/app/app.go` (or wherever auth is wired)
-   - Find where `commands.NewCreateRoleHandler(roleRepo)` is called — add `permRepo` arg
-
-6. [ ] `templ generate && go build ./...` — verify
+1. [x] `RolesPage` form expanded with module permission matrix
+   - => Signal names: `rolePerm{Module}View` / `rolePerm{Module}Edit` (camelCase PascalCase module)
+   - => `data-bind={ viewSig }` value form → exact camelCase signal match
+   - => Edit checkbox: `data-on:change` auto-sets view=true when edit checked
+   - => Helpers: `moduleSignalBase`, `rolePermViewSignal`, `rolePermEditSignal`, `rolePermInitSignals`
+2. [x] `ModulePermInput` + `Permissions map[domain.Module]ModulePermInput` added to `CreateRoleCommand`
+3. [x] `CreateRoleHandler` injects `permRepo`; seeds `role_module_permissions` after role save
+4. [x] `createRoleSSE` parses via `map[string]interface{}` — extracts per-module signals dynamically
+5. [x] `wire_auth.go` passes `permRepo` to `NewCreateRoleHandler`
+6. [x] `go test ./internal/modules/auth/...` — all pass
 
 ### Phase 3 — Verification & commit — status: open
 
@@ -96,7 +63,7 @@ status: active
    - Assign billing role to a test user → user can edit customers/invoices, blocked on others
    - Assign read-ext → user blocked from all mutations (RequireWrite fails globally)
 
-2. [ ] Commit Phase 1 separately, Phase 2 separately (two atomic commits)
+2. [x] Committed as `6272ee3` — phases 1+2 combined (template changes to same files made splitting impractical)
 
 ---
 
@@ -123,5 +90,5 @@ go test ./internal/modules/auth/...
 
 ## Progress Log
 
-<!-- Timestamped entries tracking work done. Updated after every action. -->
 - 2026-04-20 07:23 — Plan created. Two-phase fix: dynamic permissions page + role creation with permission matrix.
+- 2026-04-20 — Phase 1+2 implemented. Commit `6272ee3`. All auth tests pass. Phase 3 (manual smoke test) pending.
