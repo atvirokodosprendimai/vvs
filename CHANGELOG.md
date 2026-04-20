@@ -182,3 +182,4 @@
 - 2026-04-20 `b5f7fb5` fix(docker): show Init Swarm button after nodes removed and re-add
 - 2026-04-20 `d03bfac` spec(iptv): IPTV multi-provider channels with managed swarm stack
 - 2026-04-20 `ea0d6d8` plan(iptv): multi-provider channels + managed swarm stack
+- 2026-04-20 `2e45794` feat(iptv): replace UUID text inputs with cascading searchable selects
