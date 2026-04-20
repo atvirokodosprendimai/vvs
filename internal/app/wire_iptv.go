@@ -7,11 +7,14 @@ import (
 	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
 	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/gormsqlite"
 
-	dockerpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/docker/adapters/persistence"
-	iptvhttp        "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/adapters/http"
-	iptvpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/adapters/persistence"
-	iptvcommands    "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/app/commands"
-	iptvqueries     "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/app/queries"
+	dockerpersistence   "github.com/atvirokodosprendimai/vvs/internal/modules/docker/adapters/persistence"
+	customerpersistence "github.com/atvirokodosprendimai/vvs/internal/modules/customer/adapters/persistence"
+	customerdomain      "github.com/atvirokodosprendimai/vvs/internal/modules/customer/domain"
+	iptvhttp            "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/adapters/http"
+	iptvpersistence     "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/adapters/persistence"
+	iptvcommands        "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/app/commands"
+	iptvqueries         "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/app/queries"
+	shareddomain        "github.com/atvirokodosprendimai/vvs/internal/shared/domain"
 )
 
 type iptvWired struct {
@@ -102,7 +105,24 @@ func (a *swarmNetworksAdapter) FindByClusterID(ctx context.Context, clusterID st
 	return out, nil
 }
 
-func wireIPTV(gdb *gormsqlite.DB, docker *dockerWired) *iptvWired {
+// customerLookupAdapter implements iptvhttp.CustomerLookup.
+type customerLookupAdapter struct {
+	repo *customerpersistence.GormCustomerRepository
+}
+
+func (a *customerLookupAdapter) FindAll(ctx context.Context, search string) ([]iptvhttp.CustomerOption, error) {
+	customers, _, err := a.repo.FindAll(ctx, customerdomain.CustomerFilter{Search: search}, shareddomain.NewPagination(1, 1000))
+	if err != nil {
+		return nil, err
+	}
+	out := make([]iptvhttp.CustomerOption, len(customers))
+	for i, c := range customers {
+		out[i] = iptvhttp.CustomerOption{ID: c.ID, Name: c.CompanyName}
+	}
+	return out, nil
+}
+
+func wireIPTV(gdb *gormsqlite.DB, docker *dockerWired, cust *customerWired) *iptvWired {
 	channelRepo  := iptvpersistence.NewChannelRepository(gdb)
 	packageRepo  := iptvpersistence.NewPackageRepository(gdb)
 	subRepo      := iptvpersistence.NewSubscriptionRepository(gdb)
@@ -117,6 +137,7 @@ func wireIPTV(gdb *gormsqlite.DB, docker *dockerWired) *iptvWired {
 	var clusterLookup iptvhttp.SwarmClustersLookup
 	var nodeSLookup iptvhttp.SwarmNodesLookup
 	var networkLookup iptvhttp.SwarmNetworksLookup
+	var custLookup iptvhttp.CustomerLookup
 	if docker != nil {
 		if docker.swarmNodeRepo != nil {
 			nodeLookup = &swarmNodeSSHAdapter{repo: docker.swarmNodeRepo}
@@ -128,6 +149,9 @@ func wireIPTV(gdb *gormsqlite.DB, docker *dockerWired) *iptvWired {
 		if docker.swarmNetworkRepo != nil {
 			networkLookup = &swarmNetworksAdapter{repo: docker.swarmNetworkRepo}
 		}
+	}
+	if cust != nil && cust.repo != nil {
+		custLookup = &customerLookupAdapter{repo: cust.repo}
 	}
 
 	routes := iptvhttp.NewIPTVHandlers(
@@ -171,6 +195,7 @@ func wireIPTV(gdb *gormsqlite.DB, docker *dockerWired) *iptvWired {
 		clusterLookup,
 		nodeSLookup,
 		networkLookup,
+		custLookup,
 	)
 
 	log.Printf("module wired: iptv")
