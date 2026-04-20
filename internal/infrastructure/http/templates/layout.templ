@@ -100,14 +100,15 @@ templ Sidebar() {
 		crmVisible    := ps.CanView(authdomain.ModuleCustomers) || ps.CanView(authdomain.ModuleDeals) || ps.CanView(authdomain.ModuleTickets) || ps.CanView(authdomain.ModuleTasks)
 		financeVisible := ps.CanView(authdomain.ModuleInvoices) || ps.CanView(authdomain.ModuleProducts) || ps.CanView(authdomain.ModulePayments) || ps.CanView(authdomain.ModuleReports)
 		iptvVisible   := ps.CanView(authdomain.ModuleIPTV)
-		networkVisible := ps.CanView(authdomain.ModuleNetwork)
-		systemVisible  := ps.CanView(authdomain.ModuleEmail) || ps.CanView(authdomain.ModuleCron) || ps.CanView(authdomain.ModuleAuditLog) || ps.CanView(authdomain.ModuleUsers)
+		networkVisible  := ps.CanView(authdomain.ModuleNetwork)
+		proxmoxVisible  := ps.CanView(authdomain.ModuleProxmox)
+		systemVisible   := ps.CanView(authdomain.ModuleEmail) || ps.CanView(authdomain.ModuleCron) || ps.CanView(authdomain.ModuleAuditLog) || ps.CanView(authdomain.ModuleUsers)
 	}}
 	<nav
 		class="w-56 bg-neutral-900 border-r border-neutral-800 p-3 flex flex-col justify-between h-full"
-		data-signals="{_notifOpen:false, _navCrm:true, _navFinance:true, _navIptv:true, _navNetwork:true, _navSystem:false}"
-		data-init="(function(){try{var p=JSON.parse(localStorage.getItem('navState')||'{}');$_navCrm=p.crm??$_navCrm;$_navFinance=p.finance??$_navFinance;$_navIptv=p.iptv??$_navIptv;$_navNetwork=p.network??$_navNetwork;$_navSystem=p.system??$_navSystem}catch(e){}})()"
-		data-effect="localStorage.setItem('navState',JSON.stringify({crm:$_navCrm,finance:$_navFinance,iptv:$_navIptv,network:$_navNetwork,system:$_navSystem}))"
+		data-signals="{_notifOpen:false, _navCrm:true, _navFinance:true, _navIptv:true, _navNetwork:true, _navProxmox:true, _navSystem:false}"
+		data-init="(function(){try{var p=JSON.parse(localStorage.getItem('navState')||'{}');$_navCrm=p.crm??$_navCrm;$_navFinance=p.finance??$_navFinance;$_navIptv=p.iptv??$_navIptv;$_navNetwork=p.network??$_navNetwork;$_navProxmox=p.proxmox??$_navProxmox;$_navSystem=p.system??$_navSystem}catch(e){}})()"
+		data-effect="localStorage.setItem('navState',JSON.stringify({crm:$_navCrm,finance:$_navFinance,iptv:$_navIptv,network:$_navNetwork,proxmox:$_navProxmox,system:$_navSystem}))"
 	>
 		<div class="flex flex-col gap-0.5 overflow-y-auto min-h-0 flex-1">
 			<div class="flex items-center justify-between mb-4 px-2 pt-1">
@@ -191,6 +192,15 @@ templ Sidebar() {
 					@NavItem("/routers", "Routers", routersIcon())
 					@NavItem("/prefixes", "Prefixes", prefixesIcon())
 					@NavItem("/devices", "Devices", devicesIcon())
+				</div>
+			}
+
+			<!-- Proxmox / Compute -->
+			if proxmoxVisible {
+				@NavGroup("Compute", "_navProxmox", proxmoxNavIcon())
+				<div data-show="$_navProxmox" style="display:none" class="flex flex-col gap-0.5 ml-2 border-l border-neutral-800 pl-2">
+					@NavItem("/proxmox/nodes", "Nodes", proxmoxNavIcon())
+					@NavItem("/proxmox/vms", "VMs", proxmoxVMIcon())
 				</div>
 			}
 
@@ -440,5 +450,13 @@ func iptvSubIcon() string {
 }
 
 func iptvStbIcon() string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3"/></svg>`
+}
+
+func proxmoxNavIcon() string {
+	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.737 5.1a3.375 3.375 0 012.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 01.9 2.7m0 0a3 3 0 01-3 3m0 3h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008zm-3 6h.008v.008h-.008v-.008zm0-6h.008v.008h-.008v-.008z"/></svg>`
+}
+
+func proxmoxVMIcon() string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3"/></svg>`
 }

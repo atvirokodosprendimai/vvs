@@ -1074,6 +1074,7 @@ func moduleLabel(m domain.Module) string {
 		domain.ModulePayments:  "Payments",
 		domain.ModuleReports:   "Reports",
 		domain.ModuleNetwork:   "Network",
+		domain.ModuleProxmox:   "Proxmox",
 		domain.ModuleEmail:     "Email",
 		domain.ModuleCron:      "Cron",
 		domain.ModuleAuditLog:  "Audit Log",
@@ -1158,7 +1159,7 @@ func TOTPLoginPage(errMsg string) templ.Component {
 			var templ_7745c5c3_Var45 string
 			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(errMsg)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 568, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 569, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 			if templ_7745c5c3_Err != nil {
@@ -1210,7 +1211,7 @@ func totpLoginError(msg string) templ.Component {
 		var templ_7745c5c3_Var47 string
 		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 587, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 588, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 		if templ_7745c5c3_Err != nil {
@@ -1279,7 +1280,7 @@ func TOTPSetupPage(u *domain.User, secret, qrDataURI string) templ.Component {
 				var templ_7745c5c3_Var50 string
 				templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("{newTotpSecret:'%s',totpCode:''}", secret))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 615, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 616, Col: 76}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 				if templ_7745c5c3_Err != nil {
@@ -1292,7 +1293,7 @@ func TOTPSetupPage(u *domain.User, secret, qrDataURI string) templ.Component {
 				var templ_7745c5c3_Var51 string
 				templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(qrDataURI)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 622, Col: 28}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 623, Col: 28}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 				if templ_7745c5c3_Err != nil {
@@ -1305,7 +1306,7 @@ func TOTPSetupPage(u *domain.User, secret, qrDataURI string) templ.Component {
 				var templ_7745c5c3_Var52 string
 				templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(secret)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 627, Col: 164}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 628, Col: 164}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 				if templ_7745c5c3_Err != nil {
@@ -1358,7 +1359,7 @@ func totpSetupError(msg string) templ.Component {
 		var templ_7745c5c3_Var54 string
 		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 656, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 657, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 		if templ_7745c5c3_Err != nil {
@@ -1433,7 +1434,7 @@ func RolesPage(roles []domain.RoleDefinition) templ.Component {
 			var templ_7745c5c3_Var57 string
 			templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(rolePermInitSignals())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 692, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 693, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 			if templ_7745c5c3_Err != nil {
@@ -1453,7 +1454,7 @@ func RolesPage(roles []domain.RoleDefinition) templ.Component {
 				var templ_7745c5c3_Var58 string
 				templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(moduleLabel(m))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 735, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 736, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 				if templ_7745c5c3_Err != nil {
@@ -1466,7 +1467,7 @@ func RolesPage(roles []domain.RoleDefinition) templ.Component {
 				var templ_7745c5c3_Var59 string
 				templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(viewSig)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 739, Col: 32}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 740, Col: 32}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 				if templ_7745c5c3_Err != nil {
@@ -1479,7 +1480,7 @@ func RolesPage(roles []domain.RoleDefinition) templ.Component {
 				var templ_7745c5c3_Var60 string
 				templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(editSig)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 746, Col: 32}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 747, Col: 32}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 				if templ_7745c5c3_Err != nil {
@@ -1492,7 +1493,7 @@ func RolesPage(roles []domain.RoleDefinition) templ.Component {
 				var templ_7745c5c3_Var61 string
 				templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("if(evt.target.checked){$%s=true}", viewSig))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 747, Col: 86}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 748, Col: 86}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 				if templ_7745c5c3_Err != nil {
@@ -1546,7 +1547,7 @@ func RoleRows(roles []domain.RoleDefinition) templ.Component {
 			var templ_7745c5c3_Var63 string
 			templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(string(rd.Name))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 774, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 775, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
 			if templ_7745c5c3_Err != nil {
@@ -1560,7 +1561,7 @@ func RoleRows(roles []domain.RoleDefinition) templ.Component {
 				var templ_7745c5c3_Var64 string
 				templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(rd.DisplayName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 777, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 778, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
 				if templ_7745c5c3_Err != nil {
@@ -1614,7 +1615,7 @@ func RoleRows(roles []domain.RoleDefinition) templ.Component {
 				var templ_7745c5c3_Var65 string
 				templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.JoinStringErrs("@delete('/api/roles/" + string(rd.Name) + "')")
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 799, Col: 69}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 800, Col: 69}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var65))
 				if templ_7745c5c3_Err != nil {
@@ -1662,7 +1663,7 @@ func addRoleError(msg string) templ.Component {
 		var templ_7745c5c3_Var67 string
 		templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 811, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/auth/adapters/http/templates.templ`, Line: 812, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var67))
 		if templ_7745c5c3_Err != nil {

@@ -29,6 +29,8 @@ import (
 	emailhttp "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/http"
 	emailQueries "github.com/atvirokodosprendimai/vvs/internal/modules/email/app/queries"
 	invoiceQueries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
+	proxmoxhttp "github.com/atvirokodosprendimai/vvs/internal/modules/proxmox/adapters/http"
+	proxmoxQueries "github.com/atvirokodosprendimai/vvs/internal/modules/proxmox/app/queries"
 	"github.com/atvirokodosprendimai/vvs/internal/shared/audit"
 	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
@@ -62,6 +64,7 @@ type Handlers struct {
 	listTasksQuery       *taskQueries.ListTasksForCustomerHandler
 	listEmailQuery       *emailQueries.ListThreadsForCustomerHandler
 	listInvoicesQuery    *invoiceQueries.ListInvoicesForCustomerHandler
+	listVMsQuery         *proxmoxQueries.ListVMsForCustomerHandler
 	auditLogger          audit.Logger
 }
 
@@ -141,6 +144,12 @@ func (h *Handlers) WithEmailThreadsQuery(q *emailQueries.ListThreadsForCustomerH
 // WithInvoicesQuery injects the invoice list query for the customer detail page.
 func (h *Handlers) WithInvoicesQuery(q *invoiceQueries.ListInvoicesForCustomerHandler) *Handlers {
 	h.listInvoicesQuery = q
+	return h
+}
+
+// WithVMsForCustomerQuery injects the Proxmox VM list query for the customer detail page.
+func (h *Handlers) WithVMsForCustomerQuery(q *proxmoxQueries.ListVMsForCustomerHandler) *Handlers {
+	h.listVMsQuery = q
 	return h
 }
 
@@ -258,12 +267,20 @@ func (h *Handlers) detailPage(w http.ResponseWriter, r *http.Request) {
 			invoices = nil
 		}
 	}
+	var vms []proxmoxQueries.VMReadModel
+	if h.listVMsQuery != nil {
+		vms, err = h.listVMsQuery.Handle(r.Context(), id)
+		if err != nil {
+			log.Printf("detailPage: list vms: %v", err)
+			vms = nil
+		}
+	}
 	routerName := h.loadRouterName(r.Context(), customer)
 	var notes []queries.NoteReadModel
 	if h.listNotesQuery != nil {
 		notes, _ = h.listNotesQuery.Handle(r.Context(), id)
 	}
-	CustomerDetailPage(customer, services, routerName, notes, contacts, deals, tickets, tasks, emailThreads, invoices).Render(r.Context(), w)
+	CustomerDetailPage(customer, services, routerName, notes, contacts, deals, tickets, tasks, emailThreads, invoices, vms).Render(r.Context(), w)
 }
 
 func (h *Handlers) editPage(w http.ResponseWriter, r *http.Request) {
@@ -500,6 +517,7 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 		tasks    []taskQueries.TaskReadModel
 		emails   []emailQueries.ThreadReadModel
 		invoices []invoiceQueries.InvoiceReadModel
+		vms      []proxmoxQueries.VMReadModel
 	}
 
 	queryAll := func() state {
@@ -525,11 +543,14 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 		if h.listInvoicesQuery != nil {
 			s.invoices, _ = h.listInvoicesQuery.Handle(r.Context(), invoiceQueries.ListInvoicesForCustomerQuery{CustomerID: customerID})
 		}
+		if h.listVMsQuery != nil {
+			s.vms, _ = h.listVMsQuery.Handle(r.Context(), customerID)
+		}
 		return s
 	}
 
 	patchTabBar := func(s state) {
-		sse.PatchElementTempl(CRMTabBar(len(s.services), len(s.contacts), len(s.deals), len(s.tickets), len(s.tasks), len(s.emails), len(s.invoices)))
+		sse.PatchElementTempl(CRMTabBar(len(s.services), len(s.contacts), len(s.deals), len(s.tickets), len(s.tasks), len(s.emails), len(s.invoices), len(s.vms)))
 	}
 
 	cur := queryAll()
@@ -540,6 +561,7 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 	sse.PatchElementTempl(taskhttp.TaskList(customerID, cur.tasks))
 	sse.PatchElementTempl(emailhttp.EmailThreadsSection(customerID, cur.emails))
 	sse.PatchElementTempl(InvoiceSection(customerID, cur.invoices))
+	sse.PatchElementTempl(proxmoxhttp.VMSection(customerID, cur.vms))
 	patchTabBar(cur)
 
 	for {
@@ -576,6 +598,10 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 			}
 			if !reflect.DeepEqual(cur.invoices, next.invoices) {
 				sse.PatchElementTempl(InvoiceSection(customerID, next.invoices))
+				changed = true
+			}
+			if !reflect.DeepEqual(cur.vms, next.vms) {
+				sse.PatchElementTempl(proxmoxhttp.VMSection(customerID, next.vms))
 				changed = true
 			}
 			if changed {

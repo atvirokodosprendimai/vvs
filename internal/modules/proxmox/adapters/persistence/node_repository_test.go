@@ -15,7 +15,7 @@ import (
 func setupNodeRepo(t *testing.T, encKey ...[]byte) domain.NodeRepository {
 	t.Helper()
 	db := testutil.NewTestDB(t)
-	testutil.RunMigrations(t, db, proxmoxmigrations.Migrations, "goose_proxmox")
+	testutil.RunMigrations(t, db, proxmoxmigrations.FS, "goose_proxmox")
 	return persistence.NewGormNodeRepository(db, encKey...)
 }
 
@@ -47,7 +47,7 @@ func TestNodeRepository_TokenSecretEncryptedAtRest(t *testing.T) {
 		encKey[i] = byte(i + 1)
 	}
 	db := testutil.NewTestDB(t)
-	testutil.RunMigrations(t, db, proxmoxmigrations.Migrations, "goose_proxmox")
+	testutil.RunMigrations(t, db, proxmoxmigrations.FS, "goose_proxmox")
 
 	repo := persistence.NewGormNodeRepository(db, encKey)
 	ctx := context.Background()

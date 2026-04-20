@@ -20,6 +20,8 @@ import (
 	emailQueries "github.com/atvirokodosprendimai/vvs/internal/modules/email/app/queries"
 	emailhttp "github.com/atvirokodosprendimai/vvs/internal/modules/email/adapters/http"
 	invoiceQueries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
+	proxmoxQueries "github.com/atvirokodosprendimai/vvs/internal/modules/proxmox/app/queries"
+	proxmoxhttp "github.com/atvirokodosprendimai/vvs/internal/modules/proxmox/adapters/http"
 )
 
 templ CustomerListPage() {
@@ -225,7 +227,7 @@ templ CustomerFormPage(customer *domain.Customer, routers []RouterSummary, zones
 	}
 }
 
-templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel, routerName string, notes []queries.NoteReadModel, contacts []contactQueries.ContactReadModel, deals []dealQueries.DealReadModel, tickets []ticketQueries.TicketReadModel, tasks []taskQueries.TaskReadModel, emailThreads []emailQueries.ThreadReadModel, invoices []invoiceQueries.InvoiceReadModel) {
+templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceReadModel, routerName string, notes []queries.NoteReadModel, contacts []contactQueries.ContactReadModel, deals []dealQueries.DealReadModel, tickets []ticketQueries.TicketReadModel, tasks []taskQueries.TaskReadModel, emailThreads []emailQueries.ThreadReadModel, invoices []invoiceQueries.InvoiceReadModel, vms []proxmoxQueries.VMReadModel) {
 	@templates.Layout(c.CompanyName) {
 		<div data-signals="{statusAction:''}">
 		@templates.PageHeaderBack(c.CompanyName, fmt.Sprintf("Customer %s", c.Code.String()), "/customers", "Customers") {
@@ -377,7 +379,7 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 				data-signals="{_crmTab: new URLSearchParams(window.location.search).get('tab') || 'tickets'}"
 				data-effect="window.history.replaceState({}, '', window.location.pathname + '?tab=' + $_crmTab)"
 			>
-				@CRMTabBar(len(services), len(contacts), len(deals), len(tickets), len(tasks), len(emailThreads), len(invoices))
+				@CRMTabBar(len(services), len(contacts), len(deals), len(tickets), len(tasks), len(emailThreads), len(invoices), len(vms))
 				<div data-init={ fmt.Sprintf("@get('/sse/customers/%s/crm', {openWhenHidden: false})", c.ID) }></div>
 				<div data-show="$_crmTab === 'services'" style="display:none">
 					@servicehttp.ServiceSection(c.ID, services)
@@ -399,6 +401,9 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 				</div>
 				<div data-show="$_crmTab === 'invoices'" style="display:none">
 					@InvoiceSection(c.ID, invoices)
+				</div>
+				<div data-show="$_crmTab === 'vms'" style="display:none">
+					@proxmoxhttp.VMSection(c.ID, vms)
 				</div>
 				<div data-show="$_crmTab === 'auditlog'" style="display:none">
 					<div class="mt-4"
@@ -442,7 +447,7 @@ templ detailField(label string, value string) {
 }
 
 // CRMTabBar renders the tab bar for switching between CRM sections.
-templ CRMTabBar(serviceCount, contactCount, dealCount, ticketCount, taskCount, emailCount, invoiceCount int) {
+templ CRMTabBar(serviceCount, contactCount, dealCount, ticketCount, taskCount, emailCount, invoiceCount, vmCount int) {
 	<div id="crm-tab-bar" class="mt-6 flex items-center gap-1 border-b border-neutral-800">
 		@crmTab("services", "Services", serviceCount)
 		@crmTab("contacts", "Contacts", contactCount)
@@ -451,6 +456,7 @@ templ CRMTabBar(serviceCount, contactCount, dealCount, ticketCount, taskCount, e
 		@crmTab("tasks", "Tasks", taskCount)
 		@crmTab("emails", "Emails", emailCount)
 		@crmTab("invoices", "Invoices", invoiceCount)
+		@crmTab("vms", "VMs", vmCount)
 		@crmTab("auditlog", "Audit Log", -1)
 	</div>
 }

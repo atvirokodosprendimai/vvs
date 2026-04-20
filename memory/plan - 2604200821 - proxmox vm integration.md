@@ -57,11 +57,11 @@ status: active
 
 ---
 
-### Phase 2 — Domain layer — status: open
+### Phase 2 — Domain layer — status: completed
 
 **Goal:** Pure Go domain types with zero framework dependencies. All business rules here.
 
-1. [ ] Create `internal/modules/proxmox/domain/node.go`
+1. [x] Create `internal/modules/proxmox/domain/node.go`
    - `ProxmoxNode` struct: `ID, Name, NodeName, Host string; Port int; User, TokenID, TokenSecret, Notes string; InsecureTLS bool; CreatedAt, UpdatedAt time.Time`
    - `NodeConn` struct (passed to provisioner): `NodeName, Host, User, TokenID, TokenSecret string; Port int; InsecureTLS bool`
    - `NewProxmoxNode(name, nodeName, host string, port int, user, tokenID, tokenSecret, notes string, insecureTLS bool) (*ProxmoxNode, error)` — validates required fields
@@ -70,7 +70,7 @@ status: active
    - Sentinel errors: `ErrNodeNameRequired`, `ErrHostRequired`, `ErrUserRequired`, `ErrTokenIDRequired`, `ErrNodeNotFound`
    - Default port: 8006 when `port <= 0`
 
-2. [ ] Create `internal/modules/proxmox/domain/vm.go`
+2. [x] Create `internal/modules/proxmox/domain/vm.go`
    - `VMStatus` type alias `string` with constants: `VMStatusRunning`, `VMStatusStopped`, `VMStatusPaused`, `VMStatusCreating`, `VMStatusDeleting`, `VMStatusUnknown`
    - `VirtualMachine` struct: `ID, VMID int; NodeID, CustomerID, Name, Notes, IPAddress string; Status VMStatus; Cores, MemoryMB, DiskGB int; CreatedAt, UpdatedAt time.Time`
      - Note: `ID` is internal UUID string; `VMID` is Proxmox integer ID (100–999999)
@@ -80,7 +80,7 @@ status: active
    - `AssignCustomer(customerID string)` / `UnassignCustomer()`
    - Sentinel errors: `ErrVMIDRequired`, `ErrVMNameRequired`, `ErrCoresPositive`, `ErrMemoryPositive`, `ErrVMNotFound`, `ErrVMNotRunning` (for suspend/restart guard), `ErrVMNotStopped` (for delete guard)
 
-3. [ ] Create `internal/modules/proxmox/domain/provisioner.go`
+3. [x] Create `internal/modules/proxmox/domain/provisioner.go`
    - `VMSpec` struct: `TemplateVMID int; NewVMID int; Name, Storage string; Cores, MemoryMB, DiskGB int; FullClone bool`
      - `NewVMID == 0` means auto-allocate via `NextVMID`
    - `VMInfo` struct: `VMID int; Name string; Status VMStatus; Cores, MemoryMB int`
@@ -98,7 +98,8 @@ status: active
      ```
    - `WaitForTask` polls every 2s; returns `ErrTaskFailed` on non-OK exitstatus; honours context deadline
 
-4. [ ] Create `internal/modules/proxmox/domain/repository.go`
+4. [x] Create `internal/modules/proxmox/domain/repository.go`
+   - => also added `FindByNodeID` to VMRepository (needed by delete_node guard)
    - `NodeRepository` interface: `Save(ctx, *ProxmoxNode) error; FindByID(ctx, id) (*ProxmoxNode, error); FindAll(ctx) ([]*ProxmoxNode, error); Delete(ctx, id) error`
    - `VMRepository` interface: `Save(ctx, *VirtualMachine) error; FindByID(ctx, id) (*VirtualMachine, error); FindByCustomerID(ctx, customerID) ([]*VirtualMachine, error); FindAll(ctx) ([]*VirtualMachine, error); Delete(ctx, id) error; UpdateStatus(ctx, id string, status VMStatus) error`
 
@@ -532,3 +533,4 @@ go test ./...
 ## Progress Log
 
 - 2026-04-20 08:21 — Plan created. 13 phases, ~60 actions. Proxmox VE REST API, port/adapter pattern mirrors network module, async task polling via goroutines + NATS events, 9th CRM tab.
+- 2026-04-20 — Phase 2 complete (8c6f8bb). All domain tests green. Note: VMRepository has FindByNodeID added beyond plan (needed by delete_node guard).
