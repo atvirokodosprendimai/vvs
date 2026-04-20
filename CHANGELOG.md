@@ -130,3 +130,5 @@
 - 2026-04-20 `768d590` feat(proxmox): persistence layer — migrations, GORM models, node/VM repositories
 - 2026-04-20 `328673d` feat(proxmox): NATS subjects registry + ProxmoxEncKey config
 - 2026-04-20 `8dd0069` feat(proxmox): node/VM commands and queries
+- 2026-04-20 `a5ad327` feat(proxmox): full Proxmox VE integration — nodes, VMs, CRM tab, sidebar nav
+- 2026-04-20 `dfc6d2f` fix(proxmox): address 4 HIGH security/correctness issues from Codex review
