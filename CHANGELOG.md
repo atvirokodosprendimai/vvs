@@ -183,3 +183,4 @@
 - 2026-04-20 `d03bfac` spec(iptv): IPTV multi-provider channels with managed swarm stack
 - 2026-04-20 `ea0d6d8` plan(iptv): multi-provider channels + managed swarm stack
 - 2026-04-20 `2e45794` feat(iptv): replace UUID text inputs with cascading searchable selects
+- 2026-04-20 `9aecf5a` docs: update CHANGELOG with iptv select UX entry
