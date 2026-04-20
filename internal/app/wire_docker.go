@@ -18,8 +18,9 @@ import (
 )
 
 type dockerWired struct {
-	routes      infrahttp.ModuleRoutes
-	swarmRoutes infrahttp.ModuleRoutes
+	routes       infrahttp.ModuleRoutes
+	swarmRoutes  infrahttp.ModuleRoutes
+	swarmNodeRepo *dockerpersistence.GormSwarmNodeRepository
 }
 
 func wireDocker(
@@ -116,5 +117,5 @@ func wireDocker(
 		log.Printf("module enabled: docker")
 	}
 
-	return &dockerWired{routes: routes, swarmRoutes: swarmRoutes}
+	return &dockerWired{routes: routes, swarmRoutes: swarmRoutes, swarmNodeRepo: swarmNodeRepo}
 }

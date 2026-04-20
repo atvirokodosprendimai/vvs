@@ -103,13 +103,13 @@ func New(cfg Config) (*App, error) {
 	email   := wireEmail(gdb, pub, sub, cust, cfg)
 	inv     := wireInvoice(gdb, pub, sub, nc, cust, svc, email, cfg)
 	aud     := wireAudit(gdb, sub, cust, crm, svc, inv)
-	iptv    := wireIPTV(gdb)
+	docker  := wireDocker(gdb, nc, pub, sub, cfg)
+	iptv    := wireIPTV(gdb, docker.swarmNodeRepo)
 	billing := wireBilling(gdb, pub)
 	if cust.routes != nil {
 		cust.routes.WithBalanceHandlers(billing.getBalance, billing.adjustBalance)
 	}
 	proxmox := wireProxmox(gdb, pub, sub, cust, cfg)
-	docker  := wireDocker(gdb, nc, pub, sub, cfg)
 	infra, err := wireInfra(gdb, pub, sub, nc, auth, cust, prod, net, dev, svc, inv, iptv, crm, billing, proxmox, cfg)
 	if err != nil {
 		return nil, err

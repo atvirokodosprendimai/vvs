@@ -42,6 +42,10 @@ type channelsByPackageReader interface {
 	FindByID(ctx context.Context, id string) (*domain.Channel, error)
 }
 
+type channelProvidersByChannelReader interface {
+	FindByChannelID(ctx context.Context, channelID string) ([]*domain.ChannelProvider, error)
+}
+
 type epgReader interface {
 	ListCurrentAndNext(ctx context.Context, channelEPGIDs []string) (map[string][2]*domain.EPGProgramme, error)
 	ListForChannel(ctx context.Context, channelEPGID string, from, to time.Time) ([]*domain.EPGProgramme, error)
@@ -62,15 +66,16 @@ type keysBySubscriptionReader interface {
 // STBBridge subscribes to isp.stb.rpc.* subjects and serves STB data.
 // Runs on vvs-core — has direct access to SQLite via the injected repos.
 type STBBridge struct {
-	nc          *nats.Conn
-	keys        subscriptionKeyReader
-	subs        subscriptionReader
-	channels    channelsByPackageReader
-	epg         epgReader
-	stbsByMAC   stbByMACReader
+	nc             *nats.Conn
+	keys           subscriptionKeyReader
+	subs           subscriptionReader
+	channels       channelsByPackageReader
+	providers      channelProvidersByChannelReader
+	epg            epgReader
+	stbsByMAC      stbByMACReader
 	subsByCustomer subsByCustomerReader
-	keysBySub   keysBySubscriptionReader
-	nSubs       []*nats.Subscription
+	keysBySub      keysBySubscriptionReader
+	nSubs          []*nats.Subscription
 }
 
 // NewSTBBridge creates a bridge. Call Register() to start serving.
@@ -79,6 +84,7 @@ func NewSTBBridge(
 	keys subscriptionKeyReader,
 	subs subscriptionReader,
 	channels channelsByPackageReader,
+	providers channelProvidersByChannelReader,
 	epg epgReader,
 	stbsByMAC stbByMACReader,
 	subsByCustomer subsByCustomerReader,
@@ -89,6 +95,7 @@ func NewSTBBridge(
 		keys:           keys,
 		subs:           subs,
 		channels:       channels,
+		providers:      providers,
 		epg:            epg,
 		stbsByMAC:      stbsByMAC,
 		subsByCustomer: subsByCustomer,
@@ -388,9 +395,26 @@ func (b *STBBridge) handleChannelResolve(msg *nats.Msg) {
 		return
 	}
 
+	// Resolve stream URL: prefer active provider with lowest priority.
+	streamURL := ch.StreamURL
+	if b.providers != nil {
+		if provs, err := b.providers.FindByChannelID(ctx, ch.ID); err == nil {
+			for _, p := range provs { // ordered by priority ASC
+				if p.Active {
+					slug := ch.Slug
+					if slug == "" {
+						slug = domain.Slugify(ch.Name)
+					}
+					streamURL = domain.ResolveProviderURL(p.URLTemplate, slug, p.Token)
+					break
+				}
+			}
+		}
+	}
+
 	stbBridgeReply(msg, struct {
 		StreamURL string `json:"streamURL"`
-	}{ch.StreamURL}, nil)
+	}{streamURL}, nil)
 }
 
 func (b *STBBridge) handleConfigGet(msg *nats.Msg) {

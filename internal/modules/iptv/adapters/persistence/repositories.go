@@ -362,3 +362,153 @@ func (r *SubscriptionKeyRepository) Delete(ctx context.Context, id string) error
 		return tx.Where("id = ?", id).Delete(&SubscriptionKeyModel{}).Error
 	})
 }
+
+// ── ChannelProviderRepository ─────────────────────────────────────────────────
+
+type ChannelProviderRepository struct{ db *gormsqlite.DB }
+
+func NewChannelProviderRepository(db *gormsqlite.DB) *ChannelProviderRepository {
+	return &ChannelProviderRepository{db: db}
+}
+
+func (r *ChannelProviderRepository) Save(ctx context.Context, p *domain.ChannelProvider) error {
+	m := toChannelProviderModel(p)
+	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error { return tx.Save(&m).Error })
+}
+
+func (r *ChannelProviderRepository) FindByID(ctx context.Context, id string) (*domain.ChannelProvider, error) {
+	var m ChannelProviderModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("id = ?", id).First(&m).Error
+	})
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, domain.ErrNotFound
+		}
+		return nil, err
+	}
+	return m.toDomain(), nil
+}
+
+func (r *ChannelProviderRepository) FindByChannelID(ctx context.Context, channelID string) ([]*domain.ChannelProvider, error) {
+	var ms []ChannelProviderModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("channel_id = ?", channelID).Order("priority ASC, name ASC").Find(&ms).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*domain.ChannelProvider, len(ms))
+	for i := range ms {
+		out[i] = ms[i].toDomain()
+	}
+	return out, nil
+}
+
+func (r *ChannelProviderRepository) Delete(ctx context.Context, id string) error {
+	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("id = ?", id).Delete(&ChannelProviderModel{}).Error
+	})
+}
+
+// ── IPTVStackRepository ───────────────────────────────────────────────────────
+
+type IPTVStackRepository struct{ db *gormsqlite.DB }
+
+func NewIPTVStackRepository(db *gormsqlite.DB) *IPTVStackRepository {
+	return &IPTVStackRepository{db: db}
+}
+
+func (r *IPTVStackRepository) Save(ctx context.Context, s *domain.IPTVStack) error {
+	m := toIPTVStackModel(s)
+	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error { return tx.Save(&m).Error })
+}
+
+func (r *IPTVStackRepository) FindByID(ctx context.Context, id string) (*domain.IPTVStack, error) {
+	var m IPTVStackModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("id = ?", id).First(&m).Error
+	})
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, domain.ErrNotFound
+		}
+		return nil, err
+	}
+	return m.toDomain(), nil
+}
+
+func (r *IPTVStackRepository) FindAll(ctx context.Context) ([]*domain.IPTVStack, error) {
+	var ms []IPTVStackModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Order("name ASC").Find(&ms).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*domain.IPTVStack, len(ms))
+	for i := range ms {
+		out[i] = ms[i].toDomain()
+	}
+	return out, nil
+}
+
+func (r *IPTVStackRepository) Delete(ctx context.Context, id string) error {
+	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("id = ?", id).Delete(&IPTVStackModel{}).Error
+	})
+}
+
+// ── IPTVStackChannelRepository ────────────────────────────────────────────────
+
+type IPTVStackChannelRepository struct{ db *gormsqlite.DB }
+
+func NewIPTVStackChannelRepository(db *gormsqlite.DB) *IPTVStackChannelRepository {
+	return &IPTVStackChannelRepository{db: db}
+}
+
+func (r *IPTVStackChannelRepository) Save(ctx context.Context, sc *domain.IPTVStackChannel) error {
+	m := toIPTVStackChannelModel(sc)
+	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error { return tx.Save(&m).Error })
+}
+
+func (r *IPTVStackChannelRepository) FindByStackID(ctx context.Context, stackID string) ([]*domain.IPTVStackChannel, error) {
+	var ms []IPTVStackChannelModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("stack_id = ?", stackID).Find(&ms).Error
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*domain.IPTVStackChannel, len(ms))
+	for i := range ms {
+		out[i] = ms[i].toDomain()
+	}
+	return out, nil
+}
+
+func (r *IPTVStackChannelRepository) FindByStackIDAndChannelID(ctx context.Context, stackID, channelID string) (*domain.IPTVStackChannel, error) {
+	var m IPTVStackChannelModel
+	err := r.db.ReadTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("stack_id = ? AND channel_id = ?", stackID, channelID).First(&m).Error
+	})
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, domain.ErrNotFound
+		}
+		return nil, err
+	}
+	return m.toDomain(), nil
+}
+
+func (r *IPTVStackChannelRepository) Delete(ctx context.Context, id string) error {
+	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("id = ?", id).Delete(&IPTVStackChannelModel{}).Error
+	})
+}
+
+func (r *IPTVStackChannelRepository) DeleteByStackID(ctx context.Context, stackID string) error {
+	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
+		return tx.Where("stack_id = ?", stackID).Delete(&IPTVStackChannelModel{}).Error
+	})
+}

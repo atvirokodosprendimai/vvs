@@ -6,6 +6,7 @@ import "time"
 type ChannelReadModel struct {
 	ID        string
 	Name      string
+	Slug      string
 	LogoURL   string
 	StreamURL string
 	Category  string
@@ -56,4 +57,46 @@ type SubscriptionKeyReadModel struct {
 	Token          string
 	CreatedAt      time.Time
 	RevokedAt      *time.Time
+}
+
+// ChannelProviderReadModel is the flattened read model for provider list/detail views.
+type ChannelProviderReadModel struct {
+	ID          string
+	ChannelID   string
+	Name        string
+	URLTemplate string
+	Token       string
+	Type        string
+	Priority    int
+	Active      bool
+	CreatedAt   time.Time
+}
+
+// IPTVStackReadModel is the flattened read model for IPTV stack list/detail views.
+type IPTVStackReadModel struct {
+	ID                 string
+	Name               string
+	ClusterID          string
+	NodeID             string
+	WANNetworkID       string
+	OverlayNetworkID   string
+	WANNetworkName     string
+	OverlayNetworkName string
+	WanIP              string
+	Status             string
+	LastDeployedAt     *time.Time
+	ChannelCount       int
+	CreatedAt          time.Time
+}
+
+// IPTVStackChannelReadModel is one channel+provider assignment within a stack.
+type IPTVStackChannelReadModel struct {
+	ID           string
+	StackID      string
+	ChannelID    string
+	ChannelName  string
+	ChannelSlug  string
+	ProviderID   string
+	ProviderName string
+	ProviderType string
 }
