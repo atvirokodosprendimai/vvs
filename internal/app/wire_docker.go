@@ -64,11 +64,13 @@ func wireDocker(
 	importClusterCmd := dockercommands.NewImportSwarmClusterHandler(clusterRepo, pub)
 	initSwarmCmd := dockercommands.NewInitSwarmHandler(clusterRepo, swarmNodeRepo, swarmFactory, pub)
 	deleteClusterCmd := dockercommands.NewDeleteSwarmClusterHandler(clusterRepo, pub)
+	updateHetznerConfigCmd := dockercommands.NewUpdateClusterHetznerConfigHandler(clusterRepo)
 
 	createSwarmNodeCmd := dockercommands.NewCreateSwarmNodeHandler(swarmNodeRepo)
 	provisionNodeCmd := dockercommands.NewProvisionSwarmNodeHandler(swarmNodeRepo, clusterRepo, pub)
 	addNodeCmd := dockercommands.NewAddSwarmNodeHandler(clusterRepo, swarmNodeRepo, swarmFactory, pub)
 	removeNodeCmd := dockercommands.NewRemoveSwarmNodeHandler(clusterRepo, swarmNodeRepo, swarmFactory, pub)
+	orderHetznerCmd := dockercommands.NewOrderHetznerNodeHandler(clusterRepo, createSwarmNodeCmd, provisionNodeCmd, addNodeCmd)
 
 	createNetworkCmd := dockercommands.NewCreateSwarmNetworkHandler(clusterRepo, swarmNodeRepo, networkRepo, swarmFactory, pub)
 	deleteNetworkCmd := dockercommands.NewDeleteSwarmNetworkHandler(clusterRepo, swarmNodeRepo, networkRepo, swarmFactory, pub)
@@ -99,7 +101,9 @@ func wireDocker(
 		)
 		swarmRoutes = dockerhttp.NewSwarmHandlers(
 			createClusterCmd, importClusterCmd, initSwarmCmd, deleteClusterCmd,
+			updateHetznerConfigCmd,
 			provisionNodeCmd, addNodeCmd, removeNodeCmd, createSwarmNodeCmd,
+			orderHetznerCmd,
 			createNetworkCmd, deleteNetworkCmd, updateReservedIPCmd,
 			deployStackCmd, updateStackCmd, removeStackCmd,
 			listClustersQuery, getClusterQuery,

@@ -15,6 +15,8 @@ type SwarmClusterReadModel struct {
 	AdvertiseAddr string
 	Notes         string
 	NodeCount     int
+	HasHetzner    bool   // true when HetznerAPIKey + HetznerSSHKeyID are configured
+	SSHPublicKey  string // cluster-level public key (shown in UI for Hetzner registration)
 }
 
 type SwarmNodeReadModel struct {
@@ -84,6 +86,8 @@ func (h *ListSwarmClustersHandler) Handle(ctx context.Context) ([]SwarmClusterRe
 			AdvertiseAddr: c.AdvertiseAddr,
 			Notes:         c.Notes,
 			NodeCount:     len(nodes),
+			HasHetzner:    c.HasHetzner(),
+			SSHPublicKey:  c.SSHPublicKey,
 		}
 	}
 	return out, nil
@@ -108,6 +112,8 @@ func (h *GetSwarmClusterHandler) Handle(ctx context.Context, id string) (*SwarmC
 		Status:        string(c.Status),
 		AdvertiseAddr: c.AdvertiseAddr,
 		Notes:         c.Notes,
+		HasHetzner:    c.HasHetzner(),
+		SSHPublicKey:  c.SSHPublicKey,
 	}, nil
 }
 

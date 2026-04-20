@@ -42,6 +42,18 @@ func (r *GormSwarmClusterRepository) Save(ctx context.Context, c *domain.SwarmCl
 			return fmt.Errorf("encrypt worker_token: %w", err)
 		}
 	}
+	if c.HetznerAPIKey != "" {
+		model.HetznerAPIKey, err = emailcrypto.EncryptPassword(r.encKey, []byte(c.HetznerAPIKey))
+		if err != nil {
+			return fmt.Errorf("encrypt hetzner_api_key: %w", err)
+		}
+	}
+	if len(c.SSHPrivateKey) > 0 {
+		model.SSHPrivateKey, err = emailcrypto.EncryptPassword(r.encKey, c.SSHPrivateKey)
+		if err != nil {
+			return fmt.Errorf("encrypt ssh_private_key: %w", err)
+		}
+	}
 	return r.db.WriteTX(ctx, func(tx *gormsqlite.Tx) error {
 		return tx.Save(model).Error
 	})
@@ -89,7 +101,6 @@ func (r *GormSwarmClusterRepository) Delete(ctx context.Context, id string) erro
 
 func (r *GormSwarmClusterRepository) decryptCluster(m *SwarmClusterModel) (*domain.SwarmCluster, error) {
 	c := toSwarmClusterDomain(m)
-	var err error
 	if len(m.WgmeshKey) > 0 {
 		dec, err := emailcrypto.DecryptPassword(r.encKey, m.WgmeshKey)
 		if err != nil {
@@ -111,7 +122,20 @@ func (r *GormSwarmClusterRepository) decryptCluster(m *SwarmClusterModel) (*doma
 		}
 		c.WorkerToken = string(dec)
 	}
-	_ = err
+	if len(m.HetznerAPIKey) > 0 {
+		dec, err := emailcrypto.DecryptPassword(r.encKey, m.HetznerAPIKey)
+		if err != nil {
+			return nil, fmt.Errorf("decrypt hetzner_api_key for cluster %s: %w", m.ID, err)
+		}
+		c.HetznerAPIKey = string(dec)
+	}
+	if len(m.SSHPrivateKey) > 0 {
+		dec, err := emailcrypto.DecryptPassword(r.encKey, m.SSHPrivateKey)
+		if err != nil {
+			return nil, fmt.Errorf("decrypt ssh_private_key for cluster %s: %w", m.ID, err)
+		}
+		c.SSHPrivateKey = dec
+	}
 	return c, nil
 }
 

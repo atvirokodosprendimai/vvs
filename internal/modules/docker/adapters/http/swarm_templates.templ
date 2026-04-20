@@ -228,7 +228,7 @@ templ SwarmClusterImportPage() {
 
 templ SwarmClusterDetailPage(cluster queries.SwarmClusterReadModel, nodes []queries.SwarmNodeReadModel, networks []queries.SwarmNetworkReadModel, stacks []queries.SwarmStackReadModel) {
 	@templates.Layout("Cluster: " + cluster.Name) {
-		<div class="p-6 space-y-6">
+		<div class="p-6 space-y-6" data-signals='{"_hetznerformopen":false}'>
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-3">
 					<a href="/swarm/clusters" class="text-neutral-400 hover:text-neutral-200">← Clusters</a>
@@ -252,8 +252,22 @@ templ SwarmClusterDetailPage(cluster queries.SwarmClusterReadModel, nodes []quer
 			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
 				<div class="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
 					<h2 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Nodes</h2>
-					<a href={ templ.SafeURL("/swarm/nodes/new?cluster=" + cluster.ID) } class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1 rounded text-xs font-medium">+ Add Node</a>
+					<div class="flex gap-2">
+						if cluster.HasHetzner {
+							<button
+								type="button"
+								data-on:click="$_hetznerFormOpen = !$_hetznerFormOpen"
+								class="bg-neutral-700 hover:bg-neutral-600 text-neutral-200 px-3 py-1 rounded text-xs font-medium"
+							>⚡ Order via Hetzner</button>
+						} else {
+							<a href={ templ.SafeURL("/swarm/clusters/" + cluster.ID + "/hetzner") } class="bg-neutral-700 hover:bg-neutral-600 text-neutral-500 px-3 py-1 rounded text-xs font-medium" title="Configure Hetzner to enable auto-provisioning">Configure Hetzner</a>
+						}
+						<a href={ templ.SafeURL("/swarm/nodes/new?cluster=" + cluster.ID) } class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1 rounded text-xs font-medium">+ Add Node</a>
+					</div>
 				</div>
+				if cluster.HasHetzner {
+					@SwarmHetznerOrderPanel(cluster.ID)
+				}
 				@SwarmNodeTable(nodes, cluster.ID)
 			</div>
 
@@ -750,6 +764,122 @@ func swarmStackFormSignals(clusterID string, stack *queries.SwarmStackReadModel)
 		clusterID = stack.ClusterID
 	}
 	return fmt.Sprintf(`{"name":%q,"clusterid":%q,"composeyaml":%q}`, name, clusterID, composeYAML)
+}
+
+// ── Hetzner order panel (inline on cluster detail) ────────────────────────────
+
+templ SwarmHetznerOrderPanel(clusterID string) {
+	<div
+		data-show="$_hetznerformopen"
+		style="display:none"
+		class="border-b border-neutral-800 bg-neutral-950 px-4 py-4"
+		data-signals={ fmt.Sprintf(`{"hetzner_name":"","hetzner_servertype":"cx22","hetzner_location":"nbg1","hetzner_image":"ubuntu-24.04","hetzner_role":"worker","hetzner_clusterid":%q}`, clusterID) }
+	>
+		<h3 class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Order Hetzner VPS</h3>
+		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+			<div class="flex flex-col gap-1">
+				<label class="text-xs text-neutral-500">Node Name *</label>
+				<input type="text" data-bind:hetzner_name placeholder="node-03" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500"/>
+			</div>
+			<div class="flex flex-col gap-1">
+				<label class="text-xs text-neutral-500">Server Type</label>
+				<select data-bind:hetzner_servertype class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500">
+					<option value="cx22">cx22 (2 vCPU, 4 GB)</option>
+					<option value="cx32">cx32 (4 vCPU, 8 GB)</option>
+					<option value="cx42">cx42 (8 vCPU, 16 GB)</option>
+					<option value="cx52">cx52 (16 vCPU, 32 GB)</option>
+				</select>
+			</div>
+			<div class="flex flex-col gap-1">
+				<label class="text-xs text-neutral-500">Location</label>
+				<select data-bind:hetzner_location class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500">
+					<option value="nbg1">Nuremberg (nbg1)</option>
+					<option value="fsn1">Falkenstein (fsn1)</option>
+					<option value="hel1">Helsinki (hel1)</option>
+					<option value="ash">Ashburn (ash)</option>
+					<option value="hil">Hillsboro (hil)</option>
+					<option value="sin">Singapore (sin)</option>
+				</select>
+			</div>
+			<div class="flex flex-col gap-1">
+				<label class="text-xs text-neutral-500">Image</label>
+				<select data-bind:hetzner_image class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500">
+					<option value="ubuntu-24.04">Ubuntu 24.04</option>
+					<option value="ubuntu-22.04">Ubuntu 22.04</option>
+					<option value="debian-12">Debian 12</option>
+				</select>
+			</div>
+			<div class="flex flex-col gap-1">
+				<label class="text-xs text-neutral-500">Role</label>
+				<select data-bind:hetzner_role class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500">
+					<option value="worker">Worker</option>
+					<option value="manager">Manager</option>
+				</select>
+			</div>
+			<div class="flex flex-col gap-1 justify-end">
+				<button
+					type="button"
+					data-on:click={ "@post('/api/swarm/clusters/" + clusterID + "/order-hetzner')" }
+					class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-1.5 rounded text-sm font-medium"
+				>Order &amp; Provision</button>
+			</div>
+		</div>
+		<div id="swarm-hetzner-progress" class="mt-3 text-xs text-neutral-400 font-mono"></div>
+		<div id="swarm-form-hetzner-error" class="mt-2"></div>
+	</div>
+}
+
+// ── Hetzner config page ────────────────────────────────────────────────────────
+
+templ SwarmClusterHetznerConfigPage(cluster queries.SwarmClusterReadModel) {
+	@templates.Layout("Hetzner Config — " + cluster.Name) {
+		<div class="p-6 max-w-2xl space-y-4">
+			<div class="flex items-center gap-3">
+				<a href={ templ.SafeURL("/swarm/clusters/" + cluster.ID) } class="text-neutral-400 hover:text-neutral-200">← { cluster.Name }</a>
+				<h1 class="text-xl font-semibold text-neutral-100">Hetzner Auto-Provisioning</h1>
+			</div>
+			<p class="text-sm text-neutral-400">Configure Hetzner Cloud API access for this cluster. Once configured, you can order and provision nodes with one click.</p>
+			<form
+				class="space-y-4 bg-neutral-900 border border-neutral-800 rounded-lg p-6"
+				data-signals={ fmt.Sprintf(`{"hetzner_apikey":"","hetzner_sshkeyid":"","hetzner_sshprivkey":"","hetzner_sshpubkey":"","hetzner_clusterid":%q}`, cluster.ID) }
+			>
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Hetzner Cloud API Token *</label>
+					<input type="password" data-bind:hetzner_apikey placeholder="••••••••••••••••••••••••••••••••••••••••" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
+					<p class="text-xs text-neutral-500">Read/Write token from Hetzner Cloud Console → Security → API Tokens.</p>
+				</div>
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Hetzner SSH Key ID *</label>
+					<input type="number" data-bind:hetzner_sshkeyid placeholder="123456" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
+					<p class="text-xs text-neutral-500">Numeric ID of the SSH key pre-registered in Hetzner Console → Security → SSH Keys.</p>
+				</div>
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">SSH Private Key (PEM) — for VVS to connect</label>
+					<textarea data-bind:hetzner_sshprivkey rows="8" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono text-xs focus:outline-none focus:border-amber-500"></textarea>
+					<p class="text-xs text-neutral-500">Private key corresponding to the Hetzner SSH key above. Stored encrypted. VVS uses this to SSH into all Hetzner-ordered nodes.</p>
+				</div>
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">SSH Public Key (optional — for reference)</label>
+					<textarea data-bind:hetzner_sshpubkey rows="2" placeholder="ssh-ed25519 AAAA…" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono text-xs focus:outline-none focus:border-amber-500"></textarea>
+					if cluster.SSHPublicKey != "" {
+						<p class="text-xs text-green-500">Current: { cluster.SSHPublicKey[:min(60, len(cluster.SSHPublicKey))] }…</p>
+					}
+				</div>
+				<div id="swarm-form-error"></div>
+				<div class="flex gap-2">
+					<button type="button" data-on:click={ "@post('/api/swarm/clusters/" + cluster.ID + "/hetzner')" } class="bg-amber-600 hover:bg-amber-500 text-white px-5 py-2 rounded text-sm font-medium">
+						Save Hetzner Config
+					</button>
+					<a href={ templ.SafeURL("/swarm/clusters/" + cluster.ID) } class="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 px-5 py-2 rounded text-sm font-medium">Cancel</a>
+				</div>
+			</form>
+		</div>
+	}
+}
+
+// SwarmHetznerProgress renders a progress notice into the hetzner progress div.
+templ SwarmHetznerProgress(msg string) {
+	<div id="swarm-hetzner-progress" class="mt-3 text-xs text-neutral-400 font-mono">{ msg }</div>
 }
 
 // ── Stack detail page ─────────────────────────────────────────────────────────

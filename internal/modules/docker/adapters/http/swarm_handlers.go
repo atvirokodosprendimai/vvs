@@ -15,15 +15,17 @@ import (
 // SwarmHandlers wires all Swarm management endpoints.
 type SwarmHandlers struct {
 	// Cluster commands
-	createCluster *commands.CreateSwarmClusterHandler
-	importCluster *commands.ImportSwarmClusterHandler
-	initSwarm     *commands.InitSwarmHandler
-	deleteCluster *commands.DeleteSwarmClusterHandler
+	createCluster       *commands.CreateSwarmClusterHandler
+	importCluster       *commands.ImportSwarmClusterHandler
+	initSwarm           *commands.InitSwarmHandler
+	deleteCluster       *commands.DeleteSwarmClusterHandler
+	updateHetznerConfig *commands.UpdateClusterHetznerConfigHandler
 	// Node commands
 	createNode    *commands.CreateSwarmNodeHandler
 	provisionNode *commands.ProvisionSwarmNodeHandler
 	addNode       *commands.AddSwarmNodeHandler
 	removeNode    *commands.RemoveSwarmNodeHandler
+	orderHetzner  *commands.OrderHetznerNodeHandler
 	// Network commands
 	createNetwork    *commands.CreateSwarmNetworkHandler
 	deleteNetwork    *commands.DeleteSwarmNetworkHandler
@@ -50,10 +52,12 @@ func NewSwarmHandlers(
 	importCluster *commands.ImportSwarmClusterHandler,
 	initSwarm *commands.InitSwarmHandler,
 	deleteCluster *commands.DeleteSwarmClusterHandler,
+	updateHetznerConfig *commands.UpdateClusterHetznerConfigHandler,
 	provisionNode *commands.ProvisionSwarmNodeHandler,
 	addNode *commands.AddSwarmNodeHandler,
 	removeNode *commands.RemoveSwarmNodeHandler,
 	createNode *commands.CreateSwarmNodeHandler,
+	orderHetzner *commands.OrderHetznerNodeHandler,
 	createNetwork *commands.CreateSwarmNetworkHandler,
 	deleteNetwork *commands.DeleteSwarmNetworkHandler,
 	updateReservedIP *commands.UpdateSwarmNetworkReservedIPsHandler,
@@ -73,7 +77,9 @@ func NewSwarmHandlers(
 	return &SwarmHandlers{
 		createCluster: createCluster, importCluster: importCluster,
 		initSwarm: initSwarm, deleteCluster: deleteCluster,
+		updateHetznerConfig: updateHetznerConfig,
 		createNode: createNode, provisionNode: provisionNode, addNode: addNode, removeNode: removeNode,
+		orderHetzner: orderHetzner,
 		createNetwork: createNetwork, deleteNetwork: deleteNetwork, updateReservedIP: updateReservedIP,
 		deployStack: deployStack, updateStack: updateStack, removeStack: removeStack,
 		listClusters: listClusters, getCluster: getCluster,
@@ -97,6 +103,9 @@ func (h *SwarmHandlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/swarm/clusters/import", h.clusterImportSSE)
 	r.Post("/api/swarm/clusters/{id}/init", h.clusterInitSSE)
 	r.Delete("/api/swarm/clusters/{id}", h.clusterDeleteSSE)
+	r.Get("/swarm/clusters/{id}/hetzner", h.clusterHetznerConfigPage)
+	r.Post("/api/swarm/clusters/{id}/hetzner", h.clusterHetznerConfigSSE)
+	r.Post("/api/swarm/clusters/{id}/order-hetzner", h.clusterOrderHetznerSSE)
 
 	// ── Node pages ─────────────────────────────────────────────────────────────
 	r.Get("/swarm/nodes/new", h.nodeCreatePage)
@@ -266,6 +275,90 @@ func (h *SwarmHandlers) clusterInitSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sse.Redirect("/swarm/clusters/" + clusterID)
+}
+
+// ── Hetzner config handlers ───────────────────────────────────────────────────
+
+func (h *SwarmHandlers) clusterHetznerConfigPage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	cluster, err := h.getCluster.Handle(r.Context(), id)
+	if err != nil {
+		http.Error(w, "cluster not found", http.StatusNotFound)
+		return
+	}
+	SwarmClusterHetznerConfigPage(*cluster).Render(r.Context(), w)
+}
+
+func (h *SwarmHandlers) clusterHetznerConfigSSE(w http.ResponseWriter, r *http.Request) {
+	if !requireAdmin(w, r) {
+		return
+	}
+	id := chi.URLParam(r, "id")
+	var sig struct {
+		APIKey      string `json:"hetzner_apikey"`
+		SSHKeyID    string `json:"hetzner_sshkeyid"`
+		SSHPrivKey  string `json:"hetzner_sshprivkey"`
+		SSHPubKey   string `json:"hetzner_sshpubkey"`
+	}
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+
+	keyID, _ := strconv.Atoi(sig.SSHKeyID)
+	err := h.updateHetznerConfig.Handle(r.Context(), commands.UpdateClusterHetznerConfigCommand{
+		ClusterID:     id,
+		APIKey:        sig.APIKey,
+		SSHKeyID:      keyID,
+		SSHPrivateKey: []byte(sig.SSHPrivKey),
+		SSHPublicKey:  sig.SSHPubKey,
+	})
+	if err != nil {
+		slog.Error("swarm: update hetzner config", "err", err)
+		sse.PatchElementTempl(SwarmFormError(err.Error()))
+		return
+	}
+	sse.Redirect("/swarm/clusters/" + id)
+}
+
+func (h *SwarmHandlers) clusterOrderHetznerSSE(w http.ResponseWriter, r *http.Request) {
+	if !requireAdmin(w, r) {
+		return
+	}
+	clusterID := chi.URLParam(r, "id")
+	var sig struct {
+		Name       string `json:"hetzner_name"`
+		ServerType string `json:"hetzner_servertype"`
+		Location   string `json:"hetzner_location"`
+		Image      string `json:"hetzner_image"`
+		Role       string `json:"hetzner_role"`
+	}
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElementTempl(SwarmHetznerProgress("Starting order…"))
+
+	role := commands.SwarmNodeRoleFromString(sig.Role)
+	handler := h.orderHetzner.WithProgress(func(msg string) {
+		sse.PatchElementTempl(SwarmHetznerProgress(msg))
+	})
+	node, err := handler.Handle(r.Context(), commands.OrderHetznerNodeCommand{
+		ClusterID:  clusterID,
+		Name:       sig.Name,
+		ServerType: sig.ServerType,
+		Location:   sig.Location,
+		Image:      sig.Image,
+		Role:       role,
+	})
+	if err != nil {
+		slog.Error("swarm: order hetzner node", "err", err)
+		sse.PatchElementTempl(SwarmFormError(err.Error()))
+		return
+	}
+	sse.Redirect("/swarm/clusters/" + node.ClusterID)
 }
 
 func (h *SwarmHandlers) clusterDeleteSSE(w http.ResponseWriter, r *http.Request) {

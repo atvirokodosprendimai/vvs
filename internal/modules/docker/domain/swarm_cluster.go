@@ -25,18 +25,25 @@ const (
 )
 
 // SwarmCluster represents a Docker Swarm cluster managed by VVS.
-// WgmeshKey, ManagerToken, WorkerToken are stored AES-256-GCM encrypted at rest.
+// WgmeshKey, ManagerToken, WorkerToken, HetznerAPIKey, SSHPrivateKey are stored AES-256-GCM encrypted at rest.
 type SwarmCluster struct {
-	ID           string
-	Name         string
-	WgmeshKey    string             // shared 32+ char key for all nodes; encrypted at rest
-	ManagerToken string             // docker swarm join-token manager; encrypted at rest
-	WorkerToken  string             // docker swarm join-token worker; encrypted at rest
-	AdvertiseAddr string            // manager node's vpnIP (wgmesh0), set after SwarmInit
-	Notes        string
-	Status       SwarmClusterStatus
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID            string
+	Name          string
+	WgmeshKey     string             // shared 32+ char key for all nodes; encrypted at rest
+	ManagerToken  string             // docker swarm join-token manager; encrypted at rest
+	WorkerToken   string             // docker swarm join-token worker; encrypted at rest
+	AdvertiseAddr string             // manager node's vpnIP (wgmesh0), set after SwarmInit
+	Notes         string
+	Status        SwarmClusterStatus
+
+	// Hetzner auto-provisioning config (all optional)
+	HetznerAPIKey    string // Hetzner Cloud API token; encrypted at rest
+	HetznerSSHKeyID  int    // Hetzner SSH key resource ID (pre-registered in Hetzner Console)
+	SSHPrivateKey    []byte // cluster-level SSH private key (PEM); used for all Hetzner-ordered nodes; encrypted at rest
+	SSHPublicKey     string // corresponding public key (plain text — not secret)
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func NewSwarmCluster(name, wgmeshKey, notes string) (*SwarmCluster, error) {
@@ -70,6 +77,20 @@ func (c *SwarmCluster) SetTokens(managerToken, workerToken, advertiseAddr string
 func (c *SwarmCluster) MarkActive() {
 	c.Status = SwarmClusterActive
 	c.UpdatedAt = time.Now().UTC()
+}
+
+// SetHetznerConfig stores the Hetzner API key, SSH key ID, and cluster-level SSH key pair.
+func (c *SwarmCluster) SetHetznerConfig(apiKey string, sshKeyID int, sshPrivateKey []byte, sshPublicKey string) {
+	c.HetznerAPIKey = apiKey
+	c.HetznerSSHKeyID = sshKeyID
+	c.SSHPrivateKey = sshPrivateKey
+	c.SSHPublicKey = sshPublicKey
+	c.UpdatedAt = time.Now().UTC()
+}
+
+// HasHetzner reports whether this cluster has Hetzner auto-provisioning configured.
+func (c *SwarmCluster) HasHetzner() bool {
+	return c.HetznerAPIKey != "" && c.HetznerSSHKeyID > 0
 }
 
 type SwarmClusterRepository interface {

@@ -159,3 +159,9 @@
 - 2026-04-20 `7fdf644` plan: docker swarm cluster with wgmesh VPN transport
 - 2026-04-20 `98cf01e` chore(swarm): add golang.org/x/crypto/ssh dependency
 - 2026-04-20 `674b658` plan: mark action 1 complete (x/crypto/ssh dep)
+- 2026-04-20 `3638e0a` feat(swarm): Phase 1 — domain entities, migrations, persistence, SSH transport
+- 2026-04-20 `d2df549` plan: Phase 1 complete (actions 2-7)
+- 2026-04-20 `a15af55` feat(swarm): phases 2-5 — commands, queries, templates, handlers, wiring
+- 2026-04-20 `3172074` chore(plan): mark phases 2-5 complete
+- 2026-04-20 `adf41b9` feat(swarm): Generate button for wgmesh key using crypto.getRandomValues
+- 2026-04-20 `6644b86` fix(swarm): lowercase all Datastar signal JSON tags
