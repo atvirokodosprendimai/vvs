@@ -1,6 +1,6 @@
 ---
 tldr: Extend customer portal sessions to 7 days with sliding refresh — magic link stays short-lived, session token issued separately on first login
-status: active
+status: completed
 ---
 
 # Plan: Portal session 7-day sliding window
@@ -29,7 +29,7 @@ Magic link token and session token are the same object. Should be separate.
 
 ## Phases
 
-### Phase 1 — Session token separated from magic link — status: open
+### Phase 1 — Session token separated from magic link — status: completed
 
 **Goal:** First login via magic link issues a 7-day session token. Cookie MaxAge = 7 days.
 
@@ -59,7 +59,7 @@ Magic link token and session token are the same object. Should be separate.
 
 3. [ ] `go build ./...` — verify no compile errors
 
-### Phase 2 — Sliding refresh in requirePortalAuth — status: open
+### Phase 2 — Sliding refresh in requirePortalAuth — status: completed
 
 **Goal:** Every authenticated request refreshes the cookie if the session is past half-TTL.
 
@@ -86,20 +86,17 @@ Magic link token and session token are the same object. Should be separate.
 
 2. [ ] `go test ./internal/modules/portal/...` — confirm existing tests pass
 
-### Phase 3 — Tests + commit — status: open
+### Phase 3 — Tests + commit — status: completed
 
-1. [ ] Add test: `TestPortalAuth_IssuesSessionToken_WithLongTTL`
-   - Magic link token has 15-min TTL
-   - After `portalAuth`, cookie MaxAge should be ≥ 7 days in seconds (604800)
-   - Session token in repo should have ExpiresAt ~7 days from now
+1. [x] Add test: `TestPortalAuth_IssuesSessionToken_WithLongTTL`
+   - => MaxAge ≥ 604800, session token in repo with ~7-day ExpiresAt ✓
 
-2. [ ] Add test: `TestPortalSession_Refresh_WhenNearExpiry`
-   - Session token with < 3.5 days remaining → `requirePortalAuth` sets new cookie
-   - Session token with > 3.5 days remaining → no new cookie set
+2. [x] Add test: `TestPortalSession_Refresh_WhenNearExpiry` + `TestPortalSession_NoRefresh_WhenFresh`
+   - => Added stubInvoiceLister to fix nil panic on /portal/invoices hit ✓
 
-3. [ ] `go test ./... | grep portal` — all green
+3. [x] `go test ./internal/modules/portal/...` — all green (e09d351)
 
-4. [ ] Commit
+4. [x] Committed — e09d351
 
 ---
 
@@ -127,3 +124,4 @@ go test ./internal/modules/portal/...
 ## Progress Log
 
 - 2026-04-20 08:13 — Plan created. Root cause: portalAuth reuses magic link token as session token. Fix: issue new 7-day token on magic link consumption + sliding refresh.
+- 2026-04-20 — All 3 phases complete. Tests pass. Commits: 2000764 (impl), e09d351 (test fix stub).
