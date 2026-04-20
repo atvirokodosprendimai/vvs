@@ -21,6 +21,7 @@ type CreateIPTVStackCommand struct {
 	WANNetworkName     string
 	OverlayNetworkName string
 	WanIP              string
+	WANInterface       string
 }
 
 type CreateIPTVStackHandler struct {
@@ -43,6 +44,7 @@ func (h *CreateIPTVStackHandler) Handle(ctx context.Context, cmd CreateIPTVStack
 		WANNetworkName:     cmd.WANNetworkName,
 		OverlayNetworkName: cmd.OverlayNetworkName,
 		WanIP:              cmd.WanIP,
+		WANInterface:       cmd.WANInterface,
 		Status:             domain.IPTVStackPending,
 		CreatedAt:          now,
 		UpdatedAt:          now,
@@ -58,11 +60,14 @@ func (h *CreateIPTVStackHandler) Handle(ctx context.Context, cmd CreateIPTVStack
 type UpdateIPTVStackCommand struct {
 	ID                 string
 	Name               string
+	ClusterID          string
+	NodeID             string
 	WANNetworkID       string
 	OverlayNetworkID   string
 	WANNetworkName     string
 	OverlayNetworkName string
 	WanIP              string
+	WANInterface       string
 }
 
 type UpdateIPTVStackHandler struct {
@@ -79,11 +84,14 @@ func (h *UpdateIPTVStackHandler) Handle(ctx context.Context, cmd UpdateIPTVStack
 		return err
 	}
 	s.Name = cmd.Name
+	s.ClusterID = cmd.ClusterID
+	s.NodeID = cmd.NodeID
 	s.WANNetworkID = cmd.WANNetworkID
 	s.OverlayNetworkID = cmd.OverlayNetworkID
 	s.WANNetworkName = cmd.WANNetworkName
 	s.OverlayNetworkName = cmd.OverlayNetworkName
 	s.WanIP = cmd.WanIP
+	s.WANInterface = cmd.WANInterface
 	s.Status = domain.IPTVStackPending
 	s.UpdatedAt = time.Now().UTC()
 	return h.repo.Save(ctx, s)
@@ -105,6 +113,65 @@ func NewDeleteIPTVStackHandler(repo domain.IPTVStackRepository, channelRepo doma
 func (h *DeleteIPTVStackHandler) Handle(ctx context.Context, cmd DeleteIPTVStackCommand) error {
 	_ = h.channelRepo.DeleteByStackID(ctx, cmd.ID) // best-effort cascade
 	return h.repo.Delete(ctx, cmd.ID)
+}
+
+// ── CloneIPTVStack ────────────────────────────────────────────────────────────
+
+type CloneIPTVStackCommand struct {
+	SourceID           string
+	Name               string
+	ClusterID          string
+	NodeID             string
+	WANNetworkID       string
+	OverlayNetworkID   string
+	WANNetworkName     string
+	OverlayNetworkName string
+	WanIP              string
+	WANInterface       string
+}
+
+type CloneIPTVStackHandler struct {
+	stackRepo   domain.IPTVStackRepository
+	channelRepo domain.IPTVStackChannelRepository
+}
+
+func NewCloneIPTVStackHandler(stackRepo domain.IPTVStackRepository, channelRepo domain.IPTVStackChannelRepository) *CloneIPTVStackHandler {
+	return &CloneIPTVStackHandler{stackRepo: stackRepo, channelRepo: channelRepo}
+}
+
+func (h *CloneIPTVStackHandler) Handle(ctx context.Context, cmd CloneIPTVStackCommand) (*domain.IPTVStack, error) {
+	now := time.Now().UTC()
+	newStack := &domain.IPTVStack{
+		ID:                 uuid.Must(uuid.NewV7()).String(),
+		Name:               cmd.Name,
+		ClusterID:          cmd.ClusterID,
+		NodeID:             cmd.NodeID,
+		WANNetworkID:       cmd.WANNetworkID,
+		OverlayNetworkID:   cmd.OverlayNetworkID,
+		WANNetworkName:     cmd.WANNetworkName,
+		OverlayNetworkName: cmd.OverlayNetworkName,
+		WanIP:              cmd.WanIP,
+		WANInterface:       cmd.WANInterface,
+		Status:             domain.IPTVStackPending,
+		CreatedAt:          now,
+		UpdatedAt:          now,
+	}
+	if err := h.stackRepo.Save(ctx, newStack); err != nil {
+		return nil, fmt.Errorf("save cloned stack: %w", err)
+	}
+	// Copy channel assignments from source
+	assignments, err := h.channelRepo.FindByStackID(ctx, cmd.SourceID)
+	if err == nil {
+		for _, sc := range assignments {
+			_ = h.channelRepo.Save(ctx, &domain.IPTVStackChannel{
+				ID:         uuid.Must(uuid.NewV7()).String(),
+				StackID:    newStack.ID,
+				ChannelID:  sc.ChannelID,
+				ProviderID: sc.ProviderID,
+			})
+		}
+	}
+	return newStack, nil
 }
 
 // ── AddChannelToIPTVStack ─────────────────────────────────────────────────────

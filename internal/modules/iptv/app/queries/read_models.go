@@ -83,6 +83,7 @@ type IPTVStackReadModel struct {
 	WANNetworkName     string
 	OverlayNetworkName string
 	WanIP              string
+	WANInterface       string
 	Status             string
 	LastDeployedAt     *time.Time
 	ChannelCount       int

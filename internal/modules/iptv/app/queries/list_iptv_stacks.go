@@ -51,6 +51,7 @@ func (h *ListIPTVStacksHandler) Handle(ctx context.Context) ([]IPTVStackReadMode
 			WANNetworkName:     s.WANNetworkName,
 			OverlayNetworkName: s.OverlayNetworkName,
 			WanIP:              s.WanIP,
+			WANInterface:       s.WANInterface,
 			Status:             string(s.Status),
 			LastDeployedAt:     s.LastDeployedAt,
 			ChannelCount:       len(chs),
