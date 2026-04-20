@@ -456,7 +456,14 @@ func (h *Handlers) serviceStopSSE(w http.ResponseWriter, r *http.Request) {
 	if err := h.stopService.Handle(r.Context(), commands.StopServiceCommand{ID: id}); err != nil {
 		slog.Error("docker: stop service", "err", err)
 		sse.PatchElementTempl(DockerInlineError("docker-service-error-"+id, err.Error()))
+		return
 	}
+	svc, err := h.getService.Handle(r.Context(), id)
+	if err != nil {
+		return
+	}
+	sse.PatchElementTempl(DockerServiceStatusBadge(svc))
+	sse.PatchElementTempl(DockerServiceActions(svc))
 }
 
 func (h *Handlers) serviceStartSSE(w http.ResponseWriter, r *http.Request) {
@@ -468,7 +475,14 @@ func (h *Handlers) serviceStartSSE(w http.ResponseWriter, r *http.Request) {
 	if err := h.startService.Handle(r.Context(), commands.StartServiceCommand{ID: id}); err != nil {
 		slog.Error("docker: start service", "err", err)
 		sse.PatchElementTempl(DockerInlineError("docker-service-error-"+id, err.Error()))
+		return
 	}
+	svc, err := h.getService.Handle(r.Context(), id)
+	if err != nil {
+		return
+	}
+	sse.PatchElementTempl(DockerServiceStatusBadge(svc))
+	sse.PatchElementTempl(DockerServiceActions(svc))
 }
 
 func (h *Handlers) serviceRemoveSSE(w http.ResponseWriter, r *http.Request) {

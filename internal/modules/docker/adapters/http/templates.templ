@@ -457,13 +457,46 @@ func jsonQuote(s string) string {
 
 // ── Service detail page ───────────────────────────────────────────────────────
 
+templ DockerServiceStatusBadge(svc *queries.ServiceReadModel) {
+	<span id={ "docker-service-status-" + svc.ID } class={ serviceStatusClass(svc.Status) }>{ svc.Status }</span>
+}
+
+templ DockerServiceActions(svc *queries.ServiceReadModel) {
+	<div id={ "docker-service-actions-" + svc.ID } class="flex gap-2">
+		if svc.Status == "running" {
+			<button
+				class="px-3 py-1.5 text-sm bg-yellow-700 hover:bg-yellow-600 text-white rounded-md"
+				data-on:click={ "@post('/api/docker/services/" + svc.ID + "/stop')" }
+			>Stop</button>
+		}
+		if svc.Status == "stopped" || svc.Status == "error" {
+			<button
+				class="px-3 py-1.5 text-sm bg-green-700 hover:bg-green-600 text-white rounded-md"
+				data-on:click={ "@post('/api/docker/services/" + svc.ID + "/start')" }
+			>Start</button>
+		}
+		<a
+			href={ templ.SafeURL("/docker/services/" + svc.ID + "/edit") }
+			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded-md"
+		>Edit</a>
+		<a
+			href={ templ.SafeURL("/docker/services/" + svc.ID + "/logs") }
+			class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded-md"
+		>Logs</a>
+		<button
+			class="px-3 py-1.5 text-sm bg-red-800 hover:bg-red-700 text-white rounded-md"
+			data-on:click={ "confirm('Remove service " + svc.Name + " and all containers?') && @delete('/api/docker/services/" + svc.ID + "')" }
+		>Remove</button>
+	</div>
+}
+
 templ DockerServiceDetailPage(svc *queries.ServiceReadModel) {
 	@templates.Layout("Service: " + svc.Name) {
 		<div class="p-6 space-y-6">
 			<div class="flex items-center gap-3">
 				<a href="/docker/services" class="text-neutral-400 hover:text-amber-400 text-sm">← Services</a>
 				<h1 class="text-xl font-semibold text-neutral-100">{ svc.Name }</h1>
-				<span class={ serviceStatusClass(svc.Status) }>{ svc.Status }</span>
+				@DockerServiceStatusBadge(svc)
 			</div>
 			if svc.ErrorMsg != "" {
 				<div class="p-3 bg-red-900/20 border border-red-800 rounded text-red-400 text-sm">{ svc.ErrorMsg }</div>
@@ -474,32 +507,7 @@ templ DockerServiceDetailPage(svc *queries.ServiceReadModel) {
 			</dl>
 			<!-- Action buttons -->
 			<div id={ "docker-service-error-" + svc.ID } style="display:none"></div>
-			<div class="flex gap-2">
-				if svc.Status == "running" {
-					<button
-						class="px-3 py-1.5 text-sm bg-yellow-700 hover:bg-yellow-600 text-white rounded-md"
-						data-on:click={ "@post('/api/docker/services/" + svc.ID + "/stop')" }
-					>Stop</button>
-				}
-				if svc.Status == "stopped" || svc.Status == "error" {
-					<button
-						class="px-3 py-1.5 text-sm bg-green-700 hover:bg-green-600 text-white rounded-md"
-						data-on:click={ "@post('/api/docker/services/" + svc.ID + "/start')" }
-					>Start</button>
-				}
-				<a
-					href={ templ.SafeURL("/docker/services/" + svc.ID + "/edit") }
-					class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded-md"
-				>Edit</a>
-				<a
-					href={ templ.SafeURL("/docker/services/" + svc.ID + "/logs") }
-					class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded-md"
-				>Logs</a>
-				<button
-					class="px-3 py-1.5 text-sm bg-red-800 hover:bg-red-700 text-white rounded-md"
-					data-on:click={ "confirm('Remove service " + svc.Name + " and all containers?') && @delete('/api/docker/services/" + svc.ID + "')" }
-				>Remove</button>
-			</div>
+			@DockerServiceActions(svc)
 			<!-- Containers -->
 			<div>
 				<h2 class="text-sm font-semibold text-neutral-300 mb-3">Containers</h2>
