@@ -818,16 +818,24 @@ templ SwarmHetznerOrderPanel(clusterID string) {
 					</optgroup>
 				</select>
 			</div>
-			<div class="flex flex-col gap-1">
+			<div
+				class="flex flex-col gap-1"
+				data-effect="$hetzner_servertype.startsWith('cax') && !['nbg1','fsn1','hel1'].includes($hetzner_location) && ($hetzner_location = 'nbg1')"
+			>
 				<label class="text-xs text-neutral-500">Location</label>
 				<select data-bind:hetzner_location class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500">
-					<option value="nbg1">Nuremberg (nbg1)</option>
-					<option value="fsn1">Falkenstein (fsn1)</option>
-					<option value="hel1">Helsinki (hel1)</option>
-					<option value="ash">Ashburn (ash)</option>
-					<option value="hil">Hillsboro (hil)</option>
-					<option value="sin">Singapore (sin)</option>
+					<optgroup label="EU">
+						<option value="nbg1">Nuremberg (nbg1)</option>
+						<option value="fsn1">Falkenstein (fsn1)</option>
+						<option value="hel1">Helsinki (hel1)</option>
+					</optgroup>
+					<optgroup label="US / Asia (x86 only)">
+						<option value="ash">Ashburn (ash)</option>
+						<option value="hil">Hillsboro (hil)</option>
+						<option value="sin">Singapore (sin)</option>
+					</optgroup>
 				</select>
+				<span data-show="$hetzner_servertype.startsWith('cax')" style="display:none" class="text-xs text-amber-500">ARM available in EU only</span>
 			</div>
 			<div class="flex flex-col gap-1">
 				<label class="text-xs text-neutral-500">Image</label>
