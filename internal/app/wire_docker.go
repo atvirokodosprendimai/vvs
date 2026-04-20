@@ -86,8 +86,8 @@ func wireDocker(
 	getSwarmNodeQuery := dockerqueries.NewGetSwarmNodeHandler(swarmNodeRepo)
 	listNetworksQuery := dockerqueries.NewListSwarmNetworksHandler(networkRepo)
 	getNetworkQuery := dockerqueries.NewGetSwarmNetworkHandler(networkRepo)
-	listStacksQuery := dockerqueries.NewListSwarmStacksHandler(stackRepo)
-	getStackQuery := dockerqueries.NewGetSwarmStackHandler(stackRepo)
+	listStacksQuery := dockerqueries.NewListSwarmStacksHandler(stackRepo, swarmNodeRepo)
+	getStackQuery := dockerqueries.NewGetSwarmStackHandler(stackRepo, swarmNodeRepo)
 
 	var routes infrahttp.ModuleRoutes
 	var swarmRoutes infrahttp.ModuleRoutes
