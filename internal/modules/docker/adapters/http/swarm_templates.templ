@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/adapters/hetzner"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/app/queries"
 )
 
@@ -792,7 +793,8 @@ templ SwarmHetznerOrderPanel(clusterID string) {
 		data-show="$_hetznerformopen"
 		style="display:none"
 		class="border-b border-neutral-800 bg-neutral-950 px-4 py-4"
-		data-signals={ fmt.Sprintf(`{"hetzner_name":"","hetzner_servertype":"cpx11","hetzner_location":"nbg1","hetzner_image":"ubuntu-24.04","hetzner_role":"worker","hetzner_clusterid":%q}`, clusterID) }
+		data-signals={ fmt.Sprintf(`{"hetzner_name":"","hetzner_servertype":"","hetzner_location":"","hetzner_image":"ubuntu-24.04","hetzner_role":"worker","hetzner_clusterid":%q,"_hetzner_opts_loaded":false}`, clusterID) }
+		data-effect={ fmt.Sprintf("$_hetznerformopen && !$_hetzner_opts_loaded && @get('/api/swarm/clusters/%s/hetzner-options')", clusterID) }
 	>
 		<h3 class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-3">Order Hetzner VPS</h3>
 		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -802,41 +804,14 @@ templ SwarmHetznerOrderPanel(clusterID string) {
 			</div>
 			<div class="flex flex-col gap-1">
 				<label class="text-xs text-neutral-500">Server Type</label>
-				<select data-bind:hetzner_servertype class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500">
-					<optgroup label="AMD (cpx)">
-						<option value="cpx11">cpx11 (2 vCPU, 2 GB)</option>
-						<option value="cpx21">cpx21 (3 vCPU, 4 GB)</option>
-						<option value="cpx31">cpx31 (4 vCPU, 8 GB)</option>
-						<option value="cpx41">cpx41 (8 vCPU, 16 GB)</option>
-						<option value="cpx51">cpx51 (16 vCPU, 32 GB)</option>
-					</optgroup>
-					<optgroup label="ARM (cax)">
-						<option value="cax11">cax11 (2 vCPU, 4 GB)</option>
-						<option value="cax21">cax21 (4 vCPU, 8 GB)</option>
-						<option value="cax31">cax31 (8 vCPU, 16 GB)</option>
-						<option value="cax41">cax41 (16 vCPU, 32 GB)</option>
-					</optgroup>
-				</select>
+				<input type="text" data-bind:hetzner_servertype list="hetzner-server-types" placeholder="loading…" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm font-mono focus:outline-none focus:border-amber-500"/>
 			</div>
-			<div
-				class="flex flex-col gap-1"
-				data-effect="$hetzner_servertype.startsWith('cax') && !['nbg1','fsn1','hel1'].includes($hetzner_location) && ($hetzner_location = 'nbg1')"
-			>
+			<div class="flex flex-col gap-1">
 				<label class="text-xs text-neutral-500">Location</label>
-				<select data-bind:hetzner_location class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500">
-					<optgroup label="EU">
-						<option value="nbg1">Nuremberg (nbg1)</option>
-						<option value="fsn1">Falkenstein (fsn1)</option>
-						<option value="hel1">Helsinki (hel1)</option>
-					</optgroup>
-					<optgroup label="US / Asia (x86 only)">
-						<option value="ash">Ashburn (ash)</option>
-						<option value="hil">Hillsboro (hil)</option>
-						<option value="sin">Singapore (sin)</option>
-					</optgroup>
-				</select>
-				<span data-show="$hetzner_servertype.startsWith('cax')" style="display:none" class="text-xs text-amber-500">ARM available in EU only</span>
+				<input type="text" data-bind:hetzner_location list="hetzner-locations" placeholder="loading…" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm font-mono focus:outline-none focus:border-amber-500"/>
 			</div>
+			<datalist id="hetzner-server-types"></datalist>
+			<datalist id="hetzner-locations"></datalist>
 			<div class="flex flex-col gap-1">
 				<label class="text-xs text-neutral-500">Image</label>
 				<select data-bind:hetzner_image class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-amber-500">
@@ -974,4 +949,19 @@ templ SwarmStackDetailPage(stack queries.SwarmStackReadModel) {
 			</div>
 		</div>
 	}
+}
+
+// ── Hetzner options datalist (patched via SSE when order panel opens) ─────────
+
+templ SwarmHetznerOptions(serverTypes []hetzner.ServerType, locations []hetzner.Location) {
+	<datalist id="hetzner-server-types">
+		for _, t := range serverTypes {
+			<option value={ t.Name }>{ fmt.Sprintf("%s — %d vCPU %.0f GB RAM", t.Name, t.Cores, t.Memory) }</option>
+		}
+	</datalist>
+	<datalist id="hetzner-locations">
+		for _, l := range locations {
+			<option value={ l.Name }>{ fmt.Sprintf("%s (%s)", l.Description, l.Country) }</option>
+		}
+	</datalist>
 }
