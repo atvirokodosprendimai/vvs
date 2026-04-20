@@ -600,7 +600,7 @@ func SwarmClusterDetailPage(cluster queries.SwarmClusterReadModel, nodes []queri
 				return templ_7745c5c3_Err
 			}
 			if cluster.HasHetzner {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<button type=\"button\" data-on:click=\"$_hetznerFormOpen = !$_hetznerFormOpen\" class=\"bg-neutral-700 hover:bg-neutral-600 text-neutral-200 px-3 py-1 rounded text-xs font-medium\">⚡ Order via Hetzner</button> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<button type=\"button\" data-on:click=\"$_hetznerformopen = !$_hetznerformopen\" class=\"bg-neutral-700 hover:bg-neutral-600 text-neutral-200 px-3 py-1 rounded text-xs font-medium\">⚡ Order via Hetzner</button> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
