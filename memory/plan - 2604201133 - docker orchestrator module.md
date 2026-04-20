@@ -8,7 +8,7 @@ status: active
 ## Context
 
 - Spec: [[spec - architecture - system design and key decisions]] — hexagonal arch, single binary, NATS events, SSE frontend
-- No spec exists yet for this feature → first action creates it
+- Spec: [[spec - docker - multi-node orchestrator with compose yaml and live logs]]
 - Reference: uncloud.run (lightweight Docker management), Coolify.io (compose-based PaaS UI)
 - Go libraries: `github.com/docker/docker/client`, `github.com/compose-spec/compose-go/v2`
 
@@ -24,70 +24,65 @@ status: active
 
 ## Phases
 
-### Phase 1 — Spec + Domain — status: open
+### Phase 1 — Spec + Domain — status: active
 
-1. [ ] `/eidos:spec docker - multi-node docker orchestrator with compose yaml and live logs`
+1. [x] `/eidos:spec docker - multi-node docker orchestrator with compose yaml and live logs`
    - cover: DockerNode entity, Service entity, lifecycle states, log streaming model, credential encryption, remote vs local node distinction
+   - => [[spec - docker - multi-node orchestrator with compose yaml and live logs]] created (08cca1f)
 
-2. [ ] Domain: `DockerNode` entity
-   - file: `internal/modules/docker/domain/node.go`
-   - fields: id UUID, name string, host string (`unix:///var/run/docker.sock` or `tcp://host:2376`), tlsCert/tlsKey/tlsCA []byte (encrypted), isLocal bool, createdAt/updatedAt
-   - `NewDockerNode(name, host string, isLocal bool)` with validation
-   - `DockerNodeRepository`: Save, FindByID, FindAll, Delete
+2. [x] Domain: `DockerNode` entity
+   - => `internal/modules/docker/domain/node.go`
+   - => `NewDockerNode(name, host, isLocal)` — local auto-sets host to unix socket
+   - => `Update(...)` only replaces TLS fields if non-empty (partial update safe)
+   - => `DockerNodeRepository` interface
 
-3. [ ] Domain: `DockerService` entity
-   - file: `internal/modules/docker/domain/service.go`
-   - fields: id UUID, nodeID string, name string, composeYAML string, status (deploying/running/stopped/error/removing), errorMsg string, createdAt/updatedAt
-   - status transitions: `Deploy()`, `MarkRunning()`, `MarkStopped()`, `MarkError(msg)`, `MarkRemoving()`
-   - `DockerServiceRepository`: Save, FindByID, FindAll, FindByNodeID, Delete
+3. [x] Domain: `DockerService` entity
+   - => `internal/modules/docker/domain/service.go`
+   - => `ServiceStatus` typed const: deploying/running/stopped/error/removing
+   - => `MarkRunning/MarkStopped/MarkError/MarkRemoving` transitions
+   - => `UpdateYAML` resets status to deploying (re-deploy path)
 
-4. [ ] Migrations: `docker/migrations/001_create_docker_nodes.sql` + `002_create_docker_services.sql`
-   - `docker_nodes(id, name, host, tls_cert, tls_key, tls_ca, is_local, created_at, updated_at)`
-   - `docker_services(id, node_id, name, compose_yaml, status, error_msg, created_at, updated_at)`
-   - `embed.go` for migrations
+4. [x] Migrations: `001_create_docker_nodes.sql` + `002_create_docker_services.sql` + `embed.go`
 
-5. [ ] Persistence: `GormDockerNodeRepository` + `GormDockerServiceRepository`
-   - file: `internal/modules/docker/adapters/persistence/gorm_repositories.go`
-   - `DockerNodeModel` + `DockerServiceModel` in `models.go`
-   - Node: AES-256 encrypt tls_cert/tls_key/tls_ca before Save, decrypt on load (use existing enc key pattern)
+5. [x] Persistence: `GormDockerNodeRepository` + `GormDockerServiceRepository`
+   - => `internal/modules/docker/adapters/persistence/`
+   - => TLS cert/key/CA encrypted via `emailcrypto.EncryptPassword` (same pattern as proxmox)
+   - => partial encrypt: only encrypt non-empty fields on Save
 
-6. [ ] NATS subjects: add to `internal/shared/events/subjects.go`
-   ```
-   DockerNodeAll       = "isp.docker.node.all"
-   DockerServiceAll    = "isp.docker.service.all"
-   DockerServiceStatus = "isp.docker.service.status"
-   DockerLogsLine      = "isp.docker.logs.%s"          // containerID — use Format()
-   ```
+6. [x] NATS subjects: added to `internal/shared/events/subjects.go`
+   - => DockerNodeAll/Created/Updated/Deleted, DockerServiceAll/Deployed/StatusChanged/Removed, DockerLogsLine (%s format)
 
-### Phase 2 — Docker Client Adapter — status: open
+### Phase 2 — Docker Client Adapter — status: completed
 
-7. [ ] Docker client port (interface)
-   - file: `internal/modules/docker/domain/docker_client.go`
-   - `DockerClient` interface: `Ping(ctx) error`, `Deploy(ctx, composeYAML string) error`, `ListContainers(ctx) ([]ContainerInfo, error)`, `StartContainer(ctx, id string) error`, `StopContainer(ctx, id string) error`, `RemoveContainer(ctx, id string) error`, `StreamLogs(ctx, containerID string) (io.ReadCloser, error)`
-   - `ContainerInfo{ID, Name, Image, Status, State string, Ports []string}`
+7. [x] Docker client port (interface)
+   - => `internal/modules/docker/domain/docker_client.go`
+   - => `DockerClient` + `DockerClientFactory` interfaces
+   - => `ContainerInfo{ID, Name, Image, Status, State, Ports}`
+   - => `RemoveContainers(projectName)` removes all containers for a compose project
 
-8. [ ] Docker client implementation
-   - file: `internal/modules/docker/adapters/docker/client.go`
-   - `type Client struct { inner *dockerclient.Client }`
-   - `NewClient(host string, tlsCert, tlsKey, tlsCA []byte) (*Client, error)`
-     - local: `dockerclient.NewClientWithOpts(client.WithHost("unix:///var/run/docker.sock"))`
-     - remote TLS: `client.WithTLSClientConfig(caFile, certFile, keyFile)` + `client.WithHost(host)`
-   - `Deploy`: parse compose YAML with `compose-go`, create networks → volumes → containers in dependency order
-   - `StreamLogs`: `ContainerLogs(ctx, id, types.ContainerLogsOptions{ShowStdout: true, ShowStderr: true, Follow: true})`
+8. [x] Docker client implementation
+   - => `internal/modules/docker/adapters/dockerclient/client.go`
+   - => `Factory.ForNode(node)` builds client from domain node (no encKey leakage)
+   - => TLS from PEM bytes via `tls.X509KeyPair` + custom `http.Transport` (no temp files)
+   - => `Deploy`: compose-go `loader.LoadWithContext` → `graph.InDependencyOrder` → NetworkCreate → VolumeCreate → ContainerCreate+Start
+   - => `External` fields: `bool(netCfg.External)` not `.External.External` (compose-go v2 External is a bool type)
+   - => `ReadMultiplexLine` helper strips Docker 8-byte multiplex frame header from log stream
 
-9. [ ] Commands: `CreateNodeCmd`, `UpdateNodeCmd`, `DeleteNodeCmd`, `DeployServiceCmd`, `StopServiceCmd`, `StartServiceCmd`, `RemoveServiceCmd`
-   - file: `internal/modules/docker/app/commands/`
-   - `DeployServiceCmd`: get node → build docker client → call `client.Deploy()` → save service status=running → publish `DockerServiceAll`
-   - All node mutations publish `DockerNodeAll`
+9. [x] Commands: node_commands.go + service_commands.go
+   - => `internal/modules/docker/app/commands/`
+   - => `DeployServiceHandler` saves status=deploying first, then deploys, then updates to running/error
+   - => DeleteNode checks for active services first (ErrNodeHasServices)
+   - => RemoveService: marks removing → removes containers → deletes DB record
 
-10. [ ] Log streamer service
-    - file: `internal/modules/docker/app/services/log_streamer.go`
-    - `LogStreamer{natsPub, dockerClientFactory}`
-    - `Stream(ctx, nodeID, containerID string)` — goroutine: tails logs line by line, publishes `isp.docker.logs.<containerID>` per line
-    - goroutine exits on ctx cancel
+10. [x] Log streamer service
+    - => `internal/modules/docker/app/services/log_streamer.go`
+    - => `Stream(ctx, node, containerID)` spawns goroutine; exits on context cancel
+    - => uses `ReadMultiplexLine` to strip Docker multiplex header
 
-11. [ ] Queries: `ListNodesHandler`, `GetNodeHandler`, `ListServicesHandler`, `GetServiceHandler`, `ListContainersHandler(nodeID)`
-    - file: `internal/modules/docker/app/queries/`
+11. [x] Queries: `ListNodesHandler`, `GetNodeHandler`, `ListServicesHandler`, `GetServiceHandler`
+    - => `internal/modules/docker/app/queries/queries.go`
+    - => `NodeReadModel.HasTLS` = len(TLSCert) > 0 (never exposes raw cert bytes)
+    - => `ServiceReadModel` joins NodeName from node repo
 
 ### Phase 3 — Admin UI: Node Management — status: open
 
@@ -176,3 +171,5 @@ status: active
 ## Progress Log
 
 - **2026-04-20** Plan created
+- **2026-04-20** Phase 1 complete: spec created + domain (node/service/client port) + migrations + persistence + NATS subjects
+- **2026-04-20** Phase 2 complete: docker client adapter (compose-go + docker SDK), log streamer, node/service commands, queries
