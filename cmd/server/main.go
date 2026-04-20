@@ -155,6 +155,11 @@ func serveCommand() *cli.Command {
 				Sources: cli.EnvVars("VVS_PROXMOX_ENC_KEY"),
 			},
 			&cli.StringFlag{
+				Name:    "docker-enc-key",
+				Usage:   "32-byte AES key (hex or raw) for encrypting Docker node TLS credentials (optional)",
+				Sources: cli.EnvVars("VVS_DOCKER_ENC_KEY"),
+			},
+			&cli.StringFlag{
 				Name:    "stripe-secret-key",
 				Usage:   "Stripe secret key (sk_live_... or sk_test_...)",
 				Sources: cli.EnvVars("VVS_STRIPE_SECRET_KEY"),
@@ -251,6 +256,7 @@ func serveCommand() *cli.Command {
 				EmailEncKey:           cmd.String("email-enc-key"),
 				RouterEncKey:          cmd.String("router-enc-key"),
 				ProxmoxEncKey:         cmd.String("proxmox-enc-key"),
+				DockerEncKey:          cmd.String("docker-enc-key"),
 				StripeSecretKey:       cmd.String("stripe-secret-key"),
 				StripeWebhookSecret:   cmd.String("stripe-webhook-secret"),
 				StripePublishableKey:  cmd.String("stripe-publishable-key"),

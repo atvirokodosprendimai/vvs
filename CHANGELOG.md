@@ -146,3 +146,4 @@
 - 2026-04-20 `3be8492` plan(docker): docker orchestrator module — multi-node, compose YAML, live logs
 - 2026-04-20 `08cca1f` spec(docker): multi-node docker orchestrator with compose YAML and live logs
 - 2026-04-20 `3a800e7` feat(docker): Phase 1 — domain, migrations, persistence, NATS subjects
+- 2026-04-20 `f0e087b` feat(docker): Phase 2 — docker client adapter, log streamer, commands, queries
