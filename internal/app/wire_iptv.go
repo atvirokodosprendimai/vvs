@@ -51,7 +51,58 @@ func (a *swarmNodeSSHAdapter) FindByID(ctx context.Context, id string) (*iptvhtt
 	}, nil
 }
 
-func wireIPTV(gdb *gormsqlite.DB, swarmNodes *dockerpersistence.GormSwarmNodeRepository) *iptvWired {
+// swarmClustersAdapter implements iptvhttp.SwarmClustersLookup.
+type swarmClustersAdapter struct {
+	repo *dockerpersistence.GormSwarmClusterRepository
+}
+
+func (a *swarmClustersAdapter) FindAll(ctx context.Context) ([]iptvhttp.ClusterOption, error) {
+	clusters, err := a.repo.FindAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]iptvhttp.ClusterOption, len(clusters))
+	for i, c := range clusters {
+		out[i] = iptvhttp.ClusterOption{ID: c.ID, Name: c.Name}
+	}
+	return out, nil
+}
+
+// swarmNodesLookupAdapter implements iptvhttp.SwarmNodesLookup.
+type swarmNodesLookupAdapter struct {
+	repo *dockerpersistence.GormSwarmNodeRepository
+}
+
+func (a *swarmNodesLookupAdapter) FindByClusterID(ctx context.Context, clusterID string) ([]iptvhttp.NodeOption, error) {
+	nodes, err := a.repo.FindByClusterID(ctx, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]iptvhttp.NodeOption, len(nodes))
+	for i, n := range nodes {
+		out[i] = iptvhttp.NodeOption{ID: n.ID, Name: n.Name, VpnIP: n.VpnIP}
+	}
+	return out, nil
+}
+
+// swarmNetworksAdapter implements iptvhttp.SwarmNetworksLookup.
+type swarmNetworksAdapter struct {
+	repo *dockerpersistence.GormSwarmNetworkRepository
+}
+
+func (a *swarmNetworksAdapter) FindByClusterID(ctx context.Context, clusterID string) ([]iptvhttp.NetworkOption, error) {
+	nets, err := a.repo.FindByClusterID(ctx, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]iptvhttp.NetworkOption, len(nets))
+	for i, n := range nets {
+		out[i] = iptvhttp.NetworkOption{ID: n.ID, Name: n.Name}
+	}
+	return out, nil
+}
+
+func wireIPTV(gdb *gormsqlite.DB, docker *dockerWired) *iptvWired {
 	channelRepo  := iptvpersistence.NewChannelRepository(gdb)
 	packageRepo  := iptvpersistence.NewPackageRepository(gdb)
 	subRepo      := iptvpersistence.NewSubscriptionRepository(gdb)
@@ -63,8 +114,20 @@ func wireIPTV(gdb *gormsqlite.DB, swarmNodes *dockerpersistence.GormSwarmNodeRep
 	stackChRepo  := iptvpersistence.NewIPTVStackChannelRepository(gdb)
 
 	var nodeLookup iptvhttp.NodeSSHLookup
-	if swarmNodes != nil {
-		nodeLookup = &swarmNodeSSHAdapter{repo: swarmNodes}
+	var clusterLookup iptvhttp.SwarmClustersLookup
+	var nodeSLookup iptvhttp.SwarmNodesLookup
+	var networkLookup iptvhttp.SwarmNetworksLookup
+	if docker != nil {
+		if docker.swarmNodeRepo != nil {
+			nodeLookup = &swarmNodeSSHAdapter{repo: docker.swarmNodeRepo}
+			nodeSLookup = &swarmNodesLookupAdapter{repo: docker.swarmNodeRepo}
+		}
+		if docker.swarmClusterRepo != nil {
+			clusterLookup = &swarmClustersAdapter{repo: docker.swarmClusterRepo}
+		}
+		if docker.swarmNetworkRepo != nil {
+			networkLookup = &swarmNetworksAdapter{repo: docker.swarmNetworkRepo}
+		}
 	}
 
 	routes := iptvhttp.NewIPTVHandlers(
@@ -105,6 +168,9 @@ func wireIPTV(gdb *gormsqlite.DB, swarmNodes *dockerpersistence.GormSwarmNodeRep
 		iptvcommands.NewImportEPGHandler(epgRepo),
 		nodeLookup,
 		stackRepo,
+		clusterLookup,
+		nodeSLookup,
+		networkLookup,
 	)
 
 	log.Printf("module wired: iptv")

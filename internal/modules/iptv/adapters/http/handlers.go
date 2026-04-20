@@ -34,6 +34,34 @@ type stackReader interface {
 	FindByID(ctx context.Context, id string) (*domain.IPTVStack, error)
 }
 
+// ── Cascading select option types ─────────────────────────────────────────────
+
+// ClusterOption is one entry in the cluster select.
+type ClusterOption struct{ ID, Name string }
+
+// NodeOption is one entry in the node select.
+type NodeOption struct{ ID, Name, VpnIP string }
+
+// NetworkOption is one entry in a network select.
+type NetworkOption struct{ ID, Name string }
+
+// ── Cascading select lookup interfaces ───────────────────────────────────────
+
+// SwarmClustersLookup lists all swarm clusters.
+type SwarmClustersLookup interface {
+	FindAll(ctx context.Context) ([]ClusterOption, error)
+}
+
+// SwarmNodesLookup lists swarm nodes filtered by cluster.
+type SwarmNodesLookup interface {
+	FindByClusterID(ctx context.Context, clusterID string) ([]NodeOption, error)
+}
+
+// SwarmNetworksLookup lists swarm networks filtered by cluster.
+type SwarmNetworksLookup interface {
+	FindByClusterID(ctx context.Context, clusterID string) ([]NetworkOption, error)
+}
+
 // IPTVHandlers serves the IPTV admin module routes.
 type IPTVHandlers struct {
 	// Commands
@@ -76,6 +104,10 @@ type IPTVHandlers struct {
 	// Node SSH resolver (cross-module)
 	nodeLookup NodeSSHLookup
 	stackRepo  stackReader
+	// Cascading select lookups (cross-module, optional)
+	swarmClusters SwarmClustersLookup
+	swarmNodes    SwarmNodesLookup
+	swarmNetworks SwarmNetworksLookup
 }
 
 func NewIPTVHandlers(
@@ -113,6 +145,9 @@ func NewIPTVHandlers(
 	importEPG *commands.ImportEPGHandler,
 	nodeLookup NodeSSHLookup,
 	stackRepo stackReader,
+	swarmClusters SwarmClustersLookup,
+	swarmNodes SwarmNodesLookup,
+	swarmNetworks SwarmNetworksLookup,
 ) *IPTVHandlers {
 	return &IPTVHandlers{
 		createChannel:     createChannel,
@@ -149,6 +184,9 @@ func NewIPTVHandlers(
 		importEPG:         importEPG,
 		nodeLookup:        nodeLookup,
 		stackRepo:         stackRepo,
+		swarmClusters:     swarmClusters,
+		swarmNodes:        swarmNodes,
+		swarmNetworks:     swarmNetworks,
 	}
 }
 
@@ -207,6 +245,12 @@ func (h *IPTVHandlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/iptv/stacks/{id}/channels", h.addChannelToStackSSE)
 	r.Delete("/api/iptv/stacks/{id}/channels/{cid}", h.removeChannelFromStackSSE)
 	r.Post("/api/iptv/stacks/{id}/deploy", h.deployStackSSE)
+
+	// Cascading select SSE endpoints
+	r.Get("/sse/iptv/select/clusters", h.selectClustersSSE)
+	r.Get("/sse/iptv/select/cluster-deps", h.selectClusterDepsSSE)
+	r.Get("/sse/iptv/select/channels", h.selectChannelsSSE)
+	r.Get("/sse/iptv/select/channel-providers", h.selectChannelProvidersSSE)
 
 	// EPG
 	r.Post("/api/iptv/epg/import", h.epgImport)
@@ -874,6 +918,70 @@ func (h *IPTVHandlers) patchStackTable(w http.ResponseWriter, r *http.Request, s
 func clearSignals(sse *datastar.ServerSentEventGenerator, vals map[string]any) {
 	b, _ := json.Marshal(vals)
 	sse.PatchSignals(b)
+}
+
+// ── Cascading select SSE ──────────────────────────────────────────────────────
+
+func (h *IPTVHandlers) selectClustersSSE(w http.ResponseWriter, r *http.Request) {
+	sse := datastar.NewSSE(w, r)
+	if h.swarmClusters == nil {
+		sse.PatchElementTempl(IPTVSelectClusters(nil))
+		return
+	}
+	clusters, err := h.swarmClusters.FindAll(r.Context())
+	if err != nil {
+		log.Printf("iptv: selectClusters: %v", err)
+		sse.PatchElementTempl(IPTVSelectClusters(nil))
+		return
+	}
+	sse.PatchElementTempl(IPTVSelectClusters(clusters))
+}
+
+func (h *IPTVHandlers) selectClusterDepsSSE(w http.ResponseWriter, r *http.Request) {
+	var sig struct {
+		ClusterID string `json:"iptv_stack_cluster"`
+	}
+	sse := datastar.NewSSE(w, r)
+	_ = datastar.ReadSignals(r, &sig)
+
+	var nodes []NodeOption
+	var nets []NetworkOption
+	if sig.ClusterID != "" {
+		if h.swarmNodes != nil {
+			nodes, _ = h.swarmNodes.FindByClusterID(r.Context(), sig.ClusterID)
+		}
+		if h.swarmNetworks != nil {
+			nets, _ = h.swarmNetworks.FindByClusterID(r.Context(), sig.ClusterID)
+		}
+	}
+	sse.PatchElementTempl(IPTVSelectNodes(nodes))
+	sse.PatchElementTempl(IPTVSelectWANNetworks(nets))
+	sse.PatchElementTempl(IPTVSelectOverlayNetworks(nets))
+}
+
+func (h *IPTVHandlers) selectChannelsSSE(w http.ResponseWriter, r *http.Request) {
+	channels, err := h.listChannels.Handle(r.Context())
+	sse := datastar.NewSSE(w, r)
+	if err != nil {
+		log.Printf("iptv: selectChannels: %v", err)
+		sse.PatchElementTempl(IPTVSelectChannels(nil))
+		return
+	}
+	sse.PatchElementTempl(IPTVSelectChannels(channels))
+}
+
+func (h *IPTVHandlers) selectChannelProvidersSSE(w http.ResponseWriter, r *http.Request) {
+	var sig struct {
+		ChannelID string `json:"iptv_stack_ch_id"`
+	}
+	sse := datastar.NewSSE(w, r)
+	_ = datastar.ReadSignals(r, &sig)
+
+	var providers []queries.ChannelProviderReadModel
+	if sig.ChannelID != "" {
+		providers, _ = h.listProviders.Handle(r.Context(), sig.ChannelID)
+	}
+	sse.PatchElementTempl(IPTVSelectProviders(providers))
 }
 
 // ── EPG ───────────────────────────────────────────────────────────────────────
