@@ -20,38 +20,42 @@ status: active
    - verify `go build ./...` still passes
    - => upgraded x/crypto v0.49.0 → v0.50.0; build clean
 
-2. [ ] Domain entities: SwarmCluster, SwarmNode
+2. [x] Domain entities: SwarmCluster, SwarmNode
    - `domain/swarm_cluster.go` — SwarmCluster{ID, Name, WgmeshKey, ManagerToken, WorkerToken, Notes, Status}, SwarmClusterRepository interface
    - `domain/swarm_node.go` — SwarmNode{ID, ClusterID, Role, Name, SshHost, SshUser, SshPort, SshKey, VpnIP, SwarmNodeID, Status}, SwarmNodeRepository interface
    - WgmeshKey + tokens AES-encrypted (same pattern as DockerNode TLS creds)
    - Status types as typed consts
+   - => created; SetTokens(), SetVpnIP(), SetSwarmNodeID() helpers
 
-3. [ ] Domain entities: SwarmNetwork, SwarmStack, SwarmRoute
-   - `domain/swarm_network.go` — SwarmNetwork{ID, ClusterID, Name, Driver, Subnet, Gateway, DhcpRangeStart, DhcpRangeEnd, Parent, Options, ReservedIPs, Scope}, ReservedIP{IP, Hostname, Label}, SwarmNetworkRepository
-   - `domain/swarm_stack.go` — SwarmStack{ID, ClusterID, Name, ComposeYAML, Status}, SwarmRoute{ID, StackID, Hostname, Port, StripPrefix}, SwarmStackRepository
+3. [x] Domain entities: SwarmNetwork, SwarmStack, SwarmRoute
+   - `domain/swarm_network.go` — SwarmNetwork with ReservedIP{IP, Hostname, Label}, SwarmNetworkRepository
+   - `domain/swarm_stack.go` — SwarmStack + SwarmRoute + SwarmStackRepository
+   - => created; UpdateReservedIPs(), MarkRunning/Error/Updating() helpers
 
-4. [ ] Domain helpers
-   - `domain/wgmesh.go` — `RenderWgmeshCompose(clusterKey, hostname string) string` (returns compose YAML string)
-   - `domain/traefik_config.go` — `GenerateTraefikConfig(network *SwarmNetwork, stacks []SwarmStack, routes []SwarmRoute) string` (returns traefik-routes.yml content)
-   - `domain/subnet.go` — `SplitSubnet(cidr string) (dhcpStart, dhcpEnd, reservedStart, reservedEnd string, err error)` for auto-calculating the half-split
+4. [x] Domain helpers
+   - `domain/wgmesh.go` — `RenderWgmeshCompose(clusterKey, hostname string) string`
+   - `domain/traefik_config.go` — `GenerateTraefikConfig(network, stacks, routes)` → traefik-routes.yml YAML
+   - `domain/subnet.go` — `SplitSubnet(cidr)` → dhcpStart/End, reservedStart/End
+   - => all created; build clean
 
-5. [ ] Migrations 003–007
-   - `migrations/003_create_swarm_clusters.sql` — id, name, wgmesh_key, manager_token, worker_token, notes, status, created_at, updated_at
-   - `migrations/004_create_swarm_nodes.sql` — id, cluster_id (nullable FK), role, name, ssh_host, ssh_user, ssh_port, ssh_key, vpn_ip, swarm_node_id, status, created_at, updated_at
-   - `migrations/005_create_swarm_networks.sql` — id, cluster_id (nullable), name, driver, subnet, gateway, dhcp_range_start, dhcp_range_end, parent, options (JSON), reserved_ips (JSON), scope, created_at, updated_at
-   - `migrations/006_create_swarm_stacks.sql` — id, cluster_id, name, compose_yaml, status, created_at, updated_at
-   - `migrations/007_create_swarm_routes.sql` — id, stack_id, hostname, port, strip_prefix, created_at
+5. [x] Migrations 003–007
+   - `migrations/003_create_swarm_clusters.sql`
+   - `migrations/004_create_swarm_nodes.sql`
+   - `migrations/005_create_swarm_networks.sql`
+   - `migrations/006_create_swarm_stacks.sql`
+   - `migrations/007_create_swarm_routes.sql`
+   - => all created with goose Up/Down
 
-6. [ ] Persistence: GORM repositories
-   - `adapters/persistence/models.go` — add GORM models: GormSwarmCluster, GormSwarmNode, GormSwarmNetwork, GormSwarmStack, GormSwarmRoute
-   - `adapters/persistence/gorm_swarm_repositories.go` — implement all four repositories; enc/dec of WgmeshKey, tokens, SSH key using encKey
+6. [x] Persistence: GORM repositories
+   - `adapters/persistence/swarm_models.go` — all 5 GORM models with to/from domain funcs
+   - `adapters/persistence/gorm_swarm_repositories.go` — 4 repositories; enc/dec WgmeshKey, tokens, SSH key
+   - => created; JSON marshal for Options/ReservedIPs; build clean
 
-7. [ ] SSH transport adapter
+7. [x] SSH transport adapter
    - `adapters/dockerclient/ssh_client.go`
-   - `NewSSHClient(host, user string, port int, privateKeyPEM []byte) (*Client, error)`
-   - Custom `http.Transport` with SSH dialer using `golang.org/x/crypto/ssh`
-   - Docker SDK: `dockerclient.WithHTTPClient(httpClientWithSSHTransport)`
-   - Key bytes zeroed after dial; no temp files
+   - `NewSSH(host, user, port, pemKey)` → custom http.Transport with SSH dialer via unix socket
+   - `ExecSSH(...)` for provisioning commands (wgmesh0 IP polling)
+   - => created; HostKeyCallback=InsecureIgnoreHostKey (TODO: known_hosts); build clean
 
 ### Phase 2 - Commands: Node provisioning + Swarm init/join - status: open
 
@@ -167,3 +171,4 @@ status: active
 ## Progress Log
 
 - 2026-04-20 13:15 — Action 1: x/crypto/ssh dependency added, build clean
+- 2026-04-20 13:25 — Actions 2-7: Phase 1 complete — domain, migrations, persistence, SSH transport (commit 3638e0a)
