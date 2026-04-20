@@ -125,3 +125,31 @@ func ReadRawBody(r *http.Request) ([]byte, error) {
 	}
 	return body, nil
 }
+
+// ParsedCheckoutEvent holds the decoded data from a checkout.session.completed webhook.
+type ParsedCheckoutEvent struct {
+	SessionID     string
+	Metadata      map[string]string
+	CustomerEmail string
+}
+
+// ParseWebhook validates the webhook signature and decodes checkout.session.completed events.
+// Returns nil (no error) for unrecognised event types — Stripe expects 200 for all events.
+func (c *Client) ParseWebhook(payload []byte, sigHeader string) (*ParsedCheckoutEvent, error) {
+	event, err := webhook.ConstructEvent(payload, sigHeader, c.webhookSecret)
+	if err != nil {
+		return nil, fmt.Errorf("stripe: webhook signature: %w", err)
+	}
+	if event.Type != "checkout.session.completed" {
+		return nil, nil
+	}
+	sessionID, metadata, email, err := ReadCheckoutSessionCompleted(event)
+	if err != nil {
+		return nil, err
+	}
+	return &ParsedCheckoutEvent{
+		SessionID:     sessionID,
+		Metadata:      metadata,
+		CustomerEmail: email,
+	}, nil
+}

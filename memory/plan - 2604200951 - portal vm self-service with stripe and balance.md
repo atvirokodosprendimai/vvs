@@ -32,7 +32,7 @@ Balance shortcut: if customer balance ≥ plan price → deduct immediately, ski
 
 ## Phases
 
-### Phase 1 — VM Plan catalog (admin) — status: open
+### Phase 1 — VM Plan catalog (admin) — status: completed
 
 Admin-configurable preset VM plans: name, description, specs (cores/RAM/disk), monthly price, Proxmox node + template.
 
@@ -66,7 +66,7 @@ Admin-configurable preset VM plans: name, description, specs (cores/RAM/disk), m
 
 8. [ ] Wire: inject `VMPlanRepository` + plan commands/queries into `wire_proxmox.go` and `proxmox/adapters/http/handlers.go`
 
-### Phase 2 — Customer balance ledger — status: open
+### Phase 2 — Customer balance ledger — status: completed
 
 Prepaid credit per customer. Cached balance + append-only ledger for audit. New `billing` module.
 
@@ -108,7 +108,7 @@ Prepaid credit per customer. Cached balance + append-only ledger for audit. New 
    - `billingWired{balanceRepo, topUpCmd, deductCmd, getBalanceQuery}`
    - add to `builder.go` module chain + `allMigrations()`
 
-### Phase 3 — Stripe infrastructure — status: open
+### Phase 3 — Stripe infrastructure — status: completed
 
 Stripe Go SDK + adapter. Used by both core (webhook validation, session creation on behalf of portal) and portal binary.
 
@@ -128,7 +128,7 @@ Stripe Go SDK + adapter. Used by both core (webhook validation, session creation
    - `cmd/server/main.go`: `--stripe-*` CLI flags + `VVS_STRIPE_*` env vars
    - `cmd/portal/main.go`: same 3 flags (portal creates sessions + validates webhooks)
 
-### Phase 4 — NATS RPC bridge extensions — status: open
+### Phase 4 — NATS RPC bridge extensions — status: completed
 
 New subjects so portal binary can request VM plans, balance info, and trigger provisioning/top-up on core.
 
@@ -162,7 +162,7 @@ New subjects so portal binary can request VM plans, balance info, and trigger pr
    - `CompleteBalanceTopup(ctx, customerID string, amountCents int64, stripeSessionID string) error`
    - `BuyVMWithBalance(ctx, customerID, planID string) (vmID string, error)`
 
-### Phase 5 — Stripe webhook handler (portal binary) — status: open
+### Phase 5 — Stripe webhook handler (portal binary) — status: completed
 
 Portal receives and validates Stripe webhooks, dispatches to core.
 
@@ -178,7 +178,7 @@ Portal receives and validates Stripe webhooks, dispatches to core.
 
 2. [ ] Route registered in `RegisterPublicRoutes` (before cookie auth middleware)
 
-### Phase 6 — Portal VM purchase pages — status: open
+### Phase 6 — Portal VM purchase pages — status: completed
 
 1. [ ] Portal page: GET `/portal/plans`
    - `natsClient.ListVMPlans` → render plan cards
@@ -200,7 +200,7 @@ Portal receives and validates Stripe webhooks, dispatches to core.
    - templ: `PortalVMsPage`, `PortalVMTable(vms []VMDTO)`
    - Columns: name, status badge, IP, specs (cores/RAM/disk)
 
-### Phase 7 — Portal balance pages — status: open
+### Phase 7 — Portal balance pages — status: completed
 
 1. [ ] Portal page: GET `/portal/balance`
    - Shows balance in EUR (`balance_cents / 100`)
@@ -213,7 +213,7 @@ Portal receives and validates Stripe webhooks, dispatches to core.
    - Validate: amountCents ∈ [100, 100_000] (€1–€1000)
    - `stripeClient.CreateCheckoutSession` with metadata `{type:balance_topup, customerId, amountCents}` → redirect to Stripe URL
 
-### Phase 8 — Portal nav + final wiring — status: open
+### Phase 8 — Portal nav + final wiring — status: completed
 
 1. [ ] Portal nav links: "My VMs" (`/portal/vms`), "Plans" (`/portal/plans`), "Balance" (`/portal/balance`)
    - Update portal layout template nav section
@@ -254,4 +254,10 @@ Portal receives and validates Stripe webhooks, dispatches to core.
 
 ## Progress Log
 
-<!-- Updated after every completed action -->
+- **2026-04-20** Phases 1–4 complete (previous session): VM plans CRUD, billing balance ledger, Stripe infra, NATS RPC bridge extensions
+- **2026-04-20** Phases 5–8 complete: webhook handler, VM purchase pages, balance pages, nav links, portal binary wiring
+  - `ParsedCheckoutEvent` + `ParseWebhook` added to stripe client
+  - `stripeClient`/`portalVMClient` interfaces + all route handlers in portal http
+  - `PortalVMPlanListPage`, `PortalVMListPage`, `PortalBalancePage`, `PortalCheckoutSuccessPage`, `PortalCheckoutCancelPage` templates
+  - `portalVMClientAdapter` in cmd/portal/main.go converts NATS DTOs → http view types
+  - All Phases 1–8 done; smoke test pending

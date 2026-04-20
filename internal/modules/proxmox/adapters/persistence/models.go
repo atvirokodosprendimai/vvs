@@ -114,3 +114,62 @@ func toVMDomain(m *VMModel) *domain.VirtualMachine {
 		UpdatedAt:  m.UpdatedAt,
 	}
 }
+
+// ── VM Plan model ─────────────────────────────────────────────────────────────
+
+type VMPlanModel struct {
+	ID                    string `gorm:"primaryKey;type:text"`
+	Name                  string `gorm:"type:text;not null"`
+	Description           string `gorm:"type:text;not null;default:''"`
+	Cores                 int    `gorm:"not null"`
+	MemoryMB              int    `gorm:"column:memory_mb;not null"`
+	DiskGB                int    `gorm:"column:disk_gb;not null"`
+	Storage               string `gorm:"type:text;not null;default:'local-lvm'"`
+	TemplateVMID          int    `gorm:"column:template_vmid;not null"`
+	NodeID                string `gorm:"column:node_id;type:text;not null;default:''"`
+	PriceMonthlyEuroCents int64  `gorm:"column:price_monthly_euro_cents;not null;default:0"`
+	Enabled               bool   `gorm:"not null;default:true"`
+	Notes                 string `gorm:"type:text;not null;default:''"`
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+}
+
+func (VMPlanModel) TableName() string { return "vm_plans" }
+
+func toVMPlanModel(p *domain.VMPlan) *VMPlanModel {
+	return &VMPlanModel{
+		ID:                    p.ID,
+		Name:                  p.Name,
+		Description:           p.Description,
+		Cores:                 p.Cores,
+		MemoryMB:              p.MemoryMB,
+		DiskGB:                p.DiskGB,
+		Storage:               p.Storage,
+		TemplateVMID:          p.TemplateVMID,
+		NodeID:                p.NodeID,
+		PriceMonthlyEuroCents: p.PriceMonthlyEuroCents,
+		Enabled:               p.Enabled,
+		Notes:                 p.Notes,
+		CreatedAt:             p.CreatedAt,
+		UpdatedAt:             p.UpdatedAt,
+	}
+}
+
+func toVMPlanDomain(m *VMPlanModel) *domain.VMPlan {
+	return &domain.VMPlan{
+		ID:                    m.ID,
+		Name:                  m.Name,
+		Description:           m.Description,
+		Cores:                 m.Cores,
+		MemoryMB:              m.MemoryMB,
+		DiskGB:                m.DiskGB,
+		Storage:               m.Storage,
+		TemplateVMID:          m.TemplateVMID,
+		NodeID:                m.NodeID,
+		PriceMonthlyEuroCents: m.PriceMonthlyEuroCents,
+		Enabled:               m.Enabled,
+		Notes:                 m.Notes,
+		CreatedAt:             m.CreatedAt,
+		UpdatedAt:             m.UpdatedAt,
+	}
+}

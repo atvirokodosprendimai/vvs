@@ -30,6 +30,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nats-io/nats.go"
 	"github.com/urfave/cli/v3"
+	stripeinfra "github.com/atvirokodosprendimai/vvs/internal/infrastructure/stripe"
 	invoicehttp "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/adapters/http"
 	invoicequeries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
 	portalhttp "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/http"
@@ -138,6 +139,17 @@ func runPortal(ctx context.Context, cmd *cli.Command) error {
 	// portalCustomerReaderAdapter converts BridgeCustomer → PortalCustomer for the HTTP handler.
 	custAdapter := &portalCustomerReaderAdapter{client: client}
 
+	// Stripe client (optional — only configured if keys are provided).
+	var stripe *stripeinfra.Client
+	if sk := cmd.String("stripe-secret-key"); sk != "" {
+		stripe = stripeinfra.New(
+			sk,
+			cmd.String("stripe-webhook-secret"),
+			cmd.String("stripe-publishable-key"),
+		)
+		slog.Info("Stripe configured")
+	}
+
 	// Portal HTTP handler — backed by NATS, no DB.
 	portalHandlers := portalhttp.NewHandlers(
 		client, // domain.PortalTokenRepository
@@ -154,7 +166,11 @@ func runPortal(ctx context.Context, cmd *cli.Command) error {
 		WithBot(client).
 		WithLoginClient(client).
 		WithBaseURL(baseURL).
-		WithSecureCookie(secureCookie)
+		WithSecureCookie(secureCookie).
+		WithVMClient(&portalVMClientAdapter{client: client})
+	if stripe != nil {
+		portalHandlers.WithStripe(stripe)
+	}
 
 	r := chi.NewRouter()
 	r.Use(middleware.RealIP)
@@ -266,3 +282,66 @@ func (a *portalServiceClientAdapter) ListServices(ctx context.Context, customerI
 var _ interface {
 	Handle(context.Context, invoicequeries.ListInvoicesForCustomerQuery) ([]invoicequeries.InvoiceReadModel, error)
 } = (*portalnats.PortalNATSClient)(nil)
+
+// portalVMClientAdapter adapts PortalNATSClient to portalhttp.portalVMClient.
+// It converts nats-layer DTOs (VMPlanDTO, VMDTO) to http-layer view types.
+type portalVMClientAdapter struct {
+	client *portalnats.PortalNATSClient
+}
+
+func (a *portalVMClientAdapter) ListVMPlans(ctx context.Context) ([]portalhttp.VMPlanView, error) {
+	dtos, err := a.client.ListVMPlans(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]portalhttp.VMPlanView, len(dtos))
+	for i, d := range dtos {
+		out[i] = portalhttp.VMPlanView{
+			ID:          d.ID,
+			Name:        d.Name,
+			Description: d.Description,
+			Cores:       d.Cores,
+			RAMMb:       d.MemoryMB,
+			DiskGB:      d.DiskGB,
+			PriceCents:  d.PriceMonthlyEuroCents,
+		}
+	}
+	return out, nil
+}
+
+func (a *portalVMClientAdapter) GetBalance(ctx context.Context, customerID string) (int64, error) {
+	return a.client.GetBalance(ctx, customerID)
+}
+
+func (a *portalVMClientAdapter) ProvisionVM(ctx context.Context, customerID, planID, stripeSessionID string) (string, error) {
+	return a.client.ProvisionVM(ctx, customerID, planID, stripeSessionID)
+}
+
+func (a *portalVMClientAdapter) CompleteBalanceTopup(ctx context.Context, customerID string, amountCents int64, stripeSessionID string) error {
+	return a.client.CompleteBalanceTopup(ctx, customerID, amountCents, stripeSessionID)
+}
+
+func (a *portalVMClientAdapter) BuyVMWithBalance(ctx context.Context, customerID, planID string) (string, error) {
+	return a.client.BuyVMWithBalance(ctx, customerID, planID)
+}
+
+func (a *portalVMClientAdapter) ListCustomerVMs(ctx context.Context, customerID string) ([]portalhttp.VMView, error) {
+	dtos, err := a.client.ListCustomerVMs(ctx, customerID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]portalhttp.VMView, len(dtos))
+	for i, d := range dtos {
+		out[i] = portalhttp.VMView{
+			ID:        d.ID,
+			VMID:      d.VMID,
+			Name:      d.Name,
+			Status:    d.Status,
+			IPAddress: d.IPAddress,
+			Cores:     d.Cores,
+			MemoryMB:  d.MemoryMB,
+			DiskGB:    d.DiskGB,
+		}
+	}
+	return out, nil
+}
