@@ -263,7 +263,8 @@ func parseCompose(ctx context.Context, projectName, yaml string) (*composetypes.
 		ConfigFiles: []composetypes.ConfigFile{
 			{Content: []byte(yaml), Filename: "docker-compose.yml"},
 		},
-		WorkingDir: "/",
+		WorkingDir:  "/",
+		Environment: map[string]string{"COMPOSE_PROJECT_NAME": projectName},
 	}
 	project, err := loader.LoadWithContext(ctx, details, func(o *loader.Options) {
 		o.SkipValidation = false
