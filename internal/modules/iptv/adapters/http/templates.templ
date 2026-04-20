@@ -12,7 +12,7 @@ import (
 templ IPTVChannelListPage() {
 	@templates.Layout("IPTV Channels") {
 		<div
-			data-signals="{_iptvChOpen:false, _iptvChEditOpen:false, iptvChName:'', iptvChLogo:'', iptvChStream:'', iptvChCategory:'', iptvChEpg:''}"
+			data-signals="{_iptvChOpen:false, _iptvChEditOpen:false, iptvChEditId:'', iptvChName:'', iptvChLogo:'', iptvChStream:'', iptvChCategory:'', iptvChEpg:'', iptvChActive:false}"
 		>
 			@templates.PageHeaderRow("IPTV — Channels", "Manage broadcast channels") {
 				@iptvNavLinks("channels")
@@ -56,6 +56,36 @@ templ IPTVChannelListPage() {
 					</div>
 				</div>
 			</div>
+			<!-- Edit modal -->
+			<div
+				data-show="$_iptvChEditOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6">
+					<h2 class="text-neutral-100 font-semibold mb-4">Edit Channel</h2>
+					<div class="flex flex-col gap-3">
+						<input data-bind:iptv-ch-name placeholder="Name" class={ iptvInput() }/>
+						<input data-bind:iptv-ch-logo placeholder="Logo URL" class={ iptvInput() }/>
+						<input data-bind:iptv-ch-stream placeholder="Stream URL" class={ iptvInput() }/>
+						<input data-bind:iptv-ch-category placeholder="Category" class={ iptvInput() }/>
+						<input data-bind:iptv-ch-epg placeholder="EPG Source / tvg-id" class={ iptvInput() }/>
+						<label class="flex items-center gap-2 text-sm text-neutral-300">
+							<input type="checkbox" data-bind:iptv-ch-active class="rounded"/>
+							Active
+						</label>
+					</div>
+					<div id="iptv-form-error"></div>
+					<div class="flex gap-2 mt-4 justify-end">
+						<button type="button" data-on:click="$_iptvChEditOpen = false" class={ iptvCancelBtn() }>Cancel</button>
+						<button
+							type="button"
+							data-on:click="@put('/api/iptv/channels/' + $iptvChEditId)"
+							class={ iptvPrimaryBtn() }
+						>Save</button>
+					</div>
+				</div>
+			</div>
 		</div>
 	}
 }
@@ -95,6 +125,11 @@ templ IPTVChannelTable(channels []queries.ChannelReadModel) {
 									<a href={ templ.SafeURL("/iptv/channels/" + ch.ID) } class="text-xs text-amber-400 hover:text-amber-300 transition-colors">Providers</a>
 									<button
 										type="button"
+										data-on:click={ fmt.Sprintf("$_iptvChEditOpen=true; $iptvChEditId=%s; $iptvChName=%s; $iptvChLogo=%s; $iptvChStream=%s; $iptvChCategory=%s; $iptvChEpg=%s; $iptvChActive=%t", jsStr(ch.ID), jsStr(ch.Name), jsStr(ch.LogoURL), jsStr(ch.StreamURL), jsStr(ch.Category), jsStr(ch.EPGSource), ch.Active) }
+										class="text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+									>Edit</button>
+									<button
+										type="button"
 										data-on:click={ fmt.Sprintf("@delete('/api/iptv/channels/%s')", ch.ID) }
 										class="text-xs text-red-500 hover:text-red-400 transition-colors"
 									>Remove</button>
@@ -113,7 +148,7 @@ templ IPTVChannelTable(channels []queries.ChannelReadModel) {
 templ IPTVPackageListPage() {
 	@templates.Layout("IPTV Packages") {
 		<div
-			data-signals="{_iptvPkgOpen:false, iptvPkgName:'', iptvPkgPrice:'', iptvPkgDesc:''}"
+			data-signals="{_iptvPkgOpen:false, _iptvPkgEditOpen:false, iptvPkgEditId:'', iptvPkgName:'', iptvPkgPrice:'', iptvPkgDesc:''}"
 		>
 			@templates.PageHeaderRow("IPTV — Packages", "Channel bundles for subscribers") {
 				@iptvNavLinks("packages")
@@ -155,6 +190,30 @@ templ IPTVPackageListPage() {
 					</div>
 				</div>
 			</div>
+			<!-- Edit modal -->
+			<div
+				data-show="$_iptvPkgEditOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6">
+					<h2 class="text-neutral-100 font-semibold mb-4">Edit Package</h2>
+					<div class="flex flex-col gap-3">
+						<input data-bind:iptv-pkg-name placeholder="Name" class={ iptvInput() }/>
+						<input data-bind:iptv-pkg-price placeholder="Price (e.g. 9.99)" class={ iptvInput() }/>
+						<input data-bind:iptv-pkg-desc placeholder="Description (optional)" class={ iptvInput() }/>
+					</div>
+					<div id="iptv-form-error"></div>
+					<div class="flex gap-2 mt-4 justify-end">
+						<button type="button" data-on:click="$_iptvPkgEditOpen = false" class={ iptvCancelBtn() }>Cancel</button>
+						<button
+							type="button"
+							data-on:click="@put('/api/iptv/packages/' + $iptvPkgEditId)"
+							class={ iptvPrimaryBtn() }
+						>Save</button>
+					</div>
+				</div>
+			</div>
 		</div>
 	}
 }
@@ -182,7 +241,12 @@ templ IPTVPackageTable(packages []queries.PackageReadModel) {
 								<td class="px-4 py-3 text-amber-400 font-mono text-sm">{ fmtCents(pkg.PriceCents) }</td>
 								<td class="px-4 py-3 text-neutral-400 text-sm">{ fmt.Sprintf("%d", pkg.ChannelCount) }</td>
 								<td class="px-4 py-3 text-neutral-500 text-sm">{ pkg.Description }</td>
-								<td class="px-4 py-3 text-right">
+								<td class="px-4 py-3 text-right flex gap-3 justify-end items-center">
+									<button
+										type="button"
+										data-on:click={ fmt.Sprintf("$_iptvPkgEditOpen=true; $iptvPkgEditId=%s; $iptvPkgName=%s; $iptvPkgPrice=%s; $iptvPkgDesc=%s", jsStr(pkg.ID), jsStr(pkg.Name), jsStr(fmtCentsDecimal(pkg.PriceCents)), jsStr(pkg.Description)) }
+										class="text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+									>Edit</button>
 									<button
 										type="button"
 										data-on:click={ fmt.Sprintf("@delete('/api/iptv/packages/%s')", pkg.ID) }
@@ -203,7 +267,7 @@ templ IPTVPackageTable(packages []queries.PackageReadModel) {
 templ IPTVSubscriptionListPage() {
 	@templates.Layout("IPTV Subscriptions") {
 		<div
-			data-signals="{_iptvSubOpen:false, iptvSubCustomer:'', iptvSubPackage:'', _iptvSubLoaded:false}"
+			data-signals="{_iptvSubOpen:false, iptvSubCustomer:'', iptvSubPackage:'', _iptvSubLoaded:false, _iptvSubEditOpen:false, iptvSubEditId:'', iptvSubEditPkg:'', _iptvSubEditLoaded:false}"
 		>
 			@templates.PageHeaderRow("IPTV — Subscriptions", "Active customer subscriptions") {
 				@iptvNavLinks("subscriptions")
@@ -248,6 +312,31 @@ templ IPTVSubscriptionListPage() {
 					</div>
 				</div>
 			</div>
+			<!-- Edit modal -->
+			<div
+				data-show="$_iptvSubEditOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6">
+					<h2 class="text-neutral-100 font-semibold mb-4">Edit Subscription</h2>
+					<div class="flex flex-col gap-3">
+						<p class="text-xs text-neutral-500">Change the assigned package:</p>
+						<div id="iptv-sel-edit-sub-pkg">
+							<select class={ iptvSelect() } disabled><option>Loading packages...</option></select>
+						</div>
+					</div>
+					<div id="iptv-form-error"></div>
+					<div class="flex gap-2 mt-4 justify-end">
+						<button type="button" data-on:click="$_iptvSubEditOpen = false" class={ iptvCancelBtn() }>Cancel</button>
+						<button
+							type="button"
+							data-on:click="@put('/api/iptv/subscriptions/' + $iptvSubEditId)"
+							class={ iptvPrimaryBtn() }
+						>Save</button>
+					</div>
+				</div>
+			</div>
 		</div>
 	}
 }
@@ -276,6 +365,11 @@ templ IPTVSubscriptionTable(subs []queries.SubscriptionReadModel) {
 								<td class="px-4 py-3">@iptvSubBadge(s.Status)</td>
 								<td class="px-4 py-3 text-neutral-500 text-sm">{ s.StartsAt.Format("2006-01-02") }</td>
 								<td class="px-4 py-3 text-right flex gap-2 justify-end items-center">
+									<button
+										type="button"
+										data-on:click={ fmt.Sprintf("$_iptvSubEditOpen=true; $iptvSubEditId=%s; $_iptvSubEditLoaded || (@get('/sse/iptv/select/sub-edit-pkg'), $_iptvSubEditLoaded = true)", jsStr(s.ID)) }
+										class="text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+									>Edit</button>
 									if s.Status == "active" {
 										<button
 											type="button"
@@ -323,7 +417,7 @@ templ iptvSubBadge(status string) {
 templ IPTVSTBListPage() {
 	@templates.Layout("IPTV STBs") {
 		<div
-			data-signals="{_iptvStbOpen:false, iptvStbMac:'', iptvStbModel:'', iptvStbCustomer:'', iptvStbNotes:'', _iptvStbLoaded:false}"
+			data-signals="{_iptvStbOpen:false, iptvStbMac:'', iptvStbModel:'', iptvStbCustomer:'', iptvStbNotes:'', _iptvStbLoaded:false, _iptvStbEditOpen:false, iptvStbEditId:'', iptvStbEditModel:'', iptvStbEditNotes:''}"
 		>
 			@templates.PageHeaderRow("IPTV — Set-Top Boxes", "Device inventory") {
 				@iptvNavLinks("stbs")
@@ -368,6 +462,29 @@ templ IPTVSTBListPage() {
 					</div>
 				</div>
 			</div>
+			<!-- Edit modal -->
+			<div
+				data-show="$_iptvStbEditOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6">
+					<h2 class="text-neutral-100 font-semibold mb-4">Edit STB</h2>
+					<div class="flex flex-col gap-3">
+						<input data-bind:iptv-stb-edit-model placeholder="Model" class={ iptvInput() }/>
+						<input data-bind:iptv-stb-edit-notes placeholder="Notes (optional)" class={ iptvInput() }/>
+					</div>
+					<div id="iptv-form-error"></div>
+					<div class="flex gap-2 mt-4 justify-end">
+						<button type="button" data-on:click="$_iptvStbEditOpen = false" class={ iptvCancelBtn() }>Cancel</button>
+						<button
+							type="button"
+							data-on:click="@put('/api/iptv/stbs/' + $iptvStbEditId)"
+							class={ iptvPrimaryBtn() }
+						>Save</button>
+					</div>
+				</div>
+			</div>
 		</div>
 	}
 }
@@ -395,7 +512,12 @@ templ IPTVSTBTable(stbs []queries.STBReadModel) {
 								<td class="px-4 py-3 text-neutral-400 text-sm">{ stb.Model }</td>
 								<td class="px-4 py-3 text-neutral-400 font-mono text-xs">{ stb.CustomerID }</td>
 								<td class="px-4 py-3 text-neutral-500 text-sm">{ stb.AssignedAt.Format("2006-01-02") }</td>
-								<td class="px-4 py-3 text-right">
+								<td class="px-4 py-3 text-right flex gap-3 justify-end items-center">
+									<button
+										type="button"
+										data-on:click={ fmt.Sprintf("$_iptvStbEditOpen=true; $iptvStbEditId=%s; $iptvStbEditModel=%s; $iptvStbEditNotes=%s", jsStr(stb.ID), jsStr(stb.Model), jsStr(stb.Notes)) }
+										class="text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+									>Edit</button>
 									<button
 										type="button"
 										data-on:click={ fmt.Sprintf("@delete('/api/iptv/stbs/%s')", stb.ID) }
@@ -416,7 +538,7 @@ templ IPTVSTBTable(stbs []queries.STBReadModel) {
 templ IPTVChannelDetailPage(ch queries.ChannelReadModel) {
 	@templates.Layout("Channel — " + ch.Name) {
 		<div
-			data-signals="{_iptvProvOpen:false, iptvProvName:'', iptvProvUrl:'', iptvProvToken:'', iptvProvType:'internal', iptvProvPriority:'0'}"
+			data-signals="{_iptvProvOpen:false, iptvProvName:'', iptvProvUrl:'', iptvProvToken:'', iptvProvType:'internal', iptvProvPriority:'0', _iptvProvEditOpen:false, iptvProvEditId:'', iptvProvEditActive:false}"
 		>
 			@templates.PageHeaderBack("Channel — "+ch.Name, ch.Category, "/iptv/channels", "Channels") {
 				<button
@@ -444,6 +566,39 @@ templ IPTVChannelDetailPage(ch queries.ChannelReadModel) {
 			>
 				<div id="iptv-provider-table">
 					<div class="text-neutral-600 py-8 text-center text-sm">Loading...</div>
+				</div>
+			</div>
+			<!-- Provider edit modal -->
+			<div
+				data-show="$_iptvProvEditOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6">
+					<h2 class="text-neutral-100 font-semibold mb-4">Edit Provider</h2>
+					<div class="flex flex-col gap-3">
+						<input data-bind:iptv-prov-name placeholder="Provider name" class={ iptvInput() }/>
+						<input data-bind:iptv-prov-url placeholder="URL template" class={ iptvInput() }/>
+						<input data-bind:iptv-prov-token placeholder="Token (optional)" class={ iptvInput() }/>
+						<select data-bind:iptv-prov-type class={ iptvInput() }>
+							<option value="internal">internal (ffmpeg/HLS)</option>
+							<option value="external">external (direct stream)</option>
+						</select>
+						<input data-bind:iptv-prov-priority placeholder="Priority (0 = highest)" class={ iptvInput() }/>
+						<label class="flex items-center gap-2 text-sm text-neutral-300">
+							<input type="checkbox" data-bind:iptv-prov-edit-active class="rounded"/>
+							Active
+						</label>
+					</div>
+					<div id="iptv-form-error"></div>
+					<div class="flex gap-2 mt-4 justify-end">
+						<button type="button" data-on:click="$_iptvProvEditOpen = false" class={ iptvCancelBtn() }>Cancel</button>
+						<button
+							type="button"
+							data-on:click={ fmt.Sprintf("@put('/api/iptv/channels/%s/providers/' + $iptvProvEditId)", ch.ID) }
+							class={ iptvPrimaryBtn() }
+						>Save</button>
+					</div>
 				</div>
 			</div>
 			<!-- Provider create modal -->
@@ -516,7 +671,12 @@ templ IPTVChannelProviderTable(channelID string, providers []queries.ChannelProv
 										<span class="px-2 py-0.5 rounded text-xs bg-neutral-800 text-neutral-500 border border-neutral-700">inactive</span>
 									}
 								</td>
-								<td class="px-4 py-3 text-right">
+								<td class="px-4 py-3 text-right flex gap-3 justify-end items-center">
+									<button
+										type="button"
+										data-on:click={ fmt.Sprintf("$_iptvProvEditOpen=true; $iptvProvEditId=%s; $iptvProvName=%s; $iptvProvUrl=%s; $iptvProvToken=%s; $iptvProvType=%s; $iptvProvPriority=%s; $iptvProvEditActive=%t", jsStr(p.ID), jsStr(p.Name), jsStr(p.URLTemplate), jsStr(p.Token), jsStr(p.Type), jsStr(fmt.Sprintf("%d", p.Priority)), p.Active) }
+										class="text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+									>Edit</button>
 									<button
 										type="button"
 										data-on:click={ fmt.Sprintf("@delete('/api/iptv/channels/%s/providers/%s')", channelID, p.ID) }
@@ -537,7 +697,7 @@ templ IPTVChannelProviderTable(channelID string, providers []queries.ChannelProv
 templ IPTVStackListPage() {
 	@templates.Layout("IPTV Stacks") {
 		<div
-			data-signals="{_iptvStackOpen:false, iptvStackName:'', iptvStackCluster:'', iptvStackNode:'', iptvStackWanNet:'', iptvStackOverlayNet:'', iptvStackWanName:'', iptvStackOverlayName:'', iptvStackWanIp:''}"
+			data-signals="{_iptvStackOpen:false, iptvStackName:'', iptvStackCluster:'', iptvStackNode:'', iptvStackWanNet:'', iptvStackOverlayNet:'', iptvStackWanName:'', iptvStackOverlayName:'', iptvStackWanIp:'', _iptvStackEditOpen:false, iptvStackEditId:''}"
 		>
 			@templates.PageHeaderRow("IPTV — Stacks", "Managed ffmpeg/Caddy deployments") {
 				@iptvNavLinks("stacks")
@@ -594,6 +754,29 @@ templ IPTVStackListPage() {
 					</div>
 				</div>
 			</div>
+			<!-- Edit modal -->
+			<div
+				data-show="$_iptvStackEditOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg w-full max-w-lg p-6">
+					<h2 class="text-neutral-100 font-semibold mb-4">Edit Stack</h2>
+					<div class="flex flex-col gap-3">
+						<input data-bind:iptv-stack-name placeholder="Stack name" class={ iptvInput() }/>
+						<input data-bind:iptv-stack-wan-ip placeholder="WAN IP" class={ iptvInput() }/>
+					</div>
+					<div id="iptv-form-error"></div>
+					<div class="flex gap-2 mt-4 justify-end">
+						<button type="button" data-on:click="$_iptvStackEditOpen = false" class={ iptvCancelBtn() }>Cancel</button>
+						<button
+							type="button"
+							data-on:click="@put('/api/iptv/stacks/' + $iptvStackEditId)"
+							class={ iptvPrimaryBtn() }
+						>Save</button>
+					</div>
+				</div>
+			</div>
 		</div>
 	}
 }
@@ -633,6 +816,11 @@ templ IPTVStackTable(stacks []queries.IPTVStackReadModel) {
 								</td>
 								<td class="px-4 py-3 text-right flex gap-2 justify-end items-center">
 									<a href={ templ.SafeURL("/iptv/stacks/" + s.ID) } class="text-xs text-neutral-400 hover:text-neutral-200 transition-colors">Manage</a>
+									<button
+										type="button"
+										data-on:click={ fmt.Sprintf("$_iptvStackEditOpen=true; $iptvStackEditId=%s; $iptvStackName=%s; $iptvStackWanIp=%s", jsStr(s.ID), jsStr(s.Name), jsStr(s.WanIP)) }
+										class="text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+									>Edit</button>
 									<button
 										type="button"
 										data-on:click={ fmt.Sprintf("@delete('/api/iptv/stacks/%s')", s.ID) }
@@ -834,6 +1022,10 @@ func fmtCents(cents int64) string {
 	return fmt.Sprintf("%d.%02d EUR", cents/100, cents%100)
 }
 
+func fmtCentsDecimal(cents int64) string {
+	return fmt.Sprintf("%d.%02d", cents/100, cents%100)
+}
+
 func iptvSelect() string {
 	return "bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm w-full focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 disabled:opacity-40 disabled:cursor-not-allowed"
 }
@@ -965,6 +1157,17 @@ templ IPTVSelectSTBCustomer(customers []CustomerOption) {
 templ IPTVSelectPackages(packages []queries.PackageReadModel) {
 	<div id="iptv-sel-sub-package">
 		<select class={ iptvSelect() } data-bind:iptv-sub-package>
+			<option value="">— select package —</option>
+			for _, p := range packages {
+				<option value={ p.ID }>{ p.Name }</option>
+			}
+		</select>
+	</div>
+}
+
+templ IPTVSelectEditSubPackage(packages []queries.PackageReadModel) {
+	<div id="iptv-sel-edit-sub-pkg">
+		<select class={ iptvSelect() } data-bind:iptv-sub-edit-pkg>
 			<option value="">— select package —</option>
 			for _, p := range packages {
 				<option value={ p.ID }>{ p.Name }</option>

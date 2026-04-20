@@ -95,6 +95,27 @@ func (h *ReactivateSubscriptionHandler) Handle(ctx context.Context, cmd Reactiva
 	return h.repo.Save(ctx, sub)
 }
 
+type UpdateSubscriptionCommand struct {
+	ID        string
+	PackageID string
+}
+
+type UpdateSubscriptionHandler struct{ repo domain.SubscriptionRepository }
+
+func NewUpdateSubscriptionHandler(repo domain.SubscriptionRepository) *UpdateSubscriptionHandler {
+	return &UpdateSubscriptionHandler{repo: repo}
+}
+
+func (h *UpdateSubscriptionHandler) Handle(ctx context.Context, cmd UpdateSubscriptionCommand) error {
+	sub, err := h.repo.FindByID(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+	sub.PackageID = cmd.PackageID
+	sub.UpdatedAt = time.Now().UTC()
+	return h.repo.Save(ctx, sub)
+}
+
 type CancelSubscriptionCommand struct{ ID string }
 
 type CancelSubscriptionHandler struct{ repo domain.SubscriptionRepository }

@@ -41,6 +41,29 @@ func (h *AssignSTBHandler) Handle(ctx context.Context, cmd AssignSTBCommand) (*d
 	return stb, nil
 }
 
+type UpdateSTBCommand struct {
+	ID    string
+	Model string
+	Notes string
+}
+
+type UpdateSTBHandler struct{ repo domain.STBRepository }
+
+func NewUpdateSTBHandler(repo domain.STBRepository) *UpdateSTBHandler {
+	return &UpdateSTBHandler{repo: repo}
+}
+
+func (h *UpdateSTBHandler) Handle(ctx context.Context, cmd UpdateSTBCommand) error {
+	stb, err := h.repo.FindByID(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+	stb.Model = cmd.Model
+	stb.Notes = cmd.Notes
+	stb.UpdatedAt = time.Now().UTC()
+	return h.repo.Save(ctx, stb)
+}
+
 type DeleteSTBCommand struct{ ID string }
 
 type DeleteSTBHandler struct{ repo domain.STBRepository }

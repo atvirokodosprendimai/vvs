@@ -88,12 +88,16 @@ type IPTVHandlers struct {
 	revokeKey       *commands.RevokeSubscriptionKeyHandler
 	reissueKey      *commands.ReissueSubscriptionKeyHandler
 	assignSTB       *commands.AssignSTBHandler
+	updateSTB       *commands.UpdateSTBHandler
 	deleteSTB       *commands.DeleteSTBHandler
+	updateSub       *commands.UpdateSubscriptionHandler
 	// Provider commands
 	createProvider *commands.CreateChannelProviderHandler
+	updateProvider *commands.UpdateChannelProviderHandler
 	deleteProvider *commands.DeleteChannelProviderHandler
 	// Stack commands
 	createStack       *commands.CreateIPTVStackHandler
+	updateStack       *commands.UpdateIPTVStackHandler
 	deleteStack       *commands.DeleteIPTVStackHandler
 	addChToStack      *commands.AddChannelToIPTVStackHandler
 	removeChFromStack *commands.RemoveChannelFromIPTVStackHandler
@@ -135,10 +139,14 @@ func NewIPTVHandlers(
 	revokeKey *commands.RevokeSubscriptionKeyHandler,
 	reissueKey *commands.ReissueSubscriptionKeyHandler,
 	assignSTB *commands.AssignSTBHandler,
+	updateSTB *commands.UpdateSTBHandler,
 	deleteSTB *commands.DeleteSTBHandler,
+	updateSub *commands.UpdateSubscriptionHandler,
 	createProvider *commands.CreateChannelProviderHandler,
+	updateProvider *commands.UpdateChannelProviderHandler,
 	deleteProvider *commands.DeleteChannelProviderHandler,
 	createStack *commands.CreateIPTVStackHandler,
+	updateStack *commands.UpdateIPTVStackHandler,
 	deleteStack *commands.DeleteIPTVStackHandler,
 	addChToStack *commands.AddChannelToIPTVStackHandler,
 	removeChFromStack *commands.RemoveChannelFromIPTVStackHandler,
@@ -175,10 +183,14 @@ func NewIPTVHandlers(
 		revokeKey:         revokeKey,
 		reissueKey:        reissueKey,
 		assignSTB:         assignSTB,
+		updateSTB:         updateSTB,
 		deleteSTB:         deleteSTB,
+		updateSub:         updateSub,
 		createProvider:    createProvider,
+		updateProvider:    updateProvider,
 		deleteProvider:    deleteProvider,
 		createStack:       createStack,
+		updateStack:       updateStack,
 		deleteStack:       deleteStack,
 		addChToStack:      addChToStack,
 		removeChFromStack: removeChFromStack,
@@ -230,6 +242,7 @@ func (h *IPTVHandlers) RegisterRoutes(r chi.Router) {
 	r.Put("/api/iptv/channels/{id}", h.updateChannelSSE)
 	r.Delete("/api/iptv/channels/{id}", h.deleteChannelSSE)
 	r.Post("/api/iptv/channels/{id}/providers", h.createProviderSSE)
+	r.Put("/api/iptv/channels/{id}/providers/{pid}", h.updateProviderSSE)
 	r.Delete("/api/iptv/channels/{id}/providers/{pid}", h.deleteProviderSSE)
 
 	// Package mutations
@@ -248,10 +261,15 @@ func (h *IPTVHandlers) RegisterRoutes(r chi.Router) {
 
 	// STB mutations
 	r.Post("/api/iptv/stbs", h.assignSTBSSE)
+	r.Put("/api/iptv/stbs/{id}", h.updateSTBSSE)
 	r.Delete("/api/iptv/stbs/{id}", h.deleteSTBSSE)
+
+	// Subscription edit
+	r.Put("/api/iptv/subscriptions/{id}", h.updateSubscriptionSSE)
 
 	// Stack mutations
 	r.Post("/api/iptv/stacks", h.createStackSSE)
+	r.Put("/api/iptv/stacks/{id}", h.updateStackSSE)
 	r.Delete("/api/iptv/stacks/{id}", h.deleteStackSSE)
 	r.Post("/api/iptv/stacks/{id}/channels", h.addChannelToStackSSE)
 	r.Delete("/api/iptv/stacks/{id}/channels/{cid}", h.removeChannelFromStackSSE)
@@ -263,6 +281,7 @@ func (h *IPTVHandlers) RegisterRoutes(r chi.Router) {
 	r.Get("/sse/iptv/select/channels", h.selectChannelsSSE)
 	r.Get("/sse/iptv/select/channel-providers", h.selectChannelProvidersSSE)
 	r.Get("/sse/iptv/select/sub-deps", h.selectSubDepsSSE)
+	r.Get("/sse/iptv/select/sub-edit-pkg", h.selectSubEditPkgSSE)
 	r.Get("/sse/iptv/select/stb-deps", h.selectSTBDepsSSE)
 
 	// EPG
@@ -733,6 +752,37 @@ func (h *IPTVHandlers) deleteProviderSSE(w http.ResponseWriter, r *http.Request)
 	sse.PatchElementTempl(IPTVChannelProviderTable(chID, providers))
 }
 
+func (h *IPTVHandlers) updateProviderSSE(w http.ResponseWriter, r *http.Request) {
+	chID := chi.URLParam(r, "id")
+	pid := chi.URLParam(r, "pid")
+	var sig struct {
+		Name     string `json:"iptvProvName"`
+		URL      string `json:"iptvProvUrl"`
+		Token    string `json:"iptvProvToken"`
+		Type     string `json:"iptvProvType"`
+		Priority string `json:"iptvProvPriority"`
+		Active   bool   `json:"iptvProvEditActive"`
+	}
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
+		sse.PatchElementTempl(iptvFormError("Invalid input"))
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	priority, _ := strconv.Atoi(sig.Priority)
+	if err := h.updateProvider.Handle(r.Context(), commands.UpdateChannelProviderCommand{
+		ID: pid, Name: sig.Name, URLTemplate: sig.URL, Token: sig.Token,
+		Type: sig.Type, Priority: priority, Active: sig.Active,
+	}); err != nil {
+		log.Printf("iptv: updateProvider: %v", err)
+		sse.PatchElementTempl(iptvFormError("Failed to update provider"))
+		return
+	}
+	providers, _ := h.listProviders.Handle(r.Context(), chID)
+	sse.PatchElementTempl(IPTVChannelProviderTable(chID, providers))
+	clearSignals(sse, map[string]any{"_iptvProvEditOpen": false})
+}
+
 // ── Stack SSE + mutations ─────────────────────────────────────────────────────
 
 func (h *IPTVHandlers) stacksSSE(w http.ResponseWriter, r *http.Request) {
@@ -806,6 +856,85 @@ func (h *IPTVHandlers) deleteStackSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.patchStackTable(w, r, sse)
+}
+
+func (h *IPTVHandlers) updateStackSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var sig struct {
+		Name  string `json:"iptvStackName"`
+		WanIP string `json:"iptvStackWanIp"`
+	}
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
+		sse.PatchElementTempl(iptvFormError("Invalid input"))
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	stack, err := h.stackRepo.FindByID(r.Context(), id)
+	if err != nil {
+		sse.PatchElementTempl(iptvFormError("Stack not found"))
+		return
+	}
+	if err := h.updateStack.Handle(r.Context(), commands.UpdateIPTVStackCommand{
+		ID:                 id,
+		Name:               sig.Name,
+		WANNetworkID:       stack.WANNetworkID,
+		OverlayNetworkID:   stack.OverlayNetworkID,
+		WANNetworkName:     stack.WANNetworkName,
+		OverlayNetworkName: stack.OverlayNetworkName,
+		WanIP:              sig.WanIP,
+	}); err != nil {
+		log.Printf("iptv: updateStack: %v", err)
+		sse.PatchElementTempl(iptvFormError("Failed to update stack"))
+		return
+	}
+	h.patchStackTable(w, r, sse)
+	clearSignals(sse, map[string]any{"_iptvStackEditOpen": false})
+}
+
+func (h *IPTVHandlers) updateSTBSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var sig struct {
+		Model string `json:"iptvStbEditModel"`
+		Notes string `json:"iptvStbEditNotes"`
+	}
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
+		sse.PatchElementTempl(iptvFormError("Invalid input"))
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	if err := h.updateSTB.Handle(r.Context(), commands.UpdateSTBCommand{
+		ID: id, Model: sig.Model, Notes: sig.Notes,
+	}); err != nil {
+		log.Printf("iptv: updateSTB: %v", err)
+		sse.PatchElementTempl(iptvFormError("Failed to update STB"))
+		return
+	}
+	h.patchSTBTable(w, r, sse)
+	clearSignals(sse, map[string]any{"_iptvStbEditOpen": false})
+}
+
+func (h *IPTVHandlers) updateSubscriptionSSE(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var sig struct {
+		PackageID string `json:"iptvSubEditPkg"`
+	}
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
+		sse.PatchElementTempl(iptvFormError("Invalid input"))
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	if err := h.updateSub.Handle(r.Context(), commands.UpdateSubscriptionCommand{
+		ID: id, PackageID: sig.PackageID,
+	}); err != nil {
+		log.Printf("iptv: updateSubscription: %v", err)
+		sse.PatchElementTempl(iptvFormError("Failed to update subscription"))
+		return
+	}
+	h.patchSubscriptionTable(w, r, sse)
+	clearSignals(sse, map[string]any{"_iptvSubEditOpen": false})
 }
 
 func (h *IPTVHandlers) addChannelToStackSSE(w http.ResponseWriter, r *http.Request) {
@@ -1024,6 +1153,16 @@ func (h *IPTVHandlers) selectSubDepsSSE(w http.ResponseWriter, r *http.Request) 
 		packages = nil
 	}
 	sse.PatchElementTempl(IPTVSelectPackages(packages))
+}
+
+func (h *IPTVHandlers) selectSubEditPkgSSE(w http.ResponseWriter, r *http.Request) {
+	sse := datastar.NewSSE(w, r)
+	packages, err := h.listPackages.Handle(r.Context())
+	if err != nil {
+		log.Printf("iptv: selectSubEditPkg: %v", err)
+		packages = nil
+	}
+	sse.PatchElementTempl(IPTVSelectEditSubPackage(packages))
 }
 
 func (h *IPTVHandlers) selectSTBDepsSSE(w http.ResponseWriter, r *http.Request) {
