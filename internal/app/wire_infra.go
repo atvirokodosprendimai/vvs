@@ -39,20 +39,22 @@ type infraWired struct {
 }
 
 func wireInfra(
-	gdb  *gormsqlite.DB,
-	pub  events.EventPublisher,
-	sub  events.EventSubscriber,
-	nc   *nats.Conn,
-	auth *authWired,
-	cust *customerWired,
-	prod *productWired,
-	net  *networkWired,
-	dev  *deviceWired,
-	svc  *serviceWired,
-	inv  *invoiceWired,
-	iptv *iptvWired,
-	crm  *crmWired,
-	cfg  Config,
+	gdb     *gormsqlite.DB,
+	pub     events.EventPublisher,
+	sub     events.EventSubscriber,
+	nc      *nats.Conn,
+	auth    *authWired,
+	cust    *customerWired,
+	prod    *productWired,
+	net     *networkWired,
+	dev     *deviceWired,
+	svc     *serviceWired,
+	inv     *invoiceWired,
+	iptv    *iptvWired,
+	crm     *crmWired,
+	billing *billingWired,
+	proxmox *proxmoxWired,
+	cfg     Config,
 ) (*infraWired, error) {
 	// ── Notifications ─────────────────────────────────────────────────────────
 	notifStore  := notifications.NewStore(gdb)
@@ -185,6 +187,17 @@ func wireInfra(
 		WithServices(&portalServiceBridge{repo: svc.repo}).
 		WithEmailFinder(&portalEmailFinderBridge{repo: cust.repo}).
 		WithBot(botSessions, botOllama, chatStore)
+	if proxmox != nil && billing != nil {
+		portalBridge.WithVMAndBilling(
+			proxmox.listVMPlansForPortal,
+			proxmox.getVMPlanForPortal,
+			proxmox.listVMsForCustomer,
+			proxmox.createVMCmd,
+			billing.getBalance,
+			billing.topUpBalance,
+			billing.deductBalance,
+		)
+	}
 	if err := portalBridge.Register(); err != nil {
 		return nil, fmt.Errorf("portal nats bridge: %w", err)
 	}

@@ -327,6 +327,89 @@ func (a *InvoiceGetterAdapter) Handle(ctx context.Context, id string) (*invoiceq
 	return a.C.GetInvoice(ctx, id, customerID)
 }
 
+// ── VM Plans ──────────────────────────────────────────────────────────────────
+
+// VMPlanDTO is the portal-side view of a VM plan (subset of proxmoxqueries.VMPlanReadModel).
+type VMPlanDTO struct {
+	ID                    string `json:"ID"`
+	Name                  string `json:"Name"`
+	Description           string `json:"Description"`
+	Cores                 int    `json:"Cores"`
+	MemoryMB              int    `json:"MemoryMB"`
+	DiskGB                int    `json:"DiskGB"`
+	PriceMonthlyEuroCents int64  `json:"PriceMonthlyEuroCents"`
+}
+
+// VMDTO is the portal-side view of a VM.
+type VMDTO struct {
+	ID        string `json:"ID"`
+	VMID      int    `json:"VMID"`
+	Name      string `json:"Name"`
+	Status    string `json:"Status"`
+	IPAddress string `json:"IPAddress"`
+	Cores     int    `json:"Cores"`
+	MemoryMB  int    `json:"MemoryMB"`
+	DiskGB    int    `json:"DiskGB"`
+}
+
+// ListVMPlans returns enabled VM plans from core.
+func (c *PortalNATSClient) ListVMPlans(ctx context.Context) ([]VMPlanDTO, error) {
+	var plans []VMPlanDTO
+	err := c.rpc(ctx, SubjectVMPlansList, map[string]string{}, &plans)
+	return plans, err
+}
+
+// ListCustomerVMs returns VMs assigned to the customer.
+func (c *PortalNATSClient) ListCustomerVMs(ctx context.Context, customerID string) ([]VMDTO, error) {
+	var vms []VMDTO
+	err := c.rpc(ctx, SubjectVMsList, map[string]string{"customerID": customerID}, &vms)
+	return vms, err
+}
+
+// GetBalance returns the customer's current prepaid balance in cents.
+func (c *PortalNATSClient) GetBalance(ctx context.Context, customerID string) (int64, error) {
+	var rm struct {
+		BalanceCents int64 `json:"BalanceCents"`
+	}
+	err := c.rpc(ctx, SubjectBalanceGet, map[string]string{"customerID": customerID}, &rm)
+	return rm.BalanceCents, err
+}
+
+// ProvisionVM requests VM provisioning after a Stripe webhook.
+// stripeSessionID is stored for idempotency.
+func (c *PortalNATSClient) ProvisionVM(ctx context.Context, customerID, planID, stripeSessionID string) (string, error) {
+	var resp struct {
+		VMID string `json:"vmID"`
+	}
+	err := c.rpc(ctx, SubjectVMProvision, map[string]string{
+		"customerID":      customerID,
+		"planID":          planID,
+		"stripeSessionID": stripeSessionID,
+	}, &resp)
+	return resp.VMID, err
+}
+
+// CompleteBalanceTopup credits the customer's balance after a Stripe webhook.
+func (c *PortalNATSClient) CompleteBalanceTopup(ctx context.Context, customerID string, amountCents int64, stripeSessionID string) error {
+	return c.rpc(ctx, SubjectBalanceTopupComplete, map[string]any{
+		"customerID":      customerID,
+		"amountCents":     amountCents,
+		"stripeSessionID": stripeSessionID,
+	}, nil)
+}
+
+// BuyVMWithBalance deducts balance and provisions a VM atomically (no Stripe).
+func (c *PortalNATSClient) BuyVMWithBalance(ctx context.Context, customerID, planID string) (string, error) {
+	var resp struct {
+		VMID string `json:"vmID"`
+	}
+	err := c.rpc(ctx, SubjectBalanceDeductVM, map[string]string{
+		"customerID": customerID,
+		"planID":     planID,
+	}, &resp)
+	return resp.VMID, err
+}
+
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 // ErrNotSupported is returned by write operations not available on the portal side.

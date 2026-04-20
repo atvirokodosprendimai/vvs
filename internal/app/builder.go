@@ -108,7 +108,7 @@ func New(cfg Config) (*App, error) {
 		cust.routes.WithBalanceHandlers(billing.getBalance, billing.adjustBalance)
 	}
 	proxmox := wireProxmox(gdb, pub, sub, cust, cfg)
-	infra, err := wireInfra(gdb, pub, sub, nc, auth, cust, prod, net, dev, svc, inv, iptv, crm, cfg)
+	infra, err := wireInfra(gdb, pub, sub, nc, auth, cust, prod, net, dev, svc, inv, iptv, crm, billing, proxmox, cfg)
 	if err != nil {
 		return nil, err
 	}

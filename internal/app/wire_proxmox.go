@@ -15,8 +15,11 @@ import (
 )
 
 type proxmoxWired struct {
-	listVMsForCustomer *proxmoxqueries.ListVMsForCustomerHandler
-	routes             infrahttp.ModuleRoutes
+	listVMsForCustomer  *proxmoxqueries.ListVMsForCustomerHandler
+	listVMPlansForPortal *proxmoxqueries.ListVMPlansHandler
+	getVMPlanForPortal   *proxmoxqueries.GetVMPlanHandler
+	createVMCmd          *proxmoxcommands.CreateVMHandler
+	routes               infrahttp.ModuleRoutes
 }
 
 func wireProxmox(
@@ -71,7 +74,10 @@ func wireProxmox(
 	}
 
 	return &proxmoxWired{
-		listVMsForCustomer: listVMsForCustomer,
-		routes:             routes,
+		listVMsForCustomer:   listVMsForCustomer,
+		listVMPlansForPortal: listVMPlansQuery,
+		getVMPlanForPortal:   getVMPlanQuery,
+		createVMCmd:          createVMCmd,
+		routes:               routes,
 	}
 }
