@@ -12,9 +12,18 @@ import (
 	authdomain "github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 	portalhttp "github.com/atvirokodosprendimai/vvs/internal/modules/portal/adapters/http"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/portal/domain"
+	invoicequeries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// ── stub invoice lister ───────────────────────────────────────────────────────
+
+type stubInvoiceLister struct{}
+
+func (s *stubInvoiceLister) Handle(_ context.Context, _ invoicequeries.ListInvoicesForCustomerQuery) ([]invoicequeries.InvoiceReadModel, error) {
+	return nil, nil
+}
 
 // ── stub token repo ───────────────────────────────────────────────────────────
 
@@ -62,7 +71,7 @@ func seedToken(t *testing.T, repo *stubTokenRepo, customerID string, ttl time.Du
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 func newPortalRouter(repo *stubTokenRepo) http.Handler {
-	h := portalhttp.NewHandlers(repo, nil, nil) // invoice queries nil — not tested here
+	h := portalhttp.NewHandlers(repo, &stubInvoiceLister{}, nil)
 	r := chi.NewRouter()
 	h.RegisterRoutes(r)
 	h.RegisterPublicRoutes(r)
@@ -95,10 +104,94 @@ func TestPortalAuth_ValidToken_SetsCookieAndRedirects(t *testing.T) {
 	for _, c := range cookies {
 		if c.Name == "vvs_portal" {
 			found = true
-			assert.Equal(t, plain, c.Value)
+			// Cookie must carry a NEW session token, not the magic link value.
+			assert.NotEqual(t, plain, c.Value, "cookie must be new session token, not magic link")
+			assert.NotEmpty(t, c.Value)
 		}
 	}
 	assert.True(t, found, "vvs_portal cookie must be set")
+}
+
+func TestPortalAuth_IssuesSessionToken_WithLongTTL(t *testing.T) {
+	repo := newStubTokenRepo()
+	router := newPortalRouter(repo)
+	// Magic link has short TTL (15 min) — session must be 7 days.
+	plain := seedToken(t, repo, "cust-1", 15*time.Minute)
+
+	req := httptest.NewRequest(http.MethodGet, "/portal/auth?token="+plain, nil)
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusFound, rr.Code)
+
+	var sessionCookie *http.Cookie
+	for _, c := range rr.Result().Cookies() {
+		if c.Name == "vvs_portal" {
+			sessionCookie = c
+		}
+	}
+	require.NotNil(t, sessionCookie, "vvs_portal cookie must be set")
+
+	const sevenDaysSeconds = 7 * 24 * 60 * 60
+	assert.GreaterOrEqual(t, sessionCookie.MaxAge, sevenDaysSeconds,
+		"session cookie MaxAge must be >= 7 days")
+
+	// Session token must exist in repo and have ~7-day expiry.
+	sessionHash := domain.HashOf(sessionCookie.Value)
+	sessionTok, err := repo.FindByHash(context.Background(), sessionHash)
+	require.NoError(t, err)
+	require.NotNil(t, sessionTok, "session token must be saved in repo")
+	assert.WithinDuration(t, time.Now().Add(7*24*time.Hour), sessionTok.ExpiresAt, 10*time.Second)
+	assert.Equal(t, "cust-1", sessionTok.CustomerID)
+}
+
+func TestPortalSession_Refresh_WhenNearExpiry(t *testing.T) {
+	repo := newStubTokenRepo()
+	router := newPortalRouter(repo)
+
+	// Seed a session token with < 3.5 days remaining (past refresh threshold).
+	shortRemaining := 2 * 24 * time.Hour // 2 days left — below 3.5-day threshold
+	plain := seedToken(t, repo, "cust-2", shortRemaining)
+
+	req := httptest.NewRequest(http.MethodGet, "/portal/invoices", nil)
+	req.AddCookie(&http.Cookie{Name: "vvs_portal", Value: plain})
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	// Must not redirect to login.
+	assert.NotEqual(t, "/portal/login?expired=1", rr.Header().Get("Location"))
+
+	// Must set a new cookie with refreshed TTL.
+	var refreshed *http.Cookie
+	for _, c := range rr.Result().Cookies() {
+		if c.Name == "vvs_portal" {
+			refreshed = c
+		}
+	}
+	require.NotNil(t, refreshed, "refresh cookie must be set when session near expiry")
+	assert.NotEqual(t, plain, refreshed.Value, "refreshed cookie must carry new token")
+
+	const sevenDaysSeconds = 7 * 24 * 60 * 60
+	assert.GreaterOrEqual(t, refreshed.MaxAge, sevenDaysSeconds)
+}
+
+func TestPortalSession_NoRefresh_WhenFresh(t *testing.T) {
+	repo := newStubTokenRepo()
+	router := newPortalRouter(repo)
+
+	// Seed a session token with > 3.5 days remaining — no refresh expected.
+	plain := seedToken(t, repo, "cust-3", 6*24*time.Hour) // 6 days left
+
+	req := httptest.NewRequest(http.MethodGet, "/portal/invoices", nil)
+	req.AddCookie(&http.Cookie{Name: "vvs_portal", Value: plain})
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	for _, c := range rr.Result().Cookies() {
+		if c.Name == "vvs_portal" {
+			assert.Fail(t, "no cookie refresh expected when session has plenty of time left")
+		}
+	}
 }
 
 func TestPortalAuth_InvalidToken_RendersExpiredPage(t *testing.T) {
