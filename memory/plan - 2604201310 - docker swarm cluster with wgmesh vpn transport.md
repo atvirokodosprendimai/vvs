@@ -57,93 +57,63 @@ status: active
    - `ExecSSH(...)` for provisioning commands (wgmesh0 IP polling)
    - => created; HostKeyCallback=InsecureIgnoreHostKey (TODO: known_hosts); build clean
 
-### Phase 2 - Commands: Node provisioning + Swarm init/join - status: open
+### Phase 2 - Commands: Node provisioning + Swarm init/join - status: completed
 
-8. [ ] ProvisionSwarmNodeCommand + handler
+8. [x] ProvisionSwarmNodeCommand + handler
    - `app/commands/swarm_node_commands.go`
-   - SSH to node → run `docker compose up -d` with `RenderWgmeshCompose(...)` YAML
-   - Poll `ip -4 addr show wgmesh0` via SSH exec (30 s timeout, 2 s interval)
-   - Store `vpnIP` on SwarmNode, save, publish NATS event
-   - HTTP handler streams progress via SSE: "deploying wgmesh…" → "waiting for wgmesh0…" → "VPN IP: X.X.X.X"
+   - => SSH → deploy wgmesh compose → poll `ip -4 addr show wgmesh0` (30s/2s) → store vpnIP
+   - => WithProgress(fn) shallow-copy pattern for SSE streaming
 
-9. [ ] CreateSwarmCluster + InitSwarm command
-   - `app/commands/swarm_cluster_commands.go`
-   - **VVS-init path**: select manager SwarmNode (must have vpnIP) → `SwarmInit(ctx, vpnIP)` with all three addr flags → stores managerToken + workerToken encrypted
-   - **Import path**: save cluster with pasted tokens + vpnIP; no Docker API call
-   - SSE handler streams "initializing swarm…" → "cluster active, tokens stored"
+9. [x] CreateSwarmCluster + InitSwarm command
+   - => CreateSwarmClusterHandler + InitSwarmHandler + ImportSwarmClusterHandler
+   - => VVS-init: SwarmInit(vpnIP) → SetTokens; Import: paste tokens directly
 
-10. [ ] AddSwarmNode command (join)
-    - Worker: `SwarmJoin(ctx, managerVpnIP, workerToken)` after wgmesh provisioned
-    - Manager: same with managerToken
-    - Saves SwarmNodeID returned by Docker
-    - SSE handler: provision wgmesh → get vpnIP → join → done
+10. [x] AddSwarmNode command (join)
+    - => AddSwarmNodeHandler: joins via workerToken/managerToken; fetches SwarmNodeID from manager node list
 
-11. [ ] RemoveSwarmNode command
-    - Demote if manager → `SwarmLeave(force=false)` on target → `SwarmNodeRemove(swarmNodeID)` on manager
-    - Delete SwarmNode record; publish event
+11. [x] RemoveSwarmNode command
+    - => RemoveSwarmNodeHandler: SwarmLeave + SwarmNodeRemove on manager + delete record
 
-### Phase 3 - Commands: Networks + Stacks - status: open
+### Phase 3 - Commands: Networks + Stacks - status: completed
 
-12. [ ] Network commands
-    - `app/commands/swarm_network_commands.go`
-    - CreateSwarmNetwork: `NetworkCreate(req)` with `IPRange = dhcpRange CIDR` to enforce lower-half boundary
-    - DeleteSwarmNetwork: `NetworkRemove(networkID)`
-    - UpdateReservedIPs: update JSON column only (no Docker API call)
+12. [x] Network commands
+    - => swarm_network_commands.go: CreateSwarmNetwork with DHCPRangeCIDR() IPRange enforcement
+    - => DeleteSwarmNetwork, UpdateSwarmNetworkReservedIPs (metadata only)
 
-13. [ ] Stack commands
-    - `app/commands/swarm_stack_commands.go`
-    - DeploySwarmStack: `StackDeploy(ctx, name, composeYAML)` via manager SSH client; SSE-streamed (keep connection open during deploy)
-    - UpdateSwarmStack: same (stack deploy is idempotent)
-    - RemoveSwarmStack: `StackRemove(ctx, name)`
+13. [x] Stack commands
+    - => swarm_stack_commands.go: DeploySwarmStack (SSE-streamed, error on entity), UpdateSwarmStack, RemoveSwarmStack
 
-14. [ ] Queries
-    - `app/queries/swarm_queries.go`
-    - ListClusters, GetCluster, ListNodes (by clusterID), GetNode
-    - ListNetworks (by clusterID), GetNetwork
-    - ListStacks (by clusterID), GetStack, ListRoutes (by stackID)
+14. [x] Queries
+    - => swarm_queries.go: all read models + handlers for clusters/nodes/networks/stacks/routes
 
-### Phase 4 - HTTP layer: templates + handlers - status: open
+### Phase 4 - HTTP layer: templates + handlers - status: completed
 
-15. [ ] Swarm templates: Clusters
-    - `adapters/http/swarm_templates.templ`
-    - SwarmClustersPage + SwarmClusterTable
-    - SwarmClusterFormPage (create: name + wgmeshKey; import: +paste tokens)
-    - SwarmClusterDetailPage (node table, network table, stack table)
+15. [x] Swarm templates: Clusters
+    - => SwarmClustersPage, SwarmClusterTable, SwarmClusterFormPage, SwarmClusterImportPage, SwarmClusterDetailPage
 
-16. [ ] Swarm templates: Nodes
-    - SwarmNodesPage + SwarmNodeTable (columns: name, role badge, VPN IP, status, Docker node ID)
-    - SwarmNodeFormPage (sshHost, sshUser, sshPort, sshKey textarea, clusterID, role)
-    - Node ping/provision buttons; VPN IP shown once provisioned
+16. [x] Swarm templates: Nodes
+    - => SwarmNodeTable, SwarmNodeRow (provision/join buttons), SwarmNodeFormPage
 
-17. [ ] Swarm templates: Networks
-    - SwarmNetworksPage + SwarmNetworkTable
-    - SwarmNetworkFormPage: subnet CIDR input → JS auto-splits into DHCP/reserved ranges (editable); driver select; gateway; parent (macvlan free-text)
-    - SwarmNetworkDetailPage: reserved IPs inline editor (IP / hostname / label rows, add/remove)
-    - "Download Traefik config" button → `GET /api/swarm/networks/{id}/traefik-config`
+17. [x] Swarm templates: Networks
+    - => SwarmNetworkTable, SwarmNetworkFormPage, SwarmNetworkDetailPage, SwarmReservedIPsEditor
+    - => DHCPRangeCIDR helper; Traefik config download link
 
-18. [ ] Swarm templates: Stacks
-    - SwarmStacksPage + SwarmStackTable (columns: name, cluster, status, service count)
-    - SwarmStackFormPage: CodeMirror YAML editor (reuse existing CDN includes) + Routes section (hostname:port rows)
-    - SwarmStackDetailPage: status badge, service list, route table, action buttons
+18. [x] Swarm templates: Stacks
+    - => SwarmStackTable, SwarmStackFormPage, SwarmStackDetailPage with routes table
 
-19. [ ] Swarm HTTP handlers
-    - `adapters/http/swarm_handlers.go`
-    - All CRUD + SSE: clusters (create/import/delete), nodes (create/provision/join/remove), networks (create/delete/update-reserved-ips), stacks (deploy/update/remove)
-    - `GET /api/swarm/networks/{id}/traefik-config` → streams generated YAML as download
-    - Follows same patterns as existing handlers.go (datastar.NewSSE, PatchElementTempl, Redirect)
+19. [x] Swarm HTTP handlers
+    - => swarm_handlers.go: SwarmHandlers with all CRUD + SSE + traefik-config download
+    - => nodeCreateSSE uses CreateSwarmNodeHandler; provision/join/remove stream via WithProgress
 
-### Phase 5 - Wiring + Nav - status: open
+### Phase 5 - Wiring + Nav - status: completed
 
-20. [ ] Wire swarm into docker module
-    - `internal/app/wire_docker.go` — add swarm repos, commands, queries; pass to NewHandlers
-    - `adapters/http/handlers.go` — add swarm handler registration (or new `RegisterSwarmRoutes`)
-    - `builder.go` — migrations 003–007 already embed via dockermigrations.FS
+20. [x] Wire swarm into docker module
+    - => wire_docker.go: dockerWired.swarmRoutes; all swarm repos/commands/queries wired
+    - => builder.go: collectRoutes adds docker.swarmRoutes
 
-21. [ ] Add Swarm nav group to sidebar
-    - `internal/infrastructure/http/templates/layout.templ`
-    - Collapsible "Swarm" group (same pattern as existing Services group)
-    - Nav items: Clusters / Nodes / Networks / Stacks
-    - Guard with `CanView(authdomain.ModuleDocker)`
+21. [x] Add Swarm nav group to sidebar
+    - => layout.templ: "Swarm" collapsible group under Docker Services; _navSwarm signal; Clusters item
+    - => swarmNavIcon() added
 
 ### Phase 6 - Verification - status: open
 
@@ -172,3 +142,4 @@ status: active
 
 - 2026-04-20 13:15 — Action 1: x/crypto/ssh dependency added, build clean
 - 2026-04-20 13:25 — Actions 2-7: Phase 1 complete — domain, migrations, persistence, SSH transport (commit 3638e0a)
+- 2026-04-20 — Actions 8-21: Phases 2-5 complete — commands, queries, templates, handlers, wiring, nav (commit a15af55)
