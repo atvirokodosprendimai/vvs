@@ -52,7 +52,7 @@ status: active
 6. [x] NATS subjects: added to `internal/shared/events/subjects.go`
    - => DockerNodeAll/Created/Updated/Deleted, DockerServiceAll/Deployed/StatusChanged/Removed, DockerLogsLine (%s format)
 
-### Phase 2 — Docker Client Adapter — status: open
+### Phase 2 — Docker Client Adapter — status: completed
 
 7. [x] Docker client port (interface)
    - => `internal/modules/docker/domain/docker_client.go`
@@ -60,28 +60,29 @@ status: active
    - => `ContainerInfo{ID, Name, Image, Status, State, Ports}`
    - => `RemoveContainers(projectName)` removes all containers for a compose project
 
-8. [ ] Docker client implementation
-   - file: `internal/modules/docker/adapters/docker/client.go`
-   - `type Client struct { inner *dockerclient.Client }`
-   - `NewClient(host string, tlsCert, tlsKey, tlsCA []byte) (*Client, error)`
-     - local: `dockerclient.NewClientWithOpts(client.WithHost("unix:///var/run/docker.sock"))`
-     - remote TLS: `client.WithTLSClientConfig(caFile, certFile, keyFile)` + `client.WithHost(host)`
-   - `Deploy`: parse compose YAML with `compose-go`, create networks → volumes → containers in dependency order
-   - `StreamLogs`: `ContainerLogs(ctx, id, types.ContainerLogsOptions{ShowStdout: true, ShowStderr: true, Follow: true})`
+8. [x] Docker client implementation
+   - => `internal/modules/docker/adapters/dockerclient/client.go`
+   - => `Factory.ForNode(node)` builds client from domain node (no encKey leakage)
+   - => TLS from PEM bytes via `tls.X509KeyPair` + custom `http.Transport` (no temp files)
+   - => `Deploy`: compose-go `loader.LoadWithContext` → `graph.InDependencyOrder` → NetworkCreate → VolumeCreate → ContainerCreate+Start
+   - => `External` fields: `bool(netCfg.External)` not `.External.External` (compose-go v2 External is a bool type)
+   - => `ReadMultiplexLine` helper strips Docker 8-byte multiplex frame header from log stream
 
-9. [ ] Commands: `CreateNodeCmd`, `UpdateNodeCmd`, `DeleteNodeCmd`, `DeployServiceCmd`, `StopServiceCmd`, `StartServiceCmd`, `RemoveServiceCmd`
-   - file: `internal/modules/docker/app/commands/`
-   - `DeployServiceCmd`: get node → build docker client → call `client.Deploy()` → save service status=running → publish `DockerServiceAll`
-   - All node mutations publish `DockerNodeAll`
+9. [x] Commands: node_commands.go + service_commands.go
+   - => `internal/modules/docker/app/commands/`
+   - => `DeployServiceHandler` saves status=deploying first, then deploys, then updates to running/error
+   - => DeleteNode checks for active services first (ErrNodeHasServices)
+   - => RemoveService: marks removing → removes containers → deletes DB record
 
-10. [ ] Log streamer service
-    - file: `internal/modules/docker/app/services/log_streamer.go`
-    - `LogStreamer{natsPub, dockerClientFactory}`
-    - `Stream(ctx, nodeID, containerID string)` — goroutine: tails logs line by line, publishes `isp.docker.logs.<containerID>` per line
-    - goroutine exits on ctx cancel
+10. [x] Log streamer service
+    - => `internal/modules/docker/app/services/log_streamer.go`
+    - => `Stream(ctx, node, containerID)` spawns goroutine; exits on context cancel
+    - => uses `ReadMultiplexLine` to strip Docker multiplex header
 
-11. [ ] Queries: `ListNodesHandler`, `GetNodeHandler`, `ListServicesHandler`, `GetServiceHandler`, `ListContainersHandler(nodeID)`
-    - file: `internal/modules/docker/app/queries/`
+11. [x] Queries: `ListNodesHandler`, `GetNodeHandler`, `ListServicesHandler`, `GetServiceHandler`
+    - => `internal/modules/docker/app/queries/queries.go`
+    - => `NodeReadModel.HasTLS` = len(TLSCert) > 0 (never exposes raw cert bytes)
+    - => `ServiceReadModel` joins NodeName from node repo
 
 ### Phase 3 — Admin UI: Node Management — status: open
 
@@ -171,3 +172,4 @@ status: active
 
 - **2026-04-20** Plan created
 - **2026-04-20** Phase 1 complete: spec created + domain (node/service/client port) + migrations + persistence + NATS subjects
+- **2026-04-20** Phase 2 complete: docker client adapter (compose-go + docker SDK), log streamer, node/service commands, queries
