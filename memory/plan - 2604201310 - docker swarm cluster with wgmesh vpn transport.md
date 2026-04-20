@@ -15,9 +15,10 @@ status: active
 
 ### Phase 1 - Foundation: deps + domain + migrations + SSH transport - status: open
 
-1. [ ] Add `golang.org/x/crypto/ssh` dependency
+1. [x] Add `golang.org/x/crypto/ssh` dependency
    - `go get golang.org/x/crypto/ssh`
    - verify `go build ./...` still passes
+   - => upgraded x/crypto v0.49.0 → v0.50.0; build clean
 
 2. [ ] Domain entities: SwarmCluster, SwarmNode
    - `domain/swarm_cluster.go` — SwarmCluster{ID, Name, WgmeshKey, ManagerToken, WorkerToken, Notes, Status}, SwarmClusterRepository interface
@@ -164,3 +165,5 @@ status: active
 ## Adjustments
 
 ## Progress Log
+
+- 2026-04-20 13:15 — Action 1: x/crypto/ssh dependency added, build clean
