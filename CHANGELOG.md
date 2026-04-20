@@ -153,3 +153,9 @@
 - 2026-04-20 `504258f` feat(docker): service edit/redeploy + fix compose YAML validation
 - 2026-04-20 `33ea3e2` Merge task/docker-swarm-spec: docker swarm spec
 - 2026-04-20 `81f6f1a` fix(docker): stream deploy/update status over SSE, no background goroutines
+- 2026-04-20 `b27df26` fix(docker): stream status+actions patches after stop/start
+- 2026-04-20 `073033a` spec(docker-swarm): subnet split, VVS-owned reserved IPs, Traefik routing
+- 2026-04-20 `fa28909` spec(docker-swarm): wgmesh WireGuard mesh transport layer
+- 2026-04-20 `7fdf644` plan: docker swarm cluster with wgmesh VPN transport
+- 2026-04-20 `98cf01e` chore(swarm): add golang.org/x/crypto/ssh dependency
+- 2026-04-20 `674b658` plan: mark action 1 complete (x/crypto/ssh dep)
