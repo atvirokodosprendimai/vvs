@@ -152,3 +152,4 @@
 - 2026-04-20 `2a5a51d` fix(docker): pass COMPOSE_PROJECT_NAME env to compose-go loader
 - 2026-04-20 `504258f` feat(docker): service edit/redeploy + fix compose YAML validation
 - 2026-04-20 `33ea3e2` Merge task/docker-swarm-spec: docker swarm spec
+- 2026-04-20 `81f6f1a` fix(docker): stream deploy/update status over SSE, no background goroutines
