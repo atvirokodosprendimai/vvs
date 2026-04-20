@@ -1,6 +1,6 @@
 ---
 tldr: Implement IPTV multi-provider channels, managed swarm stack with compose generator, and provider URL resolution for playlists
-status: active
+status: completed
 ---
 
 # Plan: IPTV Multi-Provider Channels + Managed Swarm Stack
@@ -12,63 +12,53 @@ status: active
 
 ## Phases
 
-### Phase 1 - Domain + Persistence - status: open
+### Phase 1 - Domain + Persistence - status: completed
 
-1. [ ] Add `Channel.Slug` field + `ChannelProvider` domain type + `ResolveURL` helper
-   - `internal/modules/iptv/domain/channel.go`: add Slug, ChannelProvider struct, ProviderType consts, ChannelProviderRepository interface, ResolveURL func
-2. [ ] Add `IPTVStack` + `IPTVStackChannel` domain types + compose generator
-   - new file: `internal/modules/iptv/domain/iptv_stack.go`
-   - IPTVStack, IPTVStackChannel, IPTVStackChannelDetail structs
-   - IPTVStackStatus consts
-   - GenerateIPTVCompose function
-   - IPTVStackRepository + IPTVStackChannelRepository interfaces
-3. [ ] Migrations: slug column + 3 new tables
-   - `migrations/011_channel_slug.sql`
-   - `migrations/012_channel_providers.sql`
-   - `migrations/013_iptv_stacks.sql`
-4. [ ] GORM models + repositories for providers and stacks
-   - update ChannelModel with Slug in `adapters/persistence/models.go`
-   - add ChannelProviderModel, IPTVStackModel, IPTVStackChannelModel
-   - add GormChannelProviderRepository, GormIPTVStackRepository in `adapters/persistence/repositories.go`
+1. [x] Add `Channel.Slug` field + `ChannelProvider` domain type + `ResolveURL` helper
+   - => `internal/modules/iptv/domain/channel.go`: Slug, ChannelProvider, ProviderType consts, ChannelProviderRepository, ResolveProviderURL
+2. [x] Add `IPTVStack` + `IPTVStackChannel` domain types + compose generator
+   - => `internal/modules/iptv/domain/iptv_stack.go`
+3. [x] Migrations: slug column + 3 new tables
+   - => migrations/004_channel_slug.sql, 005_channel_providers.sql, 006_iptv_stacks.sql
+4. [x] GORM models + repositories for providers and stacks
+   - => persistence/models.go + repositories.go updated
 
-### Phase 2 - CQRS - status: open
+### Phase 2 - CQRS - status: completed
 
-5. [ ] Channel provider commands
-   - new file: `internal/modules/iptv/app/commands/channel_provider.go`
-   - CreateChannelProviderHandler / UpdateChannelProviderHandler / DeleteChannelProviderHandler
-6. [ ] Channel provider query
-   - new file: `internal/modules/iptv/app/queries/list_channel_providers.go`
-   - ListChannelProvidersHandler → []ChannelProviderReadModel
-   - update `read_models.go` with ChannelProviderReadModel
-7. [ ] IPTV stack commands
-   - new file: `internal/modules/iptv/app/commands/iptv_stack.go`
-   - CreateIPTVStackHandler / UpdateIPTVStackHandler / DeleteIPTVStackHandler
-   - DeployIPTVStackHandler — generate YAML → SSH write → docker compose up -d --remove-orphans
-   - AddChannelToIPTVStackHandler / RemoveChannelFromIPTVStackHandler → marks stack pending
-   - reuse ExecSSH from dockerclient
-8. [ ] IPTV stack queries
-   - new file: `internal/modules/iptv/app/queries/list_iptv_stacks.go`
-   - ListIPTVStacksHandler / GetIPTVStackHandler
-   - update `read_models.go` with IPTVStackReadModel, IPTVStackChannelReadModel
+5. [x] Channel provider commands
+   - => `internal/modules/iptv/app/commands/channel_provider.go`
+6. [x] Channel provider query
+   - => `internal/modules/iptv/app/queries/list_channel_providers.go`
+   - => Slug added to ChannelReadModel; GetChannelHandler added to list_channels.go
+7. [x] IPTV stack commands
+   - => `internal/modules/iptv/app/commands/iptv_stack.go`
+   - => DeployIPTVStackHandler with WithProgress + ExecSSH
+8. [x] IPTV stack queries
+   - => `internal/modules/iptv/app/queries/list_iptv_stacks.go`
+   - => ListIPTVStacksHandler + GetIPTVStackChannelsHandler
 
-### Phase 3 - HTTP Layer - status: open
+### Phase 3 - HTTP Layer - status: completed
 
-9. [ ] Channel providers UI — add providers panel to channel detail page
-   - new routes in `handlers.go`: POST /api/iptv/channels/{id}/providers, DELETE /api/iptv/channels/{id}/providers/{pid}
-   - `templates.templ`: providers section on channel detail; provider create form with URLTemplate, token, type, priority
-10. [ ] IPTV stacks UI
-    - new routes: GET /iptv/stacks, GET /iptv/stacks/new, GET /iptv/stacks/{id}
-    - POST /api/iptv/stacks, POST /api/iptv/stacks/{id}/deploy
-    - POST /api/iptv/stacks/{id}/channels, DELETE /api/iptv/stacks/{id}/channels/{cid}
-    - `templates.templ`: stack list page, create form, detail page with channel assignment + deploy SSE progress
+9. [x] Channel providers UI — add providers panel to channel detail page
+   - => GET /iptv/channels/{id}, GET /sse/iptv/channels/{id}/providers
+   - => POST/DELETE /api/iptv/channels/{id}/providers[/{pid}]
+   - => IPTVChannelDetailPage + IPTVChannelProviderTable templates
+   - => "Providers" link added to channel table row
+10. [x] IPTV stacks UI
+    - => GET /iptv/stacks, GET /iptv/stacks/{id}
+    - => POST /api/iptv/stacks, DELETE, /channels, /deploy
+    - => IPTVStackListPage + IPTVStackTable + IPTVStackDetailPage + IPTVStackChannelTable + IPTVDeployLog
 
-### Phase 4 - Playlist Integration + Wiring - status: open
+### Phase 4 - Playlist Integration + Wiring - status: completed
 
-11. [ ] Inject providerRepo into STBBridge; update handleChannelResolve
-    - `internal/modules/iptv/adapters/nats/stb_bridge.go`: add providerRepo field
-    - handleChannelResolve: FindByChannelID → pick lowest priority active → ResolveURL → fallback ch.StreamURL
-12. [ ] Wire all new components
-    - `internal/app/wire_iptv.go`: repos, commands, queries, inject into STBBridge and HTTP handlers
+11. [x] Inject providerRepo into STBBridge; update handleChannelResolve
+    - => channelProvidersByChannelReader interface added to stb_bridge.go
+    - => handleChannelResolve: picks lowest-priority active provider → ResolveProviderURL → fallback ch.StreamURL
+12. [x] Wire all new components
+    - => wire_iptv.go: all repos/commands/queries wired; NodeSSHLookup via swarmNodeSSHAdapter
+    - => dockerWired exposes swarmNodeRepo; wireIPTV takes it as param
+    - => wire_infra.go passes providerRepo to NewSTBBridge
+    - => builder.go: wireDocker called before wireIPTV
 
 ## Verification
 
@@ -81,3 +71,4 @@ status: active
 ## Progress Log
 
 - 2604201743 — plan created
+- 2604201900 — all 12 actions complete; build clean; all IPTV tests pass; commit 5f53d25
