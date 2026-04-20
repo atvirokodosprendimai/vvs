@@ -256,7 +256,7 @@ templ SwarmClusterDetailPage(cluster queries.SwarmClusterReadModel, nodes []quer
 						if cluster.HasHetzner {
 							<button
 								type="button"
-								data-on:click="$_hetznerFormOpen = !$_hetznerFormOpen"
+								data-on:click="$_hetznerformopen = !$_hetznerformopen"
 								class="bg-neutral-700 hover:bg-neutral-600 text-neutral-200 px-3 py-1 rounded text-xs font-medium"
 							>⚡ Order via Hetzner</button>
 						} else {
