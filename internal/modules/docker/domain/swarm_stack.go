@@ -26,19 +26,21 @@ const (
 	SwarmStackRemoving  SwarmStackStatus = "removing"
 )
 
-// SwarmStack is a docker stack deployed onto a swarm cluster.
+// SwarmStack is a compose stack deployed on a specific swarm node via SSH.
+// Overlay networking is handled by the Swarm; the compose project runs directly on TargetNodeID.
 type SwarmStack struct {
-	ID          string
-	ClusterID   string
-	Name        string
-	ComposeYAML string
-	Status      SwarmStackStatus
-	ErrorMsg    string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID           string
+	ClusterID    string
+	TargetNodeID string // which node runs this compose project (SSH deploy target)
+	Name         string
+	ComposeYAML  string
+	Status       SwarmStackStatus
+	ErrorMsg     string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
-func NewSwarmStack(clusterID, name, composeYAML string) (*SwarmStack, error) {
+func NewSwarmStack(clusterID, targetNodeID, name, composeYAML string) (*SwarmStack, error) {
 	clusterID = strings.TrimSpace(clusterID)
 	if clusterID == "" {
 		return nil, ErrStackClusterRequired
@@ -49,13 +51,14 @@ func NewSwarmStack(clusterID, name, composeYAML string) (*SwarmStack, error) {
 	}
 	now := time.Now().UTC()
 	return &SwarmStack{
-		ID:          uuid.Must(uuid.NewV7()).String(),
-		ClusterID:   clusterID,
-		Name:        name,
-		ComposeYAML: composeYAML,
-		Status:      SwarmStackDeploying,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:           uuid.Must(uuid.NewV7()).String(),
+		ClusterID:    clusterID,
+		TargetNodeID: strings.TrimSpace(targetNodeID),
+		Name:         name,
+		ComposeYAML:  composeYAML,
+		Status:       SwarmStackDeploying,
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}, nil
 }
 

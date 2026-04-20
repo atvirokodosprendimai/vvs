@@ -3,20 +3,64 @@ package commands
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/adapters/dockerclient"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/domain"
 	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 	"github.com/google/uuid"
 )
 
+// composePath returns the canonical path for a stack's compose file on a node.
+func composePath(stackName string) string {
+	return fmt.Sprintf("/opt/vvs/stacks/%s/docker-compose.yml", stackName)
+}
+
+// composeUp writes the compose YAML to the node and runs `docker compose up -d`.
+// Static IPs and DNS are defined in the compose YAML by the user.
+func composeUp(node *domain.SwarmNode, stackName, composeYAML string, progress func(string)) error {
+	dir := fmt.Sprintf("/opt/vvs/stacks/%s", stackName)
+	path := composePath(stackName)
+
+	// Write compose file
+	escapedYAML := strings.ReplaceAll(composeYAML, "'", `'"'"'`)
+	writeCmd := fmt.Sprintf("mkdir -p %s && printf '%%s' '%s' > %s", dir, escapedYAML, path)
+	if _, err := dockerclient.ExecSSH(node.SshHost, node.SshUser, node.SshPort, node.SshKey, writeCmd); err != nil {
+		return fmt.Errorf("write compose file: %w", err)
+	}
+	if progress != nil {
+		progress("Compose file written — starting containers…")
+	}
+
+	// Run docker compose up -d
+	upCmd := fmt.Sprintf("docker compose -f %s up -d --remove-orphans 2>&1", path)
+	out, err := dockerclient.ExecSSH(node.SshHost, node.SshUser, node.SshPort, node.SshKey, upCmd)
+	if err != nil {
+		return fmt.Errorf("docker compose up: %w\n%s", err, out)
+	}
+	if progress != nil && strings.TrimSpace(out) != "" {
+		progress(strings.TrimSpace(out))
+	}
+	return nil
+}
+
+// composeDown runs `docker compose down` on the node.
+func composeDown(node *domain.SwarmNode, stackName string) error {
+	path := composePath(stackName)
+	cmd := fmt.Sprintf("docker compose -f %s down 2>&1 || true", path)
+	_, err := dockerclient.ExecSSH(node.SshHost, node.SshUser, node.SshPort, node.SshKey, cmd)
+	return err
+}
+
 // ── DeploySwarmStack ──────────────────────────────────────────────────────────
 
 type DeploySwarmStackCommand struct {
-	ClusterID   string
-	Name        string
-	ComposeYAML string
-	Routes      []RouteInput
+	ClusterID    string
+	TargetNodeID string // specific node to run compose on
+	Name         string
+	ComposeYAML  string
+	Routes       []RouteInput
 }
 
 type RouteInput struct {
@@ -63,7 +107,7 @@ func (h *DeploySwarmStackHandler) emit(msg string) {
 }
 
 func (h *DeploySwarmStackHandler) Handle(ctx context.Context, cmd DeploySwarmStackCommand) (*domain.SwarmStack, error) {
-	stack, err := domain.NewSwarmStack(cmd.ClusterID, cmd.Name, cmd.ComposeYAML)
+	stack, err := domain.NewSwarmStack(cmd.ClusterID, cmd.TargetNodeID, cmd.Name, cmd.ComposeYAML)
 	if err != nil {
 		return nil, err
 	}
@@ -71,23 +115,17 @@ func (h *DeploySwarmStackHandler) Handle(ctx context.Context, cmd DeploySwarmSta
 		return nil, fmt.Errorf("save stack: %w", err)
 	}
 
-	h.emit(fmt.Sprintf("Deploying stack %q…", cmd.Name))
-
-	managerNode, err := h.findManagerNode(ctx, cmd.ClusterID)
+	// Resolve target node
+	node, err := h.resolveTargetNode(ctx, cmd.ClusterID, cmd.TargetNodeID)
 	if err != nil {
 		stack.MarkError(err.Error())
 		_ = h.stackRepo.Save(ctx, stack)
-		return stack, fmt.Errorf("find manager node: %w", err)
+		return stack, fmt.Errorf("resolve target node: %w", err)
 	}
 
-	client, err := h.factory.ForSwarmNode(managerNode)
-	if err != nil {
-		stack.MarkError(err.Error())
-		_ = h.stackRepo.Save(ctx, stack)
-		return stack, fmt.Errorf("create docker client: %w", err)
-	}
+	h.emit(fmt.Sprintf("Deploying %q on %s (%s)…", cmd.Name, node.Name, node.SshHost))
 
-	if err := client.StackDeploy(ctx, cmd.Name, cmd.ComposeYAML); err != nil {
+	if err := composeUp(node, cmd.Name, cmd.ComposeYAML, h.emit); err != nil {
 		stack.MarkError(err.Error())
 		_ = h.stackRepo.Save(ctx, stack)
 		return stack, nil // error stored on stack, not returned
@@ -115,7 +153,12 @@ func (h *DeploySwarmStackHandler) Handle(ctx context.Context, cmd DeploySwarmSta
 	return stack, nil
 }
 
-func (h *DeploySwarmStackHandler) findManagerNode(ctx context.Context, clusterID string) (*domain.SwarmNode, error) {
+// resolveTargetNode returns the target node by ID, or falls back to manager if ID is empty.
+func (h *DeploySwarmStackHandler) resolveTargetNode(ctx context.Context, clusterID, nodeID string) (*domain.SwarmNode, error) {
+	if nodeID != "" {
+		return h.nodeRepo.FindByID(ctx, nodeID)
+	}
+	// Fallback: first available manager node
 	nodes, err := h.nodeRepo.FindByClusterID(ctx, clusterID)
 	if err != nil {
 		return nil, err
@@ -125,7 +168,7 @@ func (h *DeploySwarmStackHandler) findManagerNode(ctx context.Context, clusterID
 			return n, nil
 		}
 	}
-	return nil, fmt.Errorf("no active manager node in cluster %s", clusterID)
+	return nil, fmt.Errorf("no target node specified and no active manager found in cluster %s", clusterID)
 }
 
 // ── UpdateSwarmStack ──────────────────────────────────────────────────────────
@@ -175,31 +218,37 @@ func (h *UpdateSwarmStackHandler) Handle(ctx context.Context, cmd UpdateSwarmSta
 
 	h.emit(fmt.Sprintf("Updating stack %q…", stack.Name))
 
-	nodes, err := h.nodeRepo.FindByClusterID(ctx, stack.ClusterID)
-	if err != nil {
-		return nil, fmt.Errorf("find cluster nodes: %w", err)
-	}
-	var managerNode *domain.SwarmNode
-	for _, n := range nodes {
-		if n.Role == domain.SwarmNodeManager && n.VpnIP != "" {
-			managerNode = n
-			break
+	// Find target node
+	var targetNode *domain.SwarmNode
+	if stack.TargetNodeID != "" {
+		targetNode, err = h.nodeRepo.FindByID(ctx, stack.TargetNodeID)
+		if err != nil {
+			stack.MarkError(fmt.Sprintf("target node not found: %v", err))
+			_ = h.stackRepo.Save(ctx, stack)
+			return stack, nil
+		}
+	} else {
+		// Legacy stacks without TargetNodeID — fall back to manager node
+		nodes, err := h.nodeRepo.FindByClusterID(ctx, stack.ClusterID)
+		if err != nil {
+			stack.MarkError(err.Error())
+			_ = h.stackRepo.Save(ctx, stack)
+			return stack, nil
+		}
+		for _, n := range nodes {
+			if n.Role == domain.SwarmNodeManager && n.VpnIP != "" {
+				targetNode = n
+				break
+			}
 		}
 	}
-	if managerNode == nil {
-		stack.MarkError("no active manager node")
+	if targetNode == nil {
+		stack.MarkError("no target node available")
 		_ = h.stackRepo.Save(ctx, stack)
-		return stack, fmt.Errorf("no active manager node in cluster %s", stack.ClusterID)
+		return stack, fmt.Errorf("no target node for stack %s", stack.Name)
 	}
 
-	client, err := h.factory.ForSwarmNode(managerNode)
-	if err != nil {
-		stack.MarkError(err.Error())
-		_ = h.stackRepo.Save(ctx, stack)
-		return stack, fmt.Errorf("create docker client: %w", err)
-	}
-
-	if err := client.StackDeploy(ctx, stack.Name, cmd.ComposeYAML); err != nil {
+	if err := composeUp(targetNode, stack.Name, cmd.ComposeYAML, h.emit); err != nil {
 		stack.MarkError(err.Error())
 		_ = h.stackRepo.Save(ctx, stack)
 		return stack, nil
@@ -241,17 +290,25 @@ func (h *RemoveSwarmStackHandler) Handle(ctx context.Context, cmd RemoveSwarmSta
 		return err
 	}
 
-	nodes, err := h.nodeRepo.FindByClusterID(ctx, stack.ClusterID)
-	if err == nil {
-		for _, n := range nodes {
-			if n.Role == domain.SwarmNodeManager && n.VpnIP != "" {
-				client, err := h.factory.ForSwarmNode(n)
-				if err == nil {
-					_ = client.StackRemove(ctx, stack.Name)
+	// Find target node and run docker compose down
+	var targetNode *domain.SwarmNode
+	if stack.TargetNodeID != "" {
+		targetNode, _ = h.nodeRepo.FindByID(ctx, stack.TargetNodeID)
+	}
+	if targetNode == nil {
+		// Fall back to any manager node
+		nodes, err := h.nodeRepo.FindByClusterID(ctx, stack.ClusterID)
+		if err == nil {
+			for _, n := range nodes {
+				if n.Role == domain.SwarmNodeManager && n.VpnIP != "" {
+					targetNode = n
+					break
 				}
-				break
 			}
 		}
+	}
+	if targetNode != nil {
+		_ = composeDown(targetNode, stack.Name)
 	}
 
 	if err := h.stackRepo.Delete(ctx, stack.ID); err != nil {

@@ -44,13 +44,15 @@ type SwarmNetworkReadModel struct {
 }
 
 type SwarmStackReadModel struct {
-	ID          string
-	ClusterID   string
-	Name        string
-	Status      string
-	ErrorMsg    string
-	ComposeYAML string
-	Routes      []SwarmRouteReadModel
+	ID             string
+	ClusterID      string
+	TargetNodeID   string
+	TargetNodeName string
+	Name           string
+	Status         string
+	ErrorMsg       string
+	ComposeYAML    string
+	Routes         []SwarmRouteReadModel
 }
 
 type SwarmRouteReadModel struct {
@@ -233,10 +235,13 @@ func toNetworkReadModel(n *domain.SwarmNetwork) SwarmNetworkReadModel {
 
 // ── Stack queries ─────────────────────────────────────────────────────────────
 
-type ListSwarmStacksHandler struct{ stackRepo domain.SwarmStackRepository }
+type ListSwarmStacksHandler struct {
+	stackRepo domain.SwarmStackRepository
+	nodeRepo  domain.SwarmNodeRepository
+}
 
-func NewListSwarmStacksHandler(repo domain.SwarmStackRepository) *ListSwarmStacksHandler {
-	return &ListSwarmStacksHandler{stackRepo: repo}
+func NewListSwarmStacksHandler(stackRepo domain.SwarmStackRepository, nodeRepo domain.SwarmNodeRepository) *ListSwarmStacksHandler {
+	return &ListSwarmStacksHandler{stackRepo: stackRepo, nodeRepo: nodeRepo}
 }
 
 func (h *ListSwarmStacksHandler) Handle(ctx context.Context, clusterID string) ([]SwarmStackReadModel, error) {
@@ -247,21 +252,37 @@ func (h *ListSwarmStacksHandler) Handle(ctx context.Context, clusterID string) (
 	out := make([]SwarmStackReadModel, len(stacks))
 	for i, s := range stacks {
 		out[i] = SwarmStackReadModel{
-			ID:          s.ID,
-			ClusterID:   s.ClusterID,
-			Name:        s.Name,
-			Status:      string(s.Status),
-			ErrorMsg:    s.ErrorMsg,
-			ComposeYAML: s.ComposeYAML,
+			ID:             s.ID,
+			ClusterID:      s.ClusterID,
+			TargetNodeID:   s.TargetNodeID,
+			TargetNodeName: h.resolveNodeName(ctx, s.TargetNodeID),
+			Name:           s.Name,
+			Status:         string(s.Status),
+			ErrorMsg:       s.ErrorMsg,
+			ComposeYAML:    s.ComposeYAML,
 		}
 	}
 	return out, nil
 }
 
-type GetSwarmStackHandler struct{ stackRepo domain.SwarmStackRepository }
+func (h *ListSwarmStacksHandler) resolveNodeName(ctx context.Context, nodeID string) string {
+	if nodeID == "" {
+		return ""
+	}
+	n, err := h.nodeRepo.FindByID(ctx, nodeID)
+	if err != nil || n == nil {
+		return nodeID[:min(8, len(nodeID))]
+	}
+	return n.Name
+}
 
-func NewGetSwarmStackHandler(repo domain.SwarmStackRepository) *GetSwarmStackHandler {
-	return &GetSwarmStackHandler{stackRepo: repo}
+type GetSwarmStackHandler struct {
+	stackRepo domain.SwarmStackRepository
+	nodeRepo  domain.SwarmNodeRepository
+}
+
+func NewGetSwarmStackHandler(stackRepo domain.SwarmStackRepository, nodeRepo domain.SwarmNodeRepository) *GetSwarmStackHandler {
+	return &GetSwarmStackHandler{stackRepo: stackRepo, nodeRepo: nodeRepo}
 }
 
 func (h *GetSwarmStackHandler) Handle(ctx context.Context, id string) (*SwarmStackReadModel, error) {
@@ -279,13 +300,21 @@ func (h *GetSwarmStackHandler) Handle(ctx context.Context, id string) (*SwarmSta
 			StripPrefix: r.StripPrefix,
 		}
 	}
+	nodeName := ""
+	if s.TargetNodeID != "" {
+		if n, err := h.nodeRepo.FindByID(ctx, s.TargetNodeID); err == nil && n != nil {
+			nodeName = n.Name
+		}
+	}
 	return &SwarmStackReadModel{
-		ID:          s.ID,
-		ClusterID:   s.ClusterID,
-		Name:        s.Name,
-		Status:      string(s.Status),
-		ErrorMsg:    s.ErrorMsg,
-		ComposeYAML: s.ComposeYAML,
-		Routes:      routeModels,
+		ID:             s.ID,
+		ClusterID:      s.ClusterID,
+		TargetNodeID:   s.TargetNodeID,
+		TargetNodeName: nodeName,
+		Name:           s.Name,
+		Status:         string(s.Status),
+		ErrorMsg:       s.ErrorMsg,
+		ComposeYAML:    s.ComposeYAML,
+		Routes:         routeModels,
 	}, nil
 }

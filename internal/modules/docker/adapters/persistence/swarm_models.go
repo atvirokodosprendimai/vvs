@@ -180,41 +180,44 @@ func toSwarmNetworkDomain(m *SwarmNetworkModel) *domain.SwarmNetwork {
 // ── SwarmStack model ──────────────────────────────────────────────────────────
 
 type SwarmStackModel struct {
-	ID          string `gorm:"primaryKey;type:text"`
-	ClusterID   string `gorm:"column:cluster_id;type:text;not null"`
-	Name        string `gorm:"type:text;not null"`
-	ComposeYAML string `gorm:"column:compose_yaml;type:text;not null;default:''"`
-	Status      string `gorm:"type:text;not null;default:'deploying'"`
-	ErrorMsg    string `gorm:"column:error_msg;type:text;not null;default:''"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID           string `gorm:"primaryKey;type:text"`
+	ClusterID    string `gorm:"column:cluster_id;type:text;not null"`
+	TargetNodeID string `gorm:"column:target_node_id;type:text;not null;default:''"`
+	Name         string `gorm:"type:text;not null"`
+	ComposeYAML  string `gorm:"column:compose_yaml;type:text;not null;default:''"`
+	Status       string `gorm:"type:text;not null;default:'deploying'"`
+	ErrorMsg     string `gorm:"column:error_msg;type:text;not null;default:''"`
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 func (SwarmStackModel) TableName() string { return "swarm_stacks" }
 
 func toSwarmStackModel(s *domain.SwarmStack) *SwarmStackModel {
 	return &SwarmStackModel{
-		ID:          s.ID,
-		ClusterID:   s.ClusterID,
-		Name:        s.Name,
-		ComposeYAML: s.ComposeYAML,
-		Status:      string(s.Status),
-		ErrorMsg:    s.ErrorMsg,
-		CreatedAt:   s.CreatedAt,
-		UpdatedAt:   s.UpdatedAt,
+		ID:           s.ID,
+		ClusterID:    s.ClusterID,
+		TargetNodeID: s.TargetNodeID,
+		Name:         s.Name,
+		ComposeYAML:  s.ComposeYAML,
+		Status:       string(s.Status),
+		ErrorMsg:     s.ErrorMsg,
+		CreatedAt:    s.CreatedAt,
+		UpdatedAt:    s.UpdatedAt,
 	}
 }
 
 func toSwarmStackDomain(m *SwarmStackModel) *domain.SwarmStack {
 	return &domain.SwarmStack{
-		ID:          m.ID,
-		ClusterID:   m.ClusterID,
-		Name:        m.Name,
-		ComposeYAML: m.ComposeYAML,
-		Status:      domain.SwarmStackStatus(m.Status),
-		ErrorMsg:    m.ErrorMsg,
-		CreatedAt:   m.CreatedAt,
-		UpdatedAt:   m.UpdatedAt,
+		ID:           m.ID,
+		ClusterID:    m.ClusterID,
+		TargetNodeID: m.TargetNodeID,
+		Name:         m.Name,
+		ComposeYAML:  m.ComposeYAML,
+		Status:       domain.SwarmStackStatus(m.Status),
+		ErrorMsg:     m.ErrorMsg,
+		CreatedAt:    m.CreatedAt,
+		UpdatedAt:    m.UpdatedAt,
 	}
 }
 
