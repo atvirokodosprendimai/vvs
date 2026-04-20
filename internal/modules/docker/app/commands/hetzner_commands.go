@@ -3,12 +3,65 @@ package commands
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
+
+	"golang.org/x/crypto/ssh"
 
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/adapters/hetzner"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/domain"
 	"github.com/google/uuid"
 )
+
+// waitForSSH polls until the SSH daemon on ip:22 is ready to authenticate.
+// Returns nil once a successful connection (or auth-level error) is reached,
+// meaning the daemon is up and keys are injected. Retries every 10 s up to timeout.
+func waitForSSH(ctx context.Context, ip string, privateKey []byte, timeout time.Duration, progress func(string)) error {
+	signer, err := ssh.ParsePrivateKey(privateKey)
+	if err != nil {
+		return fmt.Errorf("parse private key: %w", err)
+	}
+	cfg := &ssh.ClientConfig{
+		User:            "root",
+		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		Timeout:         10 * time.Second,
+	}
+	deadline := time.Now().Add(timeout)
+	addr := ip + ":22"
+	for {
+		if time.Now().After(deadline) {
+			return fmt.Errorf("SSH not ready on %s after %s", ip, timeout)
+		}
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		conn, dialErr := ssh.Dial("tcp", addr, cfg)
+		if dialErr == nil {
+			conn.Close()
+			return nil
+		}
+		s := dialErr.Error()
+		notUp := strings.Contains(s, "connection refused") ||
+			strings.Contains(s, "no route to host") ||
+			strings.Contains(s, "i/o timeout") ||
+			strings.Contains(s, "connection reset") ||
+			strings.Contains(s, "no supported methods")
+		if notUp {
+			if progress != nil {
+				progress("Waiting for SSH daemon…")
+			}
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(10 * time.Second):
+			}
+			continue
+		}
+		// Any other error (e.g. successful handshake then auth failure) means daemon is up.
+		return nil
+	}
+}
 
 // SwarmNodeRoleFromString converts a string role to the domain type.
 func SwarmNodeRoleFromString(role string) domain.SwarmNodeRole {
@@ -132,14 +185,11 @@ func (h *OrderHetznerNodeHandler) Handle(ctx context.Context, cmd OrderHetznerNo
 	if err != nil {
 		return nil, fmt.Errorf("Hetzner server not ready: %w", err)
 	}
-	h.emit(fmt.Sprintf("Server running at %s — giving SSH a moment to start…", ip))
-
-	// Give SSH daemon time to start after OS boot (30 s)
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-time.After(30 * time.Second):
+	h.emit(fmt.Sprintf("Server running at %s — waiting for SSH daemon…", ip))
+	if err := waitForSSH(ctx, ip, cluster.SSHPrivateKey, 3*time.Minute, h.emit); err != nil {
+		return nil, fmt.Errorf("SSH not ready: %w", err)
 	}
+	h.emit("SSH ready — starting provisioning…")
 
 	// 3. Create SwarmNode record
 	node, err := h.createNode.Handle(ctx, CreateSwarmNodeCommand{
