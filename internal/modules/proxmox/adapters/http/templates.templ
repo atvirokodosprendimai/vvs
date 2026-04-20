@@ -425,6 +425,159 @@ templ VMActionError(vmID, msg string) {
 	<div id={ "vm-action-error-" + vmID } class="text-red-400 text-sm p-2 bg-red-900/20 rounded">{ msg }</div>
 }
 
+// ── VM Plan admin pages ───────────────────────────────────────────────────────
+
+templ VMPlansPage() {
+	@templates.Layout("VM Plans") {
+		<div class="p-6 space-y-4">
+			<div class="flex items-center justify-between">
+				<h1 class="text-xl font-semibold text-neutral-100">VM Plans</h1>
+				<a href="/proxmox/plans/new" class="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-md">
+					+ New Plan
+				</a>
+			</div>
+			<div id="proxmox-plans-table" data-init="@get('/api/proxmox/plans')">
+				<div class="text-neutral-500 text-sm">Loading...</div>
+			</div>
+		</div>
+	}
+}
+
+templ VMPlanTable(plans []queries.VMPlanReadModel) {
+	<div id="proxmox-plans-table">
+		if len(plans) == 0 {
+			<p class="text-neutral-500 text-sm">No plans configured. <a href="/proxmox/plans/new" class="text-amber-400 hover:underline">Add one</a>.</p>
+		} else {
+			<table class="w-full text-sm text-neutral-300">
+				<thead class="text-left text-neutral-500 border-b border-neutral-700">
+					<tr>
+						<th class="pb-2 pr-4">Name</th>
+						<th class="pb-2 pr-4">Cores</th>
+						<th class="pb-2 pr-4">RAM</th>
+						<th class="pb-2 pr-4">Disk</th>
+						<th class="pb-2 pr-4">Price/mo</th>
+						<th class="pb-2 pr-4">Enabled</th>
+						<th class="pb-2"></th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-neutral-800">
+					for _, p := range plans {
+						@VMPlanRow(p)
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}
+
+templ VMPlanRow(p queries.VMPlanReadModel) {
+	<tr id={ "plan-row-" + p.ID } class="hover:bg-neutral-800/30">
+		<td class="py-2 pr-4 font-medium text-neutral-200">{ p.Name }</td>
+		<td class="py-2 pr-4 text-neutral-400">{ fmt.Sprint(p.Cores) }</td>
+		<td class="py-2 pr-4 text-neutral-400">{ fmt.Sprint(p.MemoryMB) } MB</td>
+		<td class="py-2 pr-4 text-neutral-400">{ fmt.Sprint(p.DiskGB) } GB</td>
+		<td class="py-2 pr-4 text-neutral-400">{ vmPlanPrice(p.PriceMonthlyEuroCents) }</td>
+		<td class="py-2 pr-4">
+			if p.Enabled {
+				<span class="text-xs text-green-400">yes</span>
+			} else {
+				<span class="text-xs text-neutral-500">no</span>
+			}
+		</td>
+		<td class="py-2 text-right space-x-2">
+			<a href={ templ.SafeURL("/proxmox/plans/" + p.ID + "/edit") } class="text-xs text-neutral-400 hover:text-amber-400">Edit</a>
+			<button
+				class="text-xs text-red-400 hover:text-red-300"
+				data-on:click={ "confirm('Delete plan " + p.Name + "?') && @delete('/api/proxmox/plans/" + p.ID + "')" }
+			>Delete</button>
+		</td>
+	</tr>
+}
+
+templ VMPlanFormPage(plan *queries.VMPlanReadModel) {
+	@templates.Layout(vmPlanFormTitle(plan)) {
+		<div class="p-6 max-w-lg space-y-4">
+			<div class="flex items-center gap-3">
+				<a href="/proxmox/plans" class="text-neutral-400 hover:text-amber-400 text-sm">← Plans</a>
+				<h1 class="text-xl font-semibold text-neutral-100">{ vmPlanFormTitle(plan) }</h1>
+			</div>
+			<div id="plan-form-error" style="display:none"></div>
+			@VMPlanForm(plan)
+		</div>
+	}
+}
+
+templ VMPlanForm(plan *queries.VMPlanReadModel) {
+	<form
+		data-signals={ vmPlanFormSignals(plan) }
+		data-on:submit__prevent={ vmPlanFormSubmit(plan) }
+		class="space-y-4"
+	>
+		<div>
+			<label class="block text-sm text-neutral-400 mb-1">Name</label>
+			<input data-bind:name class="input-field w-full" placeholder="Starter" required/>
+		</div>
+		<div>
+			<label class="block text-sm text-neutral-400 mb-1">Description</label>
+			<textarea data-bind:description class="input-field w-full h-16" placeholder="Great for small projects"></textarea>
+		</div>
+		<div class="grid grid-cols-3 gap-4">
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">Cores</label>
+				<input data-bind:cores type="number" class="input-field w-full" min="1" required/>
+			</div>
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">RAM (MB)</label>
+				<input data-bind:memory-mb type="number" class="input-field w-full" min="256" required/>
+			</div>
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">Disk (GB)</label>
+				<input data-bind:disk-gb type="number" class="input-field w-full" min="1" required/>
+			</div>
+		</div>
+		<div class="grid grid-cols-2 gap-4">
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">Storage Pool</label>
+				<input data-bind:storage class="input-field w-full" placeholder="local-lvm"/>
+			</div>
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">Template VMID</label>
+				<input data-bind:template-vmid type="number" class="input-field w-full" min="1" required/>
+			</div>
+		</div>
+		<div class="grid grid-cols-2 gap-4">
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">Node ID</label>
+				<input data-bind:node-id class="input-field w-full" placeholder="(optional — leave blank for any)"/>
+			</div>
+			<div>
+				<label class="block text-sm text-neutral-400 mb-1">Price / month (euro cents)</label>
+				<input data-bind:price-monthly-euro-cents type="number" class="input-field w-full" min="0" placeholder="500"/>
+			</div>
+		</div>
+		<div>
+			<label class="block text-sm text-neutral-400 mb-1">Notes</label>
+			<textarea data-bind:notes class="input-field w-full h-16"></textarea>
+		</div>
+		if plan != nil {
+			<div class="flex items-center gap-2">
+				<input data-bind:enabled type="checkbox" id="plan-enabled" class="text-amber-500"/>
+				<label for="plan-enabled" class="text-sm text-neutral-400">Enabled (visible to portal customers)</label>
+			</div>
+		}
+		<div class="flex gap-3">
+			<button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm rounded-md">
+				{ vmPlanFormButtonLabel(plan) }
+			</button>
+			<a href="/proxmox/plans" class="px-4 py-2 text-neutral-400 hover:text-neutral-200 text-sm">Cancel</a>
+		</div>
+	</form>
+}
+
+templ VMPlanFormError(msg string) {
+	<div id="plan-form-error" class="text-red-400 text-sm p-2 bg-red-900/20 rounded" style="display:block">{ msg }</div>
+}
+
 // ── shared helpers ────────────────────────────────────────────────────────────
 
 func nodeFormTitle(node *queries.NodeReadModel) string {
@@ -461,4 +614,43 @@ func nodeFormSubmit(node *queries.NodeReadModel) string {
 		return "@put('/api/proxmox/nodes/" + node.ID + "')"
 	}
 	return "@post('/api/proxmox/nodes')"
+}
+
+func vmPlanFormTitle(plan *queries.VMPlanReadModel) string {
+	if plan != nil {
+		return "Edit Plan"
+	}
+	return "New VM Plan"
+}
+
+func vmPlanFormButtonLabel(plan *queries.VMPlanReadModel) string {
+	if plan != nil {
+		return "Save Changes"
+	}
+	return "Create Plan"
+}
+
+func vmPlanPrice(cents int64) string {
+	euros := cents / 100
+	c := cents % 100
+	return fmt.Sprintf("€%d.%02d", euros, c)
+}
+
+func vmPlanFormSignals(plan *queries.VMPlanReadModel) string {
+	if plan == nil {
+		return `{name:'',description:'',cores:2,memoryMb:2048,diskGb:20,storage:'local-lvm',templateVmid:0,nodeId:'',priceMonthlyEuroCents:0,enabled:true,notes:''}`
+	}
+	return fmt.Sprintf(
+		`{name:%q,description:%q,cores:%d,memoryMb:%d,diskGb:%d,storage:%q,templateVmid:%d,nodeId:%q,priceMonthlyEuroCents:%d,enabled:%v,notes:%q}`,
+		plan.Name, plan.Description, plan.Cores, plan.MemoryMB, plan.DiskGB,
+		plan.Storage, plan.TemplateVMID, plan.NodeID, plan.PriceMonthlyEuroCents,
+		plan.Enabled, plan.Notes,
+	)
+}
+
+func vmPlanFormSubmit(plan *queries.VMPlanReadModel) string {
+	if plan != nil {
+		return "@put('/api/proxmox/plans/" + plan.ID + "')"
+	}
+	return "@post('/api/proxmox/plans')"
 }

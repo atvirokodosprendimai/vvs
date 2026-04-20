@@ -56,6 +56,43 @@ type VMReadModel struct {
 	UpdatedAt  time.Time
 }
 
+// VMPlanReadModel is the query-side view of a VM plan.
+type VMPlanReadModel struct {
+	ID                    string
+	Name                  string
+	Description           string
+	Cores                 int
+	MemoryMB              int
+	DiskGB                int
+	Storage               string
+	TemplateVMID          int
+	NodeID                string
+	PriceMonthlyEuroCents int64
+	Enabled               bool
+	Notes                 string
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
+}
+
+func vmPlanToReadModel(p *domain.VMPlan) VMPlanReadModel {
+	return VMPlanReadModel{
+		ID:                    p.ID,
+		Name:                  p.Name,
+		Description:           p.Description,
+		Cores:                 p.Cores,
+		MemoryMB:              p.MemoryMB,
+		DiskGB:                p.DiskGB,
+		Storage:               p.Storage,
+		TemplateVMID:          p.TemplateVMID,
+		NodeID:                p.NodeID,
+		PriceMonthlyEuroCents: p.PriceMonthlyEuroCents,
+		Enabled:               p.Enabled,
+		Notes:                 p.Notes,
+		CreatedAt:             p.CreatedAt,
+		UpdatedAt:             p.UpdatedAt,
+	}
+}
+
 func vmToReadModel(vm *domain.VirtualMachine) VMReadModel {
 	return VMReadModel{
 		ID:         vm.ID,

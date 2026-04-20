@@ -21,18 +21,24 @@ type Handlers struct {
 	updateNode *commands.UpdateNodeHandler
 	deleteNode *commands.DeleteNodeHandler
 	// VM commands
-	createVM        *commands.CreateVMHandler
-	suspendVM       *commands.SuspendVMHandler
-	resumeVM        *commands.ResumeVMHandler
-	restartVM       *commands.RestartVMHandler
-	deleteVM        *commands.DeleteVMHandler
+	createVM         *commands.CreateVMHandler
+	suspendVM        *commands.SuspendVMHandler
+	resumeVM         *commands.ResumeVMHandler
+	restartVM        *commands.RestartVMHandler
+	deleteVM         *commands.DeleteVMHandler
 	assignVMCustomer *commands.AssignVMCustomerHandler
+	// VM Plan commands
+	createVMPlan *commands.CreateVMPlanHandler
+	updateVMPlan *commands.UpdateVMPlanHandler
+	deleteVMPlan *commands.DeleteVMPlanHandler
 	// Queries
 	listNodes          *queries.ListNodesHandler
 	getNode            *queries.GetNodeHandler
 	listVMs            *queries.ListVMsHandler
 	getVM              *queries.GetVMHandler
 	listVMsForCustomer *queries.ListVMsForCustomerHandler
+	listVMPlans        *queries.ListVMPlansHandler
+	getVMPlan          *queries.GetVMPlanHandler
 	// Infra
 	subscriber events.EventSubscriber
 }
@@ -47,19 +53,26 @@ func NewHandlers(
 	restartVM *commands.RestartVMHandler,
 	deleteVM *commands.DeleteVMHandler,
 	assignVMCustomer *commands.AssignVMCustomerHandler,
+	createVMPlan *commands.CreateVMPlanHandler,
+	updateVMPlan *commands.UpdateVMPlanHandler,
+	deleteVMPlan *commands.DeleteVMPlanHandler,
 	listNodes *queries.ListNodesHandler,
 	getNode *queries.GetNodeHandler,
 	listVMs *queries.ListVMsHandler,
 	getVM *queries.GetVMHandler,
 	listVMsForCustomer *queries.ListVMsForCustomerHandler,
+	listVMPlans *queries.ListVMPlansHandler,
+	getVMPlan *queries.GetVMPlanHandler,
 	subscriber events.EventSubscriber,
 ) *Handlers {
 	return &Handlers{
 		createNode: createNode, updateNode: updateNode, deleteNode: deleteNode,
 		createVM: createVM, suspendVM: suspendVM, resumeVM: resumeVM,
 		restartVM: restartVM, deleteVM: deleteVM, assignVMCustomer: assignVMCustomer,
+		createVMPlan: createVMPlan, updateVMPlan: updateVMPlan, deleteVMPlan: deleteVMPlan,
 		listNodes: listNodes, getNode: getNode,
 		listVMs: listVMs, getVM: getVM, listVMsForCustomer: listVMsForCustomer,
+		listVMPlans: listVMPlans, getVMPlan: getVMPlan,
 		subscriber: subscriber,
 	}
 }
@@ -90,6 +103,17 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/proxmox/vms/{id}/restart", h.vmRestartSSE)
 	r.Delete("/api/proxmox/vms/{id}", h.vmDeleteSSE)
 	r.Put("/api/proxmox/vms/{id}/customer", h.vmAssignCustomerSSE)
+
+	// ── VM Plan pages ───────────────────────────────────────────────────────────
+	r.Get("/proxmox/plans", h.planListPage)
+	r.Get("/proxmox/plans/new", h.planCreatePage)
+	r.Get("/proxmox/plans/{id}/edit", h.planEditPage)
+
+	// ── VM Plan SSE / API ───────────────────────────────────────────────────────
+	r.Get("/api/proxmox/plans", h.planListSSE)
+	r.Post("/api/proxmox/plans", h.planCreateSSE)
+	r.Put("/api/proxmox/plans/{id}", h.planUpdateSSE)
+	r.Delete("/api/proxmox/plans/{id}", h.planDeleteSSE)
 }
 
 // ModuleName satisfies the ModuleNamed interface for permission checks.
@@ -383,6 +407,142 @@ func (h *Handlers) vmDeleteSSE(w http.ResponseWriter, r *http.Request) {
 		sse.PatchElementTempl(VMActionError(id, err.Error()))
 		return
 	}
+}
+
+// ── VM Plan page handlers ─────────────────────────────────────────────────────
+
+func (h *Handlers) planListPage(w http.ResponseWriter, r *http.Request) {
+	VMPlansPage().Render(r.Context(), w)
+}
+
+func (h *Handlers) planCreatePage(w http.ResponseWriter, r *http.Request) {
+	VMPlanFormPage(nil).Render(r.Context(), w)
+}
+
+func (h *Handlers) planEditPage(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	plan, err := h.getVMPlan.Handle(r.Context(), id)
+	if err != nil {
+		http.Error(w, "plan not found", http.StatusNotFound)
+		return
+	}
+	VMPlanFormPage(plan).Render(r.Context(), w)
+}
+
+// ── VM Plan SSE handlers ──────────────────────────────────────────────────────
+
+func (h *Handlers) planListSSE(w http.ResponseWriter, r *http.Request) {
+	sse := datastar.NewSSE(w, r)
+	ch, cancel := h.subscriber.ChanSubscription(events.ProxmoxVMPlanAll.String())
+	defer cancel()
+
+	current, _ := h.listVMPlans.Handle(r.Context())
+	sse.PatchElementTempl(VMPlanTable(current))
+
+	for {
+		select {
+		case _, ok := <-ch:
+			if !ok {
+				return
+			}
+			next, err := h.listVMPlans.Handle(r.Context())
+			if err != nil {
+				continue
+			}
+			if !reflect.DeepEqual(current, next) {
+				sse.PatchElementTempl(VMPlanTable(next))
+				current = next
+			}
+		case <-r.Context().Done():
+			return
+		}
+	}
+}
+
+func (h *Handlers) planCreateSSE(w http.ResponseWriter, r *http.Request) {
+	if !requireAdmin(w, r) {
+		return
+	}
+	var sig struct {
+		Name                  string `json:"name"`
+		Description           string `json:"description"`
+		Cores                 int    `json:"cores"`
+		MemoryMB              int    `json:"memoryMb"`
+		DiskGB                int    `json:"diskGb"`
+		Storage               string `json:"storage"`
+		TemplateVMID          int    `json:"templateVmid"`
+		NodeID                string `json:"nodeId"`
+		PriceMonthlyEuroCents int64  `json:"priceMonthlyEuroCents"`
+		Notes                 string `json:"notes"`
+	}
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	_, err := h.createVMPlan.Handle(r.Context(), commands.CreateVMPlanCommand{
+		Name: sig.Name, Description: sig.Description,
+		Cores: sig.Cores, MemoryMB: sig.MemoryMB, DiskGB: sig.DiskGB,
+		Storage: sig.Storage, TemplateVMID: sig.TemplateVMID, NodeID: sig.NodeID,
+		PriceMonthlyEuroCents: sig.PriceMonthlyEuroCents, Notes: sig.Notes,
+	})
+	if err != nil {
+		slog.Error("proxmox: create VM plan", "err", err)
+		sse.PatchElementTempl(VMPlanFormError(err.Error()))
+		return
+	}
+	sse.Redirect("/proxmox/plans")
+}
+
+func (h *Handlers) planUpdateSSE(w http.ResponseWriter, r *http.Request) {
+	if !requireAdmin(w, r) {
+		return
+	}
+	id := chi.URLParam(r, "id")
+	var sig struct {
+		Name                  string `json:"name"`
+		Description           string `json:"description"`
+		Cores                 int    `json:"cores"`
+		MemoryMB              int    `json:"memoryMb"`
+		DiskGB                int    `json:"diskGb"`
+		Storage               string `json:"storage"`
+		TemplateVMID          int    `json:"templateVmid"`
+		NodeID                string `json:"nodeId"`
+		PriceMonthlyEuroCents int64  `json:"priceMonthlyEuroCents"`
+		Enabled               bool   `json:"enabled"`
+		Notes                 string `json:"notes"`
+	}
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	_, err := h.updateVMPlan.Handle(r.Context(), commands.UpdateVMPlanCommand{
+		ID: id, Name: sig.Name, Description: sig.Description,
+		Cores: sig.Cores, MemoryMB: sig.MemoryMB, DiskGB: sig.DiskGB,
+		Storage: sig.Storage, TemplateVMID: sig.TemplateVMID, NodeID: sig.NodeID,
+		PriceMonthlyEuroCents: sig.PriceMonthlyEuroCents, Enabled: sig.Enabled, Notes: sig.Notes,
+	})
+	if err != nil {
+		slog.Error("proxmox: update VM plan", "err", err)
+		sse.PatchElementTempl(VMPlanFormError(err.Error()))
+		return
+	}
+	sse.Redirect("/proxmox/plans")
+}
+
+func (h *Handlers) planDeleteSSE(w http.ResponseWriter, r *http.Request) {
+	if !requireAdmin(w, r) {
+		return
+	}
+	id := chi.URLParam(r, "id")
+	sse := datastar.NewSSE(w, r)
+	if err := h.deleteVMPlan.Handle(r.Context(), commands.DeleteVMPlanCommand{ID: id}); err != nil {
+		slog.Error("proxmox: delete VM plan", "err", err)
+		sse.PatchElementTempl(VMPlanFormError(err.Error()))
+		return
+	}
+	sse.Redirect("/proxmox/plans")
 }
 
 func (h *Handlers) vmAssignCustomerSSE(w http.ResponseWriter, r *http.Request) {

@@ -41,11 +41,18 @@ func wireProxmox(
 	deleteVMCmd := proxmoxcommands.NewDeleteVMHandler(nodeRepo, vmRepo, provisioner, pub)
 	assignVMCustomerCmd := proxmoxcommands.NewAssignVMCustomerHandler(vmRepo, pub)
 
+	planRepo := proxmoxpersistence.NewGormVMPlanRepository(gdb)
+	createVMPlanCmd := proxmoxcommands.NewCreateVMPlanHandler(planRepo, pub)
+	updateVMPlanCmd := proxmoxcommands.NewUpdateVMPlanHandler(planRepo, pub)
+	deleteVMPlanCmd := proxmoxcommands.NewDeleteVMPlanHandler(planRepo, pub)
+
 	listNodesQuery := proxmoxqueries.NewListNodesHandler(nodeRepo)
 	getNodeQuery := proxmoxqueries.NewGetNodeHandler(nodeRepo)
 	listVMsQuery := proxmoxqueries.NewListVMsHandler(vmRepo, nodeRepo)
 	getVMQuery := proxmoxqueries.NewGetVMHandler(vmRepo, nodeRepo)
 	listVMsForCustomer := proxmoxqueries.NewListVMsForCustomerHandler(vmRepo, nodeRepo)
+	listVMPlansQuery := proxmoxqueries.NewListVMPlansHandler(planRepo)
+	getVMPlanQuery := proxmoxqueries.NewGetVMPlanHandler(planRepo)
 
 	var routes infrahttp.ModuleRoutes
 	if cfg.IsEnabled("proxmox") {
@@ -55,7 +62,9 @@ func wireProxmox(
 		routes = proxmoxhttp.NewHandlers(
 			createNodeCmd, updateNodeCmd, deleteNodeCmd,
 			createVMCmd, suspendVMCmd, resumeVMCmd, restartVMCmd, deleteVMCmd, assignVMCustomerCmd,
+			createVMPlanCmd, updateVMPlanCmd, deleteVMPlanCmd,
 			listNodesQuery, getNodeQuery, listVMsQuery, getVMQuery, listVMsForCustomer,
+			listVMPlansQuery, getVMPlanQuery,
 			sub,
 		)
 		log.Printf("module enabled: proxmox")
