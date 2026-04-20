@@ -34,6 +34,12 @@ type Config struct {
 	// Empty = dev mode (tokens stored in plaintext — not for production).
 	ProxmoxEncKey string // VVS_PROXMOX_ENC_KEY env var
 
+	// Stripe keys — required for portal VM purchase and balance top-up flows.
+	// Empty = Stripe integration disabled (portal checkout endpoints return 503).
+	StripeSecretKey      string // VVS_STRIPE_SECRET_KEY env var
+	StripeWebhookSecret  string // VVS_STRIPE_WEBHOOK_SECRET env var
+	StripePublishableKey string // VVS_STRIPE_PUBLISHABLE_KEY env var
+
 	// APIToken is the bearer token required for /api/v1/* requests.
 	// Empty string disables the REST API.
 	APIToken string // VVS_API_TOKEN env var

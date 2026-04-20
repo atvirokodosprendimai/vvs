@@ -4,14 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/dchest/captcha"
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
+	stripeinfra "github.com/atvirokodosprendimai/vvs/internal/infrastructure/stripe"
 	infrahttp "github.com/atvirokodosprendimai/vvs/internal/infrastructure/http"
 	invoicequeries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/portal/domain"
@@ -76,6 +79,46 @@ type portalLoginClient interface {
 	CreatePortalToken(ctx context.Context, customerID string, ttl time.Duration) (plain string, expiresAt time.Time, err error)
 }
 
+// stripeClient handles Stripe checkout session creation and webhook verification.
+type stripeClient interface {
+	ParseWebhook(payload []byte, sigHeader string) (*stripeinfra.ParsedCheckoutEvent, error)
+	CreateCheckoutSession(ctx context.Context, params stripeinfra.CheckoutParams) (sessionID, url string, err error)
+	PublishableKey() string
+}
+
+// VMPlanView is the portal-facing view of a VM plan.
+type VMPlanView struct {
+	ID          string
+	Name        string
+	Description string
+	Cores       int
+	RAMMb       int
+	DiskGB      int
+	PriceCents  int64
+}
+
+// VMView is the portal-facing view of a customer's VM.
+type VMView struct {
+	ID        string
+	VMID      int
+	Name      string
+	Status    string
+	IPAddress string
+	Cores     int
+	MemoryMB  int
+	DiskGB    int
+}
+
+// portalVMClient calls vvs-core for VM and balance operations.
+type portalVMClient interface {
+	ListVMPlans(ctx context.Context) ([]VMPlanView, error)
+	GetBalance(ctx context.Context, customerID string) (int64, error)
+	ProvisionVM(ctx context.Context, customerID, planID, stripeSessionID string) (string, error)
+	CompleteBalanceTopup(ctx context.Context, customerID string, amountCents int64, stripeSessionID string) error
+	BuyVMWithBalance(ctx context.Context, customerID, planID string) (string, error)
+	ListCustomerVMs(ctx context.Context, customerID string) ([]VMView, error)
+}
+
 // PortalService is the service view presented in the portal.
 type PortalService struct {
 	ID               string
@@ -107,6 +150,8 @@ type Handlers struct {
 	services     portalServiceClient
 	bot          portalBotClient
 	loginClient  portalLoginClient
+	stripe       stripeClient
+	vmClient     portalVMClient
 	baseURL      string
 	secureCookie bool
 }
@@ -163,6 +208,16 @@ func (h *Handlers) WithLoginClient(lc portalLoginClient) *Handlers {
 	return h
 }
 
+func (h *Handlers) WithStripe(sc stripeClient) *Handlers {
+	h.stripe = sc
+	return h
+}
+
+func (h *Handlers) WithVMClient(vc portalVMClient) *Handlers {
+	h.vmClient = vc
+	return h
+}
+
 // RegisterRoutes registers admin routes (protected by RequireAuth in the router).
 func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/customers/{id}/portal-link", h.generatePortalLink)
@@ -174,6 +229,9 @@ var authLimiter = infrahttp.NewIPRateLimiter(10, 15*time.Minute)
 // RegisterPublicRoutes registers portal routes before the auth middleware.
 // Implements infrastructure/http.PublicModuleRoutes.
 func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
+	// Stripe webhook — must be first (no auth, raw body required).
+	r.Post("/stripe/webhook", h.stripeWebhook)
+
 	r.With(authLimiter.Middleware()).Get("/portal/auth", h.portalAuth)
 	r.With(authLimiter.Middleware()).Get("/portal/login", h.portalLogin)
 	r.With(authLimiter.Middleware()).Post("/portal/login", h.portalLoginSubmit)
@@ -196,6 +254,15 @@ func (h *Handlers) RegisterPublicRoutes(r chi.Router) {
 		r.Post("/portal/bot/handoff", h.botHandoff)
 		r.Post("/portal/bot/livemessage", h.botLiveMessage)
 		r.Post("/portal/bot/close", h.botClose)
+		// VM self-service.
+		r.Get("/portal/plans", h.vmPlanList)
+		r.Post("/portal/checkout/vm", h.vmCheckout)
+		r.Get("/portal/checkout/success", h.checkoutSuccess)
+		r.Get("/portal/checkout/cancel", h.checkoutCancel)
+		r.Get("/portal/vms", h.vmList)
+		// Balance top-up.
+		r.Get("/portal/balance", h.balancePage)
+		r.Post("/portal/balance/topup", h.balanceTopup)
 	})
 }
 
@@ -699,6 +766,275 @@ func (h *Handlers) portalLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/portal/auth?token="+plain, http.StatusFound)
+}
+
+// ── Stripe webhook ──────────────────────────────────────────────────────────
+
+// stripeWebhook handles POST /stripe/webhook — validates signature and dispatches events.
+// Always responds 200 so Stripe doesn't retry; errors are logged.
+func (h *Handlers) stripeWebhook(w http.ResponseWriter, r *http.Request) {
+	if h.stripe == nil {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		slog.Error("stripe webhook: read body", "err", err)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	evt, err := h.stripe.ParseWebhook(body, r.Header.Get("Stripe-Signature"))
+	if err != nil {
+		slog.Error("stripe webhook: parse", "err", err)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if evt == nil {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	if h.vmClient != nil {
+		h.dispatchCheckoutEvent(r.Context(), evt)
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handlers) dispatchCheckoutEvent(ctx context.Context, evt *stripeinfra.ParsedCheckoutEvent) {
+	switch evt.Metadata["type"] {
+	case "vm_purchase":
+		customerID := evt.Metadata["customer_id"]
+		planID := evt.Metadata["plan_id"]
+		if customerID == "" || planID == "" {
+			slog.Error("stripe webhook: vm_purchase missing metadata", "session", evt.SessionID)
+			return
+		}
+		vmID, err := h.vmClient.ProvisionVM(ctx, customerID, planID, evt.SessionID)
+		if err != nil {
+			slog.Error("stripe webhook: provision vm", "session", evt.SessionID, "err", err)
+			return
+		}
+		slog.Info("stripe webhook: vm provisioned", "vmID", vmID, "session", evt.SessionID)
+	case "balance_topup":
+		customerID := evt.Metadata["customer_id"]
+		amountStr := evt.Metadata["amount_cents"]
+		if customerID == "" || amountStr == "" {
+			slog.Error("stripe webhook: balance_topup missing metadata", "session", evt.SessionID)
+			return
+		}
+		amountCents, err := strconv.ParseInt(amountStr, 10, 64)
+		if err != nil {
+			slog.Error("stripe webhook: balance_topup parse amount", "err", err, "session", evt.SessionID)
+			return
+		}
+		if err := h.vmClient.CompleteBalanceTopup(ctx, customerID, amountCents, evt.SessionID); err != nil {
+			slog.Error("stripe webhook: complete balance topup", "session", evt.SessionID, "err", err)
+			return
+		}
+		slog.Info("stripe webhook: balance topped up", "customer", customerID, "cents", amountCents)
+	default:
+		slog.Warn("stripe webhook: unknown checkout type", "type", evt.Metadata["type"], "session", evt.SessionID)
+	}
+}
+
+// ── VM plans & purchase ─────────────────────────────────────────────────────
+
+// vmPlanList renders GET /portal/plans — lists available VM plans.
+func (h *Handlers) vmPlanList(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	customerID := PortalCustomerIDFromContext(r.Context())
+	cust := h.resolveCustomer(r.Context(), customerID)
+	if h.vmClient == nil {
+		PortalErrorPage(cust, "Unavailable", "VM plans are not available.").Render(r.Context(), w)
+		return
+	}
+	plans, err := h.vmClient.ListVMPlans(r.Context())
+	if err != nil {
+		slog.Error("portal vmPlanList", "err", err)
+		PortalErrorPage(cust, "Error", "Could not load VM plans.").Render(r.Context(), w)
+		return
+	}
+	balance, _ := h.vmClient.GetBalance(r.Context(), customerID)
+	PortalVMPlanListPage(cust, plans, balance).Render(r.Context(), w)
+}
+
+// vmCheckout handles POST /portal/checkout/vm — buy with balance or redirect to Stripe.
+func (h *Handlers) vmCheckout(w http.ResponseWriter, r *http.Request) {
+	customerID := PortalCustomerIDFromContext(r.Context())
+	cust := h.resolveCustomer(r.Context(), customerID)
+	if h.vmClient == nil {
+		PortalErrorPage(cust, "Unavailable", "VM purchase is not available.").Render(r.Context(), w)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Redirect(w, r, "/portal/plans", http.StatusSeeOther)
+		return
+	}
+	planID := r.FormValue("plan_id")
+	if planID == "" {
+		http.Redirect(w, r, "/portal/plans", http.StatusSeeOther)
+		return
+	}
+
+	// Try balance first.
+	plans, _ := h.vmClient.ListVMPlans(r.Context())
+	var plan *VMPlanView
+	for i := range plans {
+		if plans[i].ID == planID {
+			plan = &plans[i]
+			break
+		}
+	}
+	if plan == nil {
+		PortalErrorPage(cust, "Not Found", "VM plan not found.").Render(r.Context(), w)
+		return
+	}
+
+	balance, _ := h.vmClient.GetBalance(r.Context(), customerID)
+	if balance >= plan.PriceCents {
+		vmID, err := h.vmClient.BuyVMWithBalance(r.Context(), customerID, planID)
+		if err != nil {
+			slog.Error("portal vmCheckout: buy with balance", "err", err)
+			PortalErrorPage(cust, "Error", "Could not provision VM: "+err.Error()).Render(r.Context(), w)
+			return
+		}
+		slog.Info("portal vmCheckout: provisioned from balance", "vmID", vmID)
+		http.Redirect(w, r, "/portal/checkout/success?src=balance", http.StatusSeeOther)
+		return
+	}
+
+	// Insufficient balance — redirect to Stripe Checkout.
+	if h.stripe == nil {
+		PortalErrorPage(cust, "Payment Unavailable", "Online payment is not configured.").Render(r.Context(), w)
+		return
+	}
+	baseURL := h.baseURL
+	if baseURL == "" {
+		baseURL = "http://" + r.Host
+	}
+	sessionID, url, err := h.stripe.CreateCheckoutSession(r.Context(), stripeinfra.CheckoutParams{
+		SuccessURL:    baseURL + "/portal/checkout/success",
+		CancelURL:     baseURL + "/portal/checkout/cancel",
+		CustomerEmail: cust.Email,
+		LineItems: []stripeinfra.LineItem{{
+			Name:        plan.Name,
+			Description: plan.Description,
+			AmountCents: plan.PriceCents,
+			Currency:    "eur",
+			Quantity:    1,
+		}},
+		Metadata: map[string]string{
+			"type":        "vm_purchase",
+			"customer_id": customerID,
+			"plan_id":     planID,
+		},
+	})
+	if err != nil {
+		slog.Error("portal vmCheckout: create stripe session", "err", err)
+		PortalErrorPage(cust, "Error", "Could not initiate payment.").Render(r.Context(), w)
+		return
+	}
+	slog.Info("portal vmCheckout: stripe checkout created", "session", sessionID)
+	http.Redirect(w, r, url, http.StatusSeeOther)
+}
+
+// checkoutSuccess renders GET /portal/checkout/success.
+func (h *Handlers) checkoutSuccess(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	customerID := PortalCustomerIDFromContext(r.Context())
+	cust := h.resolveCustomer(r.Context(), customerID)
+	fromBalance := r.URL.Query().Get("src") == "balance"
+	PortalCheckoutSuccessPage(cust, fromBalance).Render(r.Context(), w)
+}
+
+// checkoutCancel renders GET /portal/checkout/cancel.
+func (h *Handlers) checkoutCancel(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	customerID := PortalCustomerIDFromContext(r.Context())
+	cust := h.resolveCustomer(r.Context(), customerID)
+	PortalCheckoutCancelPage(cust).Render(r.Context(), w)
+}
+
+// vmList renders GET /portal/vms — customer's VMs.
+func (h *Handlers) vmList(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	customerID := PortalCustomerIDFromContext(r.Context())
+	cust := h.resolveCustomer(r.Context(), customerID)
+	if h.vmClient == nil {
+		PortalErrorPage(cust, "Unavailable", "VM information is not available.").Render(r.Context(), w)
+		return
+	}
+	vms, err := h.vmClient.ListCustomerVMs(r.Context(), customerID)
+	if err != nil {
+		slog.Error("portal vmList", "err", err)
+		PortalErrorPage(cust, "Error", "Could not load VMs.").Render(r.Context(), w)
+		return
+	}
+	PortalVMListPage(cust, vms).Render(r.Context(), w)
+}
+
+// ── Balance ─────────────────────────────────────────────────────────────────
+
+// balancePage renders GET /portal/balance — current balance and top-up form.
+func (h *Handlers) balancePage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	customerID := PortalCustomerIDFromContext(r.Context())
+	cust := h.resolveCustomer(r.Context(), customerID)
+	balance := int64(0)
+	if h.vmClient != nil {
+		balance, _ = h.vmClient.GetBalance(r.Context(), customerID)
+	}
+	PortalBalancePage(cust, balance).Render(r.Context(), w)
+}
+
+// balanceTopup handles POST /portal/balance/topup — creates a Stripe top-up session.
+func (h *Handlers) balanceTopup(w http.ResponseWriter, r *http.Request) {
+	customerID := PortalCustomerIDFromContext(r.Context())
+	cust := h.resolveCustomer(r.Context(), customerID)
+	if h.stripe == nil {
+		PortalErrorPage(cust, "Payment Unavailable", "Online payment is not configured.").Render(r.Context(), w)
+		return
+	}
+	if err := r.ParseForm(); err != nil {
+		http.Redirect(w, r, "/portal/balance", http.StatusSeeOther)
+		return
+	}
+	amountStr := r.FormValue("amount_cents")
+	amountCents, err := strconv.ParseInt(amountStr, 10, 64)
+	if err != nil || amountCents < 100 || amountCents > 100_000 {
+		balance := int64(0)
+		if h.vmClient != nil {
+			balance, _ = h.vmClient.GetBalance(r.Context(), customerID)
+		}
+		PortalBalancePage(cust, balance).Render(r.Context(), w)
+		return
+	}
+	baseURL := h.baseURL
+	if baseURL == "" {
+		baseURL = "http://" + r.Host
+	}
+	_, url, err := h.stripe.CreateCheckoutSession(r.Context(), stripeinfra.CheckoutParams{
+		SuccessURL:    baseURL + "/portal/checkout/success?src=topup",
+		CancelURL:     baseURL + "/portal/balance",
+		CustomerEmail: cust.Email,
+		LineItems: []stripeinfra.LineItem{{
+			Name:        "Account Top-Up",
+			Description: fmt.Sprintf("Add €%.2f to your portal balance", float64(amountCents)/100),
+			AmountCents: amountCents,
+			Currency:    "eur",
+			Quantity:    1,
+		}},
+		Metadata: map[string]string{
+			"type":         "balance_topup",
+			"customer_id":  customerID,
+			"amount_cents": strconv.FormatInt(amountCents, 10),
+		},
+	})
+	if err != nil {
+		slog.Error("portal balanceTopup: create stripe session", "err", err)
+		PortalErrorPage(cust, "Error", "Could not initiate payment.").Render(r.Context(), w)
+		return
+	}
+	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
 // resolveCustomer fetches customer info for the portal header, returning a fallback on error.

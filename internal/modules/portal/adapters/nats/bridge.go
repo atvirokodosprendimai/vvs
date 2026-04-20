@@ -136,6 +136,8 @@ type PortalBridge struct {
 	openTicket     ticketOpener
 	addComment     ticketCommenter
 	serviceLister  bridgeServiceLister
+	// VM + billing bridge (optional — wired via WithVMAndBilling)
+	vmb *vmBillingBridge
 	// bot components
 	botSessions    *bot.Sessions
 	botOllama      *bot.OllamaClient
@@ -219,6 +221,9 @@ func (b *PortalBridge) Register() error {
 		{SubjectBotClose, b.handleBotClose},
 		{SubjectCustomerFindByEmail, b.handleCustomerFindByEmail},
 		{SubjectPortalTokenCreate, b.handlePortalTokenCreate},
+	}
+	for _, extra := range b.vmBillingEntries() {
+		entries = append(entries, extra)
 	}
 	for _, e := range entries {
 		sub, err := b.nc.Subscribe(e.subject, e.handler)

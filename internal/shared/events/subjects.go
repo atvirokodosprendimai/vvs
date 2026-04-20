@@ -314,6 +314,23 @@ var ProxmoxNodeUpdated Subject = "isp.proxmox.node.updated"
 // Pub: proxmox/app/commands/delete_node.go
 var ProxmoxNodeDeleted Subject = "isp.proxmox.node.deleted"
 
+var ProxmoxVMPlanAll     Subject = "isp.proxmox.vmplan.*"
+var ProxmoxVMPlanCreated Subject = "isp.proxmox.vmplan.created"
+var ProxmoxVMPlanUpdated Subject = "isp.proxmox.vmplan.updated"
+var ProxmoxVMPlanDeleted Subject = "isp.proxmox.vmplan.deleted"
+
+// ────────────────────────────────────────────────────────────────────
+// Billing / Balance
+// ────────────────────────────────────────────────────────────────────
+
+var BillingAll Subject = "isp.billing.*"
+
+// Pub: billing/app/commands/balance_commands.go
+var BillingBalanceCredited Subject = "isp.billing.balance_credited"
+
+// Pub: billing/app/commands/balance_commands.go
+var BillingBalanceDebited Subject = "isp.billing.balance_debited"
+
 // ────────────────────────────────────────────────────────────────────
 // Notifications
 // ────────────────────────────────────────────────────────────────────

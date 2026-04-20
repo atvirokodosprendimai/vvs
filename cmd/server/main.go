@@ -155,6 +155,21 @@ func serveCommand() *cli.Command {
 				Sources: cli.EnvVars("VVS_PROXMOX_ENC_KEY"),
 			},
 			&cli.StringFlag{
+				Name:    "stripe-secret-key",
+				Usage:   "Stripe secret key (sk_live_... or sk_test_...)",
+				Sources: cli.EnvVars("VVS_STRIPE_SECRET_KEY"),
+			},
+			&cli.StringFlag{
+				Name:    "stripe-webhook-secret",
+				Usage:   "Stripe webhook signing secret (whsec_...)",
+				Sources: cli.EnvVars("VVS_STRIPE_WEBHOOK_SECRET"),
+			},
+			&cli.StringFlag{
+				Name:    "stripe-publishable-key",
+				Usage:   "Stripe publishable key (pk_live_... or pk_test_...)",
+				Sources: cli.EnvVars("VVS_STRIPE_PUBLISHABLE_KEY"),
+			},
+			&cli.StringFlag{
 				Name:    "modules",
 				Usage:   "Comma-separated list of modules to enable (default: all)",
 				Sources: cli.EnvVars("VVS_MODULES"),
@@ -236,6 +251,9 @@ func serveCommand() *cli.Command {
 				EmailEncKey:           cmd.String("email-enc-key"),
 				RouterEncKey:          cmd.String("router-enc-key"),
 				ProxmoxEncKey:         cmd.String("proxmox-enc-key"),
+				StripeSecretKey:       cmd.String("stripe-secret-key"),
+				StripeWebhookSecret:   cmd.String("stripe-webhook-secret"),
+				StripePublishableKey:  cmd.String("stripe-publishable-key"),
 				EmailSyncIntervalSecs: int(cmd.Int("email-sync-interval")),
 				EmailPageSize:         int(cmd.Int("email-page-size")),
 				SessionLifetimeSecs:   int(cmd.Int("session-lifetime")),

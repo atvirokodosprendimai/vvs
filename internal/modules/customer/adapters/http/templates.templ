@@ -346,6 +346,10 @@ templ CustomerDetailPage(c *domain.Customer, services []serviceQueries.ServiceRe
 						}
 					</div>
 				}
+				<!-- Balance -->
+				<div id="customer-balance-card">
+					@CustomerBalanceCard(c.ID, 0)
+				</div>
 				<!-- Notes -->
 				<div>
 					<h3 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-3">Notes</h3>
@@ -533,6 +537,55 @@ templ invoiceStatusBadge(status string) {
 		default:
 			<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-700 text-neutral-300">{ status }</span>
 	}
+}
+
+// CustomerBalanceCard shows the customer's prepaid balance and an admin adjust form.
+templ CustomerBalanceCard(customerID string, balanceCents int64) {
+	<div id="customer-balance-card" class="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
+		<div class="flex items-center justify-between mb-3">
+			<p class="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Portal Balance</p>
+			<span class="text-base font-semibold text-amber-400">{ balanceCentsToEur(balanceCents) }</span>
+		</div>
+		<div
+			data-signals="{balanceAdjust:0,balanceDesc:''}"
+			class="flex flex-col gap-2"
+		>
+			<div class="flex gap-2">
+				<input
+					data-bind:balance-adjust
+					type="number"
+					placeholder="±cents (e.g. 500 = €5)"
+					class="input-field flex-1 text-xs"
+				/>
+				<input
+					data-bind:balance-desc
+					type="text"
+					placeholder="Reason"
+					class="input-field flex-1 text-xs"
+				/>
+			</div>
+			<button
+				data-on:click={ "@post('/api/customers/" + customerID + "/balance/adjust')" }
+				class="px-3 py-1.5 text-xs bg-neutral-700 hover:bg-neutral-600 text-neutral-200 rounded-md"
+			>Adjust Balance</button>
+		</div>
+	</div>
+}
+
+templ balanceAdjustError(msg string) {
+	<div id="balance-adjust-error" class="text-xs text-red-400 mt-1">{ msg }</div>
+}
+
+func balanceCentsToEur(cents int64) string {
+	negative := cents < 0
+	if negative {
+		cents = -cents
+	}
+	s := fmt.Sprintf("€%d.%02d", cents/100, cents%100)
+	if negative {
+		return "-" + s
+	}
+	return s
 }
 
 func formTitle(c *domain.Customer) string {
