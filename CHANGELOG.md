@@ -184,3 +184,9 @@
 - 2026-04-20 `ea0d6d8` plan(iptv): multi-provider channels + managed swarm stack
 - 2026-04-20 `2e45794` feat(iptv): replace UUID text inputs with cascading searchable selects
 - 2026-04-20 `9aecf5a` docs: update CHANGELOG with iptv select UX entry
+- 2026-04-20 `bb18380` Merge task/iptv-select-ux: cascading searchable selects for IPTV stacks
+- 2026-04-20 `6baef4f` fix(iptv): normalize all signal names to camelCase
+- 2026-04-20 `d535138` feat(iptv): customer/package selects for subscription and STB forms
+- 2026-04-20 `ac7c18d` Merge task/iptv-form-error-id: fix IPTV form error ID mismatch
+- 2026-04-20 `bc35949` Merge task/iptv-e2e-tests: IPTV Playwright E2E tests
+- 2026-04-20 `5314b2a` fix(iptv): call ReadSignals before NewSSE in all mutation handlers
