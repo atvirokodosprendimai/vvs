@@ -102,6 +102,13 @@ func (h *ProvisionSwarmNodeHandler) Handle(ctx context.Context, cmd ProvisionSwa
 
 	h.emit("Connecting to node via SSH…")
 
+	// Install Docker if not present
+	h.emit("Installing Docker…")
+	installCmd := "command -v docker >/dev/null 2>&1 || (curl -fsSL https://get.docker.com | sh)"
+	if _, err = dockerclient.ExecSSH(node.SshHost, node.SshUser, node.SshPort, node.SshKey, installCmd); err != nil {
+		return nil, fmt.Errorf("install docker: %w", err)
+	}
+
 	// Write compose file and run docker compose up -d via SSH
 	composeYAML := domain.RenderWgmeshCompose(cluster.WgmeshKey, node.Name)
 
