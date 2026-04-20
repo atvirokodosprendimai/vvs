@@ -30,6 +30,10 @@ type Config struct {
 	// Empty = dev mode (passwords stored in plaintext — not for production).
 	RouterEncKey string // VVS_ROUTER_ENC_KEY env var
 
+	// ProxmoxEncKey is 32 bytes (hex or raw) used to AES-256-GCM encrypt Proxmox node token secrets.
+	// Empty = dev mode (tokens stored in plaintext — not for production).
+	ProxmoxEncKey string // VVS_PROXMOX_ENC_KEY env var
+
 	// APIToken is the bearer token required for /api/v1/* requests.
 	// Empty string disables the REST API.
 	APIToken string // VVS_API_TOKEN env var

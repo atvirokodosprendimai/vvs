@@ -7,19 +7,27 @@ import (
 	"github.com/atvirokodosprendimai/vvs/internal/modules/auth/domain"
 )
 
+// ModulePermInput carries the desired view/edit flags for one module.
+type ModulePermInput struct {
+	CanView bool
+	CanEdit bool
+}
+
 // CreateRoleCommand creates a new custom role.
 type CreateRoleCommand struct {
 	Name        string
 	DisplayName string
 	CanWrite    bool
+	Permissions map[domain.Module]ModulePermInput
 }
 
 type CreateRoleHandler struct {
 	roles domain.RoleRepository
+	perms domain.RolePermissionsRepository
 }
 
-func NewCreateRoleHandler(roles domain.RoleRepository) *CreateRoleHandler {
-	return &CreateRoleHandler{roles: roles}
+func NewCreateRoleHandler(roles domain.RoleRepository, perms domain.RolePermissionsRepository) *CreateRoleHandler {
+	return &CreateRoleHandler{roles: roles, perms: perms}
 }
 
 func (h *CreateRoleHandler) Handle(ctx context.Context, cmd CreateRoleCommand) (*domain.RoleDefinition, error) {
@@ -42,6 +50,19 @@ func (h *CreateRoleHandler) Handle(ctx context.Context, cmd CreateRoleCommand) (
 	}
 	if err := h.roles.Save(ctx, rd); err != nil {
 		return nil, err
+	}
+	if h.perms != nil {
+		for m, p := range cmd.Permissions {
+			if !p.CanView && !p.CanEdit {
+				continue
+			}
+			_ = h.perms.Save(ctx, &domain.RoleModulePermission{
+				Role:    rd.Name,
+				Module:  m,
+				CanView: p.CanView,
+				CanEdit: p.CanEdit,
+			})
+		}
 	}
 	return rd, nil
 }

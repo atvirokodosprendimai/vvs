@@ -27,6 +27,7 @@ import (
 	invoicemigrations   "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/migrations"
 	iptvmigrations      "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/migrations"
 	networkmigrations   "github.com/atvirokodosprendimai/vvs/internal/modules/network/migrations"
+	proxmoxmigrations   "github.com/atvirokodosprendimai/vvs/internal/modules/proxmox/migrations"
 	notifmigrations     "github.com/atvirokodosprendimai/vvs/internal/infrastructure/notifications/migrations"
 	portalmigrations    "github.com/atvirokodosprendimai/vvs/internal/modules/portal/migrations"
 	productmigrations   "github.com/atvirokodosprendimai/vvs/internal/modules/product/migrations"
@@ -90,24 +91,25 @@ func New(cfg Config) (*App, error) {
 	sub := infranats.NewSubscriber(nc)
 
 	// ── Module wiring (order matters: dependencies flow downward) ─────────────
-	auth  := wireAuth(gdb, cfg)
-	prod  := wireProduct(gdb, pub, sub, cfg)
-	svc   := wireService(gdb, pub, sub, cfg)
-	cust  := wireCustomer(gdb, pub, sub, svc, cfg)
-	net   := wireNetwork(gdb, pub, sub, cust, cfg)
-	dev   := wireDevice(gdb, pub, sub, cfg)
-	crm   := wireCRM(gdb, pub, sub, cust)
-	email := wireEmail(gdb, pub, sub, cust, cfg)
-	inv   := wireInvoice(gdb, pub, sub, nc, cust, svc, email, cfg)
-	aud   := wireAudit(gdb, sub, cust, crm, svc, inv)
-	iptv  := wireIPTV(gdb)
+	auth    := wireAuth(gdb, cfg)
+	prod    := wireProduct(gdb, pub, sub, cfg)
+	svc     := wireService(gdb, pub, sub, cfg)
+	cust    := wireCustomer(gdb, pub, sub, svc, cfg)
+	net     := wireNetwork(gdb, pub, sub, cust, cfg)
+	dev     := wireDevice(gdb, pub, sub, cfg)
+	crm     := wireCRM(gdb, pub, sub, cust)
+	email   := wireEmail(gdb, pub, sub, cust, cfg)
+	inv     := wireInvoice(gdb, pub, sub, nc, cust, svc, email, cfg)
+	aud     := wireAudit(gdb, sub, cust, crm, svc, inv)
+	iptv    := wireIPTV(gdb)
+	proxmox := wireProxmox(gdb, pub, sub, cust, cfg)
 	infra, err := wireInfra(gdb, pub, sub, nc, auth, cust, prod, net, dev, svc, inv, iptv, crm, cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	// ── HTTP ──────────────────────────────────────────────────────────────────
-	allRoutes := collectRoutes(auth, prod, cust, svc, net, dev, crm, email, inv, aud, iptv, infra)
+	allRoutes := collectRoutes(auth, prod, cust, svc, net, dev, crm, email, inv, aud, iptv, proxmox, infra)
 	router := infrahttp.NewRouter(
 		gdb.R,
 		auth.currentUser,
@@ -143,18 +145,19 @@ func New(cfg Config) (*App, error) {
 // Concrete-pointer routes that may be nil (cust, svc) use explicit nil guards
 // to avoid the non-nil-interface-wrapping-nil-pointer trap.
 func collectRoutes(
-	auth  *authWired,
-	prod  *productWired,
-	cust  *customerWired,
-	svc   *serviceWired,
-	net   *networkWired,
-	dev   *deviceWired,
-	crm   *crmWired,
-	email *emailWired,
-	inv   *invoiceWired,
-	aud   *auditWired,
-	iptv  *iptvWired,
-	infra *infraWired,
+	auth    *authWired,
+	prod    *productWired,
+	cust    *customerWired,
+	svc     *serviceWired,
+	net     *networkWired,
+	dev     *deviceWired,
+	crm     *crmWired,
+	email   *emailWired,
+	inv     *invoiceWired,
+	aud     *auditWired,
+	iptv    *iptvWired,
+	proxmox *proxmoxWired,
+	infra   *infraWired,
 ) []infrahttp.ModuleRoutes {
 	var routes []infrahttp.ModuleRoutes
 	add := func(r infrahttp.ModuleRoutes) {
@@ -180,6 +183,7 @@ func collectRoutes(
 	add(inv.routes)
 	add(aud.routes)
 	add(iptv.routes)
+	add(proxmox.routes)
 	for _, r := range infra.routes {
 		add(r)
 	}
@@ -207,5 +211,6 @@ func allMigrations() []database.ModuleMigration {
 		{Name: "audit_log",     FS: auditlogmigrations.FS,  TableName: "goose_audit_log"},
 		{Name: "portal",        FS: portalmigrations.FS,    TableName: "goose_portal"},
 		{Name: "iptv",          FS: iptvmigrations.FS,      TableName: "goose_iptv"},
+		{Name: "proxmox",       FS: proxmoxmigrations.FS,   TableName: "goose_proxmox"},
 	}
 }

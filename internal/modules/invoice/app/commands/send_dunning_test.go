@@ -60,6 +60,9 @@ func (m *mockCustomerRepo) FindAll(_ context.Context, _ customerdomain.CustomerF
 	return nil, 0, nil
 }
 func (m *mockCustomerRepo) Delete(_ context.Context, _ string) error { return nil }
+func (m *mockCustomerRepo) FindByEmail(_ context.Context, _ string) (*customerdomain.Customer, error) {
+	return nil, customerdomain.ErrCustomerNotFound
+}
 
 type mockMailer struct {
 	sent []string // "to:subject"

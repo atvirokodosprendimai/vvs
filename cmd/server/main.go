@@ -150,6 +150,11 @@ func serveCommand() *cli.Command {
 				Sources: cli.EnvVars("VVS_ROUTER_ENC_KEY"),
 			},
 			&cli.StringFlag{
+				Name:    "proxmox-enc-key",
+				Usage:   "32-byte AES key (hex or raw) for encrypting Proxmox node token secrets (optional)",
+				Sources: cli.EnvVars("VVS_PROXMOX_ENC_KEY"),
+			},
+			&cli.StringFlag{
 				Name:    "modules",
 				Usage:   "Comma-separated list of modules to enable (default: all)",
 				Sources: cli.EnvVars("VVS_MODULES"),
@@ -230,6 +235,7 @@ func serveCommand() *cli.Command {
 				APIToken:              cmd.Root().String("api-token"),
 				EmailEncKey:           cmd.String("email-enc-key"),
 				RouterEncKey:          cmd.String("router-enc-key"),
+				ProxmoxEncKey:         cmd.String("proxmox-enc-key"),
 				EmailSyncIntervalSecs: int(cmd.Int("email-sync-interval")),
 				EmailPageSize:         int(cmd.Int("email-page-size")),
 				SessionLifetimeSecs:   int(cmd.Int("session-lifetime")),

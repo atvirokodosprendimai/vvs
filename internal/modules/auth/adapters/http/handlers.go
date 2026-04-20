@@ -491,18 +491,28 @@ func (h *Handlers) permissionsSSE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "not configured", http.StatusInternalServerError)
 		return
 	}
-	opPerms, err := h.permRepo.FindByRole(r.Context(), domain.RoleOperator)
-	if err != nil {
-		log.Printf("permissionsSSE: operator: %v", err)
-		opPerms = domain.DefaultPermissions(domain.RoleOperator)
+	var roles []domain.RoleDefinition
+	if h.roleRepo != nil {
+		if rs, err := h.roleRepo.List(r.Context()); err == nil {
+			roles = rs
+		} else {
+			log.Printf("permissionsSSE: list roles: %v", err)
+		}
 	}
-	viewerPerms, err := h.permRepo.FindByRole(r.Context(), domain.RoleViewer)
-	if err != nil {
-		log.Printf("permissionsSSE: viewer: %v", err)
-		viewerPerms = domain.DefaultPermissions(domain.RoleViewer)
+	perms := make(map[domain.Role]domain.PermissionSet, len(roles))
+	for _, rd := range roles {
+		if rd.Name == domain.RoleAdmin {
+			continue
+		}
+		ps, err := h.permRepo.FindByRole(r.Context(), rd.Name)
+		if err != nil {
+			log.Printf("permissionsSSE: %s: %v", rd.Name, err)
+			ps = domain.DefaultPermissions(rd.Name)
+		}
+		perms[rd.Name] = ps
 	}
 	sse := datastar.NewSSE(w, r)
-	sse.PatchElementTempl(PermissionsGrid(opPerms, viewerPerms))
+	sse.PatchElementTempl(PermissionsGrid(roles, perms))
 }
 
 func (h *Handlers) rolesPage(w http.ResponseWriter, r *http.Request) {
@@ -526,25 +536,36 @@ func (h *Handlers) createRoleSSE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}
-	var signals struct {
-		RoleName     string `json:"roleName"`
-		RoleDisplay  string `json:"roleDisplay"`
-		RoleCanWrite bool   `json:"roleCanWrite"`
-	}
-	if err := datastar.ReadSignals(r, &signals); err != nil {
+	var rawSignals map[string]interface{}
+	if err := datastar.ReadSignals(r, &rawSignals); err != nil {
 		log.Printf("createRoleSSE: ReadSignals: %v", err)
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
+	roleName, _ := rawSignals["roleName"].(string)
+	roleDisplay, _ := rawSignals["roleDisplay"].(string)
+	roleCanWrite, _ := rawSignals["roleCanWrite"].(bool)
+
+	perms := make(map[domain.Module]commands.ModulePermInput, len(domain.AllModules))
+	for _, m := range domain.AllModules {
+		base := moduleSignalBase(m)
+		canView, _ := rawSignals["rolePerm"+base+"View"].(bool)
+		canEdit, _ := rawSignals["rolePerm"+base+"Edit"].(bool)
+		if canView || canEdit {
+			perms[m] = commands.ModulePermInput{CanView: canView, CanEdit: canEdit}
+		}
+	}
+
 	sse := datastar.NewSSE(w, r)
 	if h.createRoleCmd == nil {
 		sse.PatchElementTempl(addRoleError("role management not configured"))
 		return
 	}
 	if _, err := h.createRoleCmd.Handle(r.Context(), commands.CreateRoleCommand{
-		Name:        signals.RoleName,
-		DisplayName: signals.RoleDisplay,
-		CanWrite:    signals.RoleCanWrite,
+		Name:        roleName,
+		DisplayName: roleDisplay,
+		CanWrite:    roleCanWrite,
+		Permissions: perms,
 	}); err != nil {
 		sse.PatchElementTempl(addRoleError(err.Error()))
 		return

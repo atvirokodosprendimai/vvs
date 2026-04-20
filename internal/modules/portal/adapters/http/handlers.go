@@ -21,6 +21,9 @@ import (
 
 const portalCookieName = "vvs_portal"
 
+const portalSessionTTL       = 7 * 24 * time.Hour
+const portalRefreshThreshold = portalSessionTTL / 2 // refresh when < 3.5 days remain
+
 // invoiceLister lists invoices for a customer.
 // Satisfied by *invoicequeries.ListInvoicesForCustomerHandler and by the NATS portal client.
 type invoiceLister interface {
@@ -209,6 +212,23 @@ func (h *Handlers) requirePortalAuth(next http.Handler) http.Handler {
 			http.Redirect(w, r, "/portal/login?expired=1", http.StatusFound)
 			return
 		}
+		// Sliding refresh: if session is past half-TTL, issue a new session token.
+		if time.Until(tok.ExpiresAt) < portalRefreshThreshold {
+			if newTok, newPlain, rerr := domain.NewPortalToken(tok.CustomerID, portalSessionTTL); rerr == nil {
+				if saveErr := h.tokenRepo.Save(r.Context(), newTok); saveErr == nil {
+					http.SetCookie(w, &http.Cookie{
+						Name:     portalCookieName,
+						Value:    newPlain,
+						Path:     "/",
+						HttpOnly: true,
+						SameSite: http.SameSiteLaxMode,
+						Secure:   h.secureCookie,
+						MaxAge:   int(portalSessionTTL.Seconds()),
+					})
+				}
+			}
+			// Refresh failure is non-fatal — existing session remains valid until expiry.
+		}
 		ctx := context.WithValue(r.Context(), portalCustomerKey{}, tok.CustomerID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -245,14 +265,28 @@ func (h *Handlers) portalAuth(w http.ResponseWriter, r *http.Request) {
 		// Non-fatal: proceed to issue cookie (MarkUsed failure is better than locking the user out).
 	}
 
+	// Issue a separate session token with a 7-day TTL.
+	// The magic link token (short-lived, single-use) must not become the session credential.
+	sessionTok, sessionPlain, err := domain.NewPortalToken(tok.CustomerID, portalSessionTTL)
+	if err != nil {
+		slog.Error("portal auth: create session token", "err", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	if err := h.tokenRepo.Save(r.Context(), sessionTok); err != nil {
+		slog.Error("portal auth: save session token", "err", err)
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     portalCookieName,
-		Value:    plain,
+		Value:    sessionPlain,
 		Path:     "/",
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		Secure:   h.secureCookie,
-		MaxAge:   int(time.Until(tok.ExpiresAt).Seconds()),
+		MaxAge:   int(portalSessionTTL.Seconds()),
 	})
 	http.Redirect(w, r, "/portal/invoices", http.StatusFound)
 }
@@ -298,11 +332,13 @@ func (h *Handlers) invoiceDetail(w http.ResponseWriter, r *http.Request) {
 
 	inv, err := h.getInvoice.Handle(r.Context(), id)
 	if err != nil || inv == nil {
+		w.WriteHeader(http.StatusNotFound)
 		PortalErrorPage(cust, "Not Found", "This invoice could not be found.").Render(r.Context(), w)
 		return
 	}
 	// Ownership check — customer can only view their own invoices.
 	if inv.CustomerID != customerID {
+		w.WriteHeader(http.StatusNotFound)
 		PortalErrorPage(cust, "Not Found", "This invoice could not be found.").Render(r.Context(), w)
 		return
 	}

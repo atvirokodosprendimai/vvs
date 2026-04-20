@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
@@ -418,10 +419,13 @@ templ PermissionsPage() {
 	}
 }
 
-templ PermissionsGrid(opPerms domain.PermissionSet, viewerPerms domain.PermissionSet) {
+templ PermissionsGrid(roles []domain.RoleDefinition, perms map[domain.Role]domain.PermissionSet) {
 	<div id="permissions-grid" class="flex flex-col gap-8 max-w-2xl">
-		@permRoleSection("Operator", domain.RoleOperator, opPerms)
-		@permRoleSection("Viewer", domain.RoleViewer, viewerPerms)
+		for _, rd := range roles {
+			if rd.Name != domain.RoleAdmin {
+				@permRoleSection(roleOptionLabel(rd), rd.Name, perms[rd.Name])
+			}
+		}
 	</div>
 }
 
@@ -480,6 +484,7 @@ func moduleLabel(m domain.Module) string {
 		domain.ModulePayments:  "Payments",
 		domain.ModuleReports:   "Reports",
 		domain.ModuleNetwork:   "Network",
+		domain.ModuleProxmox:  "Proxmox",
 		domain.ModuleEmail:     "Email",
 		domain.ModuleCron:      "Cron",
 		domain.ModuleAuditLog:  "Audit Log",
@@ -489,6 +494,45 @@ func moduleLabel(m domain.Module) string {
 		return l
 	}
 	return string(m)
+}
+
+// moduleSignalBase converts a Module to a PascalCase base for signal names.
+// e.g. "audit_log" → "AuditLog", "customers" → "Customers", "iptv" → "Iptv"
+func moduleSignalBase(m domain.Module) string {
+	parts := strings.SplitN(string(m), "_", -1)
+	var b strings.Builder
+	for _, p := range parts {
+		if len(p) > 0 {
+			b.WriteString(strings.ToUpper(p[:1]))
+			b.WriteString(p[1:])
+		}
+	}
+	return b.String()
+}
+
+// rolePermViewSignal returns the Datastar signal name for a module's view permission.
+func rolePermViewSignal(m domain.Module) string {
+	return "rolePerm" + moduleSignalBase(m) + "View"
+}
+
+// rolePermEditSignal returns the Datastar signal name for a module's edit permission.
+func rolePermEditSignal(m domain.Module) string {
+	return "rolePerm" + moduleSignalBase(m) + "Edit"
+}
+
+// rolePermInitSignals returns the JSON object string for data-signals on the Add Role form.
+func rolePermInitSignals() string {
+	var b strings.Builder
+	b.WriteString(`{"roleName":"","roleDisplay":"","roleCanWrite":true`)
+	for _, m := range domain.AllModules {
+		b.WriteString(`,"`)
+		b.WriteString(rolePermViewSignal(m))
+		b.WriteString(`":false,"`)
+		b.WriteString(rolePermEditSignal(m))
+		b.WriteString(`":false`)
+	}
+	b.WriteString("}")
+	return b.String()
 }
 
 // ── TOTP Login step ───────────────────────────────────────────────────────────
@@ -646,7 +690,7 @@ templ RolesPage(roles []domain.RoleDefinition) {
 			<!-- Add role form -->
 			<div
 				class="bg-neutral-900 border border-neutral-800 rounded-lg p-5"
-				data-signals="{roleName:'',roleDisplay:'',roleCanWrite:true}"
+				data-signals={ rolePermInitSignals() }
 			>
 				<h3 class="text-sm font-semibold text-neutral-300 uppercase tracking-wider mb-4">Add Role</h3>
 				<div class="flex flex-col gap-3">
@@ -672,6 +716,45 @@ templ RolesPage(roles []domain.RoleDefinition) {
 						/>
 						Can write (allowed to make mutations)
 					</label>
+					<!-- Module permission matrix -->
+					<div class="mt-1">
+						<div class="text-xs font-medium text-neutral-400 uppercase tracking-wider mb-2">Module Permissions</div>
+						<div class="bg-neutral-800 border border-neutral-700 rounded overflow-hidden">
+							<table class="w-full text-xs">
+								<thead>
+									<tr class="text-neutral-500 border-b border-neutral-700">
+										<th class="text-left px-3 py-2 font-medium">Module</th>
+										<th class="px-3 py-2 font-medium text-center">View</th>
+										<th class="px-3 py-2 font-medium text-center">Edit</th>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-neutral-700/50">
+									for _, m := range domain.AllModules {
+										{{ viewSig := rolePermViewSignal(m) }}
+										{{ editSig := rolePermEditSignal(m) }}
+										<tr class="hover:bg-neutral-750/30">
+											<td class="px-3 py-1.5 text-neutral-300">{ moduleLabel(m) }</td>
+											<td class="px-3 py-1.5 text-center">
+												<input
+													type="checkbox"
+													data-bind={ viewSig }
+													class="w-3.5 h-3.5 accent-amber-500 cursor-pointer"
+												/>
+											</td>
+											<td class="px-3 py-1.5 text-center">
+												<input
+													type="checkbox"
+													data-bind={ editSig }
+													data-on:change={ fmt.Sprintf("if(evt.target.checked){$%s=true}", viewSig) }
+													class="w-3.5 h-3.5 accent-amber-500 cursor-pointer"
+												/>
+											</td>
+										</tr>
+									}
+								</tbody>
+							</table>
+						</div>
+					</div>
 					<div id="add-role-error" class="text-red-400 text-xs hidden"></div>
 					<button
 						type="button"

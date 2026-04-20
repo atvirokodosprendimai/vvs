@@ -114,3 +114,21 @@
 - 2026-04-19 `f024f76` fix(users): edit button modal not opening when FullName/Division empty
 - 2026-04-19 `0702053` revert: restore ()&& pattern for edit button signal chain
 - 2026-04-19 `6ed38be` fix(users): edit button modal — semicolons replace ()&& short-circuit; fix strict E2E selector
+- 2026-04-19 `7769dcd` fix(portal): consistent Invoices·Services·Support breadcrumb on all list pages
+- 2026-04-20 `0121bee` feat(iptv): per-channel EPG interface with optional token and date
+- 2026-04-20 `1a912eb` feat(crm): always show tab counts, including 0
+- 2026-04-20 `46aec19` plan: rbac permissions for dynamic roles
+- 2026-04-20 `6272ee3` feat(auth): dynamic permissions page + per-module perms at role creation
+- 2026-04-20 `3a6eccc` chore(plan): mark phases 1+2 complete for RBAC dynamic permissions
+- 2026-04-20 `1db6f00` fix(tests): repair 4 pre-existing test failures
+- 2026-04-20 `2000764` plan: portal session 7-day sliding window
+- 2026-04-20 `e09d351` test(portal): fix nil invoiceLister panic in session refresh tests
+- 2026-04-20 `183ae88` docs(plan): mark portal session 7-day plan completed
+- 2026-04-20 `e3f4d8a` docs(plan): Proxmox VM integration — 13-phase plan
+- 2026-04-20 `8c6f8bb` feat(proxmox): domain layer — ProxmoxNode, VirtualMachine, VMProvisioner port, repositories
+- 2026-04-20 `e8e5987` feat(proxmox): REST API adapter — Proxmox VE HTTP client with task polling
+- 2026-04-20 `768d590` feat(proxmox): persistence layer — migrations, GORM models, node/VM repositories
+- 2026-04-20 `328673d` feat(proxmox): NATS subjects registry + ProxmoxEncKey config
+- 2026-04-20 `8dd0069` feat(proxmox): node/VM commands and queries
+- 2026-04-20 `a5ad327` feat(proxmox): full Proxmox VE integration — nodes, VMs, CRM tab, sidebar nav
+- 2026-04-20 `dfc6d2f` fix(proxmox): address 4 HIGH security/correctness issues from Codex review

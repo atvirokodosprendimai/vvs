@@ -37,7 +37,7 @@ func wireAuth(gdb *gormsqlite.DB, cfg Config) *authWired {
 	deleteUserCmd        := authcommands.NewDeleteUserHandler(userRepo, sessionRepo)
 	changeSelfPasswordCmd := authcommands.NewChangeSelfPasswordHandler(userRepo)
 	updateUserCmd        := authcommands.NewUpdateUserHandler(userRepo, roleRepo)
-	createRoleCmd        := authcommands.NewCreateRoleHandler(roleRepo)
+	createRoleCmd        := authcommands.NewCreateRoleHandler(roleRepo, permRepo)
 	deleteRoleCmd        := authcommands.NewDeleteRoleHandler(roleRepo)
 	createSessionCmd     := authcommands.NewCreateSessionHandler(sessionRepo)
 	listUsersQuery       := authqueries.NewListUsersHandler(userRepo)
