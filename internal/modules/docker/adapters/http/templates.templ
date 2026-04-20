@@ -78,6 +78,10 @@ templ DockerServiceFormError(msg string) {
 	<div id="docker-service-form-error" class="text-red-400 text-sm p-2 bg-red-900/20 rounded">{ msg }</div>
 }
 
+templ DockerServiceDeployingNotice(msg string) {
+	<div id="docker-service-form-error" class="text-amber-400 text-sm p-2 bg-amber-900/20 rounded">{ msg }</div>
+}
+
 // DockerPingResult renders inline connectivity result for a node row.
 templ DockerPingResult(nodeID string, ok bool, msg string) {
 	<span id={ "ping-result-" + nodeID }>

@@ -150,3 +150,5 @@
 - 2026-04-20 `ee64c84` feat(docker): Phase 3-6 complete — HTTP handlers, templates, wiring
 - 2026-04-20 `08b44a3` docs(plan): mark docker orchestrator plan completed
 - 2026-04-20 `2a5a51d` fix(docker): pass COMPOSE_PROJECT_NAME env to compose-go loader
+- 2026-04-20 `504258f` feat(docker): service edit/redeploy + fix compose YAML validation
+- 2026-04-20 `33ea3e2` Merge task/docker-swarm-spec: docker swarm spec
