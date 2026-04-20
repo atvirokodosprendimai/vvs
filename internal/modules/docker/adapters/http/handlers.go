@@ -360,6 +360,8 @@ func (h *Handlers) serviceDeploySSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sse := datastar.NewSSE(w, r)
+	// Stream "deploying" notice — connection stays open while Docker runs
+	sse.PatchElementTempl(DockerServiceDeployingNotice("Deploying… this may take a minute"))
 	svc, err := h.deployService.Handle(r.Context(), commands.DeployServiceCommand{
 		NodeID:      sig.NodeID,
 		Name:        sig.Name,
@@ -368,6 +370,10 @@ func (h *Handlers) serviceDeploySSE(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("docker: deploy service", "err", err)
 		sse.PatchElementTempl(DockerServiceFormError(err.Error()))
+		return
+	}
+	if svc.ErrorMsg != "" {
+		sse.PatchElementTempl(DockerServiceFormError(svc.ErrorMsg))
 		return
 	}
 	sse.Redirect("/docker/services/" + svc.ID)
@@ -386,6 +392,8 @@ func (h *Handlers) serviceUpdateSSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sse := datastar.NewSSE(w, r)
+	// Stream "updating" notice — connection stays open while Docker re-deploys
+	sse.PatchElementTempl(DockerServiceDeployingNotice("Updating… redeploying containers"))
 	if err := h.updateService.Handle(r.Context(), commands.UpdateServiceCommand{
 		ID:          id,
 		ComposeYAML: sig.ComposeYAML,

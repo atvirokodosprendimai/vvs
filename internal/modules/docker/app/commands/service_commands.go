@@ -40,6 +40,9 @@ func NewDeployServiceHandler(
 	}
 }
 
+// Handle saves the service as "deploying", runs the Docker deploy synchronously,
+// then updates the status. The HTTP handler keeps the SSE connection open
+// during this call and streams status to the client directly.
 func (h *DeployServiceHandler) Handle(ctx context.Context, cmd DeployServiceCommand) (*domain.DockerService, error) {
 	node, err := h.nodeRepo.FindByID(ctx, cmd.NodeID)
 	if err != nil {
@@ -51,13 +54,11 @@ func (h *DeployServiceHandler) Handle(ctx context.Context, cmd DeployServiceComm
 		return nil, err
 	}
 
-	// Save as "deploying" before attempting (allows status tracking)
 	if err := h.serviceRepo.Save(ctx, svc); err != nil {
 		return nil, err
 	}
 	h.publishService(ctx, events.DockerServiceDeployed, "docker.service.deployed", svc)
 
-	// Deploy via Docker API
 	client, err := h.factory.ForNode(node)
 	if err != nil {
 		svc.MarkError(fmt.Sprintf("build docker client: %s", err))
@@ -65,16 +66,12 @@ func (h *DeployServiceHandler) Handle(ctx context.Context, cmd DeployServiceComm
 		h.publishServiceStatus(ctx, svc)
 		return svc, nil
 	}
-
 	if deployErr := client.Deploy(ctx, cmd.Name, cmd.ComposeYAML); deployErr != nil {
 		svc.MarkError(deployErr.Error())
 	} else {
 		svc.MarkRunning()
 	}
-
-	if err := h.serviceRepo.Save(ctx, svc); err != nil {
-		return nil, err
-	}
+	_ = h.serviceRepo.Save(ctx, svc)
 	h.publishServiceStatus(ctx, svc)
 	return svc, nil
 }
