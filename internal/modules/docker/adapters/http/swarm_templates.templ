@@ -134,7 +134,7 @@ templ SwarmClusterFormPage() {
 			</div>
 			<form
 				class="space-y-4 bg-neutral-900 border border-neutral-800 rounded-lg p-6"
-				data-signals='{"name":"","wgmeshKey":"","notes":""}'
+				data-signals='{"name":"","wgmeshkey":"","notes":""}'
 			>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Cluster Name *</label>
@@ -145,11 +145,11 @@ templ SwarmClusterFormPage() {
 						<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">wgmesh Key (32+ chars) *</label>
 						<button
 							type="button"
-							data-on:click="$wgmeshKey = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2,'0')).join('')"
+							data-on:click="$wgmeshkey = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2,'0')).join('')"
 							class="text-xs text-amber-400 hover:text-amber-300 font-medium"
 						>Generate</button>
 					</div>
-					<input type="text" data-bind:wgmeshKey placeholder="32+ character shared key" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
+					<input type="text" data-bind:wgmeshkey placeholder="32+ character shared key" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
 					<p class="text-xs text-neutral-500">Shared WireGuard mesh key for all nodes in this cluster.</p>
 				</div>
 				<div class="flex flex-col gap-1">
@@ -179,7 +179,7 @@ templ SwarmClusterImportPage() {
 			</div>
 			<form
 				class="space-y-4 bg-neutral-900 border border-neutral-800 rounded-lg p-6"
-				data-signals='{"name":"","wgmeshKey":"","managerToken":"","workerToken":"","advertiseAddr":"","notes":""}'
+				data-signals='{"name":"","wgmeshkey":"","managertoken":"","workertoken":"","advertiseaddr":"","notes":""}'
 			>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Cluster Name *</label>
@@ -190,23 +190,23 @@ templ SwarmClusterImportPage() {
 						<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">wgmesh Key (32+ chars) *</label>
 						<button
 							type="button"
-							data-on:click="$wgmeshKey = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2,'0')).join('')"
+							data-on:click="$wgmeshkey = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2,'0')).join('')"
 							class="text-xs text-amber-400 hover:text-amber-300 font-medium"
 						>Generate</button>
 					</div>
-					<input type="text" data-bind:wgmeshKey class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
+					<input type="text" data-bind:wgmeshkey class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
 				</div>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Manager Token</label>
-					<input type="text" data-bind:managerToken class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
+					<input type="text" data-bind:managertoken class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
 				</div>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Worker Token</label>
-					<input type="text" data-bind:workerToken class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
+					<input type="text" data-bind:workertoken class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
 				</div>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Manager VPN IP (advertise addr)</label>
-					<input type="text" data-bind:advertiseAddr placeholder="10.0.0.1" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
+					<input type="text" data-bind:advertiseaddr placeholder="10.0.0.1" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
 				</div>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Notes</label>
@@ -370,7 +370,7 @@ templ SwarmNodeFormPage(clusterID string, clusters []queries.SwarmClusterReadMod
 			</div>
 			<form
 				class="space-y-4 bg-neutral-900 border border-neutral-800 rounded-lg p-6"
-				data-signals={ fmt.Sprintf(`{"name":"","sshHost":"","sshUser":"root","sshPort":"22","sshKey":"","role":"worker","clusterID":%q}`, clusterID) }
+				data-signals={ fmt.Sprintf(`{"name":"","sshhost":"","sshuser":"root","sshport":"22","sshkey":"","role":"worker","clusterid":%q}`, clusterID) }
 			>
 				<div class="grid grid-cols-2 gap-4">
 					<div class="flex flex-col gap-1">
@@ -388,24 +388,24 @@ templ SwarmNodeFormPage(clusterID string, clusters []queries.SwarmClusterReadMod
 				<div class="grid grid-cols-3 gap-4">
 					<div class="col-span-2 flex flex-col gap-1">
 						<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">SSH Host *</label>
-						<input type="text" data-bind:sshHost placeholder="1.2.3.4" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
+						<input type="text" data-bind:sshhost placeholder="1.2.3.4" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
 					</div>
 					<div class="flex flex-col gap-1">
 						<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Port</label>
-						<input type="number" data-bind:sshPort placeholder="22" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500"/>
+						<input type="number" data-bind:sshport placeholder="22" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500"/>
 					</div>
 				</div>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">SSH User</label>
-					<input type="text" data-bind:sshUser placeholder="root" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500"/>
+					<input type="text" data-bind:sshuser placeholder="root" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500"/>
 				</div>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">SSH Private Key (PEM) *</label>
-					<textarea data-bind:sshKey rows="6" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono text-xs focus:outline-none focus:border-amber-500"></textarea>
+					<textarea data-bind:sshkey rows="6" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono text-xs focus:outline-none focus:border-amber-500"></textarea>
 				</div>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Cluster</label>
-					<select data-bind:clusterID class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+					<select data-bind:clusterid class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
 						<option value="">— none —</option>
 						for _, c := range clusters {
 							<option value={ c.ID } selected?={ c.ID == clusterID }>{ c.Name }</option>
@@ -488,7 +488,7 @@ templ SwarmNetworkFormPage(clusterID string, clusters []queries.SwarmClusterRead
 			</div>
 			<form
 				class="space-y-4 bg-neutral-900 border border-neutral-800 rounded-lg p-6"
-				data-signals={ fmt.Sprintf(`{"name":"","driver":"overlay","subnet":"","gateway":"","parent":"","scope":"swarm","clusterID":%q}`, clusterID) }
+				data-signals={ fmt.Sprintf(`{"name":"","driver":"overlay","subnet":"","gateway":"","parent":"","scope":"swarm","clusterid":%q}`, clusterID) }
 			>
 				<div class="grid grid-cols-2 gap-4">
 					<div class="flex flex-col gap-1">
@@ -520,7 +520,7 @@ templ SwarmNetworkFormPage(clusterID string, clusters []queries.SwarmClusterRead
 				</div>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Cluster</label>
-					<select data-bind:clusterID class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+					<select data-bind:clusterid class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
 						<option value="">— none —</option>
 						for _, c := range clusters {
 							<option value={ c.ID } selected?={ c.ID == clusterID }>{ c.Name }</option>
@@ -620,11 +620,11 @@ templ SwarmReservedIPsEditor(network queries.SwarmNetworkReadModel) {
 		<!-- Add row form -->
 		<div
 			class="flex gap-2 items-end"
-			data-signals='{"newIP":"","newHostname":"","newLabel":""}'
+			data-signals='{"newip":"","newhostname":"","newlabel":""}'
 		>
-			<input type="text" data-bind:newIP placeholder="10.100.64.10" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1 text-xs font-mono focus:outline-none focus:border-amber-500 w-32"/>
-			<input type="text" data-bind:newHostname placeholder="traefik.local" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500 w-36"/>
-			<input type="text" data-bind:newLabel placeholder="Traefik LB" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500 w-32"/>
+			<input type="text" data-bind:newip placeholder="10.100.64.10" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1 text-xs font-mono focus:outline-none focus:border-amber-500 w-32"/>
+			<input type="text" data-bind:newhostname placeholder="traefik.local" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500 w-36"/>
+			<input type="text" data-bind:newlabel placeholder="Traefik LB" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-500 w-32"/>
 			<button
 				type="button"
 				data-on:click={ "@post('/api/swarm/networks/" + network.ID + "/reserved-ips')" }
@@ -700,7 +700,7 @@ templ SwarmStackFormPage(clusterID string, stack *queries.SwarmStackReadModel, c
 					</div>
 					<div class="flex flex-col gap-1">
 						<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Cluster</label>
-						<select data-bind:clusterID class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+						<select data-bind:clusterid class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
 							for _, c := range clusters {
 								<option value={ c.ID } selected?={ c.ID == clusterID }>{ c.Name }</option>
 							}
@@ -711,7 +711,7 @@ templ SwarmStackFormPage(clusterID string, stack *queries.SwarmStackReadModel, c
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Compose YAML *</label>
 					<textarea
 						id="swarm-stack-compose"
-						data-bind:composeYAML
+						data-bind:composeyaml
 						rows="16"
 						class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"
 					></textarea>
@@ -749,7 +749,7 @@ func swarmStackFormSignals(clusterID string, stack *queries.SwarmStackReadModel)
 		name = stack.Name
 		clusterID = stack.ClusterID
 	}
-	return fmt.Sprintf(`{"name":%q,"clusterID":%q,"composeYAML":%q}`, name, clusterID, composeYAML)
+	return fmt.Sprintf(`{"name":%q,"clusterid":%q,"composeyaml":%q}`, name, clusterID, composeYAML)
 }
 
 // ── Stack detail page ─────────────────────────────────────────────────────────

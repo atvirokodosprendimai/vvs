@@ -173,7 +173,7 @@ func (h *SwarmHandlers) clusterCreateSSE(w http.ResponseWriter, r *http.Request)
 	}
 	var sig struct {
 		Name      string `json:"name"`
-		WgmeshKey string `json:"wgmeshKey"`
+		WgmeshKey string `json:"wgmeshkey"`
 		Notes     string `json:"notes"`
 	}
 	if err := datastar.ReadSignals(r, &sig); err != nil {
@@ -200,10 +200,10 @@ func (h *SwarmHandlers) clusterImportSSE(w http.ResponseWriter, r *http.Request)
 	}
 	var sig struct {
 		Name          string `json:"name"`
-		WgmeshKey     string `json:"wgmeshKey"`
-		ManagerToken  string `json:"managerToken"`
-		WorkerToken   string `json:"workerToken"`
-		AdvertiseAddr string `json:"advertiseAddr"`
+		WgmeshKey     string `json:"wgmeshkey"`
+		ManagerToken  string `json:"managertoken"`
+		WorkerToken   string `json:"workertoken"`
+		AdvertiseAddr string `json:"advertiseaddr"`
 		Notes         string `json:"notes"`
 	}
 	if err := datastar.ReadSignals(r, &sig); err != nil {
@@ -298,12 +298,12 @@ func (h *SwarmHandlers) nodeCreateSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	var sig struct {
 		Name      string `json:"name"`
-		SshHost   string `json:"sshHost"`
-		SshUser   string `json:"sshUser"`
-		SshPort   string `json:"sshPort"`
-		SshKey    string `json:"sshKey"`
+		SshHost   string `json:"sshhost"`
+		SshUser   string `json:"sshuser"`
+		SshPort   string `json:"sshport"`
+		SshKey    string `json:"sshkey"`
 		Role      string `json:"role"`
-		ClusterID string `json:"clusterID"`
+		ClusterID string `json:"clusterid"`
 	}
 	if err := datastar.ReadSignals(r, &sig); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
@@ -459,7 +459,7 @@ func (h *SwarmHandlers) networkCreateSSE(w http.ResponseWriter, r *http.Request)
 		Gateway   string `json:"gateway"`
 		Parent    string `json:"parent"`
 		Scope     string `json:"scope"`
-		ClusterID string `json:"clusterID"`
+		ClusterID string `json:"clusterid"`
 	}
 	if err := datastar.ReadSignals(r, &sig); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
@@ -524,9 +524,9 @@ func (h *SwarmHandlers) networkAddReservedIPSSE(w http.ResponseWriter, r *http.R
 	}
 	id := chi.URLParam(r, "id")
 	var sig struct {
-		NewIP       string `json:"newIP"`
-		NewHostname string `json:"newHostname"`
-		NewLabel    string `json:"newLabel"`
+		NewIP       string `json:"newip"`
+		NewHostname string `json:"newhostname"`
+		NewLabel    string `json:"newlabel"`
 	}
 	if err := datastar.ReadSignals(r, &sig); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
@@ -684,9 +684,9 @@ func (h *SwarmHandlers) stackDeploySSE(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var sig struct {
-		ClusterID   string `json:"clusterID"`
+		ClusterID   string `json:"clusterid"`
 		Name        string `json:"name"`
-		ComposeYAML string `json:"composeYAML"`
+		ComposeYAML string `json:"composeyaml"`
 	}
 	if err := datastar.ReadSignals(r, &sig); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
@@ -721,7 +721,7 @@ func (h *SwarmHandlers) stackUpdateSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	id := chi.URLParam(r, "id")
 	var sig struct {
-		ComposeYAML string `json:"composeYAML"`
+		ComposeYAML string `json:"composeyaml"`
 	}
 	if err := datastar.ReadSignals(r, &sig); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
