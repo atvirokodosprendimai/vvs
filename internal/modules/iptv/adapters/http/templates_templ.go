@@ -49,7 +49,7 @@ func IPTVChannelListPage() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div data-signals=\"{_iptvChOpen:false, _iptvChEditOpen:false, iptv_ch_name:'', iptv_ch_logo:'', iptv_ch_stream:'', iptv_ch_category:'', iptv_ch_epg:''}\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div data-signals=\"{_iptvChOpen:false, _iptvChEditOpen:false, iptvChName:'', iptvChLogo:'', iptvChStream:'', iptvChCategory:'', iptvChEpg:''}\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -428,7 +428,7 @@ func IPTVPackageListPage() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div data-signals=\"{_iptvPkgOpen:false, iptv_pkg_name:'', iptv_pkg_price:'', iptv_pkg_desc:''}\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<div data-signals=\"{_iptvPkgOpen:false, iptvPkgName:'', iptvPkgPrice:'', iptvPkgDesc:''}\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -748,7 +748,7 @@ func IPTVSubscriptionListPage() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<div data-signals=\"{_iptvSubOpen:false, iptv_sub_customer:'', iptv_sub_package:''}\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<div data-signals=\"{_iptvSubOpen:false, iptvSubCustomer:'', iptvSubPackage:''}\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1170,7 +1170,7 @@ func IPTVSTBListPage() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<div data-signals=\"{_iptvStbOpen:false, iptv_stb_mac:'', iptv_stb_model:'', iptv_stb_customer:'', iptv_stb_notes:''}\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<div data-signals=\"{_iptvStbOpen:false, iptvStbMac:'', iptvStbModel:'', iptvStbCustomer:'', iptvStbNotes:''}\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1512,7 +1512,7 @@ func IPTVChannelDetailPage(ch queries.ChannelReadModel) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "<div data-signals=\"{_iptvProvOpen:false, iptv_prov_name:'', iptv_prov_url:'', iptv_prov_token:'', iptv_prov_type:'internal', iptv_prov_priority:'0'}\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "<div data-signals=\"{_iptvProvOpen:false, iptvProvName:'', iptvProvUrl:'', iptvProvToken:'', iptvProvType:'internal', iptvProvPriority:'0'}\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1969,7 +1969,7 @@ func IPTVStackListPage() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 157, "<div data-signals=\"{_iptvStackOpen:false, iptv_stack_name:'', iptv_stack_cluster:'', iptv_stack_node:'', iptv_stack_wan_net:'', iptv_stack_overlay_net:'', iptv_stack_wan_name:'', iptv_stack_overlay_name:'', iptv_stack_wan_ip:''}\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 157, "<div data-signals=\"{_iptvStackOpen:false, iptvStackName:'', iptvStackCluster:'', iptvStackNode:'', iptvStackWanNet:'', iptvStackOverlayNet:'', iptvStackWanName:'', iptvStackOverlayName:'', iptvStackWanIp:''}\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2395,7 +2395,7 @@ func IPTVStackDetailPage(stack queries.IPTVStackReadModel) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 191, "<div data-signals=\"{_iptvStackChOpen:false, iptv_stack_ch_id:'', iptv_stack_ch_prov:''}\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 191, "<div data-signals=\"{_iptvStackChOpen:false, iptvStackChId:'', iptvStackChProv:''}\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -3265,7 +3265,7 @@ func IPTVSelectNodes(nodes []NodeOption) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 259, "\" data-bind:iptv-stack-node data-on:change=\"$iptv_stack_wan_ip = $el.options[$el.selectedIndex].dataset.vpnip\"><option value=\"\" data-vpnip=\"\">— select node —</option> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 259, "\" data-bind:iptv-stack-node data-on:change=\"$iptvStackWanIp = $el.options[$el.selectedIndex].dataset.vpnip\"><option value=\"\" data-vpnip=\"\">— select node —</option> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -3407,7 +3407,7 @@ func IPTVSelectWANNetworks(nets []NetworkOption) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 271, "\" data-bind:iptv-stack-wan-net data-on:change=\"$iptv_stack_wan_name = $el.options[$el.selectedIndex].dataset.name\"><option value=\"\" data-name=\"\">— select WAN network —</option> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 271, "\" data-bind:iptv-stack-wan-net data-on:change=\"$iptvStackWanName = $el.options[$el.selectedIndex].dataset.name\"><option value=\"\" data-name=\"\">— select WAN network —</option> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -3536,7 +3536,7 @@ func IPTVSelectOverlayNetworks(nets []NetworkOption) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 282, "\" data-bind:iptv-stack-overlay-net data-on:change=\"$iptv_stack_overlay_name = $el.options[$el.selectedIndex].dataset.name\"><option value=\"\" data-name=\"\">— select Overlay network —</option> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 282, "\" data-bind:iptv-stack-overlay-net data-on:change=\"$iptvStackOverlayName = $el.options[$el.selectedIndex].dataset.name\"><option value=\"\" data-name=\"\">— select Overlay network —</option> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

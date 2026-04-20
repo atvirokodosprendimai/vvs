@@ -12,7 +12,7 @@ import (
 templ IPTVChannelListPage() {
 	@templates.Layout("IPTV Channels") {
 		<div
-			data-signals="{_iptvChOpen:false, _iptvChEditOpen:false, iptv_ch_name:'', iptv_ch_logo:'', iptv_ch_stream:'', iptv_ch_category:'', iptv_ch_epg:''}"
+			data-signals="{_iptvChOpen:false, _iptvChEditOpen:false, iptvChName:'', iptvChLogo:'', iptvChStream:'', iptvChCategory:'', iptvChEpg:''}"
 		>
 			@templates.PageHeaderRow("IPTV — Channels", "Manage broadcast channels") {
 				@iptvNavLinks("channels")
@@ -113,7 +113,7 @@ templ IPTVChannelTable(channels []queries.ChannelReadModel) {
 templ IPTVPackageListPage() {
 	@templates.Layout("IPTV Packages") {
 		<div
-			data-signals="{_iptvPkgOpen:false, iptv_pkg_name:'', iptv_pkg_price:'', iptv_pkg_desc:''}"
+			data-signals="{_iptvPkgOpen:false, iptvPkgName:'', iptvPkgPrice:'', iptvPkgDesc:''}"
 		>
 			@templates.PageHeaderRow("IPTV — Packages", "Channel bundles for subscribers") {
 				@iptvNavLinks("packages")
@@ -203,7 +203,7 @@ templ IPTVPackageTable(packages []queries.PackageReadModel) {
 templ IPTVSubscriptionListPage() {
 	@templates.Layout("IPTV Subscriptions") {
 		<div
-			data-signals="{_iptvSubOpen:false, iptv_sub_customer:'', iptv_sub_package:''}"
+			data-signals="{_iptvSubOpen:false, iptvSubCustomer:'', iptvSubPackage:''}"
 		>
 			@templates.PageHeaderRow("IPTV — Subscriptions", "Active customer subscriptions") {
 				@iptvNavLinks("subscriptions")
@@ -319,7 +319,7 @@ templ iptvSubBadge(status string) {
 templ IPTVSTBListPage() {
 	@templates.Layout("IPTV STBs") {
 		<div
-			data-signals="{_iptvStbOpen:false, iptv_stb_mac:'', iptv_stb_model:'', iptv_stb_customer:'', iptv_stb_notes:''}"
+			data-signals="{_iptvStbOpen:false, iptvStbMac:'', iptvStbModel:'', iptvStbCustomer:'', iptvStbNotes:''}"
 		>
 			@templates.PageHeaderRow("IPTV — Set-Top Boxes", "Device inventory") {
 				@iptvNavLinks("stbs")
@@ -410,7 +410,7 @@ templ IPTVSTBTable(stbs []queries.STBReadModel) {
 templ IPTVChannelDetailPage(ch queries.ChannelReadModel) {
 	@templates.Layout("Channel — " + ch.Name) {
 		<div
-			data-signals="{_iptvProvOpen:false, iptv_prov_name:'', iptv_prov_url:'', iptv_prov_token:'', iptv_prov_type:'internal', iptv_prov_priority:'0'}"
+			data-signals="{_iptvProvOpen:false, iptvProvName:'', iptvProvUrl:'', iptvProvToken:'', iptvProvType:'internal', iptvProvPriority:'0'}"
 		>
 			@templates.PageHeaderBack("Channel — "+ch.Name, ch.Category, "/iptv/channels", "Channels") {
 				<button
@@ -531,7 +531,7 @@ templ IPTVChannelProviderTable(channelID string, providers []queries.ChannelProv
 templ IPTVStackListPage() {
 	@templates.Layout("IPTV Stacks") {
 		<div
-			data-signals="{_iptvStackOpen:false, iptv_stack_name:'', iptv_stack_cluster:'', iptv_stack_node:'', iptv_stack_wan_net:'', iptv_stack_overlay_net:'', iptv_stack_wan_name:'', iptv_stack_overlay_name:'', iptv_stack_wan_ip:''}"
+			data-signals="{_iptvStackOpen:false, iptvStackName:'', iptvStackCluster:'', iptvStackNode:'', iptvStackWanNet:'', iptvStackOverlayNet:'', iptvStackWanName:'', iptvStackOverlayName:'', iptvStackWanIp:''}"
 		>
 			@templates.PageHeaderRow("IPTV — Stacks", "Managed ffmpeg/Caddy deployments") {
 				@iptvNavLinks("stacks")
@@ -645,7 +645,7 @@ templ IPTVStackTable(stacks []queries.IPTVStackReadModel) {
 templ IPTVStackDetailPage(stack queries.IPTVStackReadModel) {
 	@templates.Layout("Stack — " + stack.Name) {
 		<div
-			data-signals="{_iptvStackChOpen:false, iptv_stack_ch_id:'', iptv_stack_ch_prov:''}"
+			data-signals="{_iptvStackChOpen:false, iptvStackChId:'', iptvStackChProv:''}"
 		>
 			@templates.PageHeaderBack("Stack — "+stack.Name, stack.WanIP, "/iptv/stacks", "Stacks") {
 				<button
@@ -857,7 +857,7 @@ templ IPTVSelectNodes(nodes []NodeOption) {
 			<select
 				class={ iptvSelect() }
 				data-bind:iptv-stack-node
-				data-on:change="$iptv_stack_wan_ip = $el.options[$el.selectedIndex].dataset.vpnip"
+				data-on:change="$iptvStackWanIp = $el.options[$el.selectedIndex].dataset.vpnip"
 			>
 				<option value="" data-vpnip="">— select node —</option>
 				for _, n := range nodes {
@@ -876,7 +876,7 @@ templ IPTVSelectWANNetworks(nets []NetworkOption) {
 			<select
 				class={ iptvSelect() }
 				data-bind:iptv-stack-wan-net
-				data-on:change="$iptv_stack_wan_name = $el.options[$el.selectedIndex].dataset.name"
+				data-on:change="$iptvStackWanName = $el.options[$el.selectedIndex].dataset.name"
 			>
 				<option value="" data-name="">— select WAN network —</option>
 				for _, n := range nets {
@@ -895,7 +895,7 @@ templ IPTVSelectOverlayNetworks(nets []NetworkOption) {
 			<select
 				class={ iptvSelect() }
 				data-bind:iptv-stack-overlay-net
-				data-on:change="$iptv_stack_overlay_name = $el.options[$el.selectedIndex].dataset.name"
+				data-on:change="$iptvStackOverlayName = $el.options[$el.selectedIndex].dataset.name"
 			>
 				<option value="" data-name="">— select Overlay network —</option>
 				for _, n := range nets {

@@ -361,11 +361,11 @@ func (h *IPTVHandlers) stbsSSE(w http.ResponseWriter, r *http.Request) {
 
 func (h *IPTVHandlers) createChannelSSE(w http.ResponseWriter, r *http.Request) {
 	var sig struct {
-		Name      string `json:"iptv_ch_name"`
-		LogoURL   string `json:"iptv_ch_logo"`
-		StreamURL string `json:"iptv_ch_stream"`
-		Category  string `json:"iptv_ch_category"`
-		EPGSource string `json:"iptv_ch_epg"`
+		Name      string `json:"iptvChName"`
+		LogoURL   string `json:"iptvChLogo"`
+		StreamURL string `json:"iptvChStream"`
+		Category  string `json:"iptvChCategory"`
+		EPGSource string `json:"iptvChEpg"`
 	}
 	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
@@ -382,20 +382,20 @@ func (h *IPTVHandlers) createChannelSSE(w http.ResponseWriter, r *http.Request) 
 	}
 	h.patchChannelTable(w, r, sse)
 	clearSignals(sse, map[string]any{
-		"_iptvChOpen": false, "iptv_ch_name": "", "iptv_ch_logo": "",
-		"iptv_ch_stream": "", "iptv_ch_category": "", "iptv_ch_epg": "",
+		"_iptvChOpen": false, "iptvChName": "", "iptvChLogo": "",
+		"iptvChStream": "", "iptvChCategory": "", "iptvChEpg": "",
 	})
 }
 
 func (h *IPTVHandlers) updateChannelSSE(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var sig struct {
-		Name      string `json:"iptv_ch_name"`
-		LogoURL   string `json:"iptv_ch_logo"`
-		StreamURL string `json:"iptv_ch_stream"`
-		Category  string `json:"iptv_ch_category"`
-		EPGSource string `json:"iptv_ch_epg"`
-		Active    bool   `json:"iptv_ch_active"`
+		Name      string `json:"iptvChName"`
+		LogoURL   string `json:"iptvChLogo"`
+		StreamURL string `json:"iptvChStream"`
+		Category  string `json:"iptvChCategory"`
+		EPGSource string `json:"iptvChEpg"`
+		Active    bool   `json:"iptvChActive"`
 	}
 	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
@@ -429,9 +429,9 @@ func (h *IPTVHandlers) deleteChannelSSE(w http.ResponseWriter, r *http.Request) 
 
 func (h *IPTVHandlers) createPackageSSE(w http.ResponseWriter, r *http.Request) {
 	var sig struct {
-		Name        string `json:"iptv_pkg_name"`
-		Price       string `json:"iptv_pkg_price"`
-		Description string `json:"iptv_pkg_desc"`
+		Name        string `json:"iptvPkgName"`
+		Price       string `json:"iptvPkgPrice"`
+		Description string `json:"iptvPkgDesc"`
 	}
 	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
@@ -452,16 +452,16 @@ func (h *IPTVHandlers) createPackageSSE(w http.ResponseWriter, r *http.Request) 
 	}
 	h.patchPackageTable(w, r, sse)
 	clearSignals(sse, map[string]any{
-		"_iptvPkgOpen": false, "iptv_pkg_name": "", "iptv_pkg_price": "", "iptv_pkg_desc": "",
+		"_iptvPkgOpen": false, "iptvPkgName": "", "iptvPkgPrice": "", "iptvPkgDesc": "",
 	})
 }
 
 func (h *IPTVHandlers) updatePackageSSE(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var sig struct {
-		Name        string `json:"iptv_pkg_name"`
-		Price       string `json:"iptv_pkg_price"`
-		Description string `json:"iptv_pkg_desc"`
+		Name        string `json:"iptvPkgName"`
+		Price       string `json:"iptvPkgPrice"`
+		Description string `json:"iptvPkgDesc"`
 	}
 	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
@@ -527,8 +527,8 @@ func (h *IPTVHandlers) removeChannelFromPackageSSE(w http.ResponseWriter, r *htt
 
 func (h *IPTVHandlers) createSubscriptionSSE(w http.ResponseWriter, r *http.Request) {
 	var sig struct {
-		CustomerID string `json:"iptv_sub_customer"`
-		PackageID  string `json:"iptv_sub_package"`
+		CustomerID string `json:"iptvSubCustomer"`
+		PackageID  string `json:"iptvSubPackage"`
 	}
 	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
@@ -546,7 +546,7 @@ func (h *IPTVHandlers) createSubscriptionSSE(w http.ResponseWriter, r *http.Requ
 	}
 	h.patchSubscriptionTable(w, r, sse)
 	clearSignals(sse, map[string]any{
-		"_iptvSubOpen": false, "iptv_sub_customer": "", "iptv_sub_package": "",
+		"_iptvSubOpen": false, "iptvSubCustomer": "", "iptvSubPackage": "",
 	})
 }
 
@@ -588,8 +588,8 @@ func (h *IPTVHandlers) reissueKeySSE(w http.ResponseWriter, r *http.Request) {
 	_ = id
 	// Reissue key requires subscription details — signal carries them
 	var sig struct {
-		CustomerID string `json:"iptv_sub_customer_id"`
-		PackageID  string `json:"iptv_sub_package_id"`
+		CustomerID string `json:"iptvSubCustomerId"`
+		PackageID  string `json:"iptvSubPackageId"`
 	}
 	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
@@ -612,10 +612,10 @@ func (h *IPTVHandlers) reissueKeySSE(w http.ResponseWriter, r *http.Request) {
 
 func (h *IPTVHandlers) assignSTBSSE(w http.ResponseWriter, r *http.Request) {
 	var sig struct {
-		MAC        string `json:"iptv_stb_mac"`
-		Model      string `json:"iptv_stb_model"`
-		CustomerID string `json:"iptv_stb_customer"`
-		Notes      string `json:"iptv_stb_notes"`
+		MAC        string `json:"iptvStbMac"`
+		Model      string `json:"iptvStbModel"`
+		CustomerID string `json:"iptvStbCustomer"`
+		Notes      string `json:"iptvStbNotes"`
 	}
 	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
@@ -634,8 +634,8 @@ func (h *IPTVHandlers) assignSTBSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	h.patchSTBTable(w, r, sse)
 	clearSignals(sse, map[string]any{
-		"_iptvStbOpen": false, "iptv_stb_mac": "", "iptv_stb_model": "",
-		"iptv_stb_customer": "", "iptv_stb_notes": "",
+		"_iptvStbOpen": false, "iptvStbMac": "", "iptvStbModel": "",
+		"iptvStbCustomer": "", "iptvStbNotes": "",
 	})
 }
 
@@ -667,11 +667,11 @@ func (h *IPTVHandlers) channelProvidersSSE(w http.ResponseWriter, r *http.Reques
 func (h *IPTVHandlers) createProviderSSE(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var sig struct {
-		Name        string `json:"iptv_prov_name"`
-		URLTemplate string `json:"iptv_prov_url"`
-		Token       string `json:"iptv_prov_token"`
-		Type        string `json:"iptv_prov_type"`
-		Priority    string `json:"iptv_prov_priority"`
+		Name        string `json:"iptvProvName"`
+		URLTemplate string `json:"iptvProvUrl"`
+		Token       string `json:"iptvProvToken"`
+		Type        string `json:"iptvProvType"`
+		Priority    string `json:"iptvProvPriority"`
 	}
 	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
@@ -694,8 +694,8 @@ func (h *IPTVHandlers) createProviderSSE(w http.ResponseWriter, r *http.Request)
 	providers, _ := h.listProviders.Handle(r.Context(), id)
 	sse.PatchElementTempl(IPTVChannelProviderTable(id, providers))
 	clearSignals(sse, map[string]any{
-		"_iptvProvOpen": false, "iptv_prov_name": "", "iptv_prov_url": "",
-		"iptv_prov_token": "", "iptv_prov_type": "internal", "iptv_prov_priority": "0",
+		"_iptvProvOpen": false, "iptvProvName": "", "iptvProvUrl": "",
+		"iptvProvToken": "", "iptvProvType": "internal", "iptvProvPriority": "0",
 	})
 }
 
@@ -739,14 +739,14 @@ func (h *IPTVHandlers) stackChannelsSSE(w http.ResponseWriter, r *http.Request) 
 
 func (h *IPTVHandlers) createStackSSE(w http.ResponseWriter, r *http.Request) {
 	var sig struct {
-		Name               string `json:"iptv_stack_name"`
-		ClusterID          string `json:"iptv_stack_cluster"`
-		NodeID             string `json:"iptv_stack_node"`
-		WANNetworkID       string `json:"iptv_stack_wan_net"`
-		OverlayNetworkID   string `json:"iptv_stack_overlay_net"`
-		WANNetworkName     string `json:"iptv_stack_wan_name"`
-		OverlayNetworkName string `json:"iptv_stack_overlay_name"`
-		WanIP              string `json:"iptv_stack_wan_ip"`
+		Name               string `json:"iptvStackName"`
+		ClusterID          string `json:"iptvStackCluster"`
+		NodeID             string `json:"iptvStackNode"`
+		WANNetworkID       string `json:"iptvStackWanNet"`
+		OverlayNetworkID   string `json:"iptvStackOverlayNet"`
+		WANNetworkName     string `json:"iptvStackWanName"`
+		OverlayNetworkName string `json:"iptvStackOverlayName"`
+		WanIP              string `json:"iptvStackWanIp"`
 	}
 	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
@@ -769,9 +769,9 @@ func (h *IPTVHandlers) createStackSSE(w http.ResponseWriter, r *http.Request) {
 	}
 	h.patchStackTable(w, r, sse)
 	clearSignals(sse, map[string]any{
-		"_iptvStackOpen": false, "iptv_stack_name": "", "iptv_stack_cluster": "",
-		"iptv_stack_node": "", "iptv_stack_wan_net": "", "iptv_stack_overlay_net": "",
-		"iptv_stack_wan_name": "", "iptv_stack_overlay_name": "", "iptv_stack_wan_ip": "",
+		"_iptvStackOpen": false, "iptvStackName": "", "iptvStackCluster": "",
+		"iptvStackNode": "", "iptvStackWanNet": "", "iptvStackOverlayNet": "",
+		"iptvStackWanName": "", "iptvStackOverlayName": "", "iptvStackWanIp": "",
 	})
 }
 
@@ -789,8 +789,8 @@ func (h *IPTVHandlers) deleteStackSSE(w http.ResponseWriter, r *http.Request) {
 func (h *IPTVHandlers) addChannelToStackSSE(w http.ResponseWriter, r *http.Request) {
 	stackID := chi.URLParam(r, "id")
 	var sig struct {
-		ChannelID  string `json:"iptv_stack_ch_id"`
-		ProviderID string `json:"iptv_stack_ch_prov"`
+		ChannelID  string `json:"iptvStackChId"`
+		ProviderID string `json:"iptvStackChProv"`
 	}
 	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
@@ -809,7 +809,7 @@ func (h *IPTVHandlers) addChannelToStackSSE(w http.ResponseWriter, r *http.Reque
 	chans, _ := h.getStackChans.Handle(r.Context(), stackID)
 	sse.PatchElementTempl(IPTVStackChannelTable(stackID, chans))
 	clearSignals(sse, map[string]any{
-		"_iptvStackChOpen": false, "iptv_stack_ch_id": "", "iptv_stack_ch_prov": "",
+		"_iptvStackChOpen": false, "iptvStackChId": "", "iptvStackChProv": "",
 	})
 }
 
@@ -939,7 +939,7 @@ func (h *IPTVHandlers) selectClustersSSE(w http.ResponseWriter, r *http.Request)
 
 func (h *IPTVHandlers) selectClusterDepsSSE(w http.ResponseWriter, r *http.Request) {
 	var sig struct {
-		ClusterID string `json:"iptv_stack_cluster"`
+		ClusterID string `json:"iptvStackCluster"`
 	}
 	sse := datastar.NewSSE(w, r)
 	_ = datastar.ReadSignals(r, &sig)
@@ -972,7 +972,7 @@ func (h *IPTVHandlers) selectChannelsSSE(w http.ResponseWriter, r *http.Request)
 
 func (h *IPTVHandlers) selectChannelProvidersSSE(w http.ResponseWriter, r *http.Request) {
 	var sig struct {
-		ChannelID string `json:"iptv_stack_ch_id"`
+		ChannelID string `json:"iptvStackChId"`
 	}
 	sse := datastar.NewSSE(w, r)
 	_ = datastar.ReadSignals(r, &sig)
