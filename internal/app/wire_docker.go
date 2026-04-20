@@ -70,7 +70,7 @@ func wireDocker(
 	provisionNodeCmd := dockercommands.NewProvisionSwarmNodeHandler(swarmNodeRepo, clusterRepo, pub)
 	addNodeCmd := dockercommands.NewAddSwarmNodeHandler(clusterRepo, swarmNodeRepo, swarmFactory, pub)
 	removeNodeCmd := dockercommands.NewRemoveSwarmNodeHandler(clusterRepo, swarmNodeRepo, swarmFactory, pub)
-	orderHetznerCmd := dockercommands.NewOrderHetznerNodeHandler(clusterRepo, createSwarmNodeCmd, provisionNodeCmd, addNodeCmd)
+	orderHetznerCmd := dockercommands.NewOrderHetznerNodeHandler(clusterRepo, createSwarmNodeCmd, provisionNodeCmd, initSwarmCmd, addNodeCmd)
 
 	createNetworkCmd := dockercommands.NewCreateSwarmNetworkHandler(clusterRepo, swarmNodeRepo, networkRepo, swarmFactory, pub)
 	deleteNetworkCmd := dockercommands.NewDeleteSwarmNetworkHandler(clusterRepo, swarmNodeRepo, networkRepo, swarmFactory, pub)
