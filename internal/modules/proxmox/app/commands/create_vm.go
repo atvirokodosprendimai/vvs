@@ -90,20 +90,30 @@ func (h *CreateVMHandler) runCreate(vmID string, conn domain.NodeConn, spec doma
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
+	writeStatus := func(status domain.VMStatus) {
+		wctx, wcancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer wcancel()
+		if err := h.vmRepo.UpdateStatus(wctx, vmID, status); err != nil {
+			slog.Error("proxmox: update vm status failed", "vmID", vmID, "status", status, "err", err)
+		}
+	}
+
 	upid, err := h.provisioner.CreateVM(ctx, conn, spec)
 	if err != nil {
 		slog.Error("proxmox: create VM failed", "vmID", vmID, "err", err)
-		h.vmRepo.UpdateStatus(ctx, vmID, domain.VMStatusUnknown) //nolint
+		writeStatus(domain.VMStatusUnknown)
 		return
 	}
 	if err := h.provisioner.WaitForTask(ctx, conn, upid); err != nil {
 		slog.Error("proxmox: create VM task failed", "vmID", vmID, "err", err)
-		h.vmRepo.UpdateStatus(ctx, vmID, domain.VMStatusUnknown) //nolint
+		writeStatus(domain.VMStatusUnknown)
 		return
 	}
 
-	h.vmRepo.UpdateStatus(ctx, vmID, domain.VMStatusRunning) //nolint
-	h.publishEvent(ctx, events.ProxmoxVMCreated.String(), "proxmox.vm.created", vmID)
+	writeStatus(domain.VMStatusRunning)
+	wctx, wcancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer wcancel()
+	h.publishEvent(wctx, events.ProxmoxVMCreated.String(), "proxmox.vm.created", vmID)
 }
 
 func (h *CreateVMHandler) publishStatusChanged(ctx context.Context, vm *domain.VirtualMachine) {

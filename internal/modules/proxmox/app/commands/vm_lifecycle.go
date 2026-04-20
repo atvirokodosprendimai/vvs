@@ -170,17 +170,25 @@ func (h *DeleteVMHandler) runDelete(vmID string, vmid int, prevStatus domain.VMS
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
+	revert := func() {
+		rctx, rcancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer rcancel()
+		if err := h.vmRepo.UpdateStatus(rctx, vmID, prevStatus); err != nil {
+			slog.Error("proxmox: revert vm status failed", "vmID", vmID, "err", err)
+		}
+	}
+
 	// Stop VM first if it was running or paused.
 	if prevStatus == domain.VMStatusRunning || prevStatus == domain.VMStatusPaused {
 		upid, err := h.provisioner.StopVM(ctx, conn, vmid)
 		if err != nil {
 			slog.Error("proxmox: stop VM before delete failed", "vmID", vmID, "err", err)
-			h.vmRepo.UpdateStatus(ctx, vmID, prevStatus) //nolint
+			revert()
 			return
 		}
 		if err := h.provisioner.WaitForTask(ctx, conn, upid); err != nil {
 			slog.Error("proxmox: stop VM task failed", "vmID", vmID, "err", err)
-			h.vmRepo.UpdateStatus(ctx, vmID, prevStatus) //nolint
+			revert()
 			return
 		}
 	}
@@ -188,17 +196,23 @@ func (h *DeleteVMHandler) runDelete(vmID string, vmid int, prevStatus domain.VMS
 	upid, err := h.provisioner.DeleteVM(ctx, conn, vmid)
 	if err != nil {
 		slog.Error("proxmox: delete VM failed", "vmID", vmID, "err", err)
-		h.vmRepo.UpdateStatus(ctx, vmID, prevStatus) //nolint
+		revert()
 		return
 	}
 	if err := h.provisioner.WaitForTask(ctx, conn, upid); err != nil {
 		slog.Error("proxmox: delete VM task failed", "vmID", vmID, "err", err)
-		h.vmRepo.UpdateStatus(ctx, vmID, prevStatus) //nolint
+		revert()
 		return
 	}
 
-	h.vmRepo.Delete(ctx, vmID) //nolint
-	publishEvent(h.publisher, ctx, events.ProxmoxVMDeleted.String(), "proxmox.vm.deleted", vmID)
+	dctx, dcancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer dcancel()
+	if err := h.vmRepo.Delete(dctx, vmID); err != nil {
+		slog.Error("proxmox: delete VM from db failed", "vmID", vmID, "err", err)
+		revert()
+		return
+	}
+	publishEvent(h.publisher, dctx, events.ProxmoxVMDeleted.String(), "proxmox.vm.deleted", vmID)
 }
 
 // ── Assign customer ───────────────────────────────────────────────────────────
@@ -264,13 +278,23 @@ func runAsyncOp(
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
+	writeStatus := func(status domain.VMStatus) {
+		wctx, wcancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer wcancel()
+		if err := vmRepo.UpdateStatus(wctx, vmID, status); err != nil {
+			slog.Error("proxmox: update vm status failed", "vmID", vmID, "status", status, "err", err)
+		}
+	}
+
 	if err := op(ctx); err != nil {
 		slog.Error("proxmox: async vm op failed", "vmID", vmID, "event", eventType, "err", err)
-		vmRepo.UpdateStatus(ctx, vmID, revertStatus) //nolint
+		writeStatus(revertStatus)
 		return
 	}
-	vmRepo.UpdateStatus(ctx, vmID, successStatus) //nolint
-	publishEvent(pub, ctx, subject, eventType, vmID)
+	writeStatus(successStatus)
+	wctx, wcancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer wcancel()
+	publishEvent(pub, wctx, subject, eventType, vmID)
 }
 
 func publishEvent(pub events.EventPublisher, ctx context.Context, subject, eventType, vmID string) {

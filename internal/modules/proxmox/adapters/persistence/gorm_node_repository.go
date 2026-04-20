@@ -49,7 +49,7 @@ func (r *GormNodeRepository) FindByID(ctx context.Context, id string) (*domain.P
 		}
 		return nil, err
 	}
-	return r.decryptNode(&model), nil
+	return r.decryptNode(&model)
 }
 
 func (r *GormNodeRepository) FindAll(ctx context.Context) ([]*domain.ProxmoxNode, error) {
@@ -61,7 +61,11 @@ func (r *GormNodeRepository) FindAll(ctx context.Context) ([]*domain.ProxmoxNode
 		}
 		nodes = make([]*domain.ProxmoxNode, len(models))
 		for i := range models {
-			nodes[i] = r.decryptNode(&models[i])
+			n, err := r.decryptNode(&models[i])
+			if err != nil {
+				return err
+			}
+			nodes[i] = n
 		}
 		return nil
 	})
@@ -74,12 +78,14 @@ func (r *GormNodeRepository) Delete(ctx context.Context, id string) error {
 	})
 }
 
-func (r *GormNodeRepository) decryptNode(m *NodeModel) *domain.ProxmoxNode {
+func (r *GormNodeRepository) decryptNode(m *NodeModel) (*domain.ProxmoxNode, error) {
 	node := toNodeDomain(m)
 	if len(m.TokenSecret) > 0 {
-		if plain, err := emailcrypto.DecryptPassword(r.encKey, m.TokenSecret); err == nil {
-			node.TokenSecret = string(plain)
+		plain, err := emailcrypto.DecryptPassword(r.encKey, m.TokenSecret)
+		if err != nil {
+			return nil, fmt.Errorf("decrypt proxmox token secret for node %s: %w", m.ID, err)
 		}
+		node.TokenSecret = string(plain)
 	}
-	return node
+	return node, nil
 }

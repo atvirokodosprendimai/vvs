@@ -333,6 +333,9 @@ func (h *Handlers) vmCreateSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) vmSuspendSSE(w http.ResponseWriter, r *http.Request) {
+	if !requireAdmin(w, r) {
+		return
+	}
 	id := chi.URLParam(r, "id")
 	sse := datastar.NewSSE(w, r)
 	if err := h.suspendVM.Handle(r.Context(), commands.SuspendVMCommand{ID: id}); err != nil {
@@ -344,6 +347,9 @@ func (h *Handlers) vmSuspendSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) vmResumeSSE(w http.ResponseWriter, r *http.Request) {
+	if !requireAdmin(w, r) {
+		return
+	}
 	id := chi.URLParam(r, "id")
 	sse := datastar.NewSSE(w, r)
 	if err := h.resumeVM.Handle(r.Context(), commands.ResumeVMCommand{ID: id}); err != nil {
@@ -354,6 +360,9 @@ func (h *Handlers) vmResumeSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) vmRestartSSE(w http.ResponseWriter, r *http.Request) {
+	if !requireAdmin(w, r) {
+		return
+	}
 	id := chi.URLParam(r, "id")
 	sse := datastar.NewSSE(w, r)
 	if err := h.restartVM.Handle(r.Context(), commands.RestartVMCommand{ID: id}); err != nil {
@@ -364,6 +373,9 @@ func (h *Handlers) vmRestartSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) vmDeleteSSE(w http.ResponseWriter, r *http.Request) {
+	if !requireAdmin(w, r) {
+		return
+	}
 	id := chi.URLParam(r, "id")
 	sse := datastar.NewSSE(w, r)
 	if err := h.deleteVM.Handle(r.Context(), commands.DeleteVMCommand{ID: id}); err != nil {
@@ -374,11 +386,17 @@ func (h *Handlers) vmDeleteSSE(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) vmAssignCustomerSSE(w http.ResponseWriter, r *http.Request) {
+	if !requireAdmin(w, r) {
+		return
+	}
 	id := chi.URLParam(r, "id")
 	var sig struct {
 		CustomerID string `json:"customerId"`
 	}
-	datastar.ReadSignals(r, &sig) //nolint
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
 	sse := datastar.NewSSE(w, r)
 	if err := h.assignVMCustomer.Handle(r.Context(), commands.AssignVMCustomerCommand{VMID: id, CustomerID: sig.CustomerID}); err != nil {
 		slog.Error("proxmox: assign VM customer", "err", err)
