@@ -141,7 +141,14 @@ templ SwarmClusterFormPage() {
 					<input type="text" data-bind:name placeholder="prod-eu-1" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500"/>
 				</div>
 				<div class="flex flex-col gap-1">
-					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">wgmesh Key (32+ chars) *</label>
+					<div class="flex items-center justify-between">
+						<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">wgmesh Key (32+ chars) *</label>
+						<button
+							type="button"
+							data-on:click="$wgmeshKey = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2,'0')).join('')"
+							class="text-xs text-amber-400 hover:text-amber-300 font-medium"
+						>Generate</button>
+					</div>
 					<input type="text" data-bind:wgmeshKey placeholder="32+ character shared key" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
 					<p class="text-xs text-neutral-500">Shared WireGuard mesh key for all nodes in this cluster.</p>
 				</div>
@@ -179,7 +186,14 @@ templ SwarmClusterImportPage() {
 					<input type="text" data-bind:name placeholder="prod-eu-1" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500"/>
 				</div>
 				<div class="flex flex-col gap-1">
-					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">wgmesh Key (32+ chars) *</label>
+					<div class="flex items-center justify-between">
+						<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">wgmesh Key (32+ chars) *</label>
+						<button
+							type="button"
+							data-on:click="$wgmeshKey = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2,'0')).join('')"
+							class="text-xs text-amber-400 hover:text-amber-300 font-medium"
+						>Generate</button>
+					</div>
 					<input type="text" data-bind:wgmeshKey class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
 				</div>
 				<div class="flex flex-col gap-1">
