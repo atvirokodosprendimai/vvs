@@ -5,366 +5,308 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VVS ISP Manager — Architecture</title>
 
-  <!-- Cytoscape.js core -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.29.2/cytoscape.min.js"></script>
-  <!-- Dagre layout (hierarchical / left-right flow) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/dagre/0.8.5/dagre.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+  <!-- Cytoscape.js (unpkg always serves latest stable) -->
+  <script src="https://unpkg.com/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
+  <!-- dagre (graph layout engine) -->
+  <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+  <!-- cytoscape-dagre plugin -->
+  <script src="https://unpkg.com/cytoscape-dagre@2.4.0/cytoscape-dagre.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:      #111111;
+      --bg:      #111;
       --surface: #1c1c1c;
       --card:    #242424;
       --border:  #2e2e2e;
-      --border2: #383838;
-      --muted:   #555555;
+      --border2: #3a3a3a;
+      --muted:   #555;
       --text:    #e5e5e5;
-      --subtle:  #999999;
+      --subtle:  #999;
       --amber:   #f59e0b;
       --amber2:  #fbbf24;
-      --cyan:    #22d3ee;
-      --green:   #4ade80;
-      --red:     #f87171;
-      --purple:  #a78bfa;
-      --blue:    #60a5fa;
     }
 
-    html, body { height: 100%; font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
 
-    /* ── Layout ─────────────────────────────────────────────── */
-    .app { display: flex; height: 100vh; overflow: hidden; }
+    /* ── Shell ─────────────────────────────────────────── */
+    #app { display: flex; height: 100vh; }
 
-    .sidebar {
-      width: 220px; flex-shrink: 0;
+    /* ── Sidebar ──────────────────────────────────────── */
+    #sidebar {
+      width: 200px;
+      flex-shrink: 0;
       background: var(--surface);
       border-right: 1px solid var(--border);
-      display: flex; flex-direction: column;
-      padding: 0;
+      display: flex;
+      flex-direction: column;
     }
+    .logo { padding: 16px; border-bottom: 1px solid var(--border); }
+    .logo-name { font-size: 13px; font-weight: 700; }
+    .logo-sub  { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
-    .sidebar-logo {
-      padding: 18px 16px 14px;
-      border-bottom: 1px solid var(--border);
-    }
-    .sidebar-logo .name { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: .02em; }
-    .sidebar-logo .sub  { font-size: 11px; color: var(--muted); margin-top: 2px; }
-
-    .sidebar-nav { padding: 8px 8px; flex: 1; }
-    .nav-item {
+    .nav { padding: 8px; flex: 1; }
+    .nav-btn {
       display: flex; align-items: center; gap: 8px;
-      padding: 8px 10px; border-radius: 6px;
+      width: 100%; padding: 8px 10px; border-radius: 6px;
+      background: none; border: none; cursor: pointer;
       font-size: 13px; color: var(--subtle);
-      cursor: pointer; transition: all .15s;
+      text-align: left; transition: .15s;
       margin-bottom: 2px;
-      border: none; background: none; width: 100%; text-align: left;
     }
-    .nav-item:hover { background: var(--border); color: var(--text); }
-    .nav-item.active { background: rgba(245,158,11,.12); color: var(--amber2); }
-    .nav-item .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .nav-btn:hover   { background: var(--border); color: var(--text); }
+    .nav-btn.active  { background: rgba(245,158,11,.12); color: var(--amber2); }
+    .nav-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
 
-    .sidebar-footer {
+    .sidebar-foot {
       padding: 12px 16px;
       border-top: 1px solid var(--border);
       font-size: 11px; color: var(--muted);
     }
-    .sidebar-footer a { color: var(--amber); text-decoration: none; }
 
-    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    /* ── Main area ─────────────────────────────────────── */
+    #main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 
-    .topbar {
-      height: 50px; flex-shrink: 0;
+    #topbar {
+      height: 50px;
       border-bottom: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0 16px;
+      padding: 0 16px; flex-shrink: 0;
     }
-    .topbar-title { font-size: 14px; font-weight: 600; color: var(--text); }
-    .topbar-desc  { font-size: 12px; color: var(--muted); margin-left: 8px; }
-
-    .toolbar {
-      display: flex; gap: 6px;
-    }
-    .btn {
+    .tb-left { display: flex; align-items: baseline; gap: 8px; }
+    #view-title { font-size: 14px; font-weight: 600; }
+    #view-hint  { font-size: 11px; color: var(--muted); }
+    .tb-right { display: flex; gap: 6px; }
+    .tbtn {
       padding: 5px 10px; border-radius: 5px;
       font-size: 12px; cursor: pointer;
       border: 1px solid var(--border2);
       background: var(--card); color: var(--subtle);
-      transition: all .15s;
+      transition: .15s;
     }
-    .btn:hover { border-color: var(--amber); color: var(--amber); }
+    .tbtn:hover { border-color: var(--amber); color: var(--amber); }
 
-    /* ── Canvas area ─────────────────────────────────────────── */
-    .canvas-wrapper { flex: 1; position: relative; overflow: hidden; }
+    /* ── Canvas ────────────────────────────────────────── */
+    #canvas-wrap {
+      /* exact pixel height so Cytoscape gets a real container */
+      height: calc(100vh - 50px);
+      position: relative;
+    }
 
-    #cy { width: 100%; height: 100%; }
+    .cy-container {
+      position: absolute; inset: 0;
+      display: none;
+    }
+    .cy-container.active { display: block; }
 
-    /* ── Info panel ──────────────────────────────────────────── */
-    .info-panel {
-      position: absolute; right: 0; top: 0; bottom: 0;
-      width: 280px;
+    /* ── Info panel ────────────────────────────────────── */
+    #info {
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 270px;
       background: var(--surface);
       border-left: 1px solid var(--border);
       transform: translateX(100%);
       transition: transform .2s ease;
+      z-index: 20;
       display: flex; flex-direction: column;
-      z-index: 10;
     }
-    .info-panel.open { transform: translateX(0); }
+    #info.open { transform: none; }
 
-    .info-header {
+    #info-head {
       padding: 14px 16px;
       border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex; align-items: flex-start; justify-content: space-between;
     }
-    .info-title { font-size: 14px; font-weight: 600; color: var(--text); }
-    .info-type  { font-size: 11px; color: var(--muted); margin-top: 2px; }
-    .info-close {
-      width: 24px; height: 24px; border-radius: 4px;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer; font-size: 16px; color: var(--muted);
-      background: none; border: none;
-      transition: all .15s;
+    #info-title { font-size: 14px; font-weight: 600; }
+    #info-type  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    #info-close {
+      background: none; border: none; color: var(--muted);
+      font-size: 16px; cursor: pointer; padding: 2px 4px; border-radius: 3px;
     }
-    .info-close:hover { background: var(--border); color: var(--text); }
-
-    .info-body { padding: 14px 16px; flex: 1; overflow-y: auto; font-size: 13px; color: var(--subtle); line-height: 1.6; }
-    .info-section { margin-bottom: 14px; }
-    .info-section h4 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
-    .info-section p  { color: var(--subtle); }
-    .info-tag {
-      display: inline-block; padding: 2px 7px; border-radius: 4px;
-      font-size: 11px; margin: 2px;
+    #info-close:hover { background: var(--border); color: var(--text); }
+    #info-body {
+      padding: 14px 16px;
+      font-size: 12px; color: var(--subtle);
+      line-height: 1.65; overflow-y: auto; flex: 1;
+    }
+    #info-body h4 {
+      font-size: 10px; font-weight: 700; letter-spacing: .07em;
+      text-transform: uppercase; color: var(--muted);
+      margin: 10px 0 5px;
+    }
+    .tag {
+      display: inline-block; margin: 2px;
+      padding: 2px 7px; border-radius: 4px;
+      font-size: 11px;
       background: var(--card); border: 1px solid var(--border2);
       color: var(--subtle);
     }
 
-    /* ── Legend ──────────────────────────────────────────────── */
+    /* ── Legend ────────────────────────────────────────── */
     .legend {
       position: absolute; bottom: 12px; left: 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-      display: flex; flex-direction: column; gap: 5px;
-      font-size: 11px;
-      z-index: 5;
+      background: rgba(28,28,28,.95); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 12px;
+      font-size: 11px; z-index: 10;
+      display: none; flex-direction: column; gap: 5px;
     }
-    .legend-item { display: flex; align-items: center; gap: 7px; color: var(--subtle); }
-    .legend-dot  { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
-
-    /* ── View panels ─────────────────────────────────────────── */
-    .view { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
-    .view.active { display: block; }
-
-    /* Hint */
-    .hint {
-      position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,.7); border: 1px solid var(--border2);
-      border-radius: 6px; padding: 5px 12px;
-      font-size: 11px; color: var(--muted);
-      pointer-events: none; z-index: 4;
-      white-space: nowrap;
-    }
+    .legend.active { display: flex; }
+    .li { display: flex; align-items: center; gap: 7px; color: var(--subtle); }
+    .ld { width: 10px; height: 10px; border-radius: 3px; }
   </style>
 </head>
 <body>
-<div class="app">
+<div id="app">
 
-  <!-- ── Sidebar ─────────────────────────────────────────────── -->
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="name">VVS ISP Manager</div>
-      <div class="sub">System Architecture</div>
+  <!-- ── Sidebar ──────────────────────────────────────── -->
+  <aside id="sidebar">
+    <div class="logo">
+      <div class="logo-name">VVS ISP Manager</div>
+      <div class="logo-sub">Architecture Diagrams</div>
     </div>
-    <nav class="sidebar-nav">
-      <button class="nav-item active" data-view="overview" onclick="switchView('overview', this)">
-        <span class="dot" style="background:#f59e0b"></span>
+    <nav class="nav">
+      <button class="nav-btn active" onclick="switchView('overview',this)">
+        <span class="nav-dot" style="background:#f59e0b"></span>
         System Overview
       </button>
-      <button class="nav-item" data-view="modules" onclick="switchView('modules', this)">
-        <span class="dot" style="background:#22d3ee"></span>
+      <button class="nav-btn" onclick="switchView('modules',this)">
+        <span class="nav-dot" style="background:#22d3ee"></span>
         Module Map
       </button>
-      <button class="nav-item" data-view="dataflow" onclick="switchView('dataflow', this)">
-        <span class="dot" style="background:#4ade80"></span>
+      <button class="nav-btn" onclick="switchView('dataflow',this)">
+        <span class="nav-dot" style="background:#4ade80"></span>
         Data Flow
       </button>
     </nav>
-    <div class="sidebar-footer">
-      <a href="https://github.com/atvirokodosprendimai/vvs" target="_blank">GitHub ↗</a>
-      &nbsp;·&nbsp; Go + SQLite + NATS
+    <div class="sidebar-foot">
+      Go · SQLite · NATS · Datastar
     </div>
   </aside>
 
-  <!-- ── Main ───────────────────────────────────────────────── -->
-  <div class="main">
-    <div class="topbar">
-      <div style="display:flex;align-items:baseline;gap:6px">
-        <span class="topbar-title" id="view-title">System Overview</span>
-        <span class="topbar-desc" id="view-desc">Click any node to explore · scroll to zoom · drag to pan</span>
+  <!-- ── Main ─────────────────────────────────────────── -->
+  <div id="main">
+    <div id="topbar">
+      <div class="tb-left">
+        <span id="view-title">System Overview</span>
+        <span id="view-hint">Click a node to zoom in · click background to reset</span>
       </div>
-      <div class="toolbar">
-        <button class="btn" onclick="fitAll()">Fit All</button>
-        <button class="btn" onclick="zoomIn()">＋</button>
-        <button class="btn" onclick="zoomOut()">－</button>
+      <div class="tb-right">
+        <button class="tbtn" onclick="fitAll()">Fit</button>
+        <button class="tbtn" onclick="zoomIn()">＋</button>
+        <button class="tbtn" onclick="zoomOut()">－</button>
       </div>
     </div>
 
-    <div class="canvas-wrapper">
-      <!-- Views -->
-      <div id="view-overview" class="view active">
-        <div id="cy-overview" style="width:100%;height:100%;"></div>
-        <div class="hint">Click a node to zoom in · click background to zoom out</div>
-        <div class="legend" id="legend-overview">
-          <div class="legend-item"><span class="legend-dot" style="background:#fbbf24"></span>Core server</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#22d3ee"></span>Portal binary</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#60a5fa"></span>Client (browser)</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#818cf8"></span>External service</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#6b7280"></span>Infrastructure</div>
-        </div>
+    <div id="canvas-wrap">
+
+      <!-- Canvas containers -->
+      <div id="cy-overview" class="cy-container active"></div>
+      <div id="cy-modules"  class="cy-container"></div>
+      <div id="cy-dataflow" class="cy-container"></div>
+
+      <!-- Legends -->
+      <div class="legend active" id="leg-overview">
+        <div class="li"><span class="ld" style="background:#f59e0b"></span>Core server</div>
+        <div class="li"><span class="ld" style="background:#22d3ee"></span>Portal binary</div>
+        <div class="li"><span class="ld" style="background:#60a5fa"></span>Browser (client)</div>
+        <div class="li"><span class="ld" style="background:#a78bfa"></span>External service</div>
+        <div class="li"><span class="ld" style="background:#6b7280"></span>Infrastructure</div>
+      </div>
+      <div class="legend" id="leg-modules">
+        <div class="li"><span class="ld" style="background:#f97316"></span>CRM</div>
+        <div class="li"><span class="ld" style="background:#22d3ee"></span>Finance</div>
+        <div class="li"><span class="ld" style="background:#4ade80"></span>Network &amp; Devices</div>
+        <div class="li"><span class="ld" style="background:#a78bfa"></span>Content</div>
+        <div class="li"><span class="ld" style="background:#fbbf24"></span>Virtual Machines</div>
+        <div class="li"><span class="ld" style="background:#f87171"></span>Platform</div>
+        <div class="li"><span class="ld" style="background:#2dd4bf"></span>Portal Bridge</div>
+      </div>
+      <div class="legend" id="leg-dataflow">
+        <div class="li"><span class="ld" style="background:#4ade80"></span>Write path (POST → cmd)</div>
+        <div class="li"><span class="ld" style="background:#60a5fa"></span>SSE read path</div>
+        <div class="li"><span class="ld" style="background:#f59e0b"></span>NATS event bus</div>
       </div>
 
-      <div id="view-modules" class="view">
-        <div id="cy-modules" style="width:100%;height:100%;"></div>
-        <div class="hint">Click a group to zoom in · click background to zoom out</div>
-        <div class="legend" id="legend-modules">
-          <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span>CRM</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#22d3ee"></span>Finance</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#4ade80"></span>Infrastructure</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#a78bfa"></span>Content</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#fbbf24"></span>VM</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#f87171"></span>Platform</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#2dd4bf"></span>Portal Bridge</div>
-        </div>
-      </div>
-
-      <div id="view-dataflow" class="view">
-        <div id="cy-dataflow" style="width:100%;height:100%;"></div>
-        <div class="hint">Click a node for details · green = write path · blue = read path (SSE)</div>
-        <div class="legend" id="legend-dataflow">
-          <div class="legend-item"><span class="legend-dot" style="background:#4ade80"></span>Write path (POST → command)</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#60a5fa"></span>Read path (SSE subscribe)</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span>NATS event publish</div>
-        </div>
-      </div>
-
-      <!-- Info panel (shared) -->
-      <div class="info-panel" id="info-panel">
-        <div class="info-header">
+      <!-- Info panel -->
+      <div id="info">
+        <div id="info-head">
           <div>
-            <div class="info-title" id="info-title">—</div>
-            <div class="info-type"  id="info-type">—</div>
+            <div id="info-title">—</div>
+            <div id="info-type">—</div>
           </div>
-          <button class="info-close" onclick="closeInfo()">✕</button>
+          <button id="info-close" onclick="closeInfo()">✕</button>
         </div>
-        <div class="info-body" id="info-body"></div>
+        <div id="info-body"></div>
       </div>
-    </div><!-- /canvas-wrapper -->
-  </div><!-- /main -->
-</div><!-- /app -->
+
+    </div>
+  </div>
+</div>
 
 <script>
-/* ══════════════════════════════════════════════════════════════════
-   Node metadata catalogue
-══════════════════════════════════════════════════════════════════ */
+/* ─────────────────────────────────────────────────────────────
+   Node metadata
+───────────────────────────────────────────────────────────── */
 const META = {
-  // System overview
-  'admin-browser': {
-    title: 'Admin Browser', type: 'Client',
-    desc: 'Web browser used by ISP staff. Connects to vvs-core over HTTP. UI is server-rendered HTML with Datastar SSE — no SPA framework needed.',
-    tags: ['Datastar SSE', 'Templ', 'Tailwind v4'],
-  },
-  'customer-browser': {
-    title: 'Customer Browser', type: 'Client',
-    desc: 'Web browser used by ISP customers. Connects to vvs-portal over HTTP. Self-service: invoices, tickets, VM purchase, balance top-up.',
-    tags: ['Customer Portal', 'Magic-link auth'],
-  },
-  'vvs-core': {
-    title: 'vvs-core', type: 'Core Server (cmd/server)',
-    desc: 'Single Go binary. Admin UI + all business logic + embedded NATS broker. No CGo, pure Go SQLite driver. Starts in <1s. All modules are compiled in; disabled via --modules flag.',
-    tags: ['Go 1.22+', 'SQLite WAL', 'Embedded NATS', 'Hexagonal arch', 'CQRS'],
-  },
-  'vvs-portal': {
-    title: 'vvs-portal', type: 'Portal Server (cmd/portal)',
-    desc: 'Separate Go binary for the public-facing customer portal. Zero direct DB access — all reads/writes go via NATS RPC to vvs-core. Deployed on internet-facing VPS. Validates Stripe webhooks.',
-    tags: ['No DB', 'NATS RPC client', 'Stripe webhooks', 'Magic-link sessions'],
-  },
-  'sqlite': {
-    title: 'SQLite (WAL mode)', type: 'Storage',
-    desc: 'Single .db file. WAL journal mode for concurrent reads. GORM ORM with one write connection + read pool. Per-module goose migration tables. Reset by deleting the file.',
-    tags: ['WAL mode', 'GORM', 'goose migrations', 'Pure Go driver'],
-  },
-  'nats': {
-    title: 'NATS (embedded)', type: 'Messaging',
-    desc: 'Embedded NATS server running inside vvs-core process. Pub/sub for domain events (customer.created, invoice.paid…). RPC subjects for portal bridge (isp.portal.rpc.*). Optionally exposed on :4222 for vvs-portal.',
-    tags: ['Embedded', 'Domain events', 'Portal RPC bridge', 'Per-user auth'],
-  },
-  'stripe': {
-    title: 'Stripe', type: 'External — Payments',
-    desc: 'Stripe Checkout for VM purchases and balance top-ups. vvs-portal creates Checkout sessions, Stripe calls the portal webhook on success. Portal validates signature then dispatches to vvs-core via NATS.',
-    tags: ['Checkout Sessions', 'Webhook validation', 'Idempotency via stripe_session_id'],
-  },
-  'proxmox': {
-    title: 'Proxmox VE', type: 'External — VM Hypervisor',
-    desc: 'Proxmox node pool for VM provisioning. Each node stores API credentials encrypted with AES-256. VMs are created, suspended, resumed, restarted, deleted via the Proxmox REST API.',
-    tags: ['REST API', 'AES-encrypted credentials', 'VM lifecycle'],
-  },
-  'ollama': {
-    title: 'Ollama', type: 'External — LLM',
-    desc: 'Local LLM server for the portal chat bot. Configurable model (llama3, mistral, etc.). Supports customer queries, suggests ticket creation, hands off to staff for live chat.',
-    tags: ['Local LLM', 'Configurable model', 'Staff handoff'],
-  },
-  'netbox': {
-    title: 'NetBox', type: 'External — IPAM',
-    desc: 'NetBox integration for IP address management. Used during router and customer provisioning to allocate IP addresses. Optional — system works without it.',
-    tags: ['IPAM', 'IP allocation', 'Optional'],
-  },
+  'admin-browser':     { title:'Admin Browser',     type:'Client',                     desc:'Web browser used by ISP staff. Connects to vvs-core over HTTP. Server-rendered HTML with Datastar SSE — no SPA needed.',       tags:['Datastar SSE','Templ','Tailwind v4'] },
+  'customer-browser':  { title:'Customer Browser',  type:'Client',                     desc:'Web browser used by ISP customers. Connects to vvs-portal over HTTP. Self-service: invoices, tickets, VM purchase, balance.',  tags:['Customer Portal','Magic-link auth'] },
+  'vvs-core':          { title:'vvs-core',          type:'Core Server (cmd/server)',    desc:'Single Go binary. Admin UI + all business logic + embedded NATS broker. No CGo, pure Go SQLite. All 19 modules compile in; disabled via --modules flag.', tags:['Go 1.22+','SQLite WAL','Embedded NATS','Hexagonal arch','CQRS'] },
+  'vvs-portal':        { title:'vvs-portal',        type:'Portal Server (cmd/portal)', desc:'Separate public-facing binary. Zero direct DB access — all reads/writes go via NATS RPC to vvs-core. Validates Stripe webhooks.', tags:['No DB','NATS RPC client','Stripe webhooks','Magic-link sessions'] },
+  'sqlite':            { title:'SQLite (WAL)',       type:'Storage',                    desc:'Single .db file. WAL mode for concurrent reads. GORM ORM with one write connection + read pool. Per-module goose migration tables.', tags:['WAL mode','GORM','goose','Pure Go driver'] },
+  'nats':              { title:'NATS (embedded)',    type:'Messaging',                  desc:'Embedded NATS server inside vvs-core. Pub/sub for domain events. RPC subjects for the portal bridge (isp.portal.rpc.*). Optionally exposed on :4222.', tags:['Embedded','Domain events','Portal RPC','Per-user auth'] },
+  'stripe':            { title:'Stripe',             type:'External — Payments',        desc:'Stripe Checkout for VM purchases and balance top-ups. vvs-portal creates sessions, Stripe calls the portal webhook on success. Signature validated, then dispatched to core via NATS.', tags:['Checkout Sessions','Webhook','stripe_session_id idempotency'] },
+  'proxmox':           { title:'Proxmox VE',         type:'External — Hypervisor',      desc:'Proxmox node pool for VM provisioning. API credentials stored AES-256 encrypted. VMs created/suspended/resumed/restarted/deleted via the Proxmox REST API.', tags:['REST API','AES-encrypted creds','VM lifecycle'] },
+  'ollama':            { title:'Ollama',             type:'External — LLM',             desc:'Local LLM server for the portal chat bot. Configurable model (llama3, mistral…). Handles customer queries, suggests tickets, hands off to live staff.', tags:['Local LLM','Configurable model','Staff handoff'] },
+  'netbox':            { title:'NetBox',             type:'External — IPAM',            desc:'NetBox integration for IP address management. Used during router and customer provisioning to allocate IPs. Optional — system works without it.', tags:['IPAM','IP allocation','Optional'] },
 
-  // Modules
-  'mod-customer': { title: 'customer', type: 'CRM Module', desc: 'Customer aggregate. CRUD, company code, network zone, IP address, portal balance display. Hub for all CRM tabs.', tags: ['CompanyCode', '8-tab CRM', 'Balance card'] },
-  'mod-ticket':   { title: 'ticket',   type: 'CRM Module', desc: 'Support ticket queue. Open/close/comment. Linked to customer. Portal customers can create and reply.', tags: ['Open/close/comment', 'Portal integration'] },
-  'mod-deal':     { title: 'deal',     type: 'CRM Module', desc: 'Sales pipeline. Deals with stages and amounts. Linked to customer.', tags: ['Pipeline stages', 'Customer link'] },
-  'mod-contact':  { title: 'contact',  type: 'CRM Module', desc: 'Address book contacts. Linked to customers. Name, phone, email, role.', tags: ['Address book'] },
-  'mod-task':     { title: 'task',     type: 'CRM Module', desc: 'Task management with assignee, due date, priority. Linked to customer.', tags: ['Due dates', 'Priority', 'Assignee'] },
-  'mod-invoice':  { title: 'invoice',  type: 'Finance Module', desc: 'Recurring invoices. Line items, VAT, PDF generation. Statuses: draft → finalized → paid/void. Payment CSV import.', tags: ['PDF generation', 'VAT', 'CSV import', 'Recurring'] },
-  'mod-billing':  { title: 'billing',  type: 'Finance Module', desc: 'Prepaid balance ledger. Credit/deduct/adjust. Atomic SQLite writes. Idempotent via stripe_session_id unique index.', tags: ['Balance ledger', 'Atomic deduct', 'Stripe idempotency'] },
-  'mod-payment':  { title: 'payment',  type: 'Finance Module', desc: 'Bank payment CSV import. Preview → confirm flow. Matches payments to open invoices.', tags: ['CSV import', 'Preview confirm'] },
-  'mod-network':  { title: 'network',  type: 'Infrastructure Module', desc: 'Router management. ARP sync pulls live ARP tables and maps IPs to customers. NetBox IPAM integration for IP allocation.', tags: ['Routers', 'ARP sync', 'NetBox IPAM'] },
-  'mod-device':   { title: 'device',   type: 'Infrastructure Module', desc: 'CPE/STB inventory. Lifecycle: register → deploy → return → decommission. MAC address tracking.', tags: ['CPE/STB', 'Lifecycle', 'MAC tracking'] },
-  'mod-iptv':     { title: 'iptv',     type: 'Content Module', desc: 'IPTV subscriptions, channel groups, EPG per channel. STB (set-top box) management. NATS bridge for STB binary.', tags: ['Subscriptions', 'EPG', 'STB bridge', 'Channel groups'] },
-  'mod-email':    { title: 'email',    type: 'Content Module', desc: 'IMAP inbox per customer. Thread-aware. Syncs at configurable interval. Encrypted IMAP credentials.', tags: ['IMAP', 'Threading', 'Encrypted creds', 'Sync worker'] },
-  'mod-proxmox':  { title: 'proxmox', type: 'VM Module', desc: 'Proxmox VE nodes + VM plans + provisioning. Admin manages nodes and pre-configured plans. Customers self-service via portal. VMs: create/suspend/resume/restart/delete.', tags: ['Nodes', 'VM plans', 'Self-service', 'AES-encrypted API keys'] },
-  'mod-auth':     { title: 'auth',    type: 'Platform Module', desc: 'Users, dynamic roles, role-module permission matrix. Always enabled. Session cookie auth for admin UI.', tags: ['Users', 'Dynamic roles', 'Module permissions'] },
-  'mod-cron':     { title: 'cron',    type: 'Platform Module', desc: 'Scheduled jobs persisted in SQLite. Types: action/shell/url/rpc. Daemon or system cron integration.', tags: ['4 job types', 'Daemon mode', 'Pause/resume'] },
-  'mod-audit_log':{ title: 'audit_log', type: 'Platform Module', desc: 'Immutable audit trail of all CRM mutations. Subscribes to NATS domain events. Linked to customer detail.', tags: ['Immutable log', 'NATS subscriber', 'Customer tab'] },
-  'mod-portal':   { title: 'portal (bridge)', type: 'Portal Bridge', desc: 'Core-side NATS RPC bridge. Serves isp.portal.rpc.* subjects for the vvs-portal binary. Handles token validation, invoice/service/ticket/VM/balance queries.', tags: ['NATS RPC', '16+ subjects', 'Token validation', 'VM+balance bridge'] },
+  'mod-customer':  { title:'customer',          type:'CRM Module',        desc:'Customer aggregate. CRUD, company code, network zone, IP, portal balance card. Hub of the 8-tab CRM detail view.', tags:['CompanyCode','8-tab CRM','Balance card'] },
+  'mod-ticket':    { title:'ticket',            type:'CRM Module',        desc:'Support ticket queue. Open/close/comment. Linked to customer. Portal customers can create and reply.', tags:['Open/close/comment','Portal integration'] },
+  'mod-deal':      { title:'deal',              type:'CRM Module',        desc:'Sales pipeline. Deals with stages and amounts. Linked to customer.', tags:['Pipeline stages'] },
+  'mod-contact':   { title:'contact',           type:'CRM Module',        desc:'Address book contacts linked to customers. Name, phone, email, role.', tags:['Address book'] },
+  'mod-task':      { title:'task',              type:'CRM Module',        desc:'Task management with assignee, due date, priority. Linked to customer.', tags:['Due dates','Priority','Assignee'] },
+  'mod-invoice':   { title:'invoice',           type:'Finance Module',    desc:'Recurring invoices. Line items, VAT, PDF generation. States: draft → finalized → paid/void. Payment CSV import.', tags:['PDF generation','VAT','CSV import'] },
+  'mod-billing':   { title:'billing',           type:'Finance Module',    desc:'Prepaid balance ledger. Credit/deduct/adjust. Atomic SQLite writes. Idempotent via stripe_session_id unique index.', tags:['Balance ledger','Atomic deduct','Stripe idempotency'] },
+  'mod-payment':   { title:'payment',           type:'Finance Module',    desc:'Bank payment CSV import. Preview → confirm flow. Matches payments to open invoices.', tags:['CSV import','Preview confirm'] },
+  'mod-network':   { title:'network',           type:'Infrastructure',    desc:'Router management. ARP sync pulls live ARP tables and maps IPs to customers. NetBox IPAM integration.', tags:['Routers','ARP sync','NetBox IPAM'] },
+  'mod-device':    { title:'device',            type:'Infrastructure',    desc:'CPE/STB inventory. Lifecycle: register → deploy → return → decommission. MAC address tracking.', tags:['CPE/STB','Lifecycle','MAC tracking'] },
+  'mod-iptv':      { title:'iptv',              type:'Content Module',    desc:'IPTV subscriptions, channel groups, EPG per channel. STB management. NATS bridge for STB binary.', tags:['Subscriptions','EPG','STB bridge'] },
+  'mod-email':     { title:'email',             type:'Content Module',    desc:'IMAP inbox per customer. Thread-aware. Syncs at configurable interval. Encrypted IMAP credentials.', tags:['IMAP','Threading','Encrypted creds'] },
+  'mod-proxmox':   { title:'proxmox',           type:'VM Module',         desc:'Proxmox VE nodes + VM plans + provisioning. Admins manage nodes and pre-configured plans. Customers self-service via portal.', tags:['Nodes','VM plans','Self-service'] },
+  'mod-auth':      { title:'auth',              type:'Platform Module',   desc:'Users, dynamic roles, role-module permission matrix. Always enabled. Session cookie auth for admin UI.', tags:['Users','Dynamic roles','Module permissions'] },
+  'mod-cron':      { title:'cron',              type:'Platform Module',   desc:'Scheduled jobs persisted in SQLite. Types: action/shell/url/rpc. Daemon or system cron integration.', tags:['4 job types','Daemon mode','Pause/resume'] },
+  'mod-audit_log': { title:'audit_log',         type:'Platform Module',   desc:'Immutable audit trail of all CRM mutations. Subscribes to NATS domain events. Linked to customer detail.', tags:['Immutable log','NATS subscriber'] },
+  'mod-portal':    { title:'portal (bridge)',   type:'Portal Bridge',     desc:'Core-side NATS RPC bridge. Serves isp.portal.rpc.* subjects for the vvs-portal binary. Handles token validation, invoice/service/ticket/VM/balance queries.', tags:['NATS RPC','16+ subjects','VM+balance bridge'] },
 
-  // Data flow nodes
-  'df-browser':     { title: 'Browser', type: 'Client', desc: 'Makes POST requests via Datastar fetch(). Listens to SSE stream for reactive UI updates.' },
-  'df-router':      { title: 'HTTP Router', type: 'chi Router', desc: 'go-chi/chi v5 router. Auth middleware validates session cookie. RequireAdmin for write operations. SSE endpoints for reactive reads.' },
-  'df-cmd':         { title: 'Command Handler', type: 'Write Path', desc: 'CQRS command: validates input, runs domain logic, writes to SQLite via GORM WriteTX. Returns domain aggregate or error.' },
-  'df-query':       { title: 'Query Handler', type: 'Read Path', desc: 'CQRS query: reads from SQLite read pool (no transactions). Maps to ReadModel structs. Subscribed via NATS for SSE push.' },
-  'df-domain':      { title: 'Domain / Aggregate', type: 'Domain Model', desc: 'Pure Go domain objects. No DB imports. Business rules enforced here. Commands produce domain events.' },
-  'df-sqlite':      { title: 'SQLite (WAL)', type: 'Storage', desc: 'Single writer (WriteTX mutex). Many concurrent readers via read pool. GORM ORM. WAL mode for non-blocking reads.' },
-  'df-nats-pub':    { title: 'NATS Publish', type: 'Event Bus', desc: 'Command handler publishes domain event after successful DB write. Subject e.g. isp.customer.created, isp.invoice.paid.' },
-  'df-nats-sub':    { title: 'NATS Subscribe', type: 'Event Bus', desc: 'SSE handler subscribes to NATS subject on connection open. When event arrives → re-query SQLite → push PatchElements to browser.' },
-  'df-sse':         { title: 'SSE PatchElements', type: 'Datastar SSE', desc: 'Datastar server-sent events. PatchElementTempl pushes rendered templ components as HTML patches. Browser applies patches surgically via morph.' },
-  'df-templ':       { title: 'Templ render', type: 'Template Engine', desc: 'Go templ generates type-safe HTML components. Compiled to *_templ.go files. Zero allocations for static parts.' },
+  'df-browser':  { title:'Browser',            type:'Client',        desc:'Makes POST requests via Datastar fetch(). Receives SSE stream from the server — reactive UI without a SPA framework.' },
+  'df-router':   { title:'HTTP Router (chi)',   type:'Routing',       desc:'go-chi/chi v5 router. Auth middleware validates session cookie. RequireAdmin guards write operations. SSE endpoints hold open connections.' },
+  'df-cmd':      { title:'Command Handler',     type:'Write Path',    desc:'Validates input, runs domain logic, writes to SQLite via GORM WriteTX. Returns domain aggregate or error. Publishes NATS event on success.' },
+  'df-domain':   { title:'Domain Aggregate',    type:'Domain',        desc:'Pure Go domain objects. No DB imports. All business rules enforced here. Commands produce value objects and domain events.' },
+  'df-sqlite':   { title:'SQLite (WAL)',         type:'Storage',       desc:'Single writer (WriteTX mutex). Many concurrent readers via read pool. GORM ORM. WAL mode prevents read blocking on writes.' },
+  'df-natspub':  { title:'NATS Publish',         type:'Event Bus',     desc:'After successful DB write, the command handler publishes a domain event, e.g. isp.customer.created, isp.invoice.paid.' },
+  'df-natssub':  { title:'NATS Subscribe',       type:'Event Bus',     desc:'SSE handler subscribes to NATS subject on connection open. When event arrives → re-query SQLite → push PatchElements to browser.' },
+  'df-query':    { title:'Query Handler',        type:'Read Path',     desc:'Reads from SQLite read pool (no transactions). Maps DB rows to ReadModel structs. Called on every NATS event for the SSE subscriber.' },
+  'df-templ':    { title:'Templ Render',         type:'Template',      desc:'Go templ generates type-safe HTML components, compiled to *_templ.go. PatchElementTempl wraps the rendered HTML as a Datastar patch.' },
+  'df-sse':      { title:'SSE PatchElements',    type:'Datastar SSE',  desc:'Datastar server-sent events stream. PatchElements morphs the HTML fragment into the live DOM surgically. No full page reload.' },
 };
 
-/* ══════════════════════════════════════════════════════════════════
-   Cytoscape style helpers
-══════════════════════════════════════════════════════════════════ */
-const COLORS = {
+/* ─────────────────────────────────────────────────────────────
+   Colour palette
+───────────────────────────────────────────────────────────── */
+const C = {
   core:     '#f59e0b',
   portal:   '#22d3ee',
   client:   '#60a5fa',
-  external: '#818cf8',
+  external: '#a78bfa',
   infra:    '#6b7280',
   storage:  '#94a3b8',
-  // Module groups
   crm:      '#f97316',
   finance:  '#22d3ee',
   netinfra: '#4ade80',
@@ -372,526 +314,346 @@ const COLORS = {
   vm:       '#fbbf24',
   platform: '#f87171',
   bridge:   '#2dd4bf',
-  // Data flow
   write:    '#4ade80',
   read:     '#60a5fa',
-  natsbus:  '#f59e0b',
+  nats:     '#f59e0b',
 };
 
-function nodeStyle(color, shape='roundrectangle') {
-  return {
-    'background-color': color + '22',
-    'border-color': color,
-    'border-width': 2,
-    'color': '#e5e5e5',
-    'shape': shape,
-    'text-valign': 'center',
-    'text-halign': 'center',
-    'font-size': 12,
-    'font-family': 'Inter, system-ui, sans-serif',
-    'font-weight': 500,
-    'text-wrap': 'wrap',
-    'text-max-width': 120,
-    'padding': 10,
-    'width': 'label',
-    'height': 'label',
-    'min-width': 80,
-    'min-height': 40,
-    'cursor': 'pointer',
-    'transition-property': 'background-color, border-color, border-width',
-    'transition-duration': '0.15s',
-  };
+function mkNode(id, label, color, extra) {
+  return { data: { id, label, color, ...extra } };
+}
+function mkEdge(id, src, tgt, label, color) {
+  return { data: { id, source: src, target: tgt, label: label||'', color: color||'#444' } };
 }
 
-function edgeStyle(color='#555', dashed=false) {
-  return {
-    'width': 1.5,
-    'line-color': color,
-    'target-arrow-color': color,
-    'target-arrow-shape': 'vee',
-    'curve-style': 'bezier',
-    'arrow-scale': 0.8,
-    'label': 'data(label)',
-    'font-size': 10,
-    'font-family': 'Inter, system-ui, sans-serif',
-    'color': '#666',
-    'text-background-color': '#111',
-    'text-background-opacity': 1,
-    'text-background-padding': 2,
-    'line-style': dashed ? 'dashed' : 'solid',
-  };
-}
-
-/* ══════════════════════════════════════════════════════════════════
-   VIEW 1 — System Overview
-══════════════════════════════════════════════════════════════════ */
-const overviewElements = {
-  nodes: [
-    { data: { id: 'admin-browser',    label: 'Admin\nBrowser',    color: COLORS.client   } },
-    { data: { id: 'customer-browser', label: 'Customer\nBrowser', color: COLORS.client   } },
-    { data: { id: 'vvs-core',         label: 'vvs-core\n(cmd/server)', color: COLORS.core } },
-    { data: { id: 'vvs-portal',       label: 'vvs-portal\n(cmd/portal)', color: COLORS.portal } },
-    { data: { id: 'sqlite',           label: 'SQLite\n(WAL mode)', color: COLORS.storage } },
-    { data: { id: 'nats',             label: 'NATS\n(embedded)',   color: COLORS.infra   } },
-    { data: { id: 'stripe',           label: 'Stripe\nCheckout',   color: COLORS.external } },
-    { data: { id: 'proxmox',          label: 'Proxmox VE',         color: COLORS.external } },
-    { data: { id: 'ollama',           label: 'Ollama\n(LLM)',      color: COLORS.external } },
-    { data: { id: 'netbox',           label: 'NetBox\n(IPAM)',     color: COLORS.external } },
-  ],
-  edges: [
-    { data: { id: 'e1',  source: 'admin-browser',    target: 'vvs-core',   label: 'HTTP + SSE' } },
-    { data: { id: 'e2',  source: 'customer-browser', target: 'vvs-portal', label: 'HTTP' } },
-    { data: { id: 'e3',  source: 'vvs-portal',       target: 'nats',       label: 'NATS RPC' } },
-    { data: { id: 'e4',  source: 'nats',             target: 'vvs-core',   label: 'events' } },
-    { data: { id: 'e5',  source: 'vvs-core',         target: 'sqlite',     label: 'SQL (GORM)' } },
-    { data: { id: 'e6',  source: 'vvs-core',         target: 'nats',       label: 'pub/sub', dashed: true } },
-    { data: { id: 'e7',  source: 'vvs-portal',       target: 'stripe',     label: 'Checkout API' } },
-    { data: { id: 'e8',  source: 'stripe',           target: 'vvs-portal', label: 'webhook' } },
-    { data: { id: 'e9',  source: 'vvs-core',         target: 'proxmox',    label: 'REST API' } },
-    { data: { id: 'e10', source: 'vvs-core',         target: 'ollama',     label: 'HTTP' } },
-    { data: { id: 'e11', source: 'vvs-core',         target: 'netbox',     label: 'REST API' } },
-  ],
-};
-
-let cyOverview = cytoscape({
-  container: document.getElementById('cy-overview'),
-  elements: [
-    ...overviewElements.nodes.map(n => ({
-      group: 'nodes', data: n.data,
-    })),
-    ...overviewElements.edges.map(e => ({
-      group: 'edges', data: e.data,
-    })),
-  ],
-  style: [
+/* ─────────────────────────────────────────────────────────────
+   Shared cytoscape style
+───────────────────────────────────────────────────────────── */
+function baseStyle() {
+  return [
     {
       selector: 'node',
       style: {
-        'background-color': 'data(color)',
+        'background-color':  'data(color)',
         'background-opacity': 0.15,
-        'border-color': 'data(color)',
-        'border-width': 2,
-        'color': '#e5e5e5',
-        'shape': 'roundrectangle',
-        'text-valign': 'center',
-        'text-halign': 'center',
-        'font-size': 12,
-        'font-family': 'Inter, system-ui, sans-serif',
-        'font-weight': 500,
-        'text-wrap': 'wrap',
-        'text-max-width': 120,
-        'padding': 14,
-        'width': 'label',
-        'height': 'label',
-        'min-width': 90,
-        'min-height': 44,
-        'cursor': 'pointer',
+        'border-color':      'data(color)',
+        'border-width':      2,
+        'color':             '#ddd',
+        'shape':             'roundrectangle',
+        'text-valign':       'center',
+        'text-halign':       'center',
+        'font-family':       'Inter, system-ui, sans-serif',
+        'font-size':         12,
+        'font-weight':       500,
+        'text-wrap':         'wrap',
+        'text-max-width':    110,
+        'padding':           12,
+        'width':             'label',
+        'height':            'label',
+        'min-width':         80,
+        'min-height':        36,
+        'cursor':            'pointer',
       },
     },
-    {
-      selector: 'node:hover',
-      style: {
-        'background-opacity': 0.3,
-        'border-width': 2.5,
-        'z-index': 10,
-      },
-    },
-    {
-      selector: 'node.highlighted',
-      style: {
-        'background-opacity': 0.4,
-        'border-width': 3,
-      },
-    },
-    {
-      selector: 'node.faded',
-      style: {
-        'background-opacity': 0.05,
-        'border-opacity': 0.2,
-        'color': '#444',
-      },
-    },
+    { selector: 'node:hover',      style: { 'background-opacity': 0.35, 'border-width': 2.5 } },
+    { selector: 'node.hi',         style: { 'background-opacity': 0.40, 'border-width': 3 } },
+    { selector: 'node.dim',        style: { 'background-opacity': 0.04, 'border-opacity': 0.15, 'color': '#2a2a2a' } },
     {
       selector: 'edge',
       style: {
-        'width': 1.5,
-        'line-color': '#3a3a3a',
-        'target-arrow-color': '#4a4a4a',
-        'target-arrow-shape': 'vee',
-        'curve-style': 'bezier',
-        'arrow-scale': 0.9,
-        'label': 'data(label)',
-        'font-size': 10,
-        'font-family': 'Inter, system-ui, sans-serif',
-        'color': '#555',
-        'text-background-color': '#111',
+        'width':               1.8,
+        'line-color':          'data(color)',
+        'target-arrow-color':  'data(color)',
+        'target-arrow-shape':  'vee',
+        'curve-style':         'bezier',
+        'arrow-scale':         0.85,
+        'label':               'data(label)',
+        'font-size':           10,
+        'font-family':         'Inter, system-ui, sans-serif',
+        'color':               '#666',
+        'text-background-color':   '#111',
         'text-background-opacity': 1,
         'text-background-padding': '2px',
+        'opacity':             0.7,
       },
     },
+    { selector: 'edge.hi',  style: { opacity: 1, 'width': 2.2 } },
+    { selector: 'edge.dim', style: { opacity: 0.07 } },
+  ];
+}
+
+function groupStyle() {
+  return [
     {
-      selector: 'edge.highlighted',
-      style: { 'line-color': '#555', 'target-arrow-color': '#555', 'color': '#888', 'width': 2 },
-    },
-    {
-      selector: 'edge.faded',
-      style: { 'opacity': 0.1 },
-    },
-  ],
-  layout: { name: 'cose', idealEdgeLength: 160, nodeOverlap: 40, animate: false, padding: 50 },
-  wheelSensitivity: 0.3,
-  minZoom: 0.2,
-  maxZoom: 4,
-});
-
-setupInteraction(cyOverview);
-
-/* ══════════════════════════════════════════════════════════════════
-   VIEW 2 — Module Map
-══════════════════════════════════════════════════════════════════ */
-const moduleElements = [
-  // Groups
-  { data: { id: 'grp-crm',      label: 'CRM',              color: COLORS.crm,      isGroup: true } },
-  { data: { id: 'grp-finance',  label: 'Finance',           color: COLORS.finance,  isGroup: true } },
-  { data: { id: 'grp-netinfra', label: 'Network & Devices', color: COLORS.netinfra, isGroup: true } },
-  { data: { id: 'grp-content',  label: 'Content',           color: COLORS.content,  isGroup: true } },
-  { data: { id: 'grp-vm',       label: 'Virtual Machines',  color: COLORS.vm,       isGroup: true } },
-  { data: { id: 'grp-platform', label: 'Platform',          color: COLORS.platform, isGroup: true } },
-  { data: { id: 'grp-bridge',   label: 'Portal Bridge',     color: COLORS.bridge,   isGroup: true } },
-
-  // CRM
-  { data: { id: 'mod-customer', label: 'customer', parent: 'grp-crm',      color: COLORS.crm      } },
-  { data: { id: 'mod-ticket',   label: 'ticket',   parent: 'grp-crm',      color: COLORS.crm      } },
-  { data: { id: 'mod-deal',     label: 'deal',     parent: 'grp-crm',      color: COLORS.crm      } },
-  { data: { id: 'mod-contact',  label: 'contact',  parent: 'grp-crm',      color: COLORS.crm      } },
-  { data: { id: 'mod-task',     label: 'task',     parent: 'grp-crm',      color: COLORS.crm      } },
-  // Finance
-  { data: { id: 'mod-invoice',  label: 'invoice',  parent: 'grp-finance',  color: COLORS.finance  } },
-  { data: { id: 'mod-billing',  label: 'billing',  parent: 'grp-finance',  color: COLORS.finance  } },
-  { data: { id: 'mod-payment',  label: 'payment',  parent: 'grp-finance',  color: COLORS.finance  } },
-  // Network & Devices
-  { data: { id: 'mod-network',  label: 'network',  parent: 'grp-netinfra', color: COLORS.netinfra } },
-  { data: { id: 'mod-device',   label: 'device',   parent: 'grp-netinfra', color: COLORS.netinfra } },
-  // Content
-  { data: { id: 'mod-iptv',     label: 'iptv',     parent: 'grp-content',  color: COLORS.content  } },
-  { data: { id: 'mod-email',    label: 'email',    parent: 'grp-content',  color: COLORS.content  } },
-  // VM
-  { data: { id: 'mod-proxmox',  label: 'proxmox',  parent: 'grp-vm',       color: COLORS.vm       } },
-  // Platform
-  { data: { id: 'mod-auth',     label: 'auth',     parent: 'grp-platform', color: COLORS.platform } },
-  { data: { id: 'mod-cron',     label: 'cron',     parent: 'grp-platform', color: COLORS.platform } },
-  { data: { id: 'mod-audit_log',label: 'audit_log',parent: 'grp-platform', color: COLORS.platform } },
-  // Portal bridge
-  { data: { id: 'mod-portal',   label: 'portal\n(bridge)', parent: 'grp-bridge', color: COLORS.bridge } },
-
-  // Cross-module edges
-  { data: { source: 'mod-invoice',  target: 'mod-billing',  label: 'credits on pay',  eid: 'me1' } },
-  { data: { source: 'mod-customer', target: 'mod-invoice',  label: 'has invoices',     eid: 'me2' } },
-  { data: { source: 'mod-customer', target: 'mod-ticket',   label: 'has tickets',      eid: 'me3' } },
-  { data: { source: 'mod-customer', target: 'mod-service',  label: 'has services',     eid: 'me4', visible: false } },
-  { data: { source: 'mod-proxmox',  target: 'mod-billing',  label: 'deducts balance',  eid: 'me5' } },
-  { data: { source: 'mod-portal',   target: 'mod-billing',  label: 'topup/deduct',     eid: 'me6' } },
-  { data: { source: 'mod-portal',   target: 'mod-proxmox',  label: 'provision VM',     eid: 'me7' } },
-  { data: { source: 'mod-portal',   target: 'mod-invoice',  label: 'lists invoices',   eid: 'me8' } },
-  { data: { source: 'mod-portal',   target: 'mod-ticket',   label: 'opens tickets',    eid: 'me9' } },
-  { data: { source: 'mod-audit_log',target: 'mod-customer', label: 'logs changes',     eid: 'me10' } },
-  { data: { source: 'mod-network',  target: 'mod-device',   label: 'deploys to',       eid: 'me11' } },
-];
-
-let cyModules = cytoscape({
-  container: document.getElementById('cy-modules'),
-  elements: moduleElements.map(e => {
-    if (e.data.eid) return { group: 'edges', data: { id: e.data.eid, ...e.data } };
-    return { group: 'nodes', data: e.data };
-  }),
-  style: [
-    {
-      selector: 'node[isGroup]',
+      selector: 'node[?isGroup]',
       style: {
-        'background-color': 'data(color)',
-        'background-opacity': 0.08,
-        'border-color': 'data(color)',
-        'border-width': 1.5,
-        'border-opacity': 0.5,
-        'color': 'data(color)',
-        'font-size': 11,
-        'font-weight': 700,
-        'text-valign': 'top',
-        'text-halign': 'center',
-        'padding': 20,
-        'text-margin-y': -4,
-        'cursor': 'pointer',
+        'background-color':  'data(color)',
+        'background-opacity': 0.07,
+        'border-color':      'data(color)',
+        'border-width':      1.5,
+        'border-opacity':    0.5,
+        'color':             'data(color)',
+        'font-size':         11,
+        'font-weight':       700,
+        'text-valign':       'top',
+        'text-halign':       'center',
+        'text-margin-y':     -5,
+        'padding':           20,
+        'cursor':            'pointer',
+        'min-width':         100,
+        'min-height':        80,
       },
     },
     {
       selector: 'node:child',
       style: {
-        'background-color': 'data(color)',
+        'background-color':  'data(color)',
         'background-opacity': 0.18,
-        'border-color': 'data(color)',
-        'border-width': 1.5,
-        'color': '#e5e5e5',
-        'font-size': 11,
-        'font-weight': 500,
-        'text-valign': 'center',
-        'text-halign': 'center',
-        'text-wrap': 'wrap',
-        'text-max-width': 80,
-        'padding': 8,
-        'width': 'label',
-        'height': 'label',
-        'min-width': 64,
-        'min-height': 28,
-        'cursor': 'pointer',
-        'shape': 'roundrectangle',
+        'border-color':      'data(color)',
+        'border-width':      1.5,
+        'color':             '#ddd',
+        'font-size':         11,
+        'font-weight':       500,
+        'text-wrap':         'wrap',
+        'text-max-width':    80,
+        'padding':           8,
+        'width':             'label',
+        'height':            'label',
+        'min-width':         60,
+        'min-height':        28,
+        'cursor':            'pointer',
+        'shape':             'roundrectangle',
       },
     },
-    {
-      selector: 'node:child:hover',
-      style: { 'background-opacity': 0.35, 'border-width': 2 },
-    },
-    {
-      selector: 'edge',
-      style: {
-        'width': 1.5,
-        'line-color': '#333',
-        'target-arrow-color': '#444',
-        'target-arrow-shape': 'vee',
-        'curve-style': 'bezier',
-        'arrow-scale': 0.8,
-        'label': 'data(label)',
-        'font-size': 9,
-        'color': '#555',
-        'text-background-color': '#111',
-        'text-background-opacity': 1,
-        'text-background-padding': '2px',
-      },
-    },
-    {
-      selector: 'edge.highlighted',
-      style: { 'line-color': '#555', 'target-arrow-color': '#555', 'color': '#888', 'width': 2 },
-    },
-    {
-      selector: 'edge.faded',
-      style: { 'opacity': 0.1 },
-    },
+    { selector: 'node:child:hover', style: { 'background-opacity': 0.38, 'border-width': 2 } },
+  ];
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Interaction: click → zoom + highlight
+───────────────────────────────────────────────────────────── */
+function wire(cy) {
+  cy.on('tap', 'node', evt => {
+    const node = evt.target;
+    cy.elements().removeClass('hi dim');
+    const nb = node.closedNeighborhood();
+    nb.addClass('hi');
+    cy.elements().not(nb).addClass('dim');
+    cy.animate({ fit: { eles: nb, padding: 80 }, duration: 350, easing: 'ease-in-out-cubic' });
+    const m = META[node.id()];
+    if (m) showInfo(m); else closeInfo();
+  });
+  cy.on('tap', evt => {
+    if (evt.target !== cy) return;
+    cy.elements().removeClass('hi dim');
+    cy.animate({ fit: { padding: 50 }, duration: 350, easing: 'ease-in-out-cubic' });
+    closeInfo();
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────
+   VIEW 1 — System Overview
+───────────────────────────────────────────────────────────── */
+const cyOv = cytoscape({
+  container: document.getElementById('cy-overview'),
+  wheelSensitivity: 0.3,
+  minZoom: 0.15, maxZoom: 5,
+  style: baseStyle(),
+  elements: [
+    mkNode('admin-browser',    'Admin\nBrowser',         C.client),
+    mkNode('customer-browser', 'Customer\nBrowser',      C.client),
+    mkNode('vvs-core',         'vvs-core\n(cmd/server)', C.core),
+    mkNode('vvs-portal',       'vvs-portal\n(cmd/portal)',C.portal),
+    mkNode('sqlite',           'SQLite\n(WAL)',           C.storage),
+    mkNode('nats',             'NATS\n(embedded)',        C.infra),
+    mkNode('stripe',           'Stripe\nCheckout',        C.external),
+    mkNode('proxmox',          'Proxmox VE',              C.external),
+    mkNode('ollama',           'Ollama\n(LLM)',           C.external),
+    mkNode('netbox',           'NetBox\n(IPAM)',          C.external),
+
+    mkEdge('e1',  'admin-browser',    'vvs-core',    'HTTP + SSE', '#444'),
+    mkEdge('e2',  'customer-browser', 'vvs-portal',  'HTTP',       '#444'),
+    mkEdge('e3',  'vvs-portal',       'nats',        'NATS RPC',   '#555'),
+    mkEdge('e4',  'nats',             'vvs-core',    'events',     '#555'),
+    mkEdge('e5',  'vvs-core',         'sqlite',      'SQL (GORM)', '#555'),
+    mkEdge('e6',  'vvs-core',         'nats',        'pub/sub',    '#555'),
+    mkEdge('e7',  'vvs-portal',       'stripe',      'Checkout API','#555'),
+    mkEdge('e8',  'stripe',           'vvs-portal',  'webhook',    '#555'),
+    mkEdge('e9',  'vvs-core',         'proxmox',     'REST API',   '#555'),
+    mkEdge('e10', 'vvs-core',         'ollama',      'HTTP',       '#555'),
+    mkEdge('e11', 'vvs-core',         'netbox',      'REST API',   '#555'),
   ],
   layout: {
     name: 'cose',
-    idealEdgeLength: 120,
+    idealEdgeLength: 160,
+    nodeOverlap: 30,
+    animate: false,
+    padding: 50,
+    randomize: false,
+  },
+});
+wire(cyOv);
+
+/* ─────────────────────────────────────────────────────────────
+   VIEW 2 — Module Map
+───────────────────────────────────────────────────────────── */
+const cyMod = cytoscape({
+  container: document.getElementById('cy-modules'),
+  wheelSensitivity: 0.3,
+  minZoom: 0.15, maxZoom: 5,
+  style: [...baseStyle(), ...groupStyle()],
+  elements: [
+    // Groups (compound parent nodes)
+    { data: { id: 'grp-crm',     label: 'CRM',                isGroup: true, color: C.crm      } },
+    { data: { id: 'grp-finance', label: 'Finance',             isGroup: true, color: C.finance  } },
+    { data: { id: 'grp-net',     label: 'Network & Devices',   isGroup: true, color: C.netinfra } },
+    { data: { id: 'grp-content', label: 'Content',             isGroup: true, color: C.content  } },
+    { data: { id: 'grp-vm',      label: 'Virtual Machines',    isGroup: true, color: C.vm       } },
+    { data: { id: 'grp-plat',    label: 'Platform',            isGroup: true, color: C.platform } },
+    { data: { id: 'grp-bridge',  label: 'Portal Bridge',       isGroup: true, color: C.bridge   } },
+
+    // Child nodes
+    ...[
+      ['mod-customer','customer', 'grp-crm',     C.crm     ],
+      ['mod-ticket',  'ticket',   'grp-crm',     C.crm     ],
+      ['mod-deal',    'deal',     'grp-crm',     C.crm     ],
+      ['mod-contact', 'contact',  'grp-crm',     C.crm     ],
+      ['mod-task',    'task',     'grp-crm',     C.crm     ],
+      ['mod-invoice', 'invoice',  'grp-finance', C.finance ],
+      ['mod-billing', 'billing',  'grp-finance', C.finance ],
+      ['mod-payment', 'payment',  'grp-finance', C.finance ],
+      ['mod-network', 'network',  'grp-net',     C.netinfra],
+      ['mod-device',  'device',   'grp-net',     C.netinfra],
+      ['mod-iptv',    'iptv',     'grp-content', C.content ],
+      ['mod-email',   'email',    'grp-content', C.content ],
+      ['mod-proxmox', 'proxmox',  'grp-vm',      C.vm      ],
+      ['mod-auth',    'auth',     'grp-plat',    C.platform],
+      ['mod-cron',    'cron',     'grp-plat',    C.platform],
+      ['mod-audit',   'audit_log','grp-plat',    C.platform],
+      ['mod-portal',  'portal\n(bridge)', 'grp-bridge', C.bridge],
+    ].map(([id,lbl,par,col]) => ({ data: { id, label: lbl, parent: par, color: col } })),
+
+    // Cross-module edges
+    mkEdge('me1', 'mod-customer', 'mod-invoice',  'has invoices',  '#383838'),
+    mkEdge('me2', 'mod-customer', 'mod-ticket',   'has tickets',   '#383838'),
+    mkEdge('me3', 'mod-invoice',  'mod-billing',  'credits on pay','#383838'),
+    mkEdge('me4', 'mod-proxmox',  'mod-billing',  'deducts balance','#383838'),
+    mkEdge('me5', 'mod-portal',   'mod-billing',  'topup / deduct','#383838'),
+    mkEdge('me6', 'mod-portal',   'mod-proxmox',  'provision VM',  '#383838'),
+    mkEdge('me7', 'mod-portal',   'mod-invoice',  'list invoices', '#383838'),
+    mkEdge('me8', 'mod-portal',   'mod-ticket',   'open tickets',  '#383838'),
+    mkEdge('me9', 'mod-audit',    'mod-customer', 'logs changes',  '#383838'),
+  ],
+  layout: {
+    name: 'cose',
+    idealEdgeLength: 140,
     nodeOverlap: 20,
     animate: false,
     padding: 40,
-    componentSpacing: 80,
+    componentSpacing: 100,
   },
-  wheelSensitivity: 0.3,
-  minZoom: 0.2,
-  maxZoom: 4,
 });
+wire(cyMod);
 
-setupInteraction(cyModules);
-
-/* ══════════════════════════════════════════════════════════════════
+/* ─────────────────────────────────────────────────────────────
    VIEW 3 — Data Flow
-══════════════════════════════════════════════════════════════════ */
-let cyDataflow = cytoscape({
+───────────────────────────────────────────────────────────── */
+const cyDf = cytoscape({
   container: document.getElementById('cy-dataflow'),
-  elements: [
-    // Write path nodes
-    { data: { id: 'df-browser',  label: 'Browser\n(Datastar)',  color: COLORS.client,  path: 'both'  } },
-    { data: { id: 'df-router',   label: 'HTTP Router\n(chi)',   color: COLORS.write,   path: 'both'  } },
-    { data: { id: 'df-cmd',      label: 'Command\nHandler',     color: COLORS.write,   path: 'write' } },
-    { data: { id: 'df-domain',   label: 'Domain\nAggregate',    color: COLORS.write,   path: 'write' } },
-    { data: { id: 'df-sqlite',   label: 'SQLite\n(WriteTX)',    color: COLORS.infra,   path: 'both'  } },
-    { data: { id: 'df-nats-pub', label: 'NATS\nPublish',        color: COLORS.natsbus, path: 'both'  } },
-    { data: { id: 'df-nats-sub', label: 'NATS\nSubscribe',      color: COLORS.natsbus, path: 'read'  } },
-    { data: { id: 'df-query',    label: 'Query\nHandler',       color: COLORS.read,    path: 'read'  } },
-    { data: { id: 'df-templ',    label: 'Templ\nRender',        color: COLORS.read,    path: 'read'  } },
-    { data: { id: 'df-sse',      label: 'SSE\nPatchElements',   color: COLORS.read,    path: 'read'  } },
-
-    // Edges — write path
-    { data: { id: 'df-e1', source: 'df-browser',  target: 'df-router',   label: 'POST (fetch)', edgeType: 'write' } },
-    { data: { id: 'df-e2', source: 'df-router',   target: 'df-cmd',      label: 'ReadSignals',  edgeType: 'write' } },
-    { data: { id: 'df-e3', source: 'df-cmd',      target: 'df-domain',   label: 'validate',     edgeType: 'write' } },
-    { data: { id: 'df-e4', source: 'df-domain',   target: 'df-sqlite',   label: 'WriteTX',      edgeType: 'write' } },
-    { data: { id: 'df-e5', source: 'df-sqlite',   target: 'df-nats-pub', label: 'event publish', edgeType: 'nats' } },
-
-    // Edges — read path
-    { data: { id: 'df-e6', source: 'df-router',   target: 'df-nats-sub', label: 'SSE connect',  edgeType: 'read' } },
-    { data: { id: 'df-e7', source: 'df-nats-pub', target: 'df-nats-sub', label: 'event arrives', edgeType: 'nats' } },
-    { data: { id: 'df-e8', source: 'df-nats-sub', target: 'df-query',    label: 're-query',      edgeType: 'read' } },
-    { data: { id: 'df-e9', source: 'df-query',    target: 'df-sqlite',   label: 'ReadPool',      edgeType: 'read' } },
-    { data: { id: 'df-e10', source: 'df-query',   target: 'df-templ',    label: 'ReadModel',     edgeType: 'read' } },
-    { data: { id: 'df-e11', source: 'df-templ',   target: 'df-sse',      label: 'HTML fragment', edgeType: 'read' } },
-    { data: { id: 'df-e12', source: 'df-sse',     target: 'df-browser',  label: 'PatchElements', edgeType: 'read' } },
-  ],
+  wheelSensitivity: 0.3,
+  minZoom: 0.15, maxZoom: 5,
   style: [
-    {
-      selector: 'node',
-      style: {
-        'background-color': 'data(color)',
-        'background-opacity': 0.15,
-        'border-color': 'data(color)',
-        'border-width': 2,
-        'color': '#e5e5e5',
-        'shape': 'roundrectangle',
-        'text-valign': 'center',
-        'text-halign': 'center',
-        'font-size': 11,
-        'font-family': 'Inter, system-ui, sans-serif',
-        'font-weight': 500,
-        'text-wrap': 'wrap',
-        'text-max-width': 100,
-        'padding': 12,
-        'width': 'label',
-        'height': 'label',
-        'min-width': 80,
-        'min-height': 40,
-        'cursor': 'pointer',
-      },
-    },
-    {
-      selector: 'edge[edgeType="write"]',
-      style: { 'line-color': '#166534', 'target-arrow-color': '#166534', 'width': 2, 'target-arrow-shape': 'vee', 'curve-style': 'bezier', 'label': 'data(label)', 'font-size': 10, 'color': '#4ade80', 'text-background-color': '#111', 'text-background-opacity': 1, 'text-background-padding': '2px' },
-    },
-    {
-      selector: 'edge[edgeType="read"]',
-      style: { 'line-color': '#1e3a5f', 'target-arrow-color': '#1e3a5f', 'width': 2, 'target-arrow-shape': 'vee', 'curve-style': 'bezier', 'label': 'data(label)', 'font-size': 10, 'color': '#60a5fa', 'text-background-color': '#111', 'text-background-opacity': 1, 'text-background-padding': '2px', 'line-style': 'dashed' },
-    },
-    {
-      selector: 'edge[edgeType="nats"]',
-      style: { 'line-color': '#78350f', 'target-arrow-color': '#78350f', 'width': 2, 'target-arrow-shape': 'vee', 'curve-style': 'bezier', 'label': 'data(label)', 'font-size': 10, 'color': '#f59e0b', 'text-background-color': '#111', 'text-background-opacity': 1, 'text-background-padding': '2px' },
-    },
-    {
-      selector: 'node:hover',
-      style: { 'background-opacity': 0.3, 'border-width': 2.5 },
-    },
-    {
-      selector: 'node.highlighted',
-      style: { 'background-opacity': 0.4, 'border-width': 3 },
-    },
-    {
-      selector: 'node.faded',
-      style: { 'background-opacity': 0.04, 'border-opacity': 0.15, 'color': '#333' },
-    },
-    {
-      selector: 'edge.faded',
-      style: { 'opacity': 0.08 },
-    },
+    ...baseStyle(),
+    { selector: 'edge[etype="write"]', style: { 'line-color': '#166534', 'target-arrow-color': '#166534', 'color': '#4ade80' } },
+    { selector: 'edge[etype="read"]',  style: { 'line-color': '#1e3a5f', 'target-arrow-color': '#1e3a5f', 'color': '#60a5fa', 'line-style': 'dashed' } },
+    { selector: 'edge[etype="nats"]',  style: { 'line-color': '#78350f', 'target-arrow-color': '#78350f', 'color': '#f59e0b' } },
+  ],
+  elements: [
+    mkNode('df-browser',  'Browser\n(Datastar)',   C.client),
+    mkNode('df-router',   'HTTP Router\n(chi)',    C.write),
+    mkNode('df-cmd',      'Command\nHandler',      C.write),
+    mkNode('df-domain',   'Domain\nAggregate',     C.write),
+    mkNode('df-sqlite',   'SQLite\n(WAL)',          C.storage),
+    mkNode('df-natspub',  'NATS\nPublish',          C.nats),
+    mkNode('df-natssub',  'NATS\nSubscribe',        C.nats),
+    mkNode('df-query',    'Query\nHandler',         C.read),
+    mkNode('df-templ',    'Templ\nRender',          C.read),
+    mkNode('df-sse',      'SSE\nPatchElements',     C.read),
+
+    // Write path
+    { data: { id:'dfe1', source:'df-browser', target:'df-router',  label:'POST (fetch)',  color:'#2d6a4f', etype:'write' } },
+    { data: { id:'dfe2', source:'df-router',  target:'df-cmd',     label:'ReadSignals',   color:'#2d6a4f', etype:'write' } },
+    { data: { id:'dfe3', source:'df-cmd',     target:'df-domain',  label:'validate',      color:'#2d6a4f', etype:'write' } },
+    { data: { id:'dfe4', source:'df-domain',  target:'df-sqlite',  label:'WriteTX',       color:'#2d6a4f', etype:'write' } },
+    { data: { id:'dfe5', source:'df-sqlite',  target:'df-natspub', label:'event emit',    color:'#92400e', etype:'nats'  } },
+    // Read path
+    { data: { id:'dfe6', source:'df-router',  target:'df-natssub', label:'SSE connect',   color:'#1e3a5f', etype:'read'  } },
+    { data: { id:'dfe7', source:'df-natspub', target:'df-natssub', label:'event arrives', color:'#92400e', etype:'nats'  } },
+    { data: { id:'dfe8', source:'df-natssub', target:'df-query',   label:'re-query',      color:'#1e3a5f', etype:'read'  } },
+    { data: { id:'dfe9', source:'df-query',   target:'df-sqlite',  label:'ReadPool',      color:'#1e3a5f', etype:'read'  } },
+    { data: { id:'dfea', source:'df-query',   target:'df-templ',   label:'ReadModel',     color:'#1e3a5f', etype:'read'  } },
+    { data: { id:'dfeb', source:'df-templ',   target:'df-sse',     label:'HTML fragment', color:'#1e3a5f', etype:'read'  } },
+    { data: { id:'dfec', source:'df-sse',     target:'df-browser', label:'PatchElements', color:'#1e3a5f', etype:'read'  } },
   ],
   layout: {
     name: 'dagre',
     rankDir: 'LR',
-    nodeSep: 60,
-    rankSep: 120,
+    nodeSep: 50,
+    rankSep: 110,
     animate: false,
-    padding: 40,
+    padding: 50,
   },
-  wheelSensitivity: 0.3,
-  minZoom: 0.2,
-  maxZoom: 4,
 });
+wire(cyDf);
 
-setupInteraction(cyDataflow);
-
-/* ══════════════════════════════════════════════════════════════════
-   Shared interaction: click-to-zoom + info panel
-══════════════════════════════════════════════════════════════════ */
-function setupInteraction(cy) {
-  cy.on('tap', 'node', function(evt) {
-    const node = evt.target;
-    const id   = node.id();
-
-    // Highlight node + neighbors
-    cy.elements().removeClass('highlighted faded');
-    const neighborhood = node.closedNeighborhood();
-    neighborhood.addClass('highlighted');
-    cy.elements().not(neighborhood).addClass('faded');
-
-    // Zoom to fit neighborhood
-    cy.animate({
-      fit: { eles: neighborhood, padding: 80 },
-      duration: 350,
-      easing: 'ease-in-out-cubic',
-    });
-
-    // Show info panel
-    const meta = META[id];
-    if (meta) showInfo(meta);
-  });
-
-  cy.on('tap', function(evt) {
-    if (evt.target === cy) {
-      // Background tap → reset
-      cy.elements().removeClass('highlighted faded');
-      cy.animate({ fit: { padding: 50 }, duration: 350, easing: 'ease-in-out-cubic' });
-      closeInfo();
-    }
-  });
-}
-
-/* ══════════════════════════════════════════════════════════════════
+/* ─────────────────────────────────────────────────────────────
    Info panel
-══════════════════════════════════════════════════════════════════ */
-function showInfo(meta) {
-  document.getElementById('info-title').textContent = meta.title || '—';
-  document.getElementById('info-type').textContent  = meta.type  || '—';
-
-  let html = '';
-  if (meta.desc) {
-    html += `<div class="info-section"><p>${meta.desc}</p></div>`;
-  }
-  if (meta.tags && meta.tags.length) {
-    html += `<div class="info-section"><h4>Tags</h4>`;
-    meta.tags.forEach(t => { html += `<span class="info-tag">${t}</span>`; });
-    html += '</div>';
+───────────────────────────────────────────────────────────── */
+function showInfo(m) {
+  document.getElementById('info-title').textContent = m.title || '—';
+  document.getElementById('info-type').textContent  = m.type  || '';
+  let html = m.desc ? `<p>${m.desc}</p>` : '';
+  if (m.tags && m.tags.length) {
+    html += '<h4>Tags</h4>';
+    m.tags.forEach(t => html += `<span class="tag">${t}</span> `);
   }
   document.getElementById('info-body').innerHTML = html;
-  document.getElementById('info-panel').classList.add('open');
+  document.getElementById('info').classList.add('open');
 }
-
 function closeInfo() {
-  document.getElementById('info-panel').classList.remove('open');
+  document.getElementById('info').classList.remove('open');
 }
 
-/* ══════════════════════════════════════════════════════════════════
+/* ─────────────────────────────────────────────────────────────
    View switching
-══════════════════════════════════════════════════════════════════ */
+───────────────────────────────────────────────────────────── */
 const VIEWS = {
-  overview: { cy: () => cyOverview,  title: 'System Overview',  desc: 'Click any node to explore · scroll to zoom · drag to pan' },
-  modules:  { cy: () => cyModules,   title: 'Module Map',       desc: 'Internal modules of vvs-core · click a module to explore its connections' },
-  dataflow: { cy: () => cyDataflow,  title: 'Data Flow',        desc: 'Request lifecycle · green = write path · blue = SSE read path · amber = NATS events' },
+  overview: { cy: cyOv,  title: 'System Overview',  hint: 'Click a node to zoom in · click background to reset' },
+  modules:  { cy: cyMod, title: 'Module Map',        hint: 'Modules inside vvs-core · click a group or module' },
+  dataflow: { cy: cyDf,  title: 'Data Flow',         hint: 'Green = write path (POST → cmd) · Blue = SSE read path · Amber = NATS events' },
 };
-
-let currentView = 'overview';
+let current = 'overview';
 
 function switchView(name, btn) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-
-  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.cy-container').forEach(el => el.classList.remove('active'));
+  document.getElementById('cy-' + name).classList.add('active');
+  document.querySelectorAll('.legend').forEach(el => el.classList.remove('active'));
+  document.getElementById('leg-' + name).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-
   document.getElementById('view-title').textContent = VIEWS[name].title;
-  document.getElementById('view-desc').textContent  = VIEWS[name].desc;
-
+  document.getElementById('view-hint').textContent  = VIEWS[name].hint;
   closeInfo();
-  currentView = name;
-
-  // Re-fit the newly visible diagram
-  requestAnimationFrame(() => {
-    const cy = VIEWS[name].cy();
-    cy.resize();
-    cy.fit(undefined, 50);
-  });
+  current = name;
+  requestAnimationFrame(() => { const c = VIEWS[name].cy; c.resize(); c.fit(undefined, 50); });
 }
 
-/* ══════════════════════════════════════════════════════════════════
+/* ─────────────────────────────────────────────────────────────
    Toolbar
-══════════════════════════════════════════════════════════════════ */
-function fitAll()  { VIEWS[currentView].cy().fit(undefined, 50); }
-function zoomIn()  { const cy = VIEWS[currentView].cy(); cy.zoom({ level: cy.zoom() * 1.3, renderedPosition: { x: cy.width()/2, y: cy.height()/2 } }); }
-function zoomOut() { const cy = VIEWS[currentView].cy(); cy.zoom({ level: cy.zoom() * 0.75, renderedPosition: { x: cy.width()/2, y: cy.height()/2 } }); }
+───────────────────────────────────────────────────────────── */
+function fitAll()  { VIEWS[current].cy.fit(undefined, 50); }
+function zoomIn()  { const c = VIEWS[current].cy; c.zoom({ level: c.zoom()*1.3, renderedPosition:{x:c.width()/2,y:c.height()/2} }); }
+function zoomOut() { const c = VIEWS[current].cy; c.zoom({ level: c.zoom()*0.75, renderedPosition:{x:c.width()/2,y:c.height()/2} }); }
 </script>
 </body>
 </html>
