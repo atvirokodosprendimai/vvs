@@ -10,7 +10,6 @@ import (
 
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/adapters/hetzner"
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/domain"
-	"github.com/google/uuid"
 )
 
 // waitForSSH polls until the SSH daemon on ip:22 is ready to authenticate.
@@ -126,11 +125,13 @@ type OrderHetznerNodeCommand struct {
 //  2. Poll until running → get IP
 //  3. Create SwarmNode record (using cluster SSH key)
 //  4. ProvisionSwarmNode (wgmesh)
-//  5. AddSwarmNode (join swarm)
+//  5a. InitSwarm — if this is the first manager (cluster has no tokens yet)
+//  5b. AddSwarmNode (join swarm) — for all subsequent nodes
 type OrderHetznerNodeHandler struct {
 	clusterRepo domain.SwarmClusterRepository
 	provision   *ProvisionSwarmNodeHandler
 	addNode     *AddSwarmNodeHandler
+	initSwarm   *InitSwarmHandler
 	createNode  *CreateSwarmNodeHandler
 	progress    func(string)
 }
@@ -139,12 +140,14 @@ func NewOrderHetznerNodeHandler(
 	clusterRepo domain.SwarmClusterRepository,
 	createNode *CreateSwarmNodeHandler,
 	provision *ProvisionSwarmNodeHandler,
+	initSwarm *InitSwarmHandler,
 	addNode *AddSwarmNodeHandler,
 ) *OrderHetznerNodeHandler {
 	return &OrderHetznerNodeHandler{
 		clusterRepo: clusterRepo,
 		createNode:  createNode,
 		provision:   provision,
+		initSwarm:   initSwarm,
 		addNode:     addNode,
 	}
 }
@@ -153,6 +156,7 @@ func (h *OrderHetznerNodeHandler) WithProgress(fn func(string)) *OrderHetznerNod
 	cp := *h
 	cp.progress = fn
 	cp.provision = h.provision.WithProgress(fn)
+	cp.initSwarm = h.initSwarm.WithProgress(fn)
 	cp.addNode = h.addNode.WithProgress(fn)
 	return &cp
 }
@@ -231,16 +235,32 @@ func (h *OrderHetznerNodeHandler) Handle(ctx context.Context, cmd OrderHetznerNo
 		return nil, fmt.Errorf("provision wgmesh: %w", err)
 	}
 
-	// 5. Join swarm
-	h.emit("Joining node to swarm…")
-	node, err = h.addNode.Handle(ctx, AddSwarmNodeCommand{
-		ClusterID: cmd.ClusterID,
-		NodeID:    node.ID,
-	})
+	// Re-load cluster to get current token state (may have changed since step 1)
+	cluster, err = h.clusterRepo.FindByID(ctx, cmd.ClusterID)
 	if err != nil {
-		return nil, fmt.Errorf("join swarm: %w", err)
+		return nil, fmt.Errorf("reload cluster: %w", err)
 	}
 
-	h.emit(fmt.Sprintf("Node %s joined swarm — ID: %s", node.Name, uuid.Must(uuid.NewV7()).String()))
+	// 5. Init swarm (first manager) or join (all other nodes)
+	if cmd.Role == domain.SwarmNodeManager && cluster.ManagerToken == "" {
+		h.emit("First manager node — initialising swarm…")
+		if _, err = h.initSwarm.Handle(ctx, InitSwarmCommand{
+			ClusterID:     cmd.ClusterID,
+			ManagerNodeID: node.ID,
+		}); err != nil {
+			return nil, fmt.Errorf("init swarm: %w", err)
+		}
+	} else {
+		h.emit("Joining node to swarm…")
+		node, err = h.addNode.Handle(ctx, AddSwarmNodeCommand{
+			ClusterID: cmd.ClusterID,
+			NodeID:    node.ID,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("join swarm: %w", err)
+		}
+	}
+
+	h.emit(fmt.Sprintf("Node %s active in swarm", node.Name))
 	return node, nil
 }
