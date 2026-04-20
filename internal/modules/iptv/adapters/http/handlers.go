@@ -380,11 +380,12 @@ func (h *IPTVHandlers) createChannelSSE(w http.ResponseWriter, r *http.Request) 
 		Category  string `json:"iptvChCategory"`
 		EPGSource string `json:"iptvChEpg"`
 	}
-	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(iptvFormError("Invalid input"))
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 	if _, err := h.createChannel.Handle(r.Context(), commands.CreateChannelCommand{
 		Name: sig.Name, LogoURL: sig.LogoURL, StreamURL: sig.StreamURL,
 		Category: sig.Category, EPGSource: sig.EPGSource,
@@ -410,11 +411,12 @@ func (h *IPTVHandlers) updateChannelSSE(w http.ResponseWriter, r *http.Request) 
 		EPGSource string `json:"iptvChEpg"`
 		Active    bool   `json:"iptvChActive"`
 	}
-	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(iptvFormError("Invalid input"))
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 	if _, err := h.updateChannel.Handle(r.Context(), commands.UpdateChannelCommand{
 		ID: id, Name: sig.Name, LogoURL: sig.LogoURL, StreamURL: sig.StreamURL,
 		Category: sig.Category, EPGSource: sig.EPGSource, Active: sig.Active,
@@ -446,11 +448,12 @@ func (h *IPTVHandlers) createPackageSSE(w http.ResponseWriter, r *http.Request) 
 		Price       string `json:"iptvPkgPrice"`
 		Description string `json:"iptvPkgDesc"`
 	}
-	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(iptvFormError("Invalid input"))
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 	cents, err := parsePriceCents(sig.Price)
 	if err != nil {
 		sse.PatchElementTempl(iptvFormError("Invalid price"))
@@ -476,11 +479,12 @@ func (h *IPTVHandlers) updatePackageSSE(w http.ResponseWriter, r *http.Request) 
 		Price       string `json:"iptvPkgPrice"`
 		Description string `json:"iptvPkgDesc"`
 	}
-	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(iptvFormError("Invalid input"))
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 	cents, err := parsePriceCents(sig.Price)
 	if err != nil {
 		sse.PatchElementTempl(iptvFormError("Invalid price"))
@@ -543,11 +547,12 @@ func (h *IPTVHandlers) createSubscriptionSSE(w http.ResponseWriter, r *http.Requ
 		CustomerID string `json:"iptvSubCustomer"`
 		PackageID  string `json:"iptvSubPackage"`
 	}
-	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(iptvFormError("Invalid input"))
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 	if _, err := h.createSub.Handle(r.Context(), commands.CreateSubscriptionCommand{
 		CustomerID: sig.CustomerID,
 		PackageID:  sig.PackageID,
@@ -604,11 +609,12 @@ func (h *IPTVHandlers) reissueKeySSE(w http.ResponseWriter, r *http.Request) {
 		CustomerID string `json:"iptvSubCustomerId"`
 		PackageID  string `json:"iptvSubPackageId"`
 	}
-	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(iptvFormError("Invalid input"))
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 	if _, err := h.reissueKey.Handle(r.Context(), commands.ReissueSubscriptionKeyCommand{
 		SubscriptionID: id,
 		CustomerID:     sig.CustomerID,
@@ -630,11 +636,12 @@ func (h *IPTVHandlers) assignSTBSSE(w http.ResponseWriter, r *http.Request) {
 		CustomerID string `json:"iptvStbCustomer"`
 		Notes      string `json:"iptvStbNotes"`
 	}
-	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(iptvFormError("Invalid input"))
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 	if _, err := h.assignSTB.Handle(r.Context(), commands.AssignSTBCommand{
 		MAC:        sig.MAC,
 		Model:      sig.Model,
@@ -686,11 +693,12 @@ func (h *IPTVHandlers) createProviderSSE(w http.ResponseWriter, r *http.Request)
 		Type        string `json:"iptvProvType"`
 		Priority    string `json:"iptvProvPriority"`
 	}
-	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(iptvFormError("Invalid input"))
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 	priority, _ := strconv.Atoi(sig.Priority)
 	if _, err := h.createProvider.Handle(r.Context(), commands.CreateChannelProviderCommand{
 		ChannelID:   id,
@@ -761,11 +769,12 @@ func (h *IPTVHandlers) createStackSSE(w http.ResponseWriter, r *http.Request) {
 		OverlayNetworkName string `json:"iptvStackOverlayName"`
 		WanIP              string `json:"iptvStackWanIp"`
 	}
-	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(iptvFormError("Invalid input"))
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 	if _, err := h.createStack.Handle(r.Context(), commands.CreateIPTVStackCommand{
 		Name:               sig.Name,
 		ClusterID:          sig.ClusterID,
@@ -805,11 +814,12 @@ func (h *IPTVHandlers) addChannelToStackSSE(w http.ResponseWriter, r *http.Reque
 		ChannelID  string `json:"iptvStackChId"`
 		ProviderID string `json:"iptvStackChProv"`
 	}
-	sse := datastar.NewSSE(w, r)
 	if err := datastar.ReadSignals(r, &sig); err != nil {
+		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(iptvFormError("Invalid input"))
 		return
 	}
+	sse := datastar.NewSSE(w, r)
 	if err := h.addChToStack.Handle(r.Context(), commands.AddChannelToIPTVStackCommand{
 		StackID:    stackID,
 		ChannelID:  sig.ChannelID,
