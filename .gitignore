@@ -8,6 +8,7 @@ data/
 # Environment
 .env
 .env.*
+!.env.example
 
 # Dependencies (not vendoring)
 vendor/
