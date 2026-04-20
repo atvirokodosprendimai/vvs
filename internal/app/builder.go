@@ -25,6 +25,7 @@ import (
 	devicemigrations    "github.com/atvirokodosprendimai/vvs/internal/modules/device/migrations"
 	emailmigrations     "github.com/atvirokodosprendimai/vvs/internal/modules/email/migrations"
 	invoicemigrations   "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/migrations"
+	billingmigrations   "github.com/atvirokodosprendimai/vvs/internal/modules/billing/migrations"
 	iptvmigrations      "github.com/atvirokodosprendimai/vvs/internal/modules/iptv/migrations"
 	networkmigrations   "github.com/atvirokodosprendimai/vvs/internal/modules/network/migrations"
 	proxmoxmigrations   "github.com/atvirokodosprendimai/vvs/internal/modules/proxmox/migrations"
@@ -102,6 +103,10 @@ func New(cfg Config) (*App, error) {
 	inv     := wireInvoice(gdb, pub, sub, nc, cust, svc, email, cfg)
 	aud     := wireAudit(gdb, sub, cust, crm, svc, inv)
 	iptv    := wireIPTV(gdb)
+	billing := wireBilling(gdb, pub)
+	if cust.routes != nil {
+		cust.routes.WithBalanceHandlers(billing.getBalance, billing.adjustBalance)
+	}
 	proxmox := wireProxmox(gdb, pub, sub, cust, cfg)
 	infra, err := wireInfra(gdb, pub, sub, nc, auth, cust, prod, net, dev, svc, inv, iptv, crm, cfg)
 	if err != nil {
@@ -109,7 +114,7 @@ func New(cfg Config) (*App, error) {
 	}
 
 	// ── HTTP ──────────────────────────────────────────────────────────────────
-	allRoutes := collectRoutes(auth, prod, cust, svc, net, dev, crm, email, inv, aud, iptv, proxmox, infra)
+	allRoutes := collectRoutes(auth, prod, cust, svc, net, dev, crm, email, inv, aud, iptv, billing, proxmox, infra)
 	router := infrahttp.NewRouter(
 		gdb.R,
 		auth.currentUser,
@@ -156,9 +161,11 @@ func collectRoutes(
 	inv     *invoiceWired,
 	aud     *auditWired,
 	iptv    *iptvWired,
+	billing *billingWired,
 	proxmox *proxmoxWired,
 	infra   *infraWired,
 ) []infrahttp.ModuleRoutes {
+	_ = billing // no HTTP routes yet; used in portal bridge (Phase 4)
 	var routes []infrahttp.ModuleRoutes
 	add := func(r infrahttp.ModuleRoutes) {
 		if r != nil {
@@ -212,5 +219,6 @@ func allMigrations() []database.ModuleMigration {
 		{Name: "portal",        FS: portalmigrations.FS,    TableName: "goose_portal"},
 		{Name: "iptv",          FS: iptvmigrations.FS,      TableName: "goose_iptv"},
 		{Name: "proxmox",       FS: proxmoxmigrations.FS,   TableName: "goose_proxmox"},
+		{Name: "billing",       FS: billingmigrations.FS,   TableName: "goose_billing"},
 	}
 }

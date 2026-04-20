@@ -31,6 +31,8 @@ import (
 	invoiceQueries "github.com/atvirokodosprendimai/vvs/internal/modules/invoice/app/queries"
 	proxmoxhttp "github.com/atvirokodosprendimai/vvs/internal/modules/proxmox/adapters/http"
 	proxmoxQueries "github.com/atvirokodosprendimai/vvs/internal/modules/proxmox/app/queries"
+	billingcommands "github.com/atvirokodosprendimai/vvs/internal/modules/billing/app/commands"
+	billingqueries "github.com/atvirokodosprendimai/vvs/internal/modules/billing/app/queries"
 	"github.com/atvirokodosprendimai/vvs/internal/shared/audit"
 	"github.com/atvirokodosprendimai/vvs/internal/shared/events"
 	authhttp "github.com/atvirokodosprendimai/vvs/internal/modules/auth/adapters/http"
@@ -65,6 +67,8 @@ type Handlers struct {
 	listEmailQuery       *emailQueries.ListThreadsForCustomerHandler
 	listInvoicesQuery    *invoiceQueries.ListInvoicesForCustomerHandler
 	listVMsQuery         *proxmoxQueries.ListVMsForCustomerHandler
+	getBalanceQuery      *billingqueries.GetCustomerBalanceHandler
+	adjustBalanceCmd     *billingcommands.AdjustBalanceHandler
 	auditLogger          audit.Logger
 }
 
@@ -153,6 +157,13 @@ func (h *Handlers) WithVMsForCustomerQuery(q *proxmoxQueries.ListVMsForCustomerH
 	return h
 }
 
+// WithBalanceHandlers injects billing balance query + adjust command for the customer detail page.
+func (h *Handlers) WithBalanceHandlers(q *billingqueries.GetCustomerBalanceHandler, adj *billingcommands.AdjustBalanceHandler) *Handlers {
+	h.getBalanceQuery = q
+	h.adjustBalanceCmd = adj
+	return h
+}
+
 func (h *Handlers) WithAuditLogger(l audit.Logger) *Handlers {
 	h.auditLogger = l
 	return h
@@ -192,6 +203,7 @@ func (h *Handlers) RegisterRoutes(r chi.Router) {
 	r.Get("/sse/customers/{id}/crm", h.crmLiveSSE)
 	r.Get("/sse/customers/{id}/notes", h.listNotesSSE)
 	r.Post("/api/customers/{id}/notes", h.addNoteSSE)
+	r.Post("/api/customers/{id}/balance/adjust", h.balanceAdjustSSE)
 }
 
 func (h *Handlers) listPage(w http.ResponseWriter, r *http.Request) {
@@ -510,14 +522,15 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	type state struct {
-		services []serviceQueries.ServiceReadModel
-		contacts []contactQueries.ContactReadModel
-		deals    []dealQueries.DealReadModel
-		tickets  []ticketQueries.TicketReadModel
-		tasks    []taskQueries.TaskReadModel
-		emails   []emailQueries.ThreadReadModel
-		invoices []invoiceQueries.InvoiceReadModel
-		vms      []proxmoxQueries.VMReadModel
+		services     []serviceQueries.ServiceReadModel
+		contacts     []contactQueries.ContactReadModel
+		deals        []dealQueries.DealReadModel
+		tickets      []ticketQueries.TicketReadModel
+		tasks        []taskQueries.TaskReadModel
+		emails       []emailQueries.ThreadReadModel
+		invoices     []invoiceQueries.InvoiceReadModel
+		vms          []proxmoxQueries.VMReadModel
+		balanceCents int64
 	}
 
 	queryAll := func() state {
@@ -546,6 +559,11 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 		if h.listVMsQuery != nil {
 			s.vms, _ = h.listVMsQuery.Handle(r.Context(), customerID)
 		}
+		if h.getBalanceQuery != nil {
+			if rm, err := h.getBalanceQuery.Handle(r.Context(), customerID); err == nil {
+				s.balanceCents = rm.BalanceCents
+			}
+		}
 		return s
 	}
 
@@ -562,6 +580,7 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 	sse.PatchElementTempl(emailhttp.EmailThreadsSection(customerID, cur.emails))
 	sse.PatchElementTempl(InvoiceSection(customerID, cur.invoices))
 	sse.PatchElementTempl(proxmoxhttp.VMSection(customerID, cur.vms))
+	sse.PatchElementTempl(CustomerBalanceCard(customerID, cur.balanceCents))
 	patchTabBar(cur)
 
 	for {
@@ -603,6 +622,9 @@ func (h *Handlers) crmLiveSSE(w http.ResponseWriter, r *http.Request) {
 			if !reflect.DeepEqual(cur.vms, next.vms) {
 				sse.PatchElementTempl(proxmoxhttp.VMSection(customerID, next.vms))
 				changed = true
+			}
+			if cur.balanceCents != next.balanceCents {
+				sse.PatchElementTempl(CustomerBalanceCard(customerID, next.balanceCents))
 			}
 			if changed {
 				patchTabBar(next)
@@ -704,3 +726,35 @@ func (h *Handlers) loadRouterName(ctx context.Context, c *domain.Customer) strin
 }
 
 func (h *Handlers) ModuleName() authdomain.Module { return authdomain.ModuleCustomers }
+
+func (h *Handlers) balanceAdjustSSE(w http.ResponseWriter, r *http.Request) {
+	user := authhttp.UserFromContext(r.Context())
+	if user == nil || user.Role != authdomain.RoleAdmin {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+	if h.adjustBalanceCmd == nil {
+		http.Error(w, "billing not configured", http.StatusServiceUnavailable)
+		return
+	}
+	id := chi.URLParam(r, "id")
+	var sig struct {
+		AmountCents int64  `json:"balanceAdjust"`
+		Description string `json:"balanceDesc"`
+	}
+	if err := datastar.ReadSignals(r, &sig); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+	sse := datastar.NewSSE(w, r)
+	if err := h.adjustBalanceCmd.Handle(r.Context(), billingcommands.AdjustBalanceCommand{
+		CustomerID:  id,
+		AmountCents: sig.AmountCents,
+		Description: sig.Description,
+	}); err != nil {
+		log.Printf("balance adjust error: %v", err)
+		sse.PatchElementTempl(balanceAdjustError(err.Error()))
+		return
+	}
+	// Balance card will refresh via crmLiveSSE billing event
+}
