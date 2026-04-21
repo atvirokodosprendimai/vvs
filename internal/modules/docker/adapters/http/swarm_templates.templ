@@ -927,7 +927,7 @@ templ SwarmHetznerConfigOptionsForCluster(clusterID string, serverTypes []hetzne
 							<label class="flex items-center gap-2 text-sm text-neutral-300 cursor-pointer select-none">
 								<input
 									type="checkbox"
-									data-bind={ "_hl_" + l.Name }
+									data-bind={ "hl_" + l.Name }
 									class="accent-amber-500 w-3.5 h-3.5"
 								/>
 								<span class="font-mono text-xs text-neutral-200">{ l.Name }</span>
@@ -944,7 +944,7 @@ templ SwarmHetznerConfigOptionsForCluster(clusterID string, serverTypes []hetzne
 							<label class="flex items-center gap-2 text-sm text-neutral-300 cursor-pointer select-none">
 								<input
 									type="checkbox"
-									data-bind={ "_hs_" + s.Name }
+									data-bind={ "hs_" + s.Name }
 									class="accent-amber-500 w-3.5 h-3.5"
 								/>
 								<span class="font-mono text-xs text-neutral-200">{ s.Name }</span>

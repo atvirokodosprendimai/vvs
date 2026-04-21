@@ -2511,9 +2511,9 @@ func SwarmHetznerConfigOptionsForCluster(clusterID string, serverTypes []hetzner
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var126 string
-				templ_7745c5c3_Var126, templ_7745c5c3_Err = templ.JoinStringErrs("_hl_" + l.Name)
+				templ_7745c5c3_Var126, templ_7745c5c3_Err = templ.JoinStringErrs("hl_" + l.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 930, Col: 36}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 930, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var126))
 				if templ_7745c5c3_Err != nil {
@@ -2560,9 +2560,9 @@ func SwarmHetznerConfigOptionsForCluster(clusterID string, serverTypes []hetzner
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var129 string
-				templ_7745c5c3_Var129, templ_7745c5c3_Err = templ.JoinStringErrs("_hs_" + s.Name)
+				templ_7745c5c3_Var129, templ_7745c5c3_Err = templ.JoinStringErrs("hs_" + s.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 947, Col: 36}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/modules/docker/adapters/http/swarm_templates.templ`, Line: 947, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var129))
 				if templ_7745c5c3_Err != nil {
