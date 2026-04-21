@@ -81,7 +81,6 @@ templ SwarmFormError(msg string) {
 }
 
 // ── Cluster list page ─────────────────────────────────────────────────────────
-
 templ SwarmClustersPage() {
 	@templates.Layout("Swarm Clusters") {
 		<div class="p-6 space-y-4">
@@ -145,7 +144,6 @@ templ SwarmClusterTable(clusters []queries.SwarmClusterReadModel) {
 }
 
 // ── Cluster form (create) ─────────────────────────────────────────────────────
-
 templ SwarmClusterFormPage() {
 	@templates.Layout("New Swarm Cluster") {
 		<div class="p-6 max-w-2xl space-y-4">
@@ -190,7 +188,6 @@ templ SwarmClusterFormPage() {
 }
 
 // ── Cluster import page ───────────────────────────────────────────────────────
-
 templ SwarmClusterImportPage() {
 	@templates.Layout("Import Swarm Cluster") {
 		<div class="p-6 max-w-2xl space-y-4">
@@ -246,7 +243,6 @@ templ SwarmClusterImportPage() {
 }
 
 // ── Cluster detail page ───────────────────────────────────────────────────────
-
 templ SwarmClusterDetailPage(cluster queries.SwarmClusterReadModel, nodes []queries.SwarmNodeReadModel, networks []queries.SwarmNetworkReadModel, stacks []queries.SwarmStackReadModel) {
 	@templates.Layout("Cluster: " + cluster.Name) {
 		<div class="p-6 space-y-6" data-signals='{"_hetznerformopen":false}'>
@@ -268,7 +264,6 @@ templ SwarmClusterDetailPage(cluster queries.SwarmClusterReadModel, nodes []quer
 				<p class="text-xs text-neutral-500 font-mono">Advertise: { cluster.AdvertiseAddr }</p>
 			}
 			<div id="swarm-form-error"></div>
-
 			<!-- Nodes section -->
 			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
 				<div class="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
@@ -291,7 +286,6 @@ templ SwarmClusterDetailPage(cluster queries.SwarmClusterReadModel, nodes []quer
 				}
 				@SwarmNodeTable(nodes, cluster.ID)
 			</div>
-
 			<!-- Networks section -->
 			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
 				<div class="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
@@ -300,7 +294,6 @@ templ SwarmClusterDetailPage(cluster queries.SwarmClusterReadModel, nodes []quer
 				</div>
 				@SwarmNetworkTable(networks)
 			</div>
-
 			<!-- Stacks section -->
 			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
 				<div class="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
@@ -314,7 +307,6 @@ templ SwarmClusterDetailPage(cluster queries.SwarmClusterReadModel, nodes []quer
 }
 
 // ── Node table ────────────────────────────────────────────────────────────────
-
 templ SwarmNodeTable(nodes []queries.SwarmNodeReadModel, clusterID string) {
 	<div id="swarm-nodes-table">
 		if len(nodes) == 0 {
@@ -391,7 +383,6 @@ templ SwarmNodeRow(n queries.SwarmNodeReadModel) {
 }
 
 // ── Node form page ────────────────────────────────────────────────────────────
-
 templ SwarmNodeFormPage(clusterID string, clusters []queries.SwarmClusterReadModel) {
 	@templates.Layout("Add Swarm Node") {
 		<div class="p-6 max-w-2xl space-y-4">
@@ -460,7 +451,6 @@ templ SwarmNodeFormPage(clusterID string, clusters []queries.SwarmClusterReadMod
 }
 
 // ── Network table ─────────────────────────────────────────────────────────────
-
 templ SwarmNetworkTable(networks []queries.SwarmNetworkReadModel) {
 	<div id="swarm-networks-table">
 		if len(networks) == 0 {
@@ -509,7 +499,6 @@ templ SwarmNetworkTable(networks []queries.SwarmNetworkReadModel) {
 }
 
 // ── Network form page ─────────────────────────────────────────────────────────
-
 templ SwarmNetworkFormPage(clusterID string, clusters []queries.SwarmClusterReadModel) {
 	@templates.Layout("Add Swarm Network") {
 		<div class="p-6 max-w-2xl space-y-4">
@@ -575,7 +564,6 @@ templ SwarmNetworkFormPage(clusterID string, clusters []queries.SwarmClusterRead
 }
 
 // ── Network detail page (reserved IPs editor) ─────────────────────────────────
-
 templ SwarmNetworkDetailPage(network queries.SwarmNetworkReadModel) {
 	@templates.Layout("Network: " + network.Name) {
 		<div class="p-6 space-y-6 max-w-3xl">
@@ -611,7 +599,6 @@ templ SwarmNetworkDetailPage(network queries.SwarmNetworkReadModel) {
 					>↓ Download Traefik config</a>
 				</div>
 			</div>
-
 			<!-- Reserved IPs editor -->
 			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
 				<div class="flex items-center justify-between px-4 py-3 border-b border-neutral-800">
@@ -671,7 +658,6 @@ templ SwarmReservedIPsEditor(network queries.SwarmNetworkReadModel) {
 }
 
 // ── Stack table ───────────────────────────────────────────────────────────────
-
 templ SwarmStackTable(stacks []queries.SwarmStackReadModel) {
 	<div id="swarm-stacks-table">
 		if len(stacks) == 0 {
@@ -720,7 +706,6 @@ templ SwarmStackTable(stacks []queries.SwarmStackReadModel) {
 }
 
 // ── Stack form page ───────────────────────────────────────────────────────────
-
 templ SwarmStackFormPage(clusterID string, stack *queries.SwarmStackReadModel, clusters []queries.SwarmClusterReadModel, nodes []queries.SwarmNodeReadModel) {
 	@templates.Layout(swarmStackFormTitle(stack)) {
 		<div class="p-6 max-w-3xl space-y-4">
@@ -807,7 +792,6 @@ func swarmStackFormSignals(clusterID string, stack *queries.SwarmStackReadModel)
 }
 
 // ── Hetzner order panel (inline on cluster detail) ────────────────────────────
-
 templ SwarmHetznerOrderPanel(clusterID string) {
 	<div
 		data-show="$_hetznerformopen"
@@ -861,19 +845,20 @@ templ SwarmHetznerOrderPanel(clusterID string) {
 }
 
 // ── Hetzner config page ────────────────────────────────────────────────────────
-
 templ SwarmClusterHetznerConfigPage(cluster queries.SwarmClusterReadModel) {
 	@templates.Layout("Hetzner Config — " + cluster.Name) {
-		<div class="p-6 max-w-2xl space-y-4">
+		<div
+			class="p-6 max-w-2xl space-y-6"
+			data-signals={ fmt.Sprintf(`{"hetzner_apikey":"","hetzner_sshkeyid":"","hetzner_sshprivkey":"","hetzner_sshpubkey":"","hetzner_clusterid":%q,"_hetzner_filter_loaded":false}`, cluster.ID) }
+		>
 			<div class="flex items-center gap-3">
 				<a href={ templ.SafeURL("/swarm/clusters/" + cluster.ID) } class="text-neutral-400 hover:text-neutral-200">← { cluster.Name }</a>
-				<h1 class="text-xl font-semibold text-neutral-100">Hetzner Auto-Provisioning</h1>
+				<h1 class="text-xl font-semibold text-neutral-100">Hetzner Settings</h1>
 			</div>
-			<p class="text-sm text-neutral-400">Configure Hetzner Cloud API access for this cluster. Once configured, you can order and provision nodes with one click.</p>
-			<form
-				class="space-y-4 bg-neutral-900 border border-neutral-800 rounded-lg p-6"
-				data-signals={ fmt.Sprintf(`{"hetzner_apikey":"","hetzner_sshkeyid":"","hetzner_sshprivkey":"","hetzner_sshpubkey":"","hetzner_clusterid":%q}`, cluster.ID) }
-			>
+			<!-- Credentials card -->
+			<div class="space-y-4 bg-neutral-900 border border-neutral-800 rounded-lg p-6">
+				<h2 class="text-sm font-semibold text-amber-400 uppercase tracking-wider">API Credentials</h2>
+				<p class="text-sm text-neutral-400">API token and SSH key for connecting to Hetzner Cloud.</p>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Hetzner Cloud API Token *</label>
 					<input type="password" data-bind:hetzner_apikey placeholder="••••••••••••••••••••••••••••••••••••••••" class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500"/>
@@ -899,13 +884,89 @@ templ SwarmClusterHetznerConfigPage(cluster queries.SwarmClusterReadModel) {
 				<div id="swarm-form-error"></div>
 				<div class="flex gap-2">
 					<button type="button" data-on:click={ "@post('/api/swarm/clusters/" + cluster.ID + "/hetzner')" } class="bg-amber-600 hover:bg-amber-500 text-white px-5 py-2 rounded text-sm font-medium">
-						Save Hetzner Config
+						Save Credentials
 					</button>
 					<a href={ templ.SafeURL("/swarm/clusters/" + cluster.ID) } class="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 px-5 py-2 rounded text-sm font-medium">Cancel</a>
 				</div>
-			</form>
+			</div>
+			<!-- VPS Options Filter card -->
+			<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6 space-y-4">
+				<h2 class="text-sm font-semibold text-amber-400 uppercase tracking-wider">Order Panel Options</h2>
+				<p class="text-sm text-neutral-400">Choose which locations and server types appear in the "Order Hetzner VPS" panel. Uncheck to hide. Fetch loads the current list from Hetzner API.</p>
+				if cluster.HasHetzner {
+					<div
+						data-effect={ fmt.Sprintf("!$_hetzner_filter_loaded && @get('/api/swarm/clusters/%s/hetzner-config-options')", cluster.ID) }
+					>
+						<div id="hetzner-filter-section" class="text-xs text-neutral-500">Loading options from Hetzner…</div>
+					</div>
+					<div id="hetzner-filter-save-result"></div>
+				} else {
+					<p class="text-xs text-neutral-500">Configure API credentials and save first to load available options.</p>
+				}
+			</div>
 		</div>
 	}
+}
+
+// SwarmHetznerConfigOptionsForCluster renders the filter section with a known cluster ID.
+templ SwarmHetznerConfigOptionsForCluster(clusterID string, serverTypes []hetzner.ServerType, locations []hetzner.Location, enabledLocs []string, enabledSTs []string) {
+	<div id="hetzner-filter-section" class="space-y-5">
+		if len(locations) == 0 && len(serverTypes) == 0 {
+			<p class="text-xs text-red-400">Could not fetch options — check your API token.</p>
+		} else {
+			<div class="grid grid-cols-2 gap-6">
+				<!-- Locations -->
+				<div>
+					<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Locations</h3>
+					<div class="space-y-1.5">
+						for _, l := range locations {
+							<label class="flex items-center gap-2 text-sm text-neutral-300 cursor-pointer select-none">
+								<input
+									type="checkbox"
+									data-bind={ "_hl_" + l.Name }
+									class="accent-amber-500 w-3.5 h-3.5"
+								/>
+								<span class="font-mono text-xs text-neutral-200">{ l.Name }</span>
+								<span class="text-neutral-500 text-xs">{ l.Description }</span>
+							</label>
+						}
+					</div>
+				</div>
+				<!-- Server types -->
+				<div>
+					<h3 class="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">Server Types</h3>
+					<div class="space-y-1.5">
+						for _, s := range serverTypes {
+							<label class="flex items-center gap-2 text-sm text-neutral-300 cursor-pointer select-none">
+								<input
+									type="checkbox"
+									data-bind={ "_hs_" + s.Name }
+									class="accent-amber-500 w-3.5 h-3.5"
+								/>
+								<span class="font-mono text-xs text-neutral-200">{ s.Name }</span>
+								<span class="text-neutral-500 text-xs">{ fmt.Sprintf("%dv %.0fGB", s.Cores, s.Memory) }</span>
+							</label>
+						}
+					</div>
+				</div>
+			</div>
+			<div class="flex items-center gap-3 pt-2">
+				<button
+					type="button"
+					data-on:click={ "@post('/api/swarm/clusters/" + clusterID + "/hetzner-filters')" }
+					class="bg-amber-600 hover:bg-amber-500 text-white px-4 py-1.5 rounded text-sm font-medium"
+				>
+					Save Options Filter
+				</button>
+				<span class="text-xs text-neutral-500">Unchecked = hidden in order panel</span>
+			</div>
+		}
+	</div>
+}
+
+// SwarmFilterSavedNotice confirms filters were saved.
+templ SwarmFilterSavedNotice() {
+	<div id="hetzner-filter-save-result" class="text-xs text-green-400 py-1">Options filter saved.</div>
 }
 
 // SwarmHetznerProgress renders a progress notice into the hetzner progress div.
@@ -914,7 +975,6 @@ templ SwarmHetznerProgress(msg string) {
 }
 
 // ── Stack detail page ─────────────────────────────────────────────────────────
-
 templ SwarmStackDetailPage(stack queries.SwarmStackReadModel) {
 	@templates.Layout("Stack: " + stack.Name) {
 		<div class="p-6 space-y-6 max-w-3xl">
@@ -932,7 +992,6 @@ templ SwarmStackDetailPage(stack queries.SwarmStackReadModel) {
 			if stack.ErrorMsg != "" {
 				<div class="text-red-400 text-sm p-3 bg-red-900/20 rounded">{ stack.ErrorMsg }</div>
 			}
-
 			<!-- Routes -->
 			<div class="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden">
 				<div class="px-4 py-3 border-b border-neutral-800">
@@ -972,7 +1031,6 @@ templ SwarmStackDetailPage(stack queries.SwarmStackReadModel) {
 }
 
 // ── Hetzner options datalist (patched via SSE when order panel opens) ─────────
-
 templ SwarmHetznerOptions(serverTypes []hetzner.ServerType, locations []hetzner.Location) {
 	<datalist id="hetzner-server-types">
 		for _, t := range serverTypes {

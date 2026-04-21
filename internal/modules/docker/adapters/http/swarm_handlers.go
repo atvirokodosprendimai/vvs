@@ -2,9 +2,11 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
@@ -17,11 +19,12 @@ import (
 // SwarmHandlers wires all Swarm management endpoints.
 type SwarmHandlers struct {
 	// Cluster commands
-	createCluster       *commands.CreateSwarmClusterHandler
-	importCluster       *commands.ImportSwarmClusterHandler
-	initSwarm           *commands.InitSwarmHandler
-	deleteCluster       *commands.DeleteSwarmClusterHandler
-	updateHetznerConfig *commands.UpdateClusterHetznerConfigHandler
+	createCluster        *commands.CreateSwarmClusterHandler
+	importCluster        *commands.ImportSwarmClusterHandler
+	initSwarm            *commands.InitSwarmHandler
+	deleteCluster        *commands.DeleteSwarmClusterHandler
+	updateHetznerConfig  *commands.UpdateClusterHetznerConfigHandler
+	updateHetznerFilters *commands.UpdateHetznerFiltersHandler
 	// Node commands
 	createNode    *commands.CreateSwarmNodeHandler
 	provisionNode *commands.ProvisionSwarmNodeHandler
@@ -56,6 +59,7 @@ func NewSwarmHandlers(
 	initSwarm *commands.InitSwarmHandler,
 	deleteCluster *commands.DeleteSwarmClusterHandler,
 	updateHetznerConfig *commands.UpdateClusterHetznerConfigHandler,
+	updateHetznerFilters *commands.UpdateHetznerFiltersHandler,
 	provisionNode *commands.ProvisionSwarmNodeHandler,
 	addNode *commands.AddSwarmNodeHandler,
 	removeNode *commands.RemoveSwarmNodeHandler,
@@ -81,7 +85,8 @@ func NewSwarmHandlers(
 	return &SwarmHandlers{
 		createCluster: createCluster, importCluster: importCluster,
 		initSwarm: initSwarm, deleteCluster: deleteCluster,
-		updateHetznerConfig: updateHetznerConfig,
+		updateHetznerConfig:  updateHetznerConfig,
+		updateHetznerFilters: updateHetznerFilters,
 		createNode: createNode, provisionNode: provisionNode, addNode: addNode, removeNode: removeNode,
 		orderHetzner: orderHetzner,
 		createNetwork: createNetwork, deleteNetwork: deleteNetwork, updateReservedIP: updateReservedIP,
@@ -112,6 +117,8 @@ func (h *SwarmHandlers) RegisterRoutes(r chi.Router) {
 	r.Post("/api/swarm/clusters/{id}/hetzner", h.clusterHetznerConfigSSE)
 	r.Post("/api/swarm/clusters/{id}/order-hetzner", h.clusterOrderHetznerSSE)
 	r.Get("/api/swarm/clusters/{id}/hetzner-options", h.clusterHetznerOptionsSSE)
+	r.Get("/api/swarm/clusters/{id}/hetzner-config-options", h.clusterHetznerConfigOptionsSSE)
+	r.Post("/api/swarm/clusters/{id}/hetzner-filters", h.clusterHetznerFiltersSSE)
 
 	// ── Node pages ─────────────────────────────────────────────────────────────
 	r.Get("/swarm/nodes/new", h.nodeCreatePage)
@@ -369,12 +376,119 @@ func (h *SwarmHandlers) clusterOrderHetznerSSE(w http.ResponseWriter, r *http.Re
 
 func (h *SwarmHandlers) clusterHetznerOptionsSSE(w http.ResponseWriter, r *http.Request) {
 	clusterID := chi.URLParam(r, "id")
-	apiKey := h.hetznerAPIKeyFor(r.Context(), clusterID)
+	cluster, _ := h.clusterRepo.FindByID(r.Context(), clusterID)
+	apiKey := ""
+	var enabledLocs, enabledSTs []string
+	if cluster != nil {
+		apiKey = cluster.HetznerAPIKey
+		enabledLocs = cluster.EnabledLocations
+		enabledSTs = cluster.EnabledServerTypes
+	}
 	serverTypes, _ := hetzner.ListServerTypes(r.Context(), apiKey)
 	locations, _ := hetzner.ListLocations(r.Context(), apiKey)
+
+	// Filter to enabled subsets (empty = show all)
+	if len(enabledLocs) > 0 {
+		filtered := locations[:0]
+		for _, l := range locations {
+			if sliceContains(enabledLocs, l.Name) {
+				filtered = append(filtered, l)
+			}
+		}
+		locations = filtered
+	}
+	if len(enabledSTs) > 0 {
+		filtered := serverTypes[:0]
+		for _, s := range serverTypes {
+			if sliceContains(enabledSTs, s.Name) {
+				filtered = append(filtered, s)
+			}
+		}
+		serverTypes = filtered
+	}
+
 	sse := datastar.NewSSE(w, r)
 	_ = sse.PatchElementTempl(SwarmHetznerOptions(serverTypes, locations))
 	_ = sse.PatchSignals([]byte(`{"_hetzner_opts_loaded":true}`))
+}
+
+// clusterHetznerConfigOptionsSSE fetches all available locations + server types from Hetzner
+// and returns checkbox HTML + pre-set signals for the config page filter section.
+func (h *SwarmHandlers) clusterHetznerConfigOptionsSSE(w http.ResponseWriter, r *http.Request) {
+	clusterID := chi.URLParam(r, "id")
+	cluster, _ := h.clusterRepo.FindByID(r.Context(), clusterID)
+	apiKey := ""
+	var enabledLocs, enabledSTs []string
+	if cluster != nil {
+		apiKey = cluster.HetznerAPIKey
+		enabledLocs = cluster.EnabledLocations
+		enabledSTs = cluster.EnabledServerTypes
+	}
+	serverTypes, _ := hetzner.ListServerTypes(r.Context(), apiKey)
+	locations, _ := hetzner.ListLocations(r.Context(), apiKey)
+
+	sse := datastar.NewSSE(w, r)
+	_ = sse.PatchElementTempl(SwarmHetznerConfigOptionsForCluster(clusterID, serverTypes, locations, enabledLocs, enabledSTs))
+
+	// Patch signals: _hl_{name} for locations, _hs_{name} for server types
+	signals := make(map[string]bool, len(locations)+len(serverTypes)+1)
+	signals["_hetzner_filter_loaded"] = true
+	for _, l := range locations {
+		signals["_hl_"+l.Name] = len(enabledLocs) == 0 || sliceContains(enabledLocs, l.Name)
+	}
+	for _, s := range serverTypes {
+		signals["_hs_"+s.Name] = len(enabledSTs) == 0 || sliceContains(enabledSTs, s.Name)
+	}
+	sigJSON, _ := json.Marshal(signals)
+	_ = sse.PatchSignals(sigJSON)
+}
+
+// clusterHetznerFiltersSSE reads the _hl_* and _hs_* signals and saves enabled filters.
+func (h *SwarmHandlers) clusterHetznerFiltersSSE(w http.ResponseWriter, r *http.Request) {
+	if !requireAdmin(w, r) {
+		return
+	}
+	clusterID := chi.URLParam(r, "id")
+	var allSigs map[string]any
+	if err := datastar.ReadSignals(r, &allSigs); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	var enabledLocs, enabledSTs []string
+	for k, v := range allSigs {
+		on, _ := v.(bool)
+		if !on {
+			continue
+		}
+		if strings.HasPrefix(k, "_hl_") {
+			enabledLocs = append(enabledLocs, strings.TrimPrefix(k, "_hl_"))
+		} else if strings.HasPrefix(k, "_hs_") {
+			enabledSTs = append(enabledSTs, strings.TrimPrefix(k, "_hs_"))
+		}
+	}
+
+	sse := datastar.NewSSE(w, r)
+	if err := h.updateHetznerFilters.Handle(r.Context(), commands.UpdateHetznerFiltersCommand{
+		ClusterID:          clusterID,
+		EnabledLocations:   enabledLocs,
+		EnabledServerTypes: enabledSTs,
+	}); err != nil {
+		slog.Error("swarm: update hetzner filters", "err", err)
+		sse.PatchElementTempl(SwarmFormError(err.Error()))
+		return
+	}
+	sse.PatchElementTempl(SwarmFilterSavedNotice())
+}
+
+// sliceContains reports whether s contains item.
+func sliceContains(s []string, item string) bool {
+	for _, v := range s {
+		if v == item {
+			return true
+		}
+	}
+	return false
 }
 
 // hetznerAPIKeyFor loads the decrypted Hetzner API key for a cluster.

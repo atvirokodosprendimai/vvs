@@ -42,6 +42,10 @@ type SwarmCluster struct {
 	SSHPrivateKey    []byte // cluster-level SSH private key (PEM); used for all Hetzner-ordered nodes; encrypted at rest
 	SSHPublicKey     string // corresponding public key (plain text — not secret)
 
+	// Hetzner order panel filters — empty slice means "show all"
+	EnabledLocations   []string // e.g. ["nbg1","fsn1"]; empty = show all
+	EnabledServerTypes []string // e.g. ["cx22","cx32"]; empty = show all
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -91,6 +95,14 @@ func (c *SwarmCluster) SetHetznerConfig(apiKey string, sshKeyID int, sshPrivateK
 // HasHetzner reports whether this cluster has Hetzner auto-provisioning configured.
 func (c *SwarmCluster) HasHetzner() bool {
 	return c.HetznerAPIKey != "" && c.HetznerSSHKeyID > 0
+}
+
+// SetHetznerFilters saves the subset of locations and server types to show in the order panel.
+// Pass empty slices to show all.
+func (c *SwarmCluster) SetHetznerFilters(locations, serverTypes []string) {
+	c.EnabledLocations = locations
+	c.EnabledServerTypes = serverTypes
+	c.UpdatedAt = time.Now().UTC()
 }
 
 type SwarmClusterRepository interface {
