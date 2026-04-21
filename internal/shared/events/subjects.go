@@ -371,6 +371,17 @@ var DockerServiceRemoved Subject = "isp.docker.service.removed"
 // Use Format(containerID) to publish/subscribe.
 var DockerLogsLine Subject = "isp.docker.logs.%s"
 
+// Docker Apps (git-source deploy)
+// Pub: docker/app/commands/app_commands.go
+var DockerAppAll Subject = "isp.docker.app.*"
+
+// Pub: docker/app/commands/app_commands.go
+var DockerAppStatusChanged Subject = "isp.docker.app.status_changed"
+
+// Pub: docker/app/commands/app_commands.go (dynamic — one subject per app)
+// Use Format(appID) to publish/subscribe.
+var DockerAppBuildLog Subject = "isp.docker.app.build.%s"
+
 // Docker Swarm
 // Pub: docker/app/commands/swarm_node_commands.go
 var SwarmClusterCreated Subject = "isp.swarm.cluster.created"
