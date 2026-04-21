@@ -197,6 +197,7 @@ func collectRoutes(
 	add(docker.routes)
 	add(docker.swarmRoutes)
 	add(docker.vvsDeployRoutes)
+	add(docker.appRoutes)
 	for _, r := range infra.routes {
 		add(r)
 	}
