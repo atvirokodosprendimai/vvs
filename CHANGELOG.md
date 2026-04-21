@@ -196,3 +196,9 @@
 - 2026-04-20 `f10064e` feat(iptv): full stack edit/clone with WANInterface and cluster reassignment
 - 2026-04-21 `69cad15` feat(auth): add user passwd CLI command
 - 2026-04-21 `e83e181` feat(docker): VVS component deploy — portal/stb on swarm via image or git build
+- 2026-04-21 `3f453a0` Merge task/hetzner-settings-filters: Hetzner settings page + VPS option filters
+- 2026-04-21 `dc50453` fix(docker): always show Hetzner settings link on cluster detail page
+- 2026-04-21 `ac185cd` fix(docker): move Hetzner settings link to cluster detail header
+- 2026-04-21 `5f0a125` fix(docker): use hl_/hs_ signal prefix — Datastar drops signals starting with _
+- 2026-04-21 `427893f` test(e2e): add swarm Hetzner config E2E tests
+- 2026-04-21 `c16f1d9` Merge task/fix-hetzner-settings-link: Hetzner config page, filter fix, E2E tests
