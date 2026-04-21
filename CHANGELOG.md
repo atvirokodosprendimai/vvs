@@ -190,3 +190,9 @@
 - 2026-04-20 `ac7c18d` Merge task/iptv-form-error-id: fix IPTV form error ID mismatch
 - 2026-04-20 `bc35949` Merge task/iptv-e2e-tests: IPTV Playwright E2E tests
 - 2026-04-20 `5314b2a` fix(iptv): call ReadSignals before NewSSE in all mutation handlers
+- 2026-04-20 `dd9ec44` chore: update changelog
+- 2026-04-20 `c2eaf87` feat(iptv): add Edit modals to all 6 IPTV list pages
+- 2026-04-20 `4f5c8d9` fix(docker): surface stderr in SSH exec errors
+- 2026-04-20 `f10064e` feat(iptv): full stack edit/clone with WANInterface and cluster reassignment
+- 2026-04-21 `69cad15` feat(auth): add user passwd CLI command
+- 2026-04-21 `e83e181` feat(docker): VVS component deploy — portal/stb on swarm via image or git build

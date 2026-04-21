@@ -18,9 +18,10 @@ import (
 )
 
 type dockerWired struct {
-	routes          infrahttp.ModuleRoutes
-	swarmRoutes     infrahttp.ModuleRoutes
-	swarmNodeRepo   *dockerpersistence.GormSwarmNodeRepository
+	routes           infrahttp.ModuleRoutes
+	swarmRoutes      infrahttp.ModuleRoutes
+	vvsDeployRoutes  infrahttp.ModuleRoutes
+	swarmNodeRepo    *dockerpersistence.GormSwarmNodeRepository
 	swarmClusterRepo *dockerpersistence.GormSwarmClusterRepository
 	swarmNetworkRepo *dockerpersistence.GormSwarmNetworkRepository
 }
@@ -92,8 +93,24 @@ func wireDocker(
 	listStacksQuery := dockerqueries.NewListSwarmStacksHandler(stackRepo, swarmNodeRepo)
 	getStackQuery := dockerqueries.NewGetSwarmStackHandler(stackRepo, swarmNodeRepo)
 
+	// ── VVS component deploy ──────────────────────────────────────────────────
+	registryRepo := dockerpersistence.NewGormContainerRegistryRepository(gdb, encKey)
+	deploymentRepo := dockerpersistence.NewGormVVSDeploymentRepository(gdb)
+
+	createRegistryCmd := dockercommands.NewCreateRegistryHandler(registryRepo)
+	updateRegistryCmd := dockercommands.NewUpdateRegistryHandler(registryRepo)
+	deleteRegistryCmd := dockercommands.NewDeleteRegistryHandler(registryRepo)
+	listRegistriesQuery := dockerqueries.NewListRegistriesHandler(registryRepo)
+
+	deployComponentCmd := dockercommands.NewDeployVVSComponentHandler(deploymentRepo, swarmNodeRepo, registryRepo)
+	redeployComponentCmd := dockercommands.NewRedeployVVSComponentHandler(deploymentRepo, swarmNodeRepo, registryRepo)
+	deleteDeploymentCmd := dockercommands.NewDeleteVVSDeploymentHandler(deploymentRepo, swarmNodeRepo)
+	listDeploymentsQuery := dockerqueries.NewListVVSDeploymentsHandler(deploymentRepo)
+	getDeploymentQuery := dockerqueries.NewGetVVSDeploymentHandler(deploymentRepo)
+
 	var routes infrahttp.ModuleRoutes
 	var swarmRoutes infrahttp.ModuleRoutes
+	var vvsDeployRoutes infrahttp.ModuleRoutes
 
 	if cfg.IsEnabled("docker") {
 		routes = dockerhttp.NewHandlers(
@@ -116,8 +133,14 @@ func wireDocker(
 			networkRepo,
 			clusterRepo,
 		)
+		vvsDeployRoutes = dockerhttp.NewVVSDeployHandlers(
+			createRegistryCmd, updateRegistryCmd, deleteRegistryCmd, listRegistriesQuery,
+			deployComponentCmd, redeployComponentCmd, deleteDeploymentCmd,
+			listDeploymentsQuery, getDeploymentQuery,
+			listSwarmNodesQuery, listClustersQuery,
+		)
 		log.Printf("module enabled: docker")
 	}
 
-	return &dockerWired{routes: routes, swarmRoutes: swarmRoutes, swarmNodeRepo: swarmNodeRepo, swarmClusterRepo: clusterRepo, swarmNetworkRepo: networkRepo}
+	return &dockerWired{routes: routes, swarmRoutes: swarmRoutes, vvsDeployRoutes: vvsDeployRoutes, swarmNodeRepo: swarmNodeRepo, swarmClusterRepo: clusterRepo, swarmNetworkRepo: networkRepo}
 }
