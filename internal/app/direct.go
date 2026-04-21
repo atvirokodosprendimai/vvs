@@ -87,9 +87,10 @@ func NewDirect(dbPath string) (*natsrpc.Server, func(), error) {
 	userRepo := authpersistence.NewGormUserRepository(gdb)
 	sessionRepo := authpersistence.NewGormSessionRepository(gdb)
 	roleRepo := authpersistence.NewGormRoleRepository(gdb)
-	createUserCmd := authcommands.NewCreateUserHandler(userRepo, roleRepo)
-	deleteUserCmd := authcommands.NewDeleteUserHandler(userRepo, sessionRepo)
-	listUsersQuery := authqueries.NewListUsersHandler(userRepo)
+	createUserCmd      := authcommands.NewCreateUserHandler(userRepo, roleRepo)
+	deleteUserCmd      := authcommands.NewDeleteUserHandler(userRepo, sessionRepo)
+	changePasswordCmd  := authcommands.NewChangePasswordHandler(userRepo)
+	listUsersQuery     := authqueries.NewListUsersHandler(userRepo)
 
 	// customer
 	customerRepo := customerpersistence.NewGormCustomerRepository(gdb)
@@ -150,9 +151,10 @@ func NewDirect(dbPath string) (*natsrpc.Server, func(), error) {
 	getJobQuery := cronqueries.NewGetJobHandler(cronRepo)
 
 	rpcServer := natsrpc.New(nil, natsrpc.Config{
-		ListUsers:  listUsersQuery,
-		CreateUser: createUserCmd,
-		DeleteUser: deleteUserCmd,
+		ListUsers:      listUsersQuery,
+		CreateUser:     createUserCmd,
+		DeleteUser:     deleteUserCmd,
+		ChangePassword: changePasswordCmd,
 
 		ListCustomers:  listCustomersQuery,
 		GetCustomer:    getCustomerQuery,

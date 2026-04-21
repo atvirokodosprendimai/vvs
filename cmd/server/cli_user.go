@@ -60,6 +60,24 @@ func userCommands() *cli.Command {
 					return t.do(ctx, "user.delete", map[string]string{"id": id}, nil)
 				},
 			},
+			{
+				Name:  "passwd",
+				Usage: "Change a user's password",
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "username", Required: true, Usage: "Username"},
+					&cli.StringFlag{Name: "password", Required: true, Usage: "New password"},
+				},
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					t, err := newTransport(cmd.Root().String("nats-url"), cmd.Root().String("api-url"), cmd.Root().String("api-token"), cmd.Root().String("db"))
+					if err != nil {
+						return err
+					}
+					return t.do(ctx, "user.change-password", map[string]string{
+						"username": cmd.String("username"),
+						"password": cmd.String("password"),
+					}, nil)
+				},
+			},
 		},
 	}
 }

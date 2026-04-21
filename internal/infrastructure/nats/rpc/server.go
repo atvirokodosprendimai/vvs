@@ -66,9 +66,10 @@ type Server struct {
 	mu   sync.Mutex
 
 	// auth
-	listUsers   *authqueries.ListUsersHandler
-	createUser  *authcommands.CreateUserHandler
-	deleteUser  *authcommands.DeleteUserHandler
+	listUsers      *authqueries.ListUsersHandler
+	createUser     *authcommands.CreateUserHandler
+	deleteUser     *authcommands.DeleteUserHandler
+	changePassword *authcommands.ChangePasswordHandler
 
 	// customer
 	listCustomers   *customerqueries.ListCustomersHandler
@@ -131,9 +132,10 @@ type Server struct {
 }
 
 type Config struct {
-	ListUsers   *authqueries.ListUsersHandler
-	CreateUser  *authcommands.CreateUserHandler
-	DeleteUser  *authcommands.DeleteUserHandler
+	ListUsers      *authqueries.ListUsersHandler
+	CreateUser     *authcommands.CreateUserHandler
+	DeleteUser     *authcommands.DeleteUserHandler
+	ChangePassword *authcommands.ChangePasswordHandler
 
 	ListCustomers  *customerqueries.ListCustomersHandler
 	GetCustomer    *customerqueries.GetCustomerHandler
@@ -192,9 +194,10 @@ type Config struct {
 func New(nc *nats.Conn, cfg Config) *Server {
 	return &Server{
 		nc:                nc,
-		listUsers:         cfg.ListUsers,
-		createUser:        cfg.CreateUser,
-		deleteUser:        cfg.DeleteUser,
+		listUsers:      cfg.ListUsers,
+		createUser:     cfg.CreateUser,
+		deleteUser:     cfg.DeleteUser,
+		changePassword: cfg.ChangePassword,
 		listCustomers:     cfg.ListCustomers,
 		getCustomer:       cfg.GetCustomer,
 		createCustomer:    cfg.CreateCustomer,
@@ -250,9 +253,10 @@ func New(nc *nats.Conn, cfg Config) *Server {
 func (s *Server) handlers() map[string]func(context.Context, []byte) (any, error) {
 	return map[string]func(context.Context, []byte) (any, error){
 		// auth
-		"isp.rpc.user.list":   s.handleUserList,
-		"isp.rpc.user.create": s.handleUserCreate,
-		"isp.rpc.user.delete": s.handleUserDelete,
+		"isp.rpc.user.list":            s.handleUserList,
+		"isp.rpc.user.create":          s.handleUserCreate,
+		"isp.rpc.user.delete":          s.handleUserDelete,
+		"isp.rpc.user.change-password": s.handleUserChangePassword,
 		// customer
 		"isp.rpc.customer.list":   s.handleCustomerList,
 		"isp.rpc.customer.get":    s.handleCustomerGet,
@@ -396,6 +400,35 @@ func (s *Server) handleUserDelete(ctx context.Context, payload []byte) (any, err
 		return nil, err
 	}
 	return nil, s.deleteUser.Handle(ctx, authcommands.DeleteUserCommand{ID: req.ID})
+}
+
+func (s *Server) handleUserChangePassword(ctx context.Context, payload []byte) (any, error) {
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := json.Unmarshal(payload, &req); err != nil {
+		return nil, err
+	}
+	// Resolve username → ID
+	users, err := s.listUsers.Handle(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var userID string
+	for _, u := range users {
+		if u.Username == req.Username {
+			userID = u.ID
+			break
+		}
+	}
+	if userID == "" {
+		return nil, domain.ErrUserNotFound
+	}
+	return nil, s.changePassword.Handle(ctx, authcommands.ChangePasswordCommand{
+		UserID:      userID,
+		NewPassword: req.Password,
+	})
 }
 
 // ── customer ─────────────────────────────────────────────────────────────────
