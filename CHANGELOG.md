@@ -195,3 +195,4 @@
 - 2026-04-20 `4f5c8d9` fix(docker): surface stderr in SSH exec errors
 - 2026-04-20 `f10064e` feat(iptv): full stack edit/clone with WANInterface and cluster reassignment
 - 2026-04-21 `69cad15` feat(auth): add user passwd CLI command
+- 2026-04-21 `e83e181` feat(docker): VVS component deploy — portal/stb on swarm via image or git build
