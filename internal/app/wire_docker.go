@@ -21,6 +21,7 @@ type dockerWired struct {
 	routes           infrahttp.ModuleRoutes
 	swarmRoutes      infrahttp.ModuleRoutes
 	vvsDeployRoutes  infrahttp.ModuleRoutes
+	appRoutes        infrahttp.ModuleRoutes
 	swarmNodeRepo    *dockerpersistence.GormSwarmNodeRepository
 	swarmClusterRepo *dockerpersistence.GormSwarmClusterRepository
 	swarmNetworkRepo *dockerpersistence.GormSwarmNetworkRepository
@@ -109,9 +110,18 @@ func wireDocker(
 	listDeploymentsQuery := dockerqueries.NewListVVSDeploymentsHandler(deploymentRepo)
 	getDeploymentQuery := dockerqueries.NewGetVVSDeploymentHandler(deploymentRepo)
 
+	// ── Docker Apps (git-source deploy) ──────────────────────────────────────
+	appRepo := dockerpersistence.NewGormDockerAppRepository(gdb, encKey)
+	buildAppCmd := dockercommands.NewBuildDockerAppHandler(appRepo, pub)
+	stopAppCmd := dockercommands.NewStopDockerAppHandler(appRepo, pub)
+	removeAppCmd := dockercommands.NewRemoveDockerAppHandler(appRepo, pub)
+	listAppsQuery := dockerqueries.NewListDockerAppsHandler(appRepo)
+	getAppQuery := dockerqueries.NewGetDockerAppHandler(appRepo)
+
 	var routes infrahttp.ModuleRoutes
 	var swarmRoutes infrahttp.ModuleRoutes
 	var vvsDeployRoutes infrahttp.ModuleRoutes
+	var appRoutes infrahttp.ModuleRoutes
 
 	if cfg.IsEnabled("docker") {
 		routes = dockerhttp.NewHandlers(
@@ -140,8 +150,13 @@ func wireDocker(
 			listDeploymentsQuery, getDeploymentQuery,
 			listSwarmNodesQuery, listClustersQuery,
 		)
+		appRoutes = dockerhttp.NewAppHandlers(
+			buildAppCmd, stopAppCmd, removeAppCmd,
+			listAppsQuery, getAppQuery,
+			appRepo, sub,
+		)
 		log.Printf("module enabled: docker")
 	}
 
-	return &dockerWired{routes: routes, swarmRoutes: swarmRoutes, vvsDeployRoutes: vvsDeployRoutes, swarmNodeRepo: swarmNodeRepo, swarmClusterRepo: clusterRepo, swarmNetworkRepo: networkRepo}
+	return &dockerWired{routes: routes, swarmRoutes: swarmRoutes, vvsDeployRoutes: vvsDeployRoutes, appRoutes: appRoutes, swarmNodeRepo: swarmNodeRepo, swarmClusterRepo: clusterRepo, swarmNetworkRepo: networkRepo}
 }

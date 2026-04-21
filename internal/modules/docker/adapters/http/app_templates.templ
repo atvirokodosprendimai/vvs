@@ -1,0 +1,447 @@
+package http
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/app/queries"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/domain"
+)
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+func appStatusClass(status string) string {
+	switch status {
+	case "running":
+		return "px-2 py-0.5 text-xs rounded-full bg-green-900/40 text-green-400"
+	case "building", "pushing", "deploying":
+		return "px-2 py-0.5 text-xs rounded-full bg-blue-900/40 text-blue-400 animate-pulse"
+	case "error":
+		return "px-2 py-0.5 text-xs rounded-full bg-red-900/40 text-red-400"
+	case "stopped":
+		return "px-2 py-0.5 text-xs rounded-full bg-neutral-700 text-neutral-400"
+	default:
+		return "px-2 py-0.5 text-xs rounded-full bg-neutral-700 text-neutral-500"
+	}
+}
+
+func appIsBuilding(status string) bool {
+	switch status {
+	case "building", "pushing", "deploying":
+		return true
+	}
+	return false
+}
+
+// ── App List Page ─────────────────────────────────────────────────────────────
+
+templ AppListPage(apps []queries.AppReadModel) {
+	@templates.Layout("Docker Apps") {
+		<div class="p-6 space-y-4">
+			@templates.PageHeaderRow("Docker Apps", "Build and deploy apps from Gitea repositories") {
+				<a
+					href="/docker/apps/new"
+					class="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-md"
+				>+ New App</a>
+			}
+
+			<div id="docker-apps-table" data-init="@get('/api/docker/apps')">
+				@AppTable(apps)
+			</div>
+		</div>
+	}
+}
+
+templ AppTable(apps []queries.AppReadModel) {
+	<div id="docker-apps-table">
+		if len(apps) == 0 {
+			<div class="text-neutral-500 text-sm py-8 text-center">No apps yet. <a href="/docker/apps/new" class="text-amber-400 hover:underline">Create one.</a></div>
+		} else {
+			<table class="w-full text-sm">
+				<thead>
+					<tr class="text-left text-xs text-neutral-500 border-b border-neutral-800">
+						<th class="py-2 pr-4">Name</th>
+						<th class="py-2 pr-4">Repo</th>
+						<th class="py-2 pr-4">Status</th>
+						<th class="py-2 pr-4">Image</th>
+						<th class="py-2 pr-4">Last Built</th>
+						<th class="py-2"></th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-neutral-800">
+					for _, app := range apps {
+						<tr class="text-neutral-300 hover:bg-neutral-800/30">
+							<td class="py-2 pr-4 font-medium">
+								<a href={ templ.URL("/docker/apps/" + app.ID + "/edit") } class="hover:text-amber-400">{ app.Name }</a>
+							</td>
+							<td class="py-2 pr-4 text-xs text-neutral-400 truncate max-w-xs">{ shortRepoURL(app.RepoURL) }</td>
+							<td class="py-2 pr-4">
+								@AppStatusBadge(app.ID, app.Status)
+							</td>
+							<td class="py-2 pr-4 text-xs text-neutral-500 font-mono truncate max-w-xs">{ shortImageRef(app.ImageRef) }</td>
+							<td class="py-2 pr-4 text-xs text-neutral-500">
+								if app.LastBuiltAt != nil {
+									{ app.LastBuiltAt.Format("02 Jan 15:04") }
+								} else {
+									—
+								}
+							</td>
+							<td class="py-2 text-right space-x-2">
+								<div id={ "app-error-" + app.ID }></div>
+								if appIsBuilding(app.Status) {
+									<span class="text-xs text-blue-400 animate-pulse">building…</span>
+									<a href={ templ.URL("/docker/apps/" + app.ID + "/logs") } class="text-xs text-neutral-400 hover:text-neutral-200">logs</a>
+								} else {
+									<button
+										class="px-2 py-1 text-xs bg-amber-700/60 hover:bg-amber-600 rounded text-white"
+										data-on:click={ fmt.Sprintf("@post('/api/docker/apps/%s/build')", app.ID) }
+									>Build</button>
+									if app.Status == "running" {
+										<button
+											class="px-2 py-1 text-xs bg-neutral-700 hover:bg-neutral-600 rounded text-neutral-300"
+											data-on:click={ fmt.Sprintf("@post('/api/docker/apps/%s/stop')", app.ID) }
+										>Stop</button>
+									}
+									<a href={ templ.URL("/docker/apps/" + app.ID + "/edit") } class="px-2 py-1 text-xs bg-neutral-700 hover:bg-neutral-600 rounded text-neutral-300">Edit</a>
+									<button
+										class="px-2 py-1 text-xs bg-red-900/40 hover:bg-red-800/60 rounded text-red-400"
+										data-on:click={ fmt.Sprintf("@delete('/docker/apps/%s')", app.ID) }
+									>Delete</button>
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}
+
+templ AppStatusBadge(id, status string) {
+	<span id={ "app-status-" + id } class={ appStatusClass(status) }>{ status }</span>
+}
+
+templ AppInlineError(elemID, msg string) {
+	<div id={ elemID } class="text-xs text-red-400 mt-1">{ msg }</div>
+}
+
+// ── App Form Page ─────────────────────────────────────────────────────────────
+
+templ AppFormPage(app queries.AppReadModel, isEdit bool) {
+	@templates.Layout(formTitle(app.Name, isEdit)) {
+		<div class="p-6 space-y-6 max-w-2xl">
+			@templates.PageHeaderBack(formTitle(app.Name, isEdit), "", "/docker/apps", "← Apps")
+
+			<form
+				method="POST"
+				action={ templ.URL(formAction(app.ID, isEdit)) }
+				class="space-y-6"
+			>
+				<!-- Source card -->
+				<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5 space-y-4">
+					<h2 class="text-sm font-semibold text-neutral-300">Source</h2>
+					<div class="grid grid-cols-2 gap-4">
+						<div class="col-span-2 space-y-1">
+							<label class="text-xs text-neutral-400">Gitea Repo URL</label>
+							<input
+								type="url"
+								name="repo_url"
+								value={ app.RepoURL }
+								placeholder="https://gitea.example.com/owner/repo"
+								class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+								required
+							/>
+						</div>
+						<div class="space-y-1">
+							<label class="text-xs text-neutral-400">Branch</label>
+							<input
+								type="text"
+								name="branch"
+								value={ app.Branch }
+								placeholder="main"
+								class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							/>
+						</div>
+						<div class="space-y-1">
+							<label class="text-xs text-neutral-400">App Name</label>
+							<input
+								type="text"
+								name="name"
+								value={ app.Name }
+								placeholder="my-app"
+								class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+								required
+							/>
+						</div>
+					</div>
+					<div class="grid grid-cols-2 gap-4">
+						<div class="space-y-1">
+							<label class="text-xs text-neutral-400">Registry Username</label>
+							<input
+								type="text"
+								name="reg_user"
+								value={ app.RegUser }
+								class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							/>
+						</div>
+						<div class="space-y-1">
+							<label class="text-xs text-neutral-400">Registry Password / Token</label>
+							<input
+								type="password"
+								name="reg_pass"
+								placeholder={ regPassPlaceholder(isEdit) }
+								class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							/>
+						</div>
+					</div>
+				</div>
+
+				<!-- Build args card -->
+				<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5 space-y-3">
+					<h2 class="text-sm font-semibold text-neutral-300">Build Args</h2>
+					<div id="build-args-rows" class="space-y-2">
+						for _, kv := range app.BuildArgs {
+							@kvRow("build_arg_key", "build_arg_val", kv.Key, kv.Value)
+						}
+					</div>
+					<button
+						type="button"
+						class="text-xs text-amber-400 hover:text-amber-300"
+						data-on:click="document.getElementById('build-args-rows').insertAdjacentHTML('beforeend', document.getElementById('build-arg-template').innerHTML)"
+					>+ Add build arg</button>
+					<template id="build-arg-template">
+						@kvRow("build_arg_key", "build_arg_val", "", "")
+					</template>
+				</div>
+
+				<!-- Runtime card -->
+				<div class="bg-neutral-900 border border-neutral-800 rounded-lg p-5 space-y-5">
+					<h2 class="text-sm font-semibold text-neutral-300">Runtime</h2>
+
+					<!-- Env vars -->
+					<div class="space-y-2">
+						<label class="text-xs text-neutral-400">Environment Variables</label>
+						<div id="env-rows" class="space-y-2">
+							for _, kv := range app.EnvVars {
+								@kvRow("env_key", "env_val", kv.Key, kv.Value)
+							}
+						</div>
+						<button
+							type="button"
+							class="text-xs text-amber-400 hover:text-amber-300"
+							data-on:click="document.getElementById('env-rows').insertAdjacentHTML('beforeend', document.getElementById('env-template').innerHTML)"
+						>+ Add env var</button>
+						<template id="env-template">
+							@kvRow("env_key", "env_val", "", "")
+						</template>
+					</div>
+
+					<!-- Ports -->
+					<div class="space-y-2">
+						<label class="text-xs text-neutral-400">Port Bindings</label>
+						<div id="port-rows" class="space-y-2">
+							for _, pm := range app.Ports {
+								@portRow(pm)
+							}
+						</div>
+						<button
+							type="button"
+							class="text-xs text-amber-400 hover:text-amber-300"
+							data-on:click="document.getElementById('port-rows').insertAdjacentHTML('beforeend', document.getElementById('port-template').innerHTML)"
+						>+ Add port</button>
+						<template id="port-template">
+							@portRow(domain.PortMap{Proto: "tcp"})
+						</template>
+					</div>
+
+					<!-- Volumes -->
+					<div class="space-y-2">
+						<label class="text-xs text-neutral-400">Volumes (bind mounts)</label>
+						<div id="vol-rows" class="space-y-2">
+							for _, vm := range app.Volumes {
+								@volumeRow(vm)
+							}
+						</div>
+						<button
+							type="button"
+							class="text-xs text-amber-400 hover:text-amber-300"
+							data-on:click="document.getElementById('vol-rows').insertAdjacentHTML('beforeend', document.getElementById('vol-template').innerHTML)"
+						>+ Add volume</button>
+						<template id="vol-template">
+							@volumeRow(domain.VolumeMount{})
+						</template>
+					</div>
+
+					<!-- Networks -->
+					<div class="space-y-2">
+						<label class="text-xs text-neutral-400">Networks (names, comma-separated)</label>
+						<input
+							type="text"
+							name="networks"
+							value={ strings.Join(app.Networks, ", ") }
+							placeholder="bridge, my-overlay"
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+						/>
+						<p class="text-xs text-neutral-600">Enter comma-separated Docker network names. Container is attached to all listed networks.</p>
+					</div>
+
+					<!-- Restart policy -->
+					<div class="space-y-1">
+						<label class="text-xs text-neutral-400">Restart Policy</label>
+						<select
+							name="restart_policy"
+							class="bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+						>
+							for _, opt := range []string{"no", "always", "unless-stopped", "on-failure"} {
+								<option value={ opt } selected?={ opt == app.RestartPolicy }>{ opt }</option>
+							}
+						</select>
+					</div>
+				</div>
+
+				<div class="flex gap-3">
+					<button
+						type="submit"
+						class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded text-sm font-medium"
+					>
+						if isEdit {
+							Save Changes
+						} else {
+							Create App
+						}
+					</button>
+					<a href="/docker/apps" class="px-4 py-2 bg-neutral-700 hover:bg-neutral-600 text-neutral-300 rounded text-sm">Cancel</a>
+				</div>
+			</form>
+		</div>
+	}
+}
+
+// ── Build Log Terminal ─────────────────────────────────────────────────────────
+
+templ AppBuildLogLine(line string) {
+	<div id="app-build-log">
+		<p class="text-xs font-mono text-green-400 whitespace-pre-wrap">{ line }</p>
+	</div>
+}
+
+// ── Webhook confirmed ─────────────────────────────────────────────────────────
+
+templ AppWebhookRegistered(id, webhookURL string) {
+	<div id={ "webhook-status-" + id } class="text-xs text-green-400">
+		Webhook registered: <code class="font-mono text-neutral-400">{ webhookURL }</code>
+	</div>
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+templ kvRow(keyName, valName, keyVal, valVal string) {
+	<div class="flex gap-2">
+		<input
+			type="text"
+			name={ keyName }
+			value={ keyVal }
+			placeholder="KEY"
+			class="flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-xs text-neutral-200 font-mono"
+		/>
+		<input
+			type="text"
+			name={ valName }
+			value={ valVal }
+			placeholder="value"
+			class="flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-xs text-neutral-200 font-mono"
+		/>
+		<button type="button" class="text-neutral-500 hover:text-red-400 text-xs" data-on:click="this.parentElement.remove()">✕</button>
+	</div>
+}
+
+templ portRow(pm domain.PortMap) {
+	<div class="flex gap-2">
+		<input
+			type="text"
+			name="port_host"
+			value={ pm.Host }
+			placeholder="8080"
+			class="w-24 bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-xs text-neutral-200 font-mono"
+		/>
+		<span class="text-neutral-500 self-center text-xs">:</span>
+		<input
+			type="text"
+			name="port_container"
+			value={ pm.Container }
+			placeholder="80"
+			class="w-24 bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-xs text-neutral-200 font-mono"
+		/>
+		<select
+			name="port_proto"
+			class="bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-xs text-neutral-200"
+		>
+			<option value="tcp" selected?={ pm.Proto == "tcp" || pm.Proto == "" }>tcp</option>
+			<option value="udp" selected?={ pm.Proto == "udp" }>udp</option>
+		</select>
+		<button type="button" class="text-neutral-500 hover:text-red-400 text-xs" data-on:click="this.parentElement.remove()">✕</button>
+	</div>
+}
+
+templ volumeRow(vm domain.VolumeMount) {
+	<div class="flex gap-2">
+		<input
+			type="text"
+			name="vol_host"
+			value={ vm.Host }
+			placeholder="/host/path"
+			class="flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-xs text-neutral-200 font-mono"
+		/>
+		<span class="text-neutral-500 self-center text-xs">:</span>
+		<input
+			type="text"
+			name="vol_container"
+			value={ vm.Container }
+			placeholder="/container/path"
+			class="flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-xs text-neutral-200 font-mono"
+		/>
+		<button type="button" class="text-neutral-500 hover:text-red-400 text-xs" data-on:click="this.parentElement.remove()">✕</button>
+	</div>
+}
+
+// ── Go helpers ────────────────────────────────────────────────────────────────
+
+func shortRepoURL(u string) string {
+	u = strings.TrimPrefix(u, "https://")
+	u = strings.TrimPrefix(u, "http://")
+	u = strings.TrimSuffix(u, ".git")
+	return u
+}
+
+func shortImageRef(ref string) string {
+	if ref == "" {
+		return "—"
+	}
+	parts := strings.SplitN(ref, "/", 3)
+	if len(parts) == 3 {
+		return parts[1] + "/" + parts[2]
+	}
+	return ref
+}
+
+func formTitle(name string, isEdit bool) string {
+	if isEdit {
+		return "Edit App: " + name
+	}
+	return "New Docker App"
+}
+
+func formAction(id string, isEdit bool) string {
+	if isEdit {
+		return "/docker/apps/" + id
+	}
+	return "/docker/apps"
+}
+
+func regPassPlaceholder(isEdit bool) string {
+	if isEdit {
+		return "leave blank to keep existing"
+	}
+	return "password or access token"
+}
