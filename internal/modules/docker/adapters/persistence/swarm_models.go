@@ -10,49 +10,72 @@ import (
 // ── SwarmCluster model ────────────────────────────────────────────────────────
 
 type SwarmClusterModel struct {
-	ID               string `gorm:"primaryKey;type:text"`
-	Name             string `gorm:"type:text;not null"`
-	WgmeshKey        []byte `gorm:"column:wgmesh_key"`
-	ManagerToken     []byte `gorm:"column:manager_token"`
-	WorkerToken      []byte `gorm:"column:worker_token"`
-	AdvertiseAddr    string `gorm:"column:advertise_addr;type:text;not null;default:''"`
-	Notes            string `gorm:"type:text;not null;default:''"`
-	Status           string `gorm:"type:text;not null;default:'initializing'"`
-	HetznerAPIKey    []byte `gorm:"column:hetzner_api_key"`
-	HetznerSSHKeyID  int    `gorm:"column:hetzner_ssh_key_id;not null;default:0"`
-	SSHPrivateKey    []byte `gorm:"column:ssh_private_key"`
-	SSHPublicKey     string `gorm:"column:ssh_public_key;type:text;not null;default:''"`
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	ID                       string `gorm:"primaryKey;type:text"`
+	Name                     string `gorm:"type:text;not null"`
+	WgmeshKey                []byte `gorm:"column:wgmesh_key"`
+	ManagerToken             []byte `gorm:"column:manager_token"`
+	WorkerToken              []byte `gorm:"column:worker_token"`
+	AdvertiseAddr            string `gorm:"column:advertise_addr;type:text;not null;default:''"`
+	Notes                    string `gorm:"type:text;not null;default:''"`
+	Status                   string `gorm:"type:text;not null;default:'initializing'"`
+	HetznerAPIKey            []byte `gorm:"column:hetzner_api_key"`
+	HetznerSSHKeyID          int    `gorm:"column:hetzner_ssh_key_id;not null;default:0"`
+	SSHPrivateKey            []byte `gorm:"column:ssh_private_key"`
+	SSHPublicKey             string `gorm:"column:ssh_public_key;type:text;not null;default:''"`
+	HetznerEnabledLocations  string `gorm:"column:hetzner_enabled_locations;type:text;not null;default:''"`
+	HetznerEnabledServerTypes string `gorm:"column:hetzner_enabled_server_types;type:text;not null;default:''"`
+	CreatedAt                time.Time
+	UpdatedAt                time.Time
 }
 
 func (SwarmClusterModel) TableName() string { return "swarm_clusters" }
 
+func jsonEncodeStringSlice(s []string) string {
+	if len(s) == 0 {
+		return ""
+	}
+	b, _ := json.Marshal(s)
+	return string(b)
+}
+
+func jsonDecodeStringSlice(s string) []string {
+	if s == "" {
+		return nil
+	}
+	var out []string
+	_ = json.Unmarshal([]byte(s), &out)
+	return out
+}
+
 func toSwarmClusterModel(c *domain.SwarmCluster) *SwarmClusterModel {
 	return &SwarmClusterModel{
-		ID:              c.ID,
-		Name:            c.Name,
-		AdvertiseAddr:   c.AdvertiseAddr,
-		Notes:           c.Notes,
-		Status:          string(c.Status),
-		HetznerSSHKeyID: c.HetznerSSHKeyID,
-		SSHPublicKey:    c.SSHPublicKey,
-		CreatedAt:       c.CreatedAt,
-		UpdatedAt:       c.UpdatedAt,
+		ID:                        c.ID,
+		Name:                      c.Name,
+		AdvertiseAddr:             c.AdvertiseAddr,
+		Notes:                     c.Notes,
+		Status:                    string(c.Status),
+		HetznerSSHKeyID:           c.HetznerSSHKeyID,
+		SSHPublicKey:              c.SSHPublicKey,
+		HetznerEnabledLocations:   jsonEncodeStringSlice(c.EnabledLocations),
+		HetznerEnabledServerTypes: jsonEncodeStringSlice(c.EnabledServerTypes),
+		CreatedAt:                 c.CreatedAt,
+		UpdatedAt:                 c.UpdatedAt,
 	}
 }
 
 func toSwarmClusterDomain(m *SwarmClusterModel) *domain.SwarmCluster {
 	return &domain.SwarmCluster{
-		ID:              m.ID,
-		Name:            m.Name,
-		AdvertiseAddr:   m.AdvertiseAddr,
-		Notes:           m.Notes,
-		Status:          domain.SwarmClusterStatus(m.Status),
-		HetznerSSHKeyID: m.HetznerSSHKeyID,
-		SSHPublicKey:    m.SSHPublicKey,
-		CreatedAt:       m.CreatedAt,
-		UpdatedAt:       m.UpdatedAt,
+		ID:                 m.ID,
+		Name:               m.Name,
+		AdvertiseAddr:      m.AdvertiseAddr,
+		Notes:              m.Notes,
+		Status:             domain.SwarmClusterStatus(m.Status),
+		HetznerSSHKeyID:    m.HetznerSSHKeyID,
+		SSHPublicKey:       m.SSHPublicKey,
+		EnabledLocations:   jsonDecodeStringSlice(m.HetznerEnabledLocations),
+		EnabledServerTypes: jsonDecodeStringSlice(m.HetznerEnabledServerTypes),
+		CreatedAt:          m.CreatedAt,
+		UpdatedAt:          m.UpdatedAt,
 	}
 }
 

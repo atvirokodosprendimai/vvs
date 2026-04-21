@@ -107,6 +107,33 @@ func (h *UpdateClusterHetznerConfigHandler) Handle(ctx context.Context, cmd Upda
 	return h.clusterRepo.Save(ctx, cluster)
 }
 
+// ── UpdateHetznerFilters ──────────────────────────────────────────────────────
+
+// UpdateHetznerFiltersCommand sets which locations and server types appear in the order panel.
+// Empty slices mean "show all".
+type UpdateHetznerFiltersCommand struct {
+	ClusterID          string
+	EnabledLocations   []string
+	EnabledServerTypes []string
+}
+
+type UpdateHetznerFiltersHandler struct {
+	clusterRepo domain.SwarmClusterRepository
+}
+
+func NewUpdateHetznerFiltersHandler(clusterRepo domain.SwarmClusterRepository) *UpdateHetznerFiltersHandler {
+	return &UpdateHetznerFiltersHandler{clusterRepo: clusterRepo}
+}
+
+func (h *UpdateHetznerFiltersHandler) Handle(ctx context.Context, cmd UpdateHetznerFiltersCommand) error {
+	cluster, err := h.clusterRepo.FindByID(ctx, cmd.ClusterID)
+	if err != nil {
+		return err
+	}
+	cluster.SetHetznerFilters(cmd.EnabledLocations, cmd.EnabledServerTypes)
+	return h.clusterRepo.Save(ctx, cluster)
+}
+
 // ── OrderHetznerNode ──────────────────────────────────────────────────────────
 
 // OrderHetznerNodeCommand orders a new Hetzner VPS and fully provisions it into the swarm.

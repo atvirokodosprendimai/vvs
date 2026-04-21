@@ -9,14 +9,16 @@ import (
 // ── Swarm read models ─────────────────────────────────────────────────────────
 
 type SwarmClusterReadModel struct {
-	ID            string
-	Name          string
-	Status        string
-	AdvertiseAddr string
-	Notes         string
-	NodeCount     int
-	HasHetzner    bool   // true when HetznerAPIKey + HetznerSSHKeyID are configured
-	SSHPublicKey  string // cluster-level public key (shown in UI for Hetzner registration)
+	ID                 string
+	Name               string
+	Status             string
+	AdvertiseAddr      string
+	Notes              string
+	NodeCount          int
+	HasHetzner         bool     // true when HetznerAPIKey + HetznerSSHKeyID are configured
+	SSHPublicKey       string   // cluster-level public key (shown in UI for Hetzner registration)
+	EnabledLocations   []string // empty = show all
+	EnabledServerTypes []string // empty = show all
 }
 
 type SwarmNodeReadModel struct {
@@ -82,14 +84,16 @@ func (h *ListSwarmClustersHandler) Handle(ctx context.Context) ([]SwarmClusterRe
 	for i, c := range clusters {
 		nodes, _ := h.nodeRepo.FindByClusterID(ctx, c.ID)
 		out[i] = SwarmClusterReadModel{
-			ID:            c.ID,
-			Name:          c.Name,
-			Status:        string(c.Status),
-			AdvertiseAddr: c.AdvertiseAddr,
-			Notes:         c.Notes,
-			NodeCount:     len(nodes),
-			HasHetzner:    c.HasHetzner(),
-			SSHPublicKey:  c.SSHPublicKey,
+			ID:                 c.ID,
+			Name:               c.Name,
+			Status:             string(c.Status),
+			AdvertiseAddr:      c.AdvertiseAddr,
+			Notes:              c.Notes,
+			NodeCount:          len(nodes),
+			HasHetzner:         c.HasHetzner(),
+			SSHPublicKey:       c.SSHPublicKey,
+			EnabledLocations:   c.EnabledLocations,
+			EnabledServerTypes: c.EnabledServerTypes,
 		}
 	}
 	return out, nil
@@ -109,13 +113,15 @@ func (h *GetSwarmClusterHandler) Handle(ctx context.Context, id string) (*SwarmC
 		return nil, err
 	}
 	return &SwarmClusterReadModel{
-		ID:            c.ID,
-		Name:          c.Name,
-		Status:        string(c.Status),
-		AdvertiseAddr: c.AdvertiseAddr,
-		Notes:         c.Notes,
-		HasHetzner:    c.HasHetzner(),
-		SSHPublicKey:  c.SSHPublicKey,
+		ID:                 c.ID,
+		Name:               c.Name,
+		Status:             string(c.Status),
+		AdvertiseAddr:      c.AdvertiseAddr,
+		Notes:              c.Notes,
+		HasHetzner:         c.HasHetzner(),
+		SSHPublicKey:       c.SSHPublicKey,
+		EnabledLocations:   c.EnabledLocations,
+		EnabledServerTypes: c.EnabledServerTypes,
 	}, nil
 }
 
