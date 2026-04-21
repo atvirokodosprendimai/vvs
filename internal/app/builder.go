@@ -196,6 +196,7 @@ func collectRoutes(
 	add(proxmox.routes)
 	add(docker.routes)
 	add(docker.swarmRoutes)
+	add(docker.vvsDeployRoutes)
 	for _, r := range infra.routes {
 		add(r)
 	}

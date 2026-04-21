@@ -1,0 +1,404 @@
+package http
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/atvirokodosprendimai/vvs/internal/infrastructure/http/templates"
+	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/app/queries"
+)
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+func vvsDeployStatusClass(status string) string {
+	switch status {
+	case "running":
+		return "px-2 py-0.5 text-xs rounded-full bg-green-900/40 text-green-400"
+	case "pending":
+		return "px-2 py-0.5 text-xs rounded-full bg-blue-900/40 text-blue-400 animate-pulse"
+	case "error":
+		return "px-2 py-0.5 text-xs rounded-full bg-red-900/40 text-red-400"
+	case "stopped":
+		return "px-2 py-0.5 text-xs rounded-full bg-neutral-700 text-neutral-400"
+	default:
+		return "px-2 py-0.5 text-xs rounded-full bg-neutral-700 text-neutral-500"
+	}
+}
+
+// ── VVS Deploy Page ───────────────────────────────────────────────────────────
+
+templ VVSDeployPage(nodes []queries.SwarmNodeReadModel, registries []queries.RegistryReadModel, clusters []queries.SwarmClusterReadModel) {
+	@templates.Layout("VVS Components") {
+		<div
+			class="p-6 space-y-6"
+			data-signals={ fmt.Sprintf(`{
+				_vvsDeployOpen: false,
+				_vvsRegOpen: false,
+				vvsComponent: "portal",
+				vvsSource: "image",
+				vvsNodeID: "",
+				vvsClusterID: "",
+				vvsImageURL: "",
+				vvsRegistryID: "",
+				vvsGitURL: "",
+				vvsGitRef: "main",
+				vvsNATSUrl: "",
+				vvsPort: 8080,
+				vvsRegName: "",
+				vvsRegURL: "",
+				vvsRegUsername: "",
+				vvsRegPassword: ""
+			}`) }
+		>
+			<!-- Header -->
+			<div class="flex items-center justify-between">
+				<h1 class="text-xl font-semibold text-neutral-100">VVS Components</h1>
+				<button
+					class="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-md"
+					data-on:click="$_vvsDeployOpen = true"
+				>+ Deploy</button>
+			</div>
+
+			<!-- Deployments table -->
+			<div id="vvs-deployments-table" data-init="@get('/api/swarm/vvs/deployments')">
+				<div class="text-neutral-500 text-sm">Loading...</div>
+			</div>
+
+			<!-- Registries section -->
+			<div class="mt-8">
+				<div class="flex items-center justify-between mb-3">
+					<h2 class="text-base font-semibold text-neutral-300">Container Registries</h2>
+					<button
+						class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded-md"
+						data-on:click="$_vvsRegOpen = true"
+					>+ Add Registry</button>
+				</div>
+				<div id="vvs-registries-table" data-init="@get('/api/swarm/vvs/registries')">
+					<div class="text-neutral-500 text-sm">Loading...</div>
+				</div>
+			</div>
+
+			<!-- Deploy modal -->
+			<div
+				data-show="$_vvsDeployOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+				data-on:keydown__window="evt.key === 'Escape' && ($_vvsDeployOpen = false)"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg p-6 w-full max-w-xl space-y-4 max-h-[90vh] overflow-y-auto">
+					<h2 class="text-lg font-semibold text-neutral-100">Deploy VVS Component</h2>
+					<div id="vvs-deploy-form-error"></div>
+					<div id="vvs-deploy-progress"></div>
+
+					<!-- Component -->
+					<div class="space-y-1">
+						<label class="text-xs text-neutral-400">Component</label>
+						<select
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							data-bind:vvs-component
+						>
+							<option value="portal">vvs-portal</option>
+							<option value="stb">vvs-stb</option>
+						</select>
+					</div>
+
+					<!-- Cluster -->
+					<div class="space-y-1">
+						<label class="text-xs text-neutral-400">Cluster</label>
+						<select
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							data-bind:vvs-cluster-i-d
+						>
+							<option value="">— select cluster —</option>
+							for _, c := range clusters {
+								<option value={ c.ID }>{ c.Name }</option>
+							}
+						</select>
+					</div>
+
+					<!-- Node -->
+					<div class="space-y-1">
+						<label class="text-xs text-neutral-400">Target Node</label>
+						<select
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							data-bind:vvs-node-i-d
+						>
+							<option value="">— select node —</option>
+							for _, n := range nodes {
+								<option value={ n.ID }>{ n.Name } ({ n.SshHost })</option>
+							}
+						</select>
+					</div>
+
+					<!-- Source -->
+					<div class="space-y-1">
+						<label class="text-xs text-neutral-400">Source</label>
+						<select
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							data-bind:vvs-source
+						>
+							<option value="image">Image (pull from registry)</option>
+							<option value="git">Git (build from Dockerfile)</option>
+						</select>
+					</div>
+
+					<!-- Image URL (image source) -->
+					<div
+						class="space-y-1"
+						data-show="$vvsSource === 'image'"
+					>
+						<label class="text-xs text-neutral-400">Image URL</label>
+						<input
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							placeholder="registry.example.com/vvs-portal:latest"
+							data-bind:vvs-image-u-r-l
+						/>
+					</div>
+
+					<!-- Registry (image source) -->
+					<div
+						class="space-y-1"
+						data-show="$vvsSource === 'image'"
+					>
+						<label class="text-xs text-neutral-400">Registry (optional, for private images)</label>
+						<select
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							data-bind:vvs-registry-i-d
+						>
+							<option value="">— none (public) —</option>
+							for _, reg := range registries {
+								<option value={ reg.ID }>{ reg.Name } ({ reg.URL })</option>
+							}
+						</select>
+					</div>
+
+					<!-- Git URL (git source) -->
+					<div
+						class="space-y-1"
+						data-show="$vvsSource === 'git'"
+					>
+						<label class="text-xs text-neutral-400">Git URL</label>
+						<input
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							placeholder="https://github.com/org/vvs-portal.git"
+							data-bind:vvs-git-u-r-l
+						/>
+					</div>
+
+					<!-- Git ref (git source) -->
+					<div
+						class="space-y-1"
+						data-show="$vvsSource === 'git'"
+					>
+						<label class="text-xs text-neutral-400">Branch / Tag</label>
+						<input
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							placeholder="main"
+							data-bind:vvs-git-ref
+						/>
+					</div>
+
+					<!-- NATS URL -->
+					<div class="space-y-1">
+						<label class="text-xs text-neutral-400">NATS URL (core, via VPN)</label>
+						<input
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							placeholder="nats://10.0.0.1:4222"
+							data-bind:vvs-n-a-t-s-url
+						/>
+					</div>
+
+					<!-- Port -->
+					<div class="space-y-1">
+						<label class="text-xs text-neutral-400">Host Port</label>
+						<input
+							type="number"
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							placeholder="8080"
+							data-bind:vvs-port
+						/>
+					</div>
+
+					<!-- Buttons -->
+					<div class="flex gap-3 justify-end pt-2">
+						<button
+							class="px-4 py-2 text-sm text-neutral-300 hover:text-white"
+							data-on:click="$_vvsDeployOpen = false"
+						>Cancel</button>
+						<button
+							class="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-md"
+							data-on:click="@post('/api/swarm/vvs/deployments')"
+						>Deploy</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Registry modal -->
+			<div
+				data-show="$_vvsRegOpen"
+				style="display:none"
+				class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+				data-on:keydown__window="evt.key === 'Escape' && ($_vvsRegOpen = false)"
+			>
+				<div class="bg-neutral-900 border border-neutral-700 rounded-lg p-6 w-full max-w-md space-y-4">
+					<h2 class="text-lg font-semibold text-neutral-100">Add Container Registry</h2>
+					<div id="vvs-registry-form-error"></div>
+
+					<div class="space-y-1">
+						<label class="text-xs text-neutral-400">Name</label>
+						<input
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							placeholder="My Registry"
+							data-bind:vvs-reg-name
+						/>
+					</div>
+					<div class="space-y-1">
+						<label class="text-xs text-neutral-400">URL</label>
+						<input
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							placeholder="registry.example.com"
+							data-bind:vvs-reg-u-r-l
+						/>
+					</div>
+					<div class="space-y-1">
+						<label class="text-xs text-neutral-400">Username</label>
+						<input
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							placeholder="username"
+							data-bind:vvs-reg-username
+						/>
+					</div>
+					<div class="space-y-1">
+						<label class="text-xs text-neutral-400">Password</label>
+						<input
+							type="password"
+							class="w-full bg-neutral-800 border border-neutral-700 rounded px-3 py-2 text-sm text-neutral-200"
+							data-bind:vvs-reg-password
+						/>
+					</div>
+
+					<div class="flex gap-3 justify-end pt-2">
+						<button
+							class="px-4 py-2 text-sm text-neutral-300 hover:text-white"
+							data-on:click="$_vvsRegOpen = false"
+						>Cancel</button>
+						<button
+							class="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-md"
+							data-on:click="@post('/api/swarm/vvs/registries')"
+						>Save</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// ── Deploy table ──────────────────────────────────────────────────────────────
+
+templ VVSDeployTable(deps []queries.VVSDeploymentReadModel) {
+	<div id="vvs-deployments-table">
+		if len(deps) == 0 {
+			<p class="text-neutral-500 text-sm">No deployments. Click <strong>+ Deploy</strong> to deploy vvs-portal or vvs-stb.</p>
+		} else {
+			<table class="w-full text-sm text-neutral-300">
+				<thead class="text-left text-neutral-500 border-b border-neutral-700">
+					<tr>
+						<th class="pb-2 pr-4">Component</th>
+						<th class="pb-2 pr-4">Source</th>
+						<th class="pb-2 pr-4">Image / Git</th>
+						<th class="pb-2 pr-4">Port</th>
+						<th class="pb-2 pr-4">Status</th>
+						<th class="pb-2 pr-4">Last Deployed</th>
+						<th class="pb-2"></th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-neutral-800">
+					for _, d := range deps {
+						<tr id={ "vvs-dep-row-" + d.ID } class="hover:bg-neutral-800/30">
+							<td class="py-2 pr-4 font-medium font-mono text-amber-400">vvs-{ d.Component }</td>
+							<td class="py-2 pr-4 text-neutral-400">{ d.Source }</td>
+							<td class="py-2 pr-4 font-mono text-xs text-neutral-400 max-w-xs truncate">
+								if d.Source == "image" {
+									{ d.ImageURL }
+								} else {
+									{ d.GitURL }
+									if d.GitRef != "" && d.GitRef != "main" {
+										<span class="text-neutral-500">({ d.GitRef })</span>
+									}
+								}
+							</td>
+							<td class="py-2 pr-4 text-neutral-400">{ strconv.Itoa(d.Port) }</td>
+							<td class="py-2 pr-4">
+								<span class={ vvsDeployStatusClass(d.Status) }>{ d.Status }</span>
+								if d.Status == "error" && d.ErrorMsg != "" {
+									<div class="text-xs text-red-400 mt-1 max-w-xs truncate" title={ d.ErrorMsg }>{ d.ErrorMsg }</div>
+								}
+							</td>
+							<td class="py-2 pr-4 text-neutral-500 text-xs">{ d.LastDeployedAt }</td>
+							<td class="py-2 text-right space-x-3">
+								<button
+									class="text-xs text-amber-400 hover:text-amber-300"
+									data-on:click={ fmt.Sprintf("@post('/api/swarm/vvs/deployments/%s/redeploy')", d.ID) }
+								>Redeploy</button>
+								<button
+									class="text-xs text-red-400 hover:text-red-300"
+									data-on:click={ fmt.Sprintf("confirm('Remove vvs-%s deployment?') && @delete('/api/swarm/vvs/deployments/%s')", d.Component, d.ID) }
+								>Remove</button>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}
+
+// ── Registry table ────────────────────────────────────────────────────────────
+
+templ VVSRegistryTable(regs []queries.RegistryReadModel) {
+	<div id="vvs-registries-table">
+		if len(regs) == 0 {
+			<p class="text-neutral-500 text-sm">No registries configured. Private images require a registry entry.</p>
+		} else {
+			<table class="w-full text-sm text-neutral-300">
+				<thead class="text-left text-neutral-500 border-b border-neutral-700">
+					<tr>
+						<th class="pb-2 pr-4">Name</th>
+						<th class="pb-2 pr-4">URL</th>
+						<th class="pb-2 pr-4">Username</th>
+						<th class="pb-2"></th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-neutral-800">
+					for _, reg := range regs {
+						<tr id={ "vvs-reg-row-" + reg.ID } class="hover:bg-neutral-800/30">
+							<td class="py-2 pr-4 font-medium">{ reg.Name }</td>
+							<td class="py-2 pr-4 font-mono text-xs text-neutral-400">{ reg.URL }</td>
+							<td class="py-2 pr-4 text-neutral-400">{ reg.Username }</td>
+							<td class="py-2 text-right">
+								<button
+									class="text-xs text-red-400 hover:text-red-300"
+									data-on:click={ fmt.Sprintf("confirm('Delete registry %s?') && @delete('/api/swarm/vvs/registries/%s')", reg.Name, reg.ID) }
+								>Delete</button>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</div>
+}
+
+// ── Error / progress fragments ────────────────────────────────────────────────
+
+templ VVSDeployFormError(msg string) {
+	<div id="vvs-deploy-form-error" class="text-red-400 text-sm p-2 bg-red-900/20 rounded">{ msg }</div>
+}
+
+templ VVSDeployProgress(msg string) {
+	<div id="vvs-deploy-progress" class="text-amber-400 text-sm p-2 bg-amber-900/20 rounded">{ msg }</div>
+}
+
+templ VVSRegistryFormError(msg string) {
+	<div id="vvs-registry-form-error" class="text-red-400 text-sm p-2 bg-red-900/20 rounded">{ msg }</div>
+}
