@@ -430,20 +430,21 @@ func (h *SwarmHandlers) clusterHetznerConfigOptionsSSE(w http.ResponseWriter, r 
 	sse := datastar.NewSSE(w, r)
 	_ = sse.PatchElementTempl(SwarmHetznerConfigOptionsForCluster(clusterID, serverTypes, locations, enabledLocs, enabledSTs))
 
-	// Patch signals: _hl_{name} for locations, _hs_{name} for server types
+	// Patch signals: hl_{name} for locations, hs_{name} for server types
+	// NOTE: no leading underscore — signals starting with _ are private and never sent to backend
 	signals := make(map[string]bool, len(locations)+len(serverTypes)+1)
 	signals["_hetzner_filter_loaded"] = true
 	for _, l := range locations {
-		signals["_hl_"+l.Name] = len(enabledLocs) == 0 || sliceContains(enabledLocs, l.Name)
+		signals["hl_"+l.Name] = len(enabledLocs) == 0 || sliceContains(enabledLocs, l.Name)
 	}
 	for _, s := range serverTypes {
-		signals["_hs_"+s.Name] = len(enabledSTs) == 0 || sliceContains(enabledSTs, s.Name)
+		signals["hs_"+s.Name] = len(enabledSTs) == 0 || sliceContains(enabledSTs, s.Name)
 	}
 	sigJSON, _ := json.Marshal(signals)
 	_ = sse.PatchSignals(sigJSON)
 }
 
-// clusterHetznerFiltersSSE reads the _hl_* and _hs_* signals and saves enabled filters.
+// clusterHetznerFiltersSSE reads the hl_* and hs_* signals and saves enabled filters.
 func (h *SwarmHandlers) clusterHetznerFiltersSSE(w http.ResponseWriter, r *http.Request) {
 	if !requireAdmin(w, r) {
 		return
@@ -461,10 +462,10 @@ func (h *SwarmHandlers) clusterHetznerFiltersSSE(w http.ResponseWriter, r *http.
 		if !on {
 			continue
 		}
-		if strings.HasPrefix(k, "_hl_") {
-			enabledLocs = append(enabledLocs, strings.TrimPrefix(k, "_hl_"))
-		} else if strings.HasPrefix(k, "_hs_") {
-			enabledSTs = append(enabledSTs, strings.TrimPrefix(k, "_hs_"))
+		if strings.HasPrefix(k, "hl_") {
+			enabledLocs = append(enabledLocs, strings.TrimPrefix(k, "hl_"))
+		} else if strings.HasPrefix(k, "hs_") {
+			enabledSTs = append(enabledSTs, strings.TrimPrefix(k, "hs_"))
 		}
 	}
 
