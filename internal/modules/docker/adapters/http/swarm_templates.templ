@@ -252,13 +252,16 @@ templ SwarmClusterDetailPage(cluster queries.SwarmClusterReadModel, nodes []quer
 					<h1 class="text-xl font-semibold text-neutral-100">{ cluster.Name }</h1>
 					<span class={ swarmClusterStatusClass(cluster.Status) }>{ cluster.Status }</span>
 				</div>
-				if swarmCanInit(nodes) {
-					<button
-						type="button"
-						data-on:click={ "@post('/api/swarm/clusters/" + cluster.ID + "/init')" }
-						class="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-md"
-					>Init Swarm</button>
-				}
+				<div class="flex items-center gap-2">
+					<a href={ templ.SafeURL("/swarm/clusters/" + cluster.ID + "/hetzner") } class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-neutral-300 rounded-md">⚙ Hetzner</a>
+					if swarmCanInit(nodes) {
+						<button
+							type="button"
+							data-on:click={ "@post('/api/swarm/clusters/" + cluster.ID + "/init')" }
+							class="px-3 py-1.5 text-sm bg-amber-600 hover:bg-amber-500 text-white rounded-md"
+						>Init Swarm</button>
+					}
+				</div>
 			</div>
 			if cluster.AdvertiseAddr != "" {
 				<p class="text-xs text-neutral-500 font-mono">Advertise: { cluster.AdvertiseAddr }</p>
