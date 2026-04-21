@@ -13,12 +13,13 @@ import (
 )
 
 type authWired struct {
-	permRepo    *authpersistence.GormRolePermissionsRepository
-	listUsers   *authqueries.ListUsersHandler
-	currentUser *authqueries.GetCurrentUserHandler
-	createUser  *authcommands.CreateUserHandler
-	deleteUser  *authcommands.DeleteUserHandler
-	routes      infrahttp.ModuleRoutes
+	permRepo       *authpersistence.GormRolePermissionsRepository
+	listUsers      *authqueries.ListUsersHandler
+	currentUser    *authqueries.GetCurrentUserHandler
+	createUser     *authcommands.CreateUserHandler
+	deleteUser     *authcommands.DeleteUserHandler
+	changePassword *authcommands.ChangePasswordHandler
+	routes         infrahttp.ModuleRoutes
 }
 
 func wireAuth(gdb *gormsqlite.DB, cfg Config) *authWired {
@@ -31,10 +32,11 @@ func wireAuth(gdb *gormsqlite.DB, cfg Config) *authWired {
 		log.Printf("warn: prune sessions on startup: %v", err)
 	}
 
-	loginCmd             := authcommands.NewLoginHandler(userRepo, sessionRepo)
-	logoutCmd            := authcommands.NewLogoutHandler(sessionRepo)
-	createUserCmd        := authcommands.NewCreateUserHandler(userRepo, roleRepo)
-	deleteUserCmd        := authcommands.NewDeleteUserHandler(userRepo, sessionRepo)
+	loginCmd              := authcommands.NewLoginHandler(userRepo, sessionRepo)
+	logoutCmd             := authcommands.NewLogoutHandler(sessionRepo)
+	createUserCmd         := authcommands.NewCreateUserHandler(userRepo, roleRepo)
+	deleteUserCmd         := authcommands.NewDeleteUserHandler(userRepo, sessionRepo)
+	changePasswordCmd     := authcommands.NewChangePasswordHandler(userRepo)
 	changeSelfPasswordCmd := authcommands.NewChangeSelfPasswordHandler(userRepo)
 	updateUserCmd        := authcommands.NewUpdateUserHandler(userRepo, roleRepo)
 	createRoleCmd        := authcommands.NewCreateRoleHandler(roleRepo, permRepo)
@@ -62,11 +64,12 @@ func wireAuth(gdb *gormsqlite.DB, cfg Config) *authWired {
 	}
 
 	return &authWired{
-		permRepo:    permRepo,
-		listUsers:   listUsersQuery,
-		currentUser: getCurrentUserQuery,
-		createUser:  createUserCmd,
-		deleteUser:  deleteUserCmd,
-		routes:      routes,
+		permRepo:       permRepo,
+		listUsers:      listUsersQuery,
+		currentUser:    getCurrentUserQuery,
+		createUser:     createUserCmd,
+		deleteUser:     deleteUserCmd,
+		changePassword: changePasswordCmd,
+		routes:         routes,
 	}
 }

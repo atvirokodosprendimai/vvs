@@ -75,9 +75,10 @@ func wireInfra(
 
 	// ── NATS RPC ──────────────────────────────────────────────────────────────
 	rpcServer := natsrpc.New(nc, natsrpc.Config{
-		ListUsers:  auth.listUsers,
-		CreateUser: auth.createUser,
-		DeleteUser: auth.deleteUser,
+		ListUsers:      auth.listUsers,
+		CreateUser:     auth.createUser,
+		DeleteUser:     auth.deleteUser,
+		ChangePassword: auth.changePassword,
 
 		ListCustomers:  cust.listQuery,
 		GetCustomer:    cust.getQuery,
