@@ -34,6 +34,7 @@ type SwarmStack struct {
 	TargetNodeID string // which node runs this compose project (SSH deploy target)
 	Name         string
 	ComposeYAML  string
+	RegistryID   string // optional; empty = no registry auth before compose up
 	Status       SwarmStackStatus
 	ErrorMsg     string
 	CreatedAt    time.Time
