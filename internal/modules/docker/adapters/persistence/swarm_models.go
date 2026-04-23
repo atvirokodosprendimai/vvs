@@ -211,6 +211,7 @@ type SwarmStackModel struct {
 	TargetNodeID string `gorm:"column:target_node_id;type:text;not null;default:''"`
 	Name         string `gorm:"type:text;not null"`
 	ComposeYAML  string `gorm:"column:compose_yaml;type:text;not null;default:''"`
+	RegistryID   string `gorm:"column:registry_id;type:text;not null;default:''"`
 	Status       string `gorm:"type:text;not null;default:'deploying'"`
 	ErrorMsg     string `gorm:"column:error_msg;type:text;not null;default:''"`
 	CreatedAt    time.Time
@@ -226,6 +227,7 @@ func toSwarmStackModel(s *domain.SwarmStack) *SwarmStackModel {
 		TargetNodeID: s.TargetNodeID,
 		Name:         s.Name,
 		ComposeYAML:  s.ComposeYAML,
+		RegistryID:   s.RegistryID,
 		Status:       string(s.Status),
 		ErrorMsg:     s.ErrorMsg,
 		CreatedAt:    s.CreatedAt,
@@ -240,6 +242,7 @@ func toSwarmStackDomain(m *SwarmStackModel) *domain.SwarmStack {
 		TargetNodeID: m.TargetNodeID,
 		Name:         m.Name,
 		ComposeYAML:  m.ComposeYAML,
+		RegistryID:   m.RegistryID,
 		Status:       domain.SwarmStackStatus(m.Status),
 		ErrorMsg:     m.ErrorMsg,
 		CreatedAt:    m.CreatedAt,
