@@ -82,8 +82,11 @@ func wireDocker(
 	deleteNetworkCmd := dockercommands.NewDeleteSwarmNetworkHandler(clusterRepo, swarmNodeRepo, networkRepo, swarmFactory, pub)
 	updateReservedIPCmd := dockercommands.NewUpdateSwarmNetworkReservedIPsHandler(networkRepo)
 
-	deployStackCmd := dockercommands.NewDeploySwarmStackHandler(clusterRepo, swarmNodeRepo, stackRepo, swarmFactory, pub)
-	updateStackCmd := dockercommands.NewUpdateSwarmStackHandler(swarmNodeRepo, stackRepo, swarmFactory)
+	// ── Registry repo (shared by stack deploy + VVS component deploy) ────────
+	registryRepo := dockerpersistence.NewGormContainerRegistryRepository(gdb, encKey)
+
+	deployStackCmd := dockercommands.NewDeploySwarmStackHandler(clusterRepo, swarmNodeRepo, stackRepo, registryRepo, swarmFactory, pub)
+	updateStackCmd := dockercommands.NewUpdateSwarmStackHandler(swarmNodeRepo, stackRepo, registryRepo, swarmFactory)
 	removeStackCmd := dockercommands.NewRemoveSwarmStackHandler(swarmNodeRepo, stackRepo, swarmFactory, pub)
 
 	listClustersQuery := dockerqueries.NewListSwarmClustersHandler(clusterRepo, swarmNodeRepo)
@@ -96,7 +99,6 @@ func wireDocker(
 	getStackQuery := dockerqueries.NewGetSwarmStackHandler(stackRepo, swarmNodeRepo)
 
 	// ── VVS component deploy ──────────────────────────────────────────────────
-	registryRepo := dockerpersistence.NewGormContainerRegistryRepository(gdb, encKey)
 	deploymentRepo := dockerpersistence.NewGormVVSDeploymentRepository(gdb)
 
 	createRegistryCmd := dockercommands.NewCreateRegistryHandler(registryRepo)

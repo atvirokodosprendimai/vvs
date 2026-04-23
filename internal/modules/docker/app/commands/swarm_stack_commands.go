@@ -18,8 +18,8 @@ func composePath(stackName string) string {
 }
 
 // composeUp writes the compose YAML to the node and runs `docker compose up -d`.
-// Static IPs and DNS are defined in the compose YAML by the user.
-func composeUp(node *domain.SwarmNode, stackName, composeYAML string, progress func(string)) error {
+// If reg is non-nil, docker login is run on the node before compose up.
+func composeUp(node *domain.SwarmNode, stackName, composeYAML string, reg *domain.ContainerRegistry, progress func(string)) error {
 	dir := fmt.Sprintf("/opt/vvs/stacks/%s", stackName)
 	path := composePath(stackName)
 
@@ -31,6 +31,21 @@ func composeUp(node *domain.SwarmNode, stackName, composeYAML string, progress f
 	}
 	if progress != nil {
 		progress("Compose file written — starting containers…")
+	}
+
+	// docker login if registry configured
+	if reg != nil {
+		if progress != nil {
+			progress(fmt.Sprintf("Logging in to registry %s…", reg.URL))
+		}
+		loginCmd := fmt.Sprintf("echo %s | docker login %s -u %s --password-stdin 2>&1",
+			shellQuote(reg.Password), shellQuote(reg.URL), shellQuote(reg.Username))
+		if out, err := dockerclient.ExecSSH(node.SshHost, node.SshUser, node.SshPort, node.SshKey, loginCmd); err != nil {
+			return fmt.Errorf("docker login: %w\n%s", err, out)
+		}
+		if progress != nil {
+			progress("Registry login OK")
+		}
 	}
 
 	// Run docker compose up -d
@@ -60,6 +75,7 @@ type DeploySwarmStackCommand struct {
 	TargetNodeID string // specific node to run compose on
 	Name         string
 	ComposeYAML  string
+	RegistryID   string // optional; empty = no registry auth
 	Routes       []RouteInput
 }
 
@@ -70,27 +86,30 @@ type RouteInput struct {
 }
 
 type DeploySwarmStackHandler struct {
-	clusterRepo domain.SwarmClusterRepository
-	nodeRepo    domain.SwarmNodeRepository
-	stackRepo   domain.SwarmStackRepository
-	factory     domain.SwarmClientFactory
-	publisher   events.EventPublisher
-	progress    func(msg string)
+	clusterRepo  domain.SwarmClusterRepository
+	nodeRepo     domain.SwarmNodeRepository
+	stackRepo    domain.SwarmStackRepository
+	registryRepo domain.ContainerRegistryRepository
+	factory      domain.SwarmClientFactory
+	publisher    events.EventPublisher
+	progress     func(msg string)
 }
 
 func NewDeploySwarmStackHandler(
 	clusterRepo domain.SwarmClusterRepository,
 	nodeRepo domain.SwarmNodeRepository,
 	stackRepo domain.SwarmStackRepository,
+	registryRepo domain.ContainerRegistryRepository,
 	factory domain.SwarmClientFactory,
 	pub events.EventPublisher,
 ) *DeploySwarmStackHandler {
 	return &DeploySwarmStackHandler{
-		clusterRepo: clusterRepo,
-		nodeRepo:    nodeRepo,
-		stackRepo:   stackRepo,
-		factory:     factory,
-		publisher:   pub,
+		clusterRepo:  clusterRepo,
+		nodeRepo:     nodeRepo,
+		stackRepo:    stackRepo,
+		registryRepo: registryRepo,
+		factory:      factory,
+		publisher:    pub,
 	}
 }
 
@@ -111,6 +130,7 @@ func (h *DeploySwarmStackHandler) Handle(ctx context.Context, cmd DeploySwarmSta
 	if err != nil {
 		return nil, err
 	}
+	stack.RegistryID = cmd.RegistryID
 	if err := h.stackRepo.Save(ctx, stack); err != nil {
 		return nil, fmt.Errorf("save stack: %w", err)
 	}
@@ -123,9 +143,20 @@ func (h *DeploySwarmStackHandler) Handle(ctx context.Context, cmd DeploySwarmSta
 		return stack, fmt.Errorf("resolve target node: %w", err)
 	}
 
+	// Resolve registry if configured
+	var reg *domain.ContainerRegistry
+	if cmd.RegistryID != "" {
+		reg, err = h.registryRepo.FindByID(ctx, cmd.RegistryID)
+		if err != nil {
+			stack.MarkError(fmt.Sprintf("find registry: %v", err))
+			_ = h.stackRepo.Save(ctx, stack)
+			return stack, nil
+		}
+	}
+
 	h.emit(fmt.Sprintf("Deploying %q on %s (%s)…", cmd.Name, node.Name, node.SshHost))
 
-	if err := composeUp(node, cmd.Name, cmd.ComposeYAML, h.emit); err != nil {
+	if err := composeUp(node, cmd.Name, cmd.ComposeYAML, reg, h.emit); err != nil {
 		stack.MarkError(err.Error())
 		_ = h.stackRepo.Save(ctx, stack)
 		return stack, nil // error stored on stack, not returned
@@ -176,21 +207,24 @@ func (h *DeploySwarmStackHandler) resolveTargetNode(ctx context.Context, cluster
 type UpdateSwarmStackCommand struct {
 	StackID     string
 	ComposeYAML string
+	RegistryID  string // optional; empty = keep existing RegistryID from stored stack
 }
 
 type UpdateSwarmStackHandler struct {
-	nodeRepo  domain.SwarmNodeRepository
-	stackRepo domain.SwarmStackRepository
-	factory   domain.SwarmClientFactory
-	progress  func(msg string)
+	nodeRepo     domain.SwarmNodeRepository
+	stackRepo    domain.SwarmStackRepository
+	registryRepo domain.ContainerRegistryRepository
+	factory      domain.SwarmClientFactory
+	progress     func(msg string)
 }
 
 func NewUpdateSwarmStackHandler(
 	nodeRepo domain.SwarmNodeRepository,
 	stackRepo domain.SwarmStackRepository,
+	registryRepo domain.ContainerRegistryRepository,
 	factory domain.SwarmClientFactory,
 ) *UpdateSwarmStackHandler {
-	return &UpdateSwarmStackHandler{nodeRepo: nodeRepo, stackRepo: stackRepo, factory: factory}
+	return &UpdateSwarmStackHandler{nodeRepo: nodeRepo, stackRepo: stackRepo, registryRepo: registryRepo, factory: factory}
 }
 
 func (h *UpdateSwarmStackHandler) WithProgress(fn func(msg string)) *UpdateSwarmStackHandler {
@@ -212,6 +246,9 @@ func (h *UpdateSwarmStackHandler) Handle(ctx context.Context, cmd UpdateSwarmSta
 	}
 
 	stack.UpdateYAML(cmd.ComposeYAML)
+	if cmd.RegistryID != "" {
+		stack.RegistryID = cmd.RegistryID
+	}
 	if err := h.stackRepo.Save(ctx, stack); err != nil {
 		return nil, fmt.Errorf("save stack: %w", err)
 	}
@@ -248,7 +285,18 @@ func (h *UpdateSwarmStackHandler) Handle(ctx context.Context, cmd UpdateSwarmSta
 		return stack, fmt.Errorf("no target node for stack %s", stack.Name)
 	}
 
-	if err := composeUp(targetNode, stack.Name, cmd.ComposeYAML, h.emit); err != nil {
+	// Resolve registry if configured
+	var reg *domain.ContainerRegistry
+	if stack.RegistryID != "" {
+		reg, err = h.registryRepo.FindByID(ctx, stack.RegistryID)
+		if err != nil {
+			stack.MarkError(fmt.Sprintf("find registry: %v", err))
+			_ = h.stackRepo.Save(ctx, stack)
+			return stack, nil
+		}
+	}
+
+	if err := composeUp(targetNode, stack.Name, cmd.ComposeYAML, reg, h.emit); err != nil {
 		stack.MarkError(err.Error())
 		_ = h.stackRepo.Save(ctx, stack)
 		return stack, nil
