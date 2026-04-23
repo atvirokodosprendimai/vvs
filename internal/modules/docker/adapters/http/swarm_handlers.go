@@ -40,14 +40,15 @@ type SwarmHandlers struct {
 	updateStack  *commands.UpdateSwarmStackHandler
 	removeStack  *commands.RemoveSwarmStackHandler
 	// Queries
-	listClusters  *queries.ListSwarmClustersHandler
-	getCluster    *queries.GetSwarmClusterHandler
-	listNodes     *queries.ListSwarmNodesHandler
-	getNode       *queries.GetSwarmNodeHandler
-	listNetworks  *queries.ListSwarmNetworksHandler
-	getNetwork    *queries.GetSwarmNetworkHandler
-	listStacks    *queries.ListSwarmStacksHandler
-	getStack      *queries.GetSwarmStackHandler
+	listClusters    *queries.ListSwarmClustersHandler
+	getCluster      *queries.GetSwarmClusterHandler
+	listNodes       *queries.ListSwarmNodesHandler
+	getNode         *queries.GetSwarmNodeHandler
+	listNetworks    *queries.ListSwarmNetworksHandler
+	getNetwork      *queries.GetSwarmNetworkHandler
+	listStacks      *queries.ListSwarmStacksHandler
+	getStack        *queries.GetSwarmStackHandler
+	listRegistries  *queries.ListRegistriesHandler
 	// Repos
 	networkRepo domain.SwarmNetworkRepository
 	clusterRepo domain.SwarmClusterRepository
@@ -79,6 +80,7 @@ func NewSwarmHandlers(
 	getNetwork *queries.GetSwarmNetworkHandler,
 	listStacks *queries.ListSwarmStacksHandler,
 	getStack *queries.GetSwarmStackHandler,
+	listRegistries *queries.ListRegistriesHandler,
 	networkRepo domain.SwarmNetworkRepository,
 	clusterRepo domain.SwarmClusterRepository,
 ) *SwarmHandlers {
@@ -95,6 +97,7 @@ func NewSwarmHandlers(
 		listNodes: listNodes, getNode: getNode,
 		listNetworks: listNetworks, getNetwork: getNetwork,
 		listStacks: listStacks, getStack: getStack,
+		listRegistries: listRegistries,
 		networkRepo: networkRepo,
 		clusterRepo: clusterRepo,
 	}
@@ -890,7 +893,8 @@ func (h *SwarmHandlers) stackCreatePage(w http.ResponseWriter, r *http.Request) 
 	clusterID := r.URL.Query().Get("cluster")
 	clusters, _ := h.listClusters.Handle(r.Context())
 	nodes, _ := h.listNodes.Handle(r.Context(), clusterID)
-	SwarmStackFormPage(clusterID, nil, clusters, nodes).Render(r.Context(), w)
+	registries, _ := h.listRegistries.Handle(r.Context())
+	SwarmStackFormPage(clusterID, nil, clusters, nodes, registries).Render(r.Context(), w)
 }
 
 func (h *SwarmHandlers) stackDetailPage(w http.ResponseWriter, r *http.Request) {
@@ -912,7 +916,8 @@ func (h *SwarmHandlers) stackEditPage(w http.ResponseWriter, r *http.Request) {
 	}
 	clusters, _ := h.listClusters.Handle(r.Context())
 	nodes, _ := h.listNodes.Handle(r.Context(), stack.ClusterID)
-	SwarmStackFormPage(stack.ClusterID, stack, clusters, nodes).Render(r.Context(), w)
+	registries, _ := h.listRegistries.Handle(r.Context())
+	SwarmStackFormPage(stack.ClusterID, stack, clusters, nodes, registries).Render(r.Context(), w)
 }
 
 // ── Stack SSE handlers ────────────────────────────────────────────────────────
@@ -926,6 +931,7 @@ func (h *SwarmHandlers) stackDeploySSE(w http.ResponseWriter, r *http.Request) {
 		Name         string `json:"name"`
 		ComposeYAML  string `json:"composeyaml"`
 		TargetNodeID string `json:"targetnodeid"`
+		RegistryID   string `json:"registryid"`
 	}
 	if err := datastar.ReadSignals(r, &sig); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
@@ -942,6 +948,7 @@ func (h *SwarmHandlers) stackDeploySSE(w http.ResponseWriter, r *http.Request) {
 		Name:         sig.Name,
 		ComposeYAML:  sig.ComposeYAML,
 		TargetNodeID: sig.TargetNodeID,
+		RegistryID:   sig.RegistryID,
 	})
 	if err != nil {
 		slog.Error("swarm: deploy stack", "err", err)
@@ -962,6 +969,7 @@ func (h *SwarmHandlers) stackUpdateSSE(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var sig struct {
 		ComposeYAML string `json:"composeyaml"`
+		RegistryID  string `json:"registryid"`
 	}
 	if err := datastar.ReadSignals(r, &sig); err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
@@ -976,6 +984,7 @@ func (h *SwarmHandlers) stackUpdateSSE(w http.ResponseWriter, r *http.Request) {
 	stack, err := handler.Handle(r.Context(), commands.UpdateSwarmStackCommand{
 		StackID:     id,
 		ComposeYAML: sig.ComposeYAML,
+		RegistryID:  sig.RegistryID,
 	})
 	if err != nil {
 		slog.Error("swarm: update stack", "err", err)

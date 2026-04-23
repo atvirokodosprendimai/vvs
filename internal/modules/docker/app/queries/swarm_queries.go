@@ -54,6 +54,8 @@ type SwarmStackReadModel struct {
 	Status         string
 	ErrorMsg       string
 	ComposeYAML    string
+	RegistryID     string
+	RegistryName   string
 	Routes         []SwarmRouteReadModel
 }
 
@@ -266,6 +268,7 @@ func (h *ListSwarmStacksHandler) Handle(ctx context.Context, clusterID string) (
 			Status:         string(s.Status),
 			ErrorMsg:       s.ErrorMsg,
 			ComposeYAML:    s.ComposeYAML,
+			RegistryID:     s.RegistryID,
 		}
 	}
 	return out, nil
@@ -283,12 +286,13 @@ func (h *ListSwarmStacksHandler) resolveNodeName(ctx context.Context, nodeID str
 }
 
 type GetSwarmStackHandler struct {
-	stackRepo domain.SwarmStackRepository
-	nodeRepo  domain.SwarmNodeRepository
+	stackRepo    domain.SwarmStackRepository
+	nodeRepo     domain.SwarmNodeRepository
+	registryRepo domain.ContainerRegistryRepository
 }
 
-func NewGetSwarmStackHandler(stackRepo domain.SwarmStackRepository, nodeRepo domain.SwarmNodeRepository) *GetSwarmStackHandler {
-	return &GetSwarmStackHandler{stackRepo: stackRepo, nodeRepo: nodeRepo}
+func NewGetSwarmStackHandler(stackRepo domain.SwarmStackRepository, nodeRepo domain.SwarmNodeRepository, registryRepo domain.ContainerRegistryRepository) *GetSwarmStackHandler {
+	return &GetSwarmStackHandler{stackRepo: stackRepo, nodeRepo: nodeRepo, registryRepo: registryRepo}
 }
 
 func (h *GetSwarmStackHandler) Handle(ctx context.Context, id string) (*SwarmStackReadModel, error) {
@@ -312,6 +316,13 @@ func (h *GetSwarmStackHandler) Handle(ctx context.Context, id string) (*SwarmSta
 			nodeName = n.Name
 		}
 	}
+	registryID := s.RegistryID
+	registryName := ""
+	if registryID != "" && h.registryRepo != nil {
+		if reg, err := h.registryRepo.FindByID(ctx, registryID); err == nil && reg != nil {
+			registryName = reg.Name
+		}
+	}
 	return &SwarmStackReadModel{
 		ID:             s.ID,
 		ClusterID:      s.ClusterID,
@@ -321,6 +332,8 @@ func (h *GetSwarmStackHandler) Handle(ctx context.Context, id string) (*SwarmSta
 		Status:         string(s.Status),
 		ErrorMsg:       s.ErrorMsg,
 		ComposeYAML:    s.ComposeYAML,
+		RegistryID:     registryID,
+		RegistryName:   registryName,
 		Routes:         routeModels,
 	}, nil
 }

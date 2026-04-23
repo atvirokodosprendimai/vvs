@@ -710,7 +710,7 @@ templ SwarmStackTable(stacks []queries.SwarmStackReadModel) {
 }
 
 // ── Stack form page ───────────────────────────────────────────────────────────
-templ SwarmStackFormPage(clusterID string, stack *queries.SwarmStackReadModel, clusters []queries.SwarmClusterReadModel, nodes []queries.SwarmNodeReadModel) {
+templ SwarmStackFormPage(clusterID string, stack *queries.SwarmStackReadModel, clusters []queries.SwarmClusterReadModel, nodes []queries.SwarmNodeReadModel, registries []queries.RegistryReadModel) {
 	@templates.Layout(swarmStackFormTitle(stack)) {
 		<div class="p-6 max-w-3xl space-y-4">
 			<div class="flex items-center gap-3">
@@ -747,6 +747,16 @@ templ SwarmStackFormPage(clusterID string, stack *queries.SwarmStackReadModel, c
 							<option value={ n.ID }>{ n.Name } ({ n.Role })</option>
 						}
 					</select>
+				</div>
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Registry</label>
+					<select data-bind:registryid class="bg-neutral-800 text-neutral-100 border border-neutral-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-amber-500">
+						<option value="">— none (public images) —</option>
+						for _, reg := range registries {
+							<option value={ reg.ID }>{ reg.Name } ({ reg.URL })</option>
+						}
+					</select>
+					<span class="text-xs text-neutral-500">Select a registry to run <code class="text-amber-400">docker login</code> on the node before deploy</span>
 				</div>
 				<div class="flex flex-col gap-1">
 					<label class="text-xs font-medium text-neutral-400 uppercase tracking-wider">Compose YAML *</label>
@@ -786,13 +796,15 @@ func swarmStackFormSignals(clusterID string, stack *queries.SwarmStackReadModel)
 	composeYAML := ""
 	name := ""
 	targetNodeID := ""
+	registryID := ""
 	if stack != nil {
 		composeYAML = stack.ComposeYAML
 		name = stack.Name
 		clusterID = stack.ClusterID
 		targetNodeID = stack.TargetNodeID
+		registryID = stack.RegistryID
 	}
-	return fmt.Sprintf(`{"name":%q,"clusterid":%q,"composeyaml":%q,"targetnodeid":%q}`, name, clusterID, composeYAML, targetNodeID)
+	return fmt.Sprintf(`{"name":%q,"clusterid":%q,"composeyaml":%q,"targetnodeid":%q,"registryid":%q}`, name, clusterID, composeYAML, targetNodeID, registryID)
 }
 
 // ── Hetzner order panel (inline on cluster detail) ────────────────────────────
@@ -989,6 +1001,9 @@ templ SwarmStackDetailPage(stack queries.SwarmStackReadModel) {
 					<span id={ "swarm-stack-status-" + stack.ID } class={ swarmStackStatusClass(stack.Status) }>{ stack.Status }</span>
 					if stack.TargetNodeName != "" {
 						<span class="text-xs text-neutral-500 font-mono">{ "@ " + stack.TargetNodeName }</span>
+					}
+					if stack.RegistryName != "" {
+						<span class="text-xs bg-blue-900/40 text-blue-300 border border-blue-700/50 rounded px-2 py-0.5">{ stack.RegistryName }</span>
 					}
 				</div>
 				<a href={ templ.SafeURL("/swarm/stacks/" + stack.ID + "/edit") } class="px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 text-white rounded-md">Edit</a>

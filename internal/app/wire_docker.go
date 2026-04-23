@@ -96,7 +96,7 @@ func wireDocker(
 	listNetworksQuery := dockerqueries.NewListSwarmNetworksHandler(networkRepo)
 	getNetworkQuery := dockerqueries.NewGetSwarmNetworkHandler(networkRepo)
 	listStacksQuery := dockerqueries.NewListSwarmStacksHandler(stackRepo, swarmNodeRepo)
-	getStackQuery := dockerqueries.NewGetSwarmStackHandler(stackRepo, swarmNodeRepo)
+	getStackQuery := dockerqueries.NewGetSwarmStackHandler(stackRepo, swarmNodeRepo, registryRepo)
 
 	// ── VVS component deploy ──────────────────────────────────────────────────
 	deploymentRepo := dockerpersistence.NewGormVVSDeploymentRepository(gdb)
@@ -143,6 +143,7 @@ func wireDocker(
 			listSwarmNodesQuery, getSwarmNodeQuery,
 			listNetworksQuery, getNetworkQuery,
 			listStacksQuery, getStackQuery,
+			listRegistriesQuery,
 			networkRepo,
 			clusterRepo,
 		)
