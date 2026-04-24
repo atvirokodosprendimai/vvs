@@ -942,7 +942,7 @@ func kvRow(keyName, valName, keyVal, valVal string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\" placeholder=\"value\" class=\"flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-xs text-neutral-200 font-mono\"> <button type=\"button\" class=\"text-neutral-500 hover:text-red-400 text-xs\" data-on:click=\"this.parentElement.remove()\">✕</button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\" placeholder=\"value\" class=\"flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-xs text-neutral-200 font-mono\"> <button type=\"button\" class=\"text-neutral-500 hover:text-red-400 text-xs\" data-on:click=\"el.parentElement.remove()\">✕</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1017,7 +1017,7 @@ func portRow(pm domain.PortMap) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, ">udp</option></select> <button type=\"button\" class=\"text-neutral-500 hover:text-red-400 text-xs\" data-on:click=\"this.parentElement.remove()\">✕</button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, ">udp</option></select> <button type=\"button\" class=\"text-neutral-500 hover:text-red-400 text-xs\" data-on:click=\"el.parentElement.remove()\">✕</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1072,7 +1072,7 @@ func volumeRow(vm domain.VolumeMount) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "\" placeholder=\"/container/path\" class=\"flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-xs text-neutral-200 font-mono\"> <button type=\"button\" class=\"text-neutral-500 hover:text-red-400 text-xs\" data-on:click=\"this.parentElement.remove()\">✕</button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "\" placeholder=\"/container/path\" class=\"flex-1 bg-neutral-800 border border-neutral-700 rounded px-2 py-1.5 text-xs text-neutral-200 font-mono\"> <button type=\"button\" class=\"text-neutral-500 hover:text-red-400 text-xs\" data-on:click=\"el.parentElement.remove()\">✕</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
