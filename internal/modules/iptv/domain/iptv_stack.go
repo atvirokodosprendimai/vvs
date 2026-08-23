@@ -2,7 +2,9 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -15,6 +17,14 @@ const (
 	IPTVStackDeploying IPTVStackStatus = "deploying"
 	IPTVStackRunning   IPTVStackStatus = "running"
 	IPTVStackError     IPTVStackStatus = "error"
+)
+
+var (
+	// ErrInvalidStackName is returned when a stack name contains unsafe characters
+	ErrInvalidStackName = errors.New("stack name must contain only alphanumeric characters, hyphens, and underscores")
+	
+	// stackNamePattern enforces safe characters for filesystem and shell usage
+	stackNamePattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
 
 // IPTVStack is a managed Docker Compose deployment on a swarm node that
@@ -49,6 +59,21 @@ type IPTVStackChannelDetail struct {
 	ChannelSlug   string
 	ProviderType  ProviderType
 	ResolvedURL   string // source URL for ffmpeg (internal) or proxy target (external)
+}
+
+// ValidateStackName checks if a stack name contains only safe characters.
+// This prevents command injection when the name is used in shell commands during deployment.
+func ValidateStackName(name string) error {
+	if name == "" {
+		return errors.New("stack name cannot be empty")
+	}
+	if len(name) > 64 {
+		return errors.New("stack name cannot exceed 64 characters")
+	}
+	if !stackNamePattern.MatchString(name) {
+		return ErrInvalidStackName
+	}
+	return nil
 }
 
 // IPTVStackRepository is the port for IPTVStack persistence.

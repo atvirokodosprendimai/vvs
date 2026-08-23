@@ -3,6 +3,7 @@ package commands
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/atvirokodosprendimai/vvs/internal/modules/docker/adapters/dockerclient"
@@ -33,6 +34,11 @@ func NewCreateIPTVStackHandler(repo domain.IPTVStackRepository) *CreateIPTVStack
 }
 
 func (h *CreateIPTVStackHandler) Handle(ctx context.Context, cmd CreateIPTVStackCommand) (*domain.IPTVStack, error) {
+	// Validate stack name to prevent command injection
+	if err := domain.ValidateStackName(cmd.Name); err != nil {
+		return nil, fmt.Errorf("invalid stack name: %w", err)
+	}
+	
 	now := time.Now().UTC()
 	s := &domain.IPTVStack{
 		ID:                 uuid.Must(uuid.NewV7()).String(),
@@ -79,6 +85,11 @@ func NewUpdateIPTVStackHandler(repo domain.IPTVStackRepository) *UpdateIPTVStack
 }
 
 func (h *UpdateIPTVStackHandler) Handle(ctx context.Context, cmd UpdateIPTVStackCommand) error {
+	// Validate stack name to prevent command injection
+	if err := domain.ValidateStackName(cmd.Name); err != nil {
+		return fmt.Errorf("invalid stack name: %w", err)
+	}
+	
 	s, err := h.repo.FindByID(ctx, cmd.ID)
 	if err != nil {
 		return err
@@ -140,6 +151,11 @@ func NewCloneIPTVStackHandler(stackRepo domain.IPTVStackRepository, channelRepo 
 }
 
 func (h *CloneIPTVStackHandler) Handle(ctx context.Context, cmd CloneIPTVStackCommand) (*domain.IPTVStack, error) {
+	// Validate stack name to prevent command injection
+	if err := domain.ValidateStackName(cmd.Name); err != nil {
+		return nil, fmt.Errorf("invalid stack name: %w", err)
+	}
+	
 	now := time.Now().UTC()
 	newStack := &domain.IPTVStack{
 		ID:                 uuid.Must(uuid.NewV7()).String(),
@@ -296,6 +312,14 @@ func (h *DeployIPTVStackHandler) emit(msg string) {
 	}
 }
 
+// shellQuote wraps a string in single quotes and escapes any single quotes within it.
+// This provides defense-in-depth shell escaping even though input validation should
+// prevent special characters from reaching this point.
+func shellQuote(s string) string {
+	// Replace ' with '\'' (end quote, escaped quote, start quote)
+	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
+}
+
 func (h *DeployIPTVStackHandler) Handle(ctx context.Context, cmd DeployIPTVStackCommand) error {
 	stack, err := h.stackRepo.FindByID(ctx, cmd.StackID)
 	if err != nil {
@@ -336,7 +360,12 @@ func (h *DeployIPTVStackHandler) Handle(ctx context.Context, cmd DeployIPTVStack
 	}
 
 	composeYAML := domain.GenerateIPTVCompose(stack, details)
-	deployPath := fmt.Sprintf("/opt/vvs/stacks/%s", stack.Name)
+	
+	// Defense-in-depth: shell-quote the stack name even though it's validated
+	// to contain only safe characters. This prevents command injection if
+	// validation is bypassed or if the name is modified after validation.
+	quotedName := shellQuote(stack.Name)
+	deployPath := fmt.Sprintf("/opt/vvs/stacks/%s", quotedName)
 	mkdirCmd := fmt.Sprintf("mkdir -p %s", deployPath)
 	writeCmd := fmt.Sprintf("cat > %s/docker-compose.yml << 'EOFCOMPOSE'\n%s\nEOFCOMPOSE", deployPath, composeYAML)
 	upCmd := fmt.Sprintf("docker compose -f %s/docker-compose.yml up -d --remove-orphans", deployPath)
